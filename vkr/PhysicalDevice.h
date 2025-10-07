@@ -27,8 +27,12 @@ namespace mt
 
     using QueuesInfo = std::vector<QueueFamily>;
 
-  public:
+  private:
+    // Только VKRLib может создавать объекты этого класса
+    friend class VKRLib;
     PhysicalDevice(VkPhysicalDevice deviceHandle);
+
+  public:
     PhysicalDevice(const PhysicalDevice&) = delete;
     PhysicalDevice& operator = (const PhysicalDevice&) = delete;
     virtual ~PhysicalDevice() noexcept = default;
@@ -36,13 +40,17 @@ namespace mt
     inline VkPhysicalDevice handle() const noexcept;
 
     inline const VkPhysicalDeviceProperties& properties() const noexcept;
+
     inline const VkPhysicalDeviceFeatures& features() const noexcept;
+    bool areFeaturesSupported(
+                      const VkPhysicalDeviceFeatures& features) const noexcept;
+
     inline const MemoryInfo& memoryInfo() const noexcept;
 
     std::vector<VkExtensionProperties> availableExtensions() const;
     inline bool isExtensionSupported(const char* extensionName) const;
 
-    inline QueuesInfo queuesInfo() const noexcept;
+    inline const QueuesInfo& queuesInfo() const noexcept;
 
     SwapChainSupport surfaceСompatibility(const WindowSurface& surface) const;
     inline bool isSurfaceSuitable(const WindowSurface& surface) const;
@@ -91,7 +99,8 @@ namespace mt
     return false;
   }
 
-  inline PhysicalDevice::QueuesInfo PhysicalDevice::queuesInfo() const noexcept
+  inline const PhysicalDevice::QueuesInfo&
+                                    PhysicalDevice::queuesInfo() const noexcept
   {
     return _queuesInfo;
   }

@@ -72,6 +72,7 @@ namespace mt
     //    системой. Если передать nullptr, то проверка на совместимость не будет
     //    производиться
     PhysicalDevice* getGraphicDevice(
+      VkPhysicalDeviceFeatures requiredFeatures,
       const std::vector<std::string>& requiredExtensions,
       const WindowSurface* testSurface) const;
 
@@ -89,6 +90,9 @@ namespace mt
                                 VkDebugUtilsMessengerCreateInfoEXT& createInfo);
     void _setupDebugMessenger();
     void _receivePhysicalDevices();
+    // Добавить в пользовательский список фич те фичи, которые требует движек
+    static void _extendRequiredFeatures(
+                                    VkPhysicalDeviceFeatures& requiredFeatures);
 
   private:
     VkInstance _handle;

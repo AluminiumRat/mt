@@ -71,6 +71,75 @@ void PhysicalDevice::_fillMemoryInfo()
   }
 }
 
+bool PhysicalDevice::areFeaturesSupported(
+                        const VkPhysicalDeviceFeatures& features) const noexcept
+{
+  bool featuresSupported = true;
+
+#define VKR_CHECK_FEATURE(featureName) \
+  if(features.##featureName) featuresSupported &= bool(_features.##featureName);
+
+  VKR_CHECK_FEATURE(robustBufferAccess)
+  VKR_CHECK_FEATURE(fullDrawIndexUint32)
+  VKR_CHECK_FEATURE(imageCubeArray)
+  VKR_CHECK_FEATURE(independentBlend)
+  VKR_CHECK_FEATURE(geometryShader)
+  VKR_CHECK_FEATURE(tessellationShader)
+  VKR_CHECK_FEATURE(sampleRateShading)
+  VKR_CHECK_FEATURE(dualSrcBlend)
+  VKR_CHECK_FEATURE(logicOp)
+  VKR_CHECK_FEATURE(multiDrawIndirect)
+  VKR_CHECK_FEATURE(drawIndirectFirstInstance)
+  VKR_CHECK_FEATURE(depthClamp)
+  VKR_CHECK_FEATURE(depthBiasClamp)
+  VKR_CHECK_FEATURE(fillModeNonSolid)
+  VKR_CHECK_FEATURE(depthBounds)
+  VKR_CHECK_FEATURE(wideLines)
+  VKR_CHECK_FEATURE(largePoints)
+  VKR_CHECK_FEATURE(alphaToOne)
+  VKR_CHECK_FEATURE(multiViewport)
+  VKR_CHECK_FEATURE(samplerAnisotropy)
+  VKR_CHECK_FEATURE(textureCompressionETC2)
+  VKR_CHECK_FEATURE(textureCompressionASTC_LDR)
+  VKR_CHECK_FEATURE(textureCompressionBC)
+  VKR_CHECK_FEATURE(occlusionQueryPrecise)
+  VKR_CHECK_FEATURE(pipelineStatisticsQuery)
+  VKR_CHECK_FEATURE(vertexPipelineStoresAndAtomics)
+  VKR_CHECK_FEATURE(fragmentStoresAndAtomics)
+  VKR_CHECK_FEATURE(shaderTessellationAndGeometryPointSize)
+  VKR_CHECK_FEATURE(shaderImageGatherExtended)
+  VKR_CHECK_FEATURE(shaderStorageImageExtendedFormats)
+  VKR_CHECK_FEATURE(shaderStorageImageMultisample)
+  VKR_CHECK_FEATURE(shaderStorageImageReadWithoutFormat)
+  VKR_CHECK_FEATURE(shaderStorageImageWriteWithoutFormat)
+  VKR_CHECK_FEATURE(shaderUniformBufferArrayDynamicIndexing)
+  VKR_CHECK_FEATURE(shaderSampledImageArrayDynamicIndexing)
+  VKR_CHECK_FEATURE(shaderStorageBufferArrayDynamicIndexing)
+  VKR_CHECK_FEATURE(shaderStorageImageArrayDynamicIndexing)
+  VKR_CHECK_FEATURE(shaderClipDistance)
+  VKR_CHECK_FEATURE(shaderCullDistance)
+  VKR_CHECK_FEATURE(shaderFloat64)
+  VKR_CHECK_FEATURE(shaderInt64)
+  VKR_CHECK_FEATURE(shaderInt16)
+  VKR_CHECK_FEATURE(shaderResourceResidency)
+  VKR_CHECK_FEATURE(shaderResourceMinLod)
+  VKR_CHECK_FEATURE(sparseBinding)
+  VKR_CHECK_FEATURE(sparseResidencyBuffer)
+  VKR_CHECK_FEATURE(sparseResidencyImage2D)
+  VKR_CHECK_FEATURE(sparseResidencyImage3D)
+  VKR_CHECK_FEATURE(sparseResidency2Samples)
+  VKR_CHECK_FEATURE(sparseResidency4Samples)
+  VKR_CHECK_FEATURE(sparseResidency8Samples)
+  VKR_CHECK_FEATURE(sparseResidency16Samples)
+  VKR_CHECK_FEATURE(sparseResidencyAliased)
+  VKR_CHECK_FEATURE(variableMultisampleRate)
+  VKR_CHECK_FEATURE(inheritedQueries)
+
+#undef VKR_CHECK_FEATURE
+
+  return featuresSupported;
+}
+
 PhysicalDevice::SwapChainSupport PhysicalDevice::surface—ompatibility(
                                             const WindowSurface& surface) const
 {

@@ -288,7 +288,14 @@ std::vector<VkExtensionProperties> VKRLib::availableExtensions()
   return availableExtensions;
 }
 
+void VKRLib::_extendRequiredFeatures(VkPhysicalDeviceFeatures& requiredFeatures)
+{
+  requiredFeatures.samplerAnisotropy = VK_TRUE;
+  requiredFeatures.textureCompressionBC = VK_TRUE;
+}
+
 PhysicalDevice* VKRLib::getGraphicDevice(
+                      VkPhysicalDeviceFeatures requiredFeatures,
                       const std::vector<std::string>& requiredExtensions,
                       const WindowSurface* testSurface) const
 {
@@ -301,6 +308,9 @@ PhysicalDevice* VKRLib::getGraphicDevice(
     extensions.insert(extension);
   }
 
+  // Дополняем пользовательские фичи требованиями движка
+  _extendRequiredFeatures(requiredFeatures);
+
   // Выбираем видюху, которая имеет наибольший объем недоступной с CPU
   // памяти (дискретка). Если таких нет, то выбираем встройку
   PhysicalDevice* bestDevice = nullptr;
@@ -310,6 +320,14 @@ PhysicalDevice* VKRLib::getGraphicDevice(
     // Для начала проверяем, что карта может отрисовывать в окно
     if (testSurface != nullptr && !device->isSurfaceSuitable(*testSurface))
     {
+      Log::info() << "Device " << device->properties().deviceName << " is not suitable with window's surface";
+      continue;
+    }
+
+    // Проверяем, что карта поддерживает все требуемые фичи
+    if(!device->areFeaturesSupported(requiredFeatures))
+    {
+      Log::info() << "Device " << device->properties().deviceName << " doesn't support all features";
       continue;
     }
 
@@ -319,11 +337,15 @@ PhysicalDevice* VKRLib::getGraphicDevice(
     {
       if(!device->isExtensionSupported(extensionName.c_str()))
       {
+        Log::info() << "Device " << device->properties().deviceName << " doesn't support extension " << extensionName;
         allExtensionsSupported = false;
         break;
       }
     }
-    if(!allExtensionsSupported) continue;
+    if(!allExtensionsSupported)
+    {
+      continue;
+    }
 
     // Обходим все типы памяти и пытаемся определить, сколько есть честной
     // GPU памяти
