@@ -65,11 +65,11 @@ inline void dumpDeviceExtensions(const mt::PhysicalDevice& device)
 // Какая память и сколько её есть на устройстве
 inline void dumpDeviceMemory(const mt::PhysicalDevice& device)
 {
-  const mt::PhysicalDevice::MemoryInfo& memoryInfo = device.memoryInfo();
+  const mt::MemoryInfo& memoryInfo = device.memoryInfo();
   mt::Log::info() << "  Memory heaps: [" << memoryInfo.heaps.size() << "]";
   for (size_t heapIndex = 0; heapIndex < memoryInfo.heaps.size(); heapIndex++)
   {
-    const mt::PhysicalDevice::MemoryHeapInfo& heap = memoryInfo.heaps[heapIndex];
+    const mt::MemoryHeapInfo& heap = memoryInfo.heaps[heapIndex];
     mt::Log::info() << "    " << heapIndex;
     mt::Log::info() << "      Heap size: " << heap.size / (1024 * 1024) << "MB";
     mt::Log::info() << "      Device local: " << heap.isDeviceLocal();
@@ -78,7 +78,7 @@ inline void dumpDeviceMemory(const mt::PhysicalDevice& device)
     mt::Log::info() << "      Memory types: [" << heap.types.size() << "]";
     for (size_t index = 0; index < heap.types.size(); index++)
     {
-      const mt::PhysicalDevice::MemoryTypeInfo& type = *heap.types[index];
+      const mt::MemoryTypeInfo& type = *heap.types[index];
       mt::Log::info() << "        " << index;
       mt::Log::info() << "          Global index: " << type.index;
       mt::Log::info() << "          Device local: " << type.isDeviceLocal();

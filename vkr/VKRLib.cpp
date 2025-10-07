@@ -328,8 +328,7 @@ PhysicalDevice* VKRLib::getGraphicDevice(
     // Обходим все типы памяти и пытаемся определить, сколько есть честной
     // GPU памяти
     VkDeviceSize gpuMemorySize = 0;
-    for(const PhysicalDevice::MemoryTypeInfo& memoryType :
-                                                      device->memoryInfo().types)
+    for(const MemoryTypeInfo& memoryType : device->memoryInfo().types)
     {
       if(memoryType.isDeviceOnly())
       {
