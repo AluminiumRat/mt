@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #include <vulkan/vulkan.h>
 
@@ -6,13 +6,13 @@
 
 namespace mt
 {
-  // Очень тонкая RAII обертка для VkSurfaceKHR.
-  // Можно использовать саму по себе, если вы смогли раздобыть где-то
-  // VkSurfaceKHR, либо использовать платформенно-зависимый потомок
+  // РћС‡РµРЅСЊ С‚РѕРЅРєР°СЏ RAII РѕР±РµСЂС‚РєР° РґР»СЏ VkSurfaceKHR.
+  // РњРѕР¶РЅРѕ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ СЃР°РјСѓ РїРѕ СЃРµР±Рµ, РµСЃР»Рё РІС‹ СЃРјРѕРіР»Рё СЂР°Р·РґРѕР±С‹С‚СЊ РіРґРµ-С‚Рѕ
+  // VkSurfaceKHR, Р»РёР±Рѕ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РїР»Р°С‚С„РѕСЂРјРµРЅРЅРѕ-Р·Р°РІРёСЃРёРјС‹Р№ РїРѕС‚РѕРјРѕРє
   class WindowSurface
   {
   public:
-    // handle будет уничтожен в деструкторе
+    // handle Р±СѓРґРµС‚ СѓРЅРёС‡С‚РѕР¶РµРЅ РІ РґРµСЃС‚СЂСѓРєС‚РѕСЂРµ
     WindowSurface(VkSurfaceKHR handle) noexcept;
     WindowSurface(const WindowSurface&) = delete;
     WindowSurface& operator = (const WindowSurface&) = delete;

@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #include <bitset>
 
@@ -7,7 +7,7 @@
 #include <vkr/VKRLib.h>
 #include <vkr/WindowSurface.h>
 
-// Дамп вулкан лэйеров
+// Р”Р°РјРї РІСѓР»РєР°РЅ Р»СЌР№РµСЂРѕРІ
 inline void dumpInstanceLayers()
 {
   mt::VKRLib& vkrLib = mt::VKRLib::instance();
@@ -18,7 +18,7 @@ inline void dumpInstanceLayers()
   }
 }
 
-// Дамп расширений уровня инстанс
+// Р”Р°РјРї СЂР°СЃС€РёСЂРµРЅРёР№ СѓСЂРѕРІРЅСЏ РёРЅСЃС‚Р°РЅСЃ
 inline void dumpInstanceExtensions()
 {
   mt::VKRLib& vkrLib = mt::VKRLib::instance();
@@ -29,8 +29,8 @@ inline void dumpInstanceExtensions()
   }
 }
 
-// Дам очередей
-// testsurface нужен только для проверки совместимости, можно передавать nullptr
+// Р”Р°Рј РѕС‡РµСЂРµРґРµР№
+// testsurface РЅСѓР¶РµРЅ С‚РѕР»СЊРєРѕ РґР»СЏ РїСЂРѕРІРµСЂРєРё СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё, РјРѕР¶РЅРѕ РїРµСЂРµРґР°РІР°С‚СЊ nullptr
 inline void dumpQueueFamilies(
   const mt::PhysicalDevice& device,
   const mt::WindowSurface* testsurface)
@@ -52,7 +52,7 @@ inline void dumpQueueFamilies(
   }
 }
 
-// Дамп расширений уровня устройства
+// Р”Р°РјРї СЂР°СЃС€РёСЂРµРЅРёР№ СѓСЂРѕРІРЅСЏ СѓСЃС‚СЂРѕР№СЃС‚РІР°
 inline void dumpDeviceExtensions(const mt::PhysicalDevice& device)
 {
   mt::Log::info() << "  Device extensions: [" << device.availableExtensions().size() << "]";
@@ -62,7 +62,7 @@ inline void dumpDeviceExtensions(const mt::PhysicalDevice& device)
   }
 }
 
-// Какая память и сколько её есть на устройстве
+// РљР°РєР°СЏ РїР°РјСЏС‚СЊ Рё СЃРєРѕР»СЊРєРѕ РµС‘ РµСЃС‚СЊ РЅР° СѓСЃС‚СЂРѕР№СЃС‚РІРµ
 inline void dumpDeviceMemory(const mt::PhysicalDevice& device)
 {
   const mt::MemoryInfo& memoryInfo = device.memoryInfo();
@@ -90,8 +90,8 @@ inline void dumpDeviceMemory(const mt::PhysicalDevice& device)
   }
 }
 
-// Дамп физических устройств
-// testsurface нужен только для проверки совместимости, можно передавать nullptr
+// Р”Р°РјРї С„РёР·РёС‡РµСЃРєРёС… СѓСЃС‚СЂРѕР№СЃС‚РІ
+// testsurface РЅСѓР¶РµРЅ С‚РѕР»СЊРєРѕ РґР»СЏ РїСЂРѕРІРµСЂРєРё СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё, РјРѕР¶РЅРѕ РїРµСЂРµРґР°РІР°С‚СЊ nullptr
 inline void dumpPhysicalDevices(
   bool dumpExtensions,
   bool dumpQueues,
@@ -110,10 +110,10 @@ inline void dumpPhysicalDevices(
   }
 }
 
-// Выводит в лог инфу об физических устройствах системы
-// testsurface нужна только для того, чтобы выяснить кто может с ней
-// взаимодействовать. Если передать nullptr, то совместимость не будет
-// проверяться.
+// Р’С‹РІРѕРґРёС‚ РІ Р»РѕРі РёРЅС„Сѓ РѕР± С„РёР·РёС‡РµСЃРєРёС… СѓСЃС‚СЂРѕР№СЃС‚РІР°С… СЃРёСЃС‚РµРјС‹
+// testsurface РЅСѓР¶РЅР° С‚РѕР»СЊРєРѕ РґР»СЏ С‚РѕРіРѕ, С‡С‚РѕР±С‹ РІС‹СЏСЃРЅРёС‚СЊ РєС‚Рѕ РјРѕР¶РµС‚ СЃ РЅРµР№
+// РІР·Р°РёРјРѕРґРµР№СЃС‚РІРѕРІР°С‚СЊ. Р•СЃР»Рё РїРµСЂРµРґР°С‚СЊ nullptr, С‚Рѕ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚СЊ РЅРµ Р±СѓРґРµС‚
+// РїСЂРѕРІРµСЂСЏС‚СЊСЃСЏ.
 inline void dumpHardware(
   bool dumpLayers,
   bool dumpExtensions,

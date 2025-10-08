@@ -1,4 +1,4 @@
-#include <stdexcept>
+﻿#include <stdexcept>
 
 #include <vkr/queue/QueueFamiliesInfo.h>
 #include <vkr/PhysicalDevice.h>

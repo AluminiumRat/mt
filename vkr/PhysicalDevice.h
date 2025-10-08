@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #include <cstdlib>
 #include <vector>
@@ -12,9 +12,9 @@ namespace mt
 {
   class WindowSurface;
 
-  // Класс предоставляет информацию об одном из графических устройств,
-  // установленном в системе.
-  // Список всех устройств можно получить через класс VKRLib
+  // РљР»Р°СЃСЃ РїСЂРµРґРѕСЃС‚Р°РІР»СЏРµС‚ РёРЅС„РѕСЂРјР°С†РёСЋ РѕР± РѕРґРЅРѕРј РёР· РіСЂР°С„РёС‡РµСЃРєРёС… СѓСЃС‚СЂРѕР№СЃС‚РІ,
+  // СѓСЃС‚Р°РЅРѕРІР»РµРЅРЅРѕРј РІ СЃРёСЃС‚РµРјРµ.
+  // РЎРїРёСЃРѕРє РІСЃРµС… СѓСЃС‚СЂРѕР№СЃС‚РІ РјРѕР¶РЅРѕ РїРѕР»СѓС‡РёС‚СЊ С‡РµСЂРµР· РєР»Р°СЃСЃ VKRLib
   class PhysicalDevice
   {
   public:
@@ -26,7 +26,7 @@ namespace mt
     };
 
   private:
-    // Только VKRLib может создавать объекты этого класса
+    // РўРѕР»СЊРєРѕ VKRLib РјРѕР¶РµС‚ СЃРѕР·РґР°РІР°С‚СЊ РѕР±СЉРµРєС‚С‹ СЌС‚РѕРіРѕ РєР»Р°СЃСЃР°
     friend class VKRLib;
     PhysicalDevice(VkPhysicalDevice deviceHandle);
 
@@ -50,7 +50,7 @@ namespace mt
 
     inline const QueueFamiliesInfo& queuesInfo() const noexcept;
 
-    SwapChainSupport surfaceСompatibility(const WindowSurface& surface) const;
+    SwapChainSupport surfaceРЎompatibility(const WindowSurface& surface) const;
     inline bool isSurfaceSuitable(const WindowSurface& surface) const;
 
   private:
@@ -105,7 +105,7 @@ namespace mt
   inline bool PhysicalDevice::isSurfaceSuitable(
                                             const WindowSurface& surface) const
   {
-    SwapChainSupport support = surfaceСompatibility(surface);
+    SwapChainSupport support = surfaceРЎompatibility(surface);
     return support.formats.size() != 0 && support.presentModes.size() != 0;
   }
 }

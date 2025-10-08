@@ -1,4 +1,4 @@
-#include <algorithm>
+п»ї#include <algorithm>
 
 #include <cstdlib>
 #include <vector>
@@ -54,15 +54,15 @@ VKRLib::VKRLib( const char* applicationName,
 
 bool VKRLib::isValidationSupported()
 {
-  // Проверяем, что доступен лэйер валидации. Также нам нужно расширение
-  // VK_EXT_debug_utils для перехвата сообщений
+  // РџСЂРѕРІРµСЂСЏРµРј, С‡С‚Рѕ РґРѕСЃС‚СѓРїРµРЅ Р»СЌР№РµСЂ РІР°Р»РёРґР°С†РёРё. РўР°РєР¶Рµ РЅР°Рј РЅСѓР¶РЅРѕ СЂР°СЃС€РёСЂРµРЅРёРµ
+  // VK_EXT_debug_utils РґР»СЏ РїРµСЂРµС…РІР°С‚Р° СЃРѕРѕР±С‰РµРЅРёР№
   return  isLayerSupported(validationLayerName) &&
           isExtensionSupported(debugExtensionName);
 }
 
 bool VKRLib::isDebugSupported()
 {
-  // Проверяем, что доступно расширение VK_EXT_debug_utils
+  // РџСЂРѕРІРµСЂСЏРµРј, С‡С‚Рѕ РґРѕСЃС‚СѓРїРЅРѕ СЂР°СЃС€РёСЂРµРЅРёРµ VK_EXT_debug_utils
   return isExtensionSupported(debugExtensionName);
 }
 
@@ -93,10 +93,10 @@ void VKRLib::_createVKInstance( const char* applicationName,
   createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
   createInfo.pApplicationInfo = &appInfo;
 
-  // Собираем необходимые расширения уровня instance
+  // РЎРѕР±РёСЂР°РµРј РЅРµРѕР±С…РѕРґРёРјС‹Рµ СЂР°СЃС€РёСЂРµРЅРёСЏ СѓСЂРѕРІРЅСЏ instance
   std::vector<const char*> extensions = requiredInstanceExtensions;
-  // VK_EXT_debug_utils нужно как для дебаг маркеров, так и для получения
-  // фидбэка от лэйера валидации
+  // VK_EXT_debug_utils РЅСѓР¶РЅРѕ РєР°Рє РґР»СЏ РґРµР±Р°Рі РјР°СЂРєРµСЂРѕРІ, С‚Р°Рє Рё РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ
+  // С„РёРґР±СЌРєР° РѕС‚ Р»СЌР№РµСЂР° РІР°Р»РёРґР°С†РёРё
   if(_isDebugEnabled || _isValidationEnabled)
   {
     extensions.push_back(debugExtensionName);
@@ -302,14 +302,14 @@ bool VKRLib::_isDeviceSuitable(
   bool requireCompute,
   const WindowSurface* testSurface)
 {
-  // Для начала проверяем, что карта может отрисовывать в окно
+  // Р”Р»СЏ РЅР°С‡Р°Р»Р° РїСЂРѕРІРµСЂСЏРµРј, С‡С‚Рѕ РєР°СЂС‚Р° РјРѕР¶РµС‚ РѕС‚СЂРёСЃРѕРІС‹РІР°С‚СЊ РІ РѕРєРЅРѕ
   if (testSurface != nullptr && !device.isSurfaceSuitable(*testSurface))
   {
     Log::info() << "Device " << device.properties().deviceName << " is not suitable with window's surface";
     return false;
   }
 
-  // Проверяем, что карта поддерживает все требуемые виды очередей
+  // РџСЂРѕРІРµСЂСЏРµРј, С‡С‚Рѕ РєР°СЂС‚Р° РїРѕРґРґРµСЂР¶РёРІР°РµС‚ РІСЃРµ С‚СЂРµР±СѓРµРјС‹Рµ РІРёРґС‹ РѕС‡РµСЂРµРґРµР№
   if (!makeQueueSources(device.queuesInfo(),
                         requireGraphic,
                         requireCompute,
@@ -320,14 +320,14 @@ bool VKRLib::_isDeviceSuitable(
     return false;
   }
 
-  // Проверяем, что карта поддерживает все требуемые фичи
+  // РџСЂРѕРІРµСЂСЏРµРј, С‡С‚Рѕ РєР°СЂС‚Р° РїРѕРґРґРµСЂР¶РёРІР°РµС‚ РІСЃРµ С‚СЂРµР±СѓРµРјС‹Рµ С„РёС‡Рё
   if (!device.areFeaturesSupported(requiredFeatures))
   {
     Log::info() << "Device " << device.properties().deviceName << " doesn't support all features";
     return false;
   }
 
-  // Проверяем, что карта поддерживает все требуемые расширения
+  // РџСЂРѕРІРµСЂСЏРµРј, С‡С‚Рѕ РєР°СЂС‚Р° РїРѕРґРґРµСЂР¶РёРІР°РµС‚ РІСЃРµ С‚СЂРµР±СѓРµРјС‹Рµ СЂР°СЃС€РёСЂРµРЅРёСЏ
   for (const std::string& extensionName : requiredExtensions)
   {
     if (!device.isExtensionSupported(extensionName.c_str()))
@@ -347,7 +347,7 @@ PhysicalDevice* VKRLib::getGraphicDevice(
                       bool requireCompute,
                       const WindowSurface* testSurface) const
 {
-  // Формируем список расширений, которые должны поддерживаться устройством
+  // Р¤РѕСЂРјРёСЂСѓРµРј СЃРїРёСЃРѕРє СЂР°СЃС€РёСЂРµРЅРёР№, РєРѕС‚РѕСЂС‹Рµ РґРѕР»Р¶РЅС‹ РїРѕРґРґРµСЂР¶РёРІР°С‚СЊСЃСЏ СѓСЃС‚СЂРѕР№СЃС‚РІРѕРј
   std::set<std::string> extensions( requiredExtensions.begin(),
                                     requiredExtensions.end());
   if(testSurface != nullptr) extensions.insert(swapchainExtensionName);
@@ -356,11 +356,11 @@ PhysicalDevice* VKRLib::getGraphicDevice(
     extensions.insert(extension);
   }
 
-  // Дополняем пользовательские фичи требованиями движка
+  // Р”РѕРїРѕР»РЅСЏРµРј РїРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРёРµ С„РёС‡Рё С‚СЂРµР±РѕРІР°РЅРёСЏРјРё РґРІРёР¶РєР°
   _extendRequiredFeatures(requiredFeatures);
 
-  // Выбираем видюху, которая имеет наибольший объем недоступной с CPU
-  // памяти (дискретка). Если таких нет, то выбираем встройку
+  // Р’С‹Р±РёСЂР°РµРј РІРёРґСЋС…Сѓ, РєРѕС‚РѕСЂР°СЏ РёРјРµРµС‚ РЅР°РёР±РѕР»СЊС€РёР№ РѕР±СЉРµРј РЅРµРґРѕСЃС‚СѓРїРЅРѕР№ СЃ CPU
+  // РїР°РјСЏС‚Рё (РґРёСЃРєСЂРµС‚РєР°). Р•СЃР»Рё С‚Р°РєРёС… РЅРµС‚, С‚Рѕ РІС‹Р±РёСЂР°РµРј РІСЃС‚СЂРѕР№РєСѓ
   PhysicalDevice* bestDevice = nullptr;
   VkDeviceSize bestMemorySize = 0;
   for(const std::unique_ptr<PhysicalDevice>& device : _devices)
@@ -375,8 +375,8 @@ PhysicalDevice* VKRLib::getGraphicDevice(
       continue;
     }
 
-    // Обходим все типы памяти и пытаемся определить, сколько есть честной
-    // GPU памяти
+    // РћР±С…РѕРґРёРј РІСЃРµ С‚РёРїС‹ РїР°РјСЏС‚Рё Рё РїС‹С‚Р°РµРјСЃСЏ РѕРїСЂРµРґРµР»РёС‚СЊ, СЃРєРѕР»СЊРєРѕ РµСЃС‚СЊ С‡РµСЃС‚РЅРѕР№
+    // GPU РїР°РјСЏС‚Рё
     VkDeviceSize gpuMemorySize = 0;
     for(const MemoryTypeInfo& memoryType : device->memoryInfo().types)
     {
@@ -386,11 +386,11 @@ PhysicalDevice* VKRLib::getGraphicDevice(
       }
     }
 
-    // Если это первый обнаруженный девайс, то нам нет разницы - встройка это или
-    // нет, мы берем его как лучшего кандидата, так как лучше у нас всё равно
-    // пока нету.
-    // Если это не первый девайс, то выбираем тот у кого памяти больше. Встройки
-    // отпадают автоматом, так как у них будет 0 памяти.
+    // Р•СЃР»Рё СЌС‚Рѕ РїРµСЂРІС‹Р№ РѕР±РЅР°СЂСѓР¶РµРЅРЅС‹Р№ РґРµРІР°Р№СЃ, С‚Рѕ РЅР°Рј РЅРµС‚ СЂР°Р·РЅРёС†С‹ - РІСЃС‚СЂРѕР№РєР° СЌС‚Рѕ РёР»Рё
+    // РЅРµС‚, РјС‹ Р±РµСЂРµРј РµРіРѕ РєР°Рє Р»СѓС‡С€РµРіРѕ РєР°РЅРґРёРґР°С‚Р°, С‚Р°Рє РєР°Рє Р»СѓС‡С€Рµ Сѓ РЅР°СЃ РІСЃС‘ СЂР°РІРЅРѕ
+    // РїРѕРєР° РЅРµС‚Сѓ.
+    // Р•СЃР»Рё СЌС‚Рѕ РЅРµ РїРµСЂРІС‹Р№ РґРµРІР°Р№СЃ, С‚Рѕ РІС‹Р±РёСЂР°РµРј С‚РѕС‚ Сѓ РєРѕРіРѕ РїР°РјСЏС‚Рё Р±РѕР»СЊС€Рµ. Р’СЃС‚СЂРѕР№РєРё
+    // РѕС‚РїР°РґР°СЋС‚ Р°РІС‚РѕРјР°С‚РѕРј, С‚Р°Рє РєР°Рє Сѓ РЅРёС… Р±СѓРґРµС‚ 0 РїР°РјСЏС‚Рё.
     if(bestDevice == nullptr || gpuMemorySize > bestMemorySize)
     {
       bestDevice = device.get();

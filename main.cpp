@@ -1,4 +1,4 @@
-#include <exception>
+﻿#include <exception>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define GLFW_INCLUDE_VULKAN

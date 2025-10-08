@@ -1,4 +1,4 @@
-#include <stdexcept>
+﻿#include <stdexcept>
 
 #include <util/util.h>
 #include <vkr/VKRLib.h>

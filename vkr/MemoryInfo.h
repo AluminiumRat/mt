@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #include <vector>
 #include <vulkan/vulkan.h>
@@ -7,34 +7,34 @@ namespace mt
 {
   struct MemoryTypeInfo;
 
-  // Иформация об одном пуле памяти на PhysicalDevice
+  // РС„РѕСЂРјР°С†РёСЏ РѕР± РѕРґРЅРѕРј РїСѓР»Рµ РїР°РјСЏС‚Рё РЅР° PhysicalDevice
   struct MemoryHeapInfo
   {
-    uint32_t index = 0;                   // Индекс среди всех куч устройства
+    uint32_t index = 0;                   // РРЅРґРµРєСЃ СЃСЂРµРґРё РІСЃРµС… РєСѓС‡ СѓСЃС‚СЂРѕР№СЃС‚РІР°
     VkMemoryHeapFlags flags = 0;
-    VkDeviceSize size = 0;                // Разбер в байтах
+    VkDeviceSize size = 0;                // Р Р°Р·Р±РµСЂ РІ Р±Р°Р№С‚Р°С…
 
-    // Указатели не могут быть nullptr
+    // РЈРєР°Р·Р°С‚РµР»Рё РЅРµ РјРѕРіСѓС‚ Р±С‹С‚СЊ nullptr
     std::vector<const MemoryTypeInfo*> types;
 
     inline bool isDeviceLocal() const;
   };
 
-  // Информация об одном типе памяти, доступном на PhysicalDevice
+  // РРЅС„РѕСЂРјР°С†РёСЏ РѕР± РѕРґРЅРѕРј С‚РёРїРµ РїР°РјСЏС‚Рё, РґРѕСЃС‚СѓРїРЅРѕРј РЅР° PhysicalDevice
   struct MemoryTypeInfo
   {
-    uint32_t index = 0;                   // Индекс среди всех типов девайса
+    uint32_t index = 0;                   // РРЅРґРµРєСЃ СЃСЂРµРґРё РІСЃРµС… С‚РёРїРѕРІ РґРµРІР°Р№СЃР°
     VkMemoryPropertyFlags flags = 0;
-    const MemoryHeapInfo* heap;           // heap не может быть nullptr
+    const MemoryHeapInfo* heap;           // heap РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ nullptr
 
     inline bool isDeviceLocal() const;
     inline bool isHostVisible() const;
     inline bool isHostCoherent() const;
-    // Память находится на устройстве и напрямую не доступна с CPU
+    // РџР°РјСЏС‚СЊ РЅР°С…РѕРґРёС‚СЃСЏ РЅР° СѓСЃС‚СЂРѕР№СЃС‚РІРµ Рё РЅР°РїСЂСЏРјСѓСЋ РЅРµ РґРѕСЃС‚СѓРїРЅР° СЃ CPU
     inline bool isDeviceOnly() const;
   };
 
-  // Информация обо всех пулах и типах памяти, доступных на PhysicalDevice
+  // РРЅС„РѕСЂРјР°С†РёСЏ РѕР±Рѕ РІСЃРµС… РїСѓР»Р°С… Рё С‚РёРїР°С… РїР°РјСЏС‚Рё, РґРѕСЃС‚СѓРїРЅС‹С… РЅР° PhysicalDevice
   struct MemoryInfo
   {
     std::vector<MemoryHeapInfo> heaps;

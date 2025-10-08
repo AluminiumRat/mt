@@ -1,4 +1,4 @@
-#include <exception>
+п»ї#include <exception>
 #include <set>
 
 #include <util/Assert.h>
@@ -6,14 +6,14 @@
 
 using namespace mt;
 
-// Слот - это возможнось создания одной очереди из конкретного семейства
-// Если семейство поддерживает несколько очередей, то ему соответствет несколько
-// слотов.
+// РЎР»РѕС‚ - СЌС‚Рѕ РІРѕР·РјРѕР¶РЅРѕСЃСЊ СЃРѕР·РґР°РЅРёСЏ РѕРґРЅРѕР№ РѕС‡РµСЂРµРґРё РёР· РєРѕРЅРєСЂРµС‚РЅРѕРіРѕ СЃРµРјРµР№СЃС‚РІР°
+// Р•СЃР»Рё СЃРµРјРµР№СЃС‚РІРѕ РїРѕРґРґРµСЂР¶РёРІР°РµС‚ РЅРµСЃРєРѕР»СЊРєРѕ РѕС‡РµСЂРµРґРµР№, С‚Рѕ РµРјСѓ СЃРѕРѕС‚РІРµС‚СЃС‚РІРµС‚ РЅРµСЃРєРѕР»СЊРєРѕ
+// СЃР»РѕС‚РѕРІ.
 using Slots = std::vector<const QueueFamily*>;
 
-// Создаем слоты, которые мы можем использовать для создания очередей.
-// Фактически размножаем ссылки на каждое семейство столько раз, сколько
-// очередей поддерживает семейство
+// РЎРѕР·РґР°РµРј СЃР»РѕС‚С‹, РєРѕС‚РѕСЂС‹Рµ РјС‹ РјРѕР¶РµРј РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РґР»СЏ СЃРѕР·РґР°РЅРёСЏ РѕС‡РµСЂРµРґРµР№.
+// Р¤Р°РєС‚РёС‡РµСЃРєРё СЂР°Р·РјРЅРѕР¶Р°РµРј СЃСЃС‹Р»РєРё РЅР° РєР°Р¶РґРѕРµ СЃРµРјРµР№СЃС‚РІРѕ СЃС‚РѕР»СЊРєРѕ СЂР°Р·, СЃРєРѕР»СЊРєРѕ
+// РѕС‡РµСЂРµРґРµР№ РїРѕРґРґРµСЂР¶РёРІР°РµС‚ СЃРµРјРµР№СЃС‚РІРѕ
 static Slots makeSlots(const QueueFamiliesInfo& familiesInfo)
 {
   Slots slots;
@@ -29,7 +29,7 @@ static Slots makeSlots(const QueueFamiliesInfo& familiesInfo)
   return slots;
 }
 
-// Занимаем слот для графической очереди.
+// Р—Р°РЅРёРјР°РµРј СЃР»РѕС‚ РґР»СЏ РіСЂР°С„РёС‡РµСЃРєРѕР№ РѕС‡РµСЂРµРґРё.
 static bool findGraphic(Slots& slots, QueueSources& sources)
 {
   for(Slots::iterator iSlot = slots.begin();
@@ -49,8 +49,8 @@ static bool findGraphic(Slots& slots, QueueSources& sources)
   return false;
 }
 
-// Найти подходящий слот для компьют очереди, которая будет выполнять роль
-// основной очереди команд (случай, когда графическая очередь не создается)
+// РќР°Р№С‚Рё РїРѕРґС…РѕРґСЏС‰РёР№ СЃР»РѕС‚ РґР»СЏ РєРѕРјРїСЊСЋС‚ РѕС‡РµСЂРµРґРё, РєРѕС‚РѕСЂР°СЏ Р±СѓРґРµС‚ РІС‹РїРѕР»РЅСЏС‚СЊ СЂРѕР»СЊ
+// РѕСЃРЅРѕРІРЅРѕР№ РѕС‡РµСЂРµРґРё РєРѕРјР°РЅРґ (СЃР»СѓС‡Р°Р№, РєРѕРіРґР° РіСЂР°С„РёС‡РµСЃРєР°СЏ РѕС‡РµСЂРµРґСЊ РЅРµ СЃРѕР·РґР°РµС‚СЃСЏ)
 static bool findPrimaryCompute(Slots& slots, QueueSources& sources)
 {
   for(Slots::iterator iSlot = slots.begin();
@@ -70,23 +70,23 @@ static bool findPrimaryCompute(Slots& slots, QueueSources& sources)
   return false;
 }
 
-// Определяет, какая из очередей является основной, graphic или compute (случай
-// когда graphic очередь не создается вовсе)
+// РћРїСЂРµРґРµР»СЏРµС‚, РєР°РєР°СЏ РёР· РѕС‡РµСЂРµРґРµР№ СЏРІР»СЏРµС‚СЃСЏ РѕСЃРЅРѕРІРЅРѕР№, graphic РёР»Рё compute (СЃР»СѓС‡Р°Р№
+// РєРѕРіРґР° graphic РѕС‡РµСЂРµРґСЊ РЅРµ СЃРѕР·РґР°РµС‚СЃСЏ РІРѕРІСЃРµ)
 static QueueType getPrimaryQueue(const QueueSources& sources) noexcept
 {
-  // Проверяем, есть ли графическая очередь
+  // РџСЂРѕРІРµСЂСЏРµРј, РµСЃС‚СЊ Р»Рё РіСЂР°С„РёС‡РµСЃРєР°СЏ РѕС‡РµСЂРµРґСЊ
   if(std::holds_alternative<const QueueFamily*>(sources[GRAPHIC_QUEUE]))
   {
     return GRAPHIC_QUEUE;
   }
 
-  // Если нет графической очереди, то основной становится компьют очередь
+  // Р•СЃР»Рё РЅРµС‚ РіСЂР°С„РёС‡РµСЃРєРѕР№ РѕС‡РµСЂРµРґРё, С‚Рѕ РѕСЃРЅРѕРІРЅРѕР№ СЃС‚Р°РЅРѕРІРёС‚СЃСЏ РєРѕРјРїСЊСЋС‚ РѕС‡РµСЂРµРґСЊ
   if (std::holds_alternative<const QueueFamily*>(sources[COMPUTE_QUEUE]))
   {
     return COMPUTE_QUEUE;
   }
 
-  // Если нет ни графической, ни компьют очереди - это ошибка
+  // Р•СЃР»Рё РЅРµС‚ РЅРё РіСЂР°С„РёС‡РµСЃРєРѕР№, РЅРё РєРѕРјРїСЊСЋС‚ РѕС‡РµСЂРµРґРё - СЌС‚Рѕ РѕС€РёР±РєР°
   MT_ASSERT(false && "getPrimaryQueue: Both the graphic que and the compute queue are nullptr");
 }
 
@@ -95,7 +95,7 @@ static bool findPresentationQueue(
   Slots& slots,
   QueueSources& sources)
 {
-  // Для начала пытаемся найти отдельную очередь
+  // Р”Р»СЏ РЅР°С‡Р°Р»Р° РїС‹С‚Р°РµРјСЃСЏ РЅР°Р№С‚Рё РѕС‚РґРµР»СЊРЅСѓСЋ РѕС‡РµСЂРµРґСЊ
   for(Slots::iterator iSlot = slots.begin();
       iSlot != slots.end();
       iSlot++)
@@ -109,8 +109,8 @@ static bool findPresentationQueue(
     }
   }
 
-  // Если не удалось найти выделенную очередь, то пытаемся использовать
-  // основную очередь
+  // Р•СЃР»Рё РЅРµ СѓРґР°Р»РѕСЃСЊ РЅР°Р№С‚Рё РІС‹РґРµР»РµРЅРЅСѓСЋ РѕС‡РµСЂРµРґСЊ, С‚Рѕ РїС‹С‚Р°РµРјСЃСЏ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ
+  // РѕСЃРЅРѕРІРЅСѓСЋ РѕС‡РµСЂРµРґСЊ
   QueueType primaryQueue = getPrimaryQueue(sources);
   const QueueFamily* primaryQueueFamily =
                             std::get<const QueueFamily*>(sources[primaryQueue]);
@@ -125,7 +125,7 @@ static bool findPresentationQueue(
 
 static bool findTransferQueue(Slots& slots, QueueSources& sources)
 {
-  // Для начала пытаемся найти специальную трансфер очередь
+  // Р”Р»СЏ РЅР°С‡Р°Р»Р° РїС‹С‚Р°РµРјСЃСЏ РЅР°Р№С‚Рё СЃРїРµС†РёР°Р»СЊРЅСѓСЋ С‚СЂР°РЅСЃС„РµСЂ РѕС‡РµСЂРµРґСЊ
   for(Slots::iterator iSlot = slots.begin();
       iSlot != slots.end();
       iSlot++)
@@ -139,8 +139,8 @@ static bool findTransferQueue(Slots& slots, QueueSources& sources)
     }
   }
 
-  // Если специальную не нашли, то ищем просто отдельную очередь, которая
-  // поддерживает трансфер
+  // Р•СЃР»Рё СЃРїРµС†РёР°Р»СЊРЅСѓСЋ РЅРµ РЅР°С€Р»Рё, С‚Рѕ РёС‰РµРј РїСЂРѕСЃС‚Рѕ РѕС‚РґРµР»СЊРЅСѓСЋ РѕС‡РµСЂРµРґСЊ, РєРѕС‚РѕСЂР°СЏ
+  // РїРѕРґРґРµСЂР¶РёРІР°РµС‚ С‚СЂР°РЅСЃС„РµСЂ
   for(Slots::iterator iSlot = slots.begin();
       iSlot != slots.end();
       iSlot++)
@@ -154,17 +154,17 @@ static bool findTransferQueue(Slots& slots, QueueSources& sources)
     }
   }
 
-  //Если не нашли отдельную очередь, то используем основную
+  //Р•СЃР»Рё РЅРµ РЅР°С€Р»Рё РѕС‚РґРµР»СЊРЅСѓСЋ РѕС‡РµСЂРµРґСЊ, С‚Рѕ РёСЃРїРѕР»СЊР·СѓРµРј РѕСЃРЅРѕРІРЅСѓСЋ
   QueueType primaryQueue = getPrimaryQueue(sources);
   sources[TRANSFER_QUEUE] = primaryQueue;
   return true;
 }
 
-// Найти дополнительную компьют очередь. Вызывается в случае, если нужны и
-// графическая очередь, и компьют
+// РќР°Р№С‚Рё РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅСѓСЋ РєРѕРјРїСЊСЋС‚ РѕС‡РµСЂРµРґСЊ. Р’С‹Р·С‹РІР°РµС‚СЃСЏ РІ СЃР»СѓС‡Р°Рµ, РµСЃР»Рё РЅСѓР¶РЅС‹ Рё
+// РіСЂР°С„РёС‡РµСЃРєР°СЏ РѕС‡РµСЂРµРґСЊ, Рё РєРѕРјРїСЊСЋС‚
 static bool findSecondaryComputeQueue(Slots& slots, QueueSources& sources)
 {
-  // Для начала пытаемся найти отдельную очередь
+  // Р”Р»СЏ РЅР°С‡Р°Р»Р° РїС‹С‚Р°РµРјСЃСЏ РЅР°Р№С‚Рё РѕС‚РґРµР»СЊРЅСѓСЋ РѕС‡РµСЂРµРґСЊ
   for ( Slots::iterator iSlot = slots.begin();
         iSlot != slots.end();
         iSlot++)
@@ -178,7 +178,7 @@ static bool findSecondaryComputeQueue(Slots& slots, QueueSources& sources)
     }
   }
 
-  //Если не нашли отдельную очередь, то используем основную
+  //Р•СЃР»Рё РЅРµ РЅР°С€Р»Рё РѕС‚РґРµР»СЊРЅСѓСЋ РѕС‡РµСЂРµРґСЊ, С‚Рѕ РёСЃРїРѕР»СЊР·СѓРµРј РѕСЃРЅРѕРІРЅСѓСЋ
   QueueType primaryQueue = getPrimaryQueue(sources);
   const QueueFamily* primaryQueueFamily =
                             std::get<const QueueFamily*>(sources[primaryQueue]);
@@ -208,7 +208,7 @@ std::optional<QueueSources> mt::makeQueueSources(
 
   Slots slots = makeSlots(familiesInfo);
 
-  // Создаем основную очередь. Это может быть как графическая, так и компьют
+  // РЎРѕР·РґР°РµРј РѕСЃРЅРѕРІРЅСѓСЋ РѕС‡РµСЂРµРґСЊ. Р­С‚Рѕ РјРѕР¶РµС‚ Р±С‹С‚СЊ РєР°Рє РіСЂР°С„РёС‡РµСЃРєР°СЏ, С‚Р°Рє Рё РєРѕРјРїСЊСЋС‚
   if(makeGraphic)
   { 
     if(!findGraphic(slots, sources)) return std::nullopt;
@@ -218,7 +218,7 @@ std::optional<QueueSources> mt::makeQueueSources(
     if(!findPrimaryCompute(slots, sources)) return std::nullopt;
   }
 
-  // Очередб презентации
+  // РћС‡РµСЂРµРґР± РїСЂРµР·РµРЅС‚Р°С†РёРё
   if(testSurface != nullptr)
   {
     if(!findPresentationQueue(*testSurface, slots, sources))
@@ -227,13 +227,13 @@ std::optional<QueueSources> mt::makeQueueSources(
     }
   }
 
-  // Трансфер очередь
+  // РўСЂР°РЅСЃС„РµСЂ РѕС‡РµСЂРµРґСЊ
   if(makeTransfer)
   {
     if(!findTransferQueue(slots, sources)) return std::nullopt;
   }
 
-  // Выделенная компьют очередь
+  // Р’С‹РґРµР»РµРЅРЅР°СЏ РєРѕРјРїСЊСЋС‚ РѕС‡РµСЂРµРґСЊ
   if(makeGraphic && makeCompute)
   {
     if(!findSecondaryComputeQueue(slots, sources)) return std::nullopt;

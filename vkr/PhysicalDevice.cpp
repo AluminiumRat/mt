@@ -1,4 +1,4 @@
-#include <stdexcept>
+п»ї#include <stdexcept>
 
 #include <vkr/PhysicalDevice.h>
 #include <vkr/VKRLib.h>
@@ -27,7 +27,7 @@ PhysicalDevice::PhysicalDevice(VkPhysicalDevice deviceHandle) :
 
 void PhysicalDevice::_fillMemoryInfo()
 {
-  // Получаем информацию о памяти, доступной на устройстве
+  // РџРѕР»СѓС‡Р°РµРј РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РїР°РјСЏС‚Рё, РґРѕСЃС‚СѓРїРЅРѕР№ РЅР° СѓСЃС‚СЂРѕР№СЃС‚РІРµ
   VkPhysicalDeviceMemoryProperties memoryProperties;
   vkGetPhysicalDeviceMemoryProperties(_handle, &memoryProperties);
 
@@ -37,7 +37,7 @@ void PhysicalDevice::_fillMemoryInfo()
     throw std::runtime_error("PhysicalDevice: Unable to get devices memory properties.");
   }
 
-  // Получаем информацию по кучам
+  // РџРѕР»СѓС‡Р°РµРј РёРЅС„РѕСЂРјР°С†РёСЋ РїРѕ РєСѓС‡Р°Рј
   _memoryInfo.heaps.reserve(memoryProperties.memoryHeapCount);
   for(uint32_t heapIndex = 0;
       heapIndex < memoryProperties.memoryHeapCount;
@@ -50,7 +50,7 @@ void PhysicalDevice::_fillMemoryInfo()
     _memoryInfo.heaps.push_back(info);
   }
 
-  // Получаем информацию по тиам памяти
+  // РџРѕР»СѓС‡Р°РµРј РёРЅС„РѕСЂРјР°С†РёСЋ РїРѕ С‚РёР°Рј РїР°РјСЏС‚Рё
   _memoryInfo.types.reserve(memoryProperties.memoryTypeCount);
   for(uint32_t typeIndex = 0;
       typeIndex < memoryProperties.memoryTypeCount;
@@ -64,7 +64,7 @@ void PhysicalDevice::_fillMemoryInfo()
     _memoryInfo.types.push_back(info);
   }
 
-  // Раскидываем ссылки на типы по кучам
+  // Р Р°СЃРєРёРґС‹РІР°РµРј СЃСЃС‹Р»РєРё РЅР° С‚РёРїС‹ РїРѕ РєСѓС‡Р°Рј
   for(MemoryTypeInfo& type : _memoryInfo.types)
   {
     _memoryInfo.heaps[type.heap->index].types.push_back(&type);
@@ -140,12 +140,12 @@ bool PhysicalDevice::areFeaturesSupported(
   return featuresSupported;
 }
 
-PhysicalDevice::SwapChainSupport PhysicalDevice::surfaceСompatibility(
+PhysicalDevice::SwapChainSupport PhysicalDevice::surfaceРЎompatibility(
                                             const WindowSurface& surface) const
 {
   SwapChainSupport support{};
 
-  // Проверяем, что хотя бы одно семейство очередей поддерживало пресент в
+  // РџСЂРѕРІРµСЂСЏРµРј, С‡С‚Рѕ С…РѕС‚СЏ Р±С‹ РѕРґРЅРѕ СЃРµРјРµР№СЃС‚РІРѕ РѕС‡РµСЂРµРґРµР№ РїРѕРґРґРµСЂР¶РёРІР°Р»Рѕ РїСЂРµСЃРµРЅС‚ РІ
   // surface
   bool presentIsSupported = false;
   for(const QueueFamily& queuesFamily : _queuesInfo)
@@ -154,7 +154,7 @@ PhysicalDevice::SwapChainSupport PhysicalDevice::surfaceСompatibility(
   }
   if(!presentIsSupported) return support;
 
-  // Получаем ограничения и возможности свапчейна
+  // РџРѕР»СѓС‡Р°РµРј РѕРіСЂР°РЅРёС‡РµРЅРёСЏ Рё РІРѕР·РјРѕР¶РЅРѕСЃС‚Рё СЃРІР°РїС‡РµР№РЅР°
   if(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
                                         _handle,
                                         surface.handle(),
@@ -163,7 +163,7 @@ PhysicalDevice::SwapChainSupport PhysicalDevice::surfaceСompatibility(
     throw std::runtime_error("PhysicalDevice: Unable to get surface capabilities.");
   }
 
-  // Получаем поддерживаемые форматы
+  // РџРѕР»СѓС‡Р°РµРј РїРѕРґРґРµСЂР¶РёРІР°РµРјС‹Рµ С„РѕСЂРјР°С‚С‹
   uint32_t formatCount;
   if(vkGetPhysicalDeviceSurfaceFormatsKHR( _handle,
                                           surface.handle(),
@@ -185,7 +185,7 @@ PhysicalDevice::SwapChainSupport PhysicalDevice::surfaceСompatibility(
     }
   }
 
-  // Получаем поддерживаемые режимы
+  // РџРѕР»СѓС‡Р°РµРј РїРѕРґРґРµСЂР¶РёРІР°РµРјС‹Рµ СЂРµР¶РёРјС‹
   uint32_t presentModeCount;
   if(vkGetPhysicalDeviceSurfacePresentModesKHR( _handle,
                                                 surface.handle(),
