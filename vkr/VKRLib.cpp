@@ -1,7 +1,6 @@
 #include <algorithm>
 
 #include <cstdlib>
-#include <set>
 #include <vector>
 
 #define VMA_IMPLEMENTATION
@@ -295,6 +294,52 @@ void VKRLib::_extendRequiredFeatures(VkPhysicalDeviceFeatures& requiredFeatures)
   requiredFeatures.textureCompressionBC = VK_TRUE;
 }
 
+bool VKRLib::_isDeviceSuitable(
+  const PhysicalDevice& device,
+  const VkPhysicalDeviceFeatures& requiredFeatures,
+  const std::set<std::string>& requiredExtensions,
+  bool requireGraphic,
+  bool requireCompute,
+  const WindowSurface* testSurface)
+{
+  // Для начала проверяем, что карта может отрисовывать в окно
+  if (testSurface != nullptr && !device.isSurfaceSuitable(*testSurface))
+  {
+    Log::info() << "Device " << device.properties().deviceName << " is not suitable with window's surface";
+    return false;
+  }
+
+  // Проверяем, что карта поддерживает все требуемые виды очередей
+  if (!makeQueueSources(device.queuesInfo(),
+                        requireGraphic,
+                        requireCompute,
+                        false,            // makeTransfer
+                        testSurface).has_value())
+  {
+    Log::info() << "Device " << device.properties().deviceName << " doesn't support all required queue types";
+    return false;
+  }
+
+  // Проверяем, что карта поддерживает все требуемые фичи
+  if (!device.areFeaturesSupported(requiredFeatures))
+  {
+    Log::info() << "Device " << device.properties().deviceName << " doesn't support all features";
+    return false;
+  }
+
+  // Проверяем, что карта поддерживает все требуемые расширения
+  for (const std::string& extensionName : requiredExtensions)
+  {
+    if (!device.isExtensionSupported(extensionName.c_str()))
+    {
+      Log::info() << "Device " << device.properties().deviceName << " doesn't support extension " << extensionName;
+      return false;
+    }
+  }
+
+  return true;
+}
+
 PhysicalDevice* VKRLib::getGraphicDevice(
                       VkPhysicalDeviceFeatures requiredFeatures,
                       const std::vector<std::string>& requiredExtensions,
@@ -320,43 +365,12 @@ PhysicalDevice* VKRLib::getGraphicDevice(
   VkDeviceSize bestMemorySize = 0;
   for(const std::unique_ptr<PhysicalDevice>& device : _devices)
   {
-    // Для начала проверяем, что карта может отрисовывать в окно
-    if (testSurface != nullptr && !device->isSurfaceSuitable(*testSurface))
-    {
-      Log::info() << "Device " << device->properties().deviceName << " is not suitable with window's surface";
-      continue;
-    }
-
-    // Проверяем, что карта поддерживает все требуемые виды очередей
-    if(!makeQueueSources( device->queuesInfo(),
+    if(!_isDeviceSuitable(*device,
+                          requiredFeatures,
+                          extensions,
                           requireGraphic,
                           requireCompute,
-                          false,            // makeTransfer
-                          testSurface).has_value())
-    {
-      Log::info() << "Device " << device->properties().deviceName << " doesn't support all required queue types";
-      continue;
-    }
-
-    // Проверяем, что карта поддерживает все требуемые фичи
-    if(!device->areFeaturesSupported(requiredFeatures))
-    {
-      Log::info() << "Device " << device->properties().deviceName << " doesn't support all features";
-      continue;
-    }
-
-    // Проверяем, что карта поддерживает все требуемые расширения
-    bool allExtensionsSupported = true;
-    for(const std::string& extensionName : extensions)
-    {
-      if(!device->isExtensionSupported(extensionName.c_str()))
-      {
-        Log::info() << "Device " << device->properties().deviceName << " doesn't support extension " << extensionName;
-        allExtensionsSupported = false;
-        break;
-      }
-    }
-    if(!allExtensionsSupported)
+                          testSurface))
     {
       continue;
     }

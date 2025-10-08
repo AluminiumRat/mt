@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <memory>
+#include <set>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -95,6 +96,13 @@ namespace mt
     // Добавить в пользовательский список фич те фичи, которые требует движек
     static void _extendRequiredFeatures(
                                     VkPhysicalDeviceFeatures& requiredFeatures);
+    static bool _isDeviceSuitable(
+      const PhysicalDevice& device,
+      const VkPhysicalDeviceFeatures& requiredFeatures,
+      const std::set<std::string>& requiredExtensions,
+      bool requireGraphic,
+      bool requireCompute,
+      const WindowSurface* testSurface);
 
   private:
     VkInstance _handle;
