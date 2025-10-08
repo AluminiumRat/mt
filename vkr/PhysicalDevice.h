@@ -5,7 +5,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <vkr/queue/QueueFamily.h>
+#include <vkr/queue/QueueFamiliesInfo.h>
 #include <vkr/MemoryInfo.h>
 
 namespace mt
@@ -24,8 +24,6 @@ namespace mt
       std::vector<VkSurfaceFormatKHR> formats;
       std::vector<VkPresentModeKHR> presentModes;
     };
-
-    using QueuesInfo = std::vector<QueueFamily>;
 
   private:
     // Только VKRLib может создавать объекты этого класса
@@ -50,7 +48,7 @@ namespace mt
     std::vector<VkExtensionProperties> availableExtensions() const;
     inline bool isExtensionSupported(const char* extensionName) const;
 
-    inline const QueuesInfo& queuesInfo() const noexcept;
+    inline const QueueFamiliesInfo& queuesInfo() const noexcept;
 
     SwapChainSupport surfaceСompatibility(const WindowSurface& surface) const;
     inline bool isSurfaceSuitable(const WindowSurface& surface) const;
@@ -64,7 +62,7 @@ namespace mt
     VkPhysicalDeviceProperties _properties;
     VkPhysicalDeviceFeatures _features;
     MemoryInfo _memoryInfo;
-    QueuesInfo _queuesInfo;
+    QueueFamiliesInfo _queuesInfo;
   };
 
   inline VkPhysicalDevice PhysicalDevice::handle() const noexcept
@@ -99,8 +97,7 @@ namespace mt
     return false;
   }
 
-  inline const PhysicalDevice::QueuesInfo&
-                                    PhysicalDevice::queuesInfo() const noexcept
+  inline const QueueFamiliesInfo& PhysicalDevice::queuesInfo() const noexcept
   {
     return _queuesInfo;
   }

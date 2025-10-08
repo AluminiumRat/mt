@@ -1,6 +1,6 @@
 #include <stdexcept>
 
-#include <vkr/queue/QueueFamily.h>
+#include <vkr/queue/QueueFamiliesInfo.h>
 #include <vkr/PhysicalDevice.h>
 #include <vkr/WindowSurface.h>
 

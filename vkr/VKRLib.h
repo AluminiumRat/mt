@@ -74,6 +74,8 @@ namespace mt
     PhysicalDevice* getGraphicDevice(
       VkPhysicalDeviceFeatures requiredFeatures,
       const std::vector<std::string>& requiredExtensions,
+      bool requireGraphic,
+      bool requireCompute,
       const WindowSurface* testSurface) const;
 
     static std::vector<VkLayerProperties> availableLayers();

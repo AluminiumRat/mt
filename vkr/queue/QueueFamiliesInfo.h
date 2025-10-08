@@ -1,15 +1,20 @@
 #pragma once
 
+#include <vector>
+
 #include <vulkan/vulkan.h>
 
 namespace mt
 {
+  class QueueFamily;
   class PhysicalDevice;
   class WindowSurface;
 
-  // Вспомогательный класс для работы с инфорацией о семейсвах очередей на
-  // физическом устройстве.
-  // Просто упрощенный способ получить информацию
+  // Информация обо всех доступных семействах очередей на PhisicalDevice
+  using QueueFamiliesInfo = std::vector<QueueFamily>;
+
+  // Вспомогательный класс для работы с инфорацией о семейсве очередей на
+  // физическом устройстве. Просто упрощенный способ получить информацию
   class QueueFamily
   {
   public:
@@ -24,9 +29,13 @@ namespace mt
     inline VkQueueFlags queueFlags() const noexcept;
     // Очередь поддерживает и графические операции, и компьюты и трансфер
     inline bool isGraphic() const noexcept;
+    // Поддерживает компьюты и трансфер
+    inline bool isCompute() const noexcept;
     // Очередь поддерживает компьюты и трансфер, но не поддерживает графические
     // операции.
     inline bool isSeparateCompute() const noexcept;
+    // Поддерживает трансфер
+    inline bool isTransfer() const noexcept;
     // Очередь поддерживает трансфер, но не поддерживает ни графические операции
     // ни компьюты
     inline bool isSeparateTransfer() const noexcept;
@@ -67,11 +76,22 @@ namespace mt
             (queueFlags() & VK_QUEUE_TRANSFER_BIT);
   }
 
+  inline bool QueueFamily::isCompute() const noexcept
+  {
+    return  (queueFlags() & VK_QUEUE_COMPUTE_BIT) &&
+            (queueFlags() & VK_QUEUE_TRANSFER_BIT);
+  }
+
   inline bool QueueFamily::isSeparateCompute() const noexcept
   {
     return  (queueFlags() & VK_QUEUE_COMPUTE_BIT) &&
             (queueFlags() & VK_QUEUE_TRANSFER_BIT) &&
             !(queueFlags() & VK_QUEUE_GRAPHICS_BIT);
+  }
+
+  inline bool QueueFamily::isTransfer() const noexcept
+  {
+    return queueFlags() & VK_QUEUE_TRANSFER_BIT;
   }
 
   inline bool QueueFamily::isSeparateTransfer() const noexcept

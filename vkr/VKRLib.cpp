@@ -7,6 +7,7 @@
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 
+#include <vkr/queue/QueueSources.h>
 #include <vkr/VKRLib.h>
 
 using namespace mt;
@@ -297,6 +298,8 @@ void VKRLib::_extendRequiredFeatures(VkPhysicalDeviceFeatures& requiredFeatures)
 PhysicalDevice* VKRLib::getGraphicDevice(
                       VkPhysicalDeviceFeatures requiredFeatures,
                       const std::vector<std::string>& requiredExtensions,
+                      bool requireGraphic,
+                      bool requireCompute,
                       const WindowSurface* testSurface) const
 {
   // Формируем список расширений, которые должны поддерживаться устройством
@@ -321,6 +324,17 @@ PhysicalDevice* VKRLib::getGraphicDevice(
     if (testSurface != nullptr && !device->isSurfaceSuitable(*testSurface))
     {
       Log::info() << "Device " << device->properties().deviceName << " is not suitable with window's surface";
+      continue;
+    }
+
+    // Проверяем, что карта поддерживает все требуемые виды очередей
+    if(!makeQueueSources( device->queuesInfo(),
+                          requireGraphic,
+                          requireCompute,
+                          false,            // makeTransfer
+                          testSurface).has_value())
+    {
+      Log::info() << "Device " << device->properties().deviceName << " doesn't support all required queue types";
       continue;
     }
 

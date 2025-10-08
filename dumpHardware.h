@@ -35,14 +35,14 @@ inline void dumpQueueFamilies(
   const mt::PhysicalDevice& device,
   const mt::WindowSurface* testsurface)
 {
-  mt::PhysicalDevice::QueuesInfo queuesInfo = device.queuesInfo();
+  mt::QueueFamiliesInfo queuesInfo = device.queuesInfo();
   mt::Log::info() << "  Queues families: [" << queuesInfo.size() << "]";
   for (int index = 0; index < queuesInfo.size(); index++)
   {
     mt::Log::info() << "    " << index;
     mt::Log::info() << "      Is graphic: " << queuesInfo[index].isGraphic();
-    mt::Log::info() << "      Is separate compute: " << queuesInfo[index].isSeparateCompute();
-    mt::Log::info() << "      Is separate transfer: " << queuesInfo[index].isSeparateTransfer();
+    mt::Log::info() << "      Is compute: " << queuesInfo[index].isCompute();
+    mt::Log::info() << "      Is transfer: " << queuesInfo[index].isTransfer();
     mt::Log::info() << "      Sparse binding: " << queuesInfo[index].sparseBindingSupported();
     if (testsurface != nullptr)
     {

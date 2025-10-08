@@ -36,7 +36,8 @@ int main(int argc, char* argv[])
                   false,      // dumpMemory
                   &surface);
 
-    mt::PhysicalDevice* device = vkrLib.getGraphicDevice({}, {}, &surface);
+    mt::PhysicalDevice* device =
+                          vkrLib.getGraphicDevice({}, {}, true, true, &surface);
 
     while (!glfwWindowShouldClose(window))
     {
