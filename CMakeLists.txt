@@ -37,6 +37,7 @@ add_executable (vkTest
                 "util/Log.cpp"
                 "vkr/queue/QueueFamiliesInfo.cpp"
                 "vkr/queue/QueueSources.cpp"
+                "vkr/Device.cpp"
                 "vkr/PhysicalDevice.cpp"
                 "vkr/VKRLib.cpp"
                 "vkr/WindowSurface.cpp"

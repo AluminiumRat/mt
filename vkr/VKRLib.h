@@ -7,6 +7,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <vkr/Device.h>
 #include <vkr/PhysicalDevice.h>
 #include <util/util.h>
 
@@ -65,18 +66,49 @@ namespace mt
     inline bool isDebugEnabled() const noexcept;
 
     inline std::vector<PhysicalDevice*> devices() const;
-    // Выбрать физическое устройство, наиболее пригодное для графики
+    // Выбрать самое сильное физическое устройство.
     // Может вернуть nullptr, если не нашлось ни одного подходящего устройства
     // requiredExtensions - имена расширений, которые должны поддерживаться
     //    устройством
     // testSurface нужна для проверки совместимости устройства с оконной
     //    системой. Если передать nullptr, то проверка на совместимость не будет
     //    производиться
-    PhysicalDevice* getGraphicDevice(
+    PhysicalDevice* getBestPhysicalDevice(
       VkPhysicalDeviceFeatures requiredFeatures,
       const std::vector<std::string>& requiredExtensions,
       bool requireGraphic,
       bool requireCompute,
+      const WindowSurface* testSurface) const;
+
+    // Создать логическое устройство из наиболее сильного физического
+    // Может вернуть nullptr, если не нашлось ни одного подходящего устройства
+    // requiredExtensions - имена расширений, которые должны поддерживаться
+    //    устройством
+    // Если testSurface не nullptr, то будет выбрано устройство, которое может
+    //    выводить картинку на эту поверхность, а также будет создана очередь
+    //    презентации. Если testSurface == nullptr, то созданное устройство не
+    //    будет поддерживать вывод в оконную систему
+    std::unique_ptr<Device> createDevice(
+      const VkPhysicalDeviceFeatures& requiredFeatures,
+      const std::vector<std::string>& requiredExtensions,
+      bool createGraphicQueue,
+      bool createComputeQueue,
+      bool createTransferQueue,
+      const WindowSurface* testSurface) const;
+
+    // Создать логическое устройство из конкретного физического
+    // Всегда возвращает валидный указатель или выбрасывает исключение
+    // Соответствие physicalDevice указанным требованиям на совести вызывающего
+    // Если testSurface не nullptr, то будет создана очередь презентации.
+    //    Если testSurface == nullptr, то созданное устройство не
+    //    будет поддерживать вывод в оконную систему
+    std::unique_ptr<Device> createDevice(
+      PhysicalDevice& physicalDevice,
+      VkPhysicalDeviceFeatures requiredFeatures,
+      const std::vector<std::string>& enabledExtensions,
+      bool createGraphicQueue,
+      bool createComputeQueue,
+      bool createTransferQueue,
       const WindowSurface* testSurface) const;
 
     static std::vector<VkLayerProperties> availableLayers();
@@ -93,9 +125,16 @@ namespace mt
                                 VkDebugUtilsMessengerCreateInfoEXT& createInfo);
     void _setupDebugMessenger();
     void _receivePhysicalDevices();
+
     // Добавить в пользовательский список фич те фичи, которые требует движек
-    static void _extendRequiredFeatures(
-                                    VkPhysicalDeviceFeatures& requiredFeatures);
+    void _extendRequiredFeatures(
+                              VkPhysicalDeviceFeatures& requiredFeatures) const;
+
+    // Добавить в пользовательский список расширений те, которые требует движек
+    std::set<std::string> _extendRequiredExtensions(
+                              const std::vector<std::string>& requiredExtensions,
+                              bool needPresent) const;
+
     static bool _isDeviceSuitable(
       const PhysicalDevice& device,
       const VkPhysicalDeviceFeatures& requiredFeatures,

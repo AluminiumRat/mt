@@ -36,13 +36,15 @@ int main(int argc, char* argv[])
                   false,      // dumpMemory
                   &surface);
 
-    mt::PhysicalDevice* device =
-                          vkrLib.getGraphicDevice({}, {}, true, true, &surface);
+    std::unique_ptr<mt::Device> device = vkrLib.createDevice(
+                                            {}, {}, true, true, true, &surface);
 
     while (!glfwWindowShouldClose(window))
     {
       glfwPollEvents();
     }
+
+    device.reset();
 
     glfwDestroyWindow(window);
     glfwTerminate();

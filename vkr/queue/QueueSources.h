@@ -8,20 +8,11 @@
 #include <variant>
 
 #include <vkr/queue/QueueFamiliesInfo.h>
+#include <vkr/queue/QueueTypes.h>
 
 namespace mt
 {
   class WindowSurface;
-
-  // Типы очередей, которые поддерживаются логическим устройством
-  enum QueueType
-  {
-    GRAPHIC_QUEUE,
-    COMPUTE_QUEUE,
-    PRESENTATION_QUEUE,
-    TRANSFER_QUEUE,
-  };
-  constexpr int QueueTypeCount = TRANSFER_QUEUE + 1;
 
   // Тип-метка, говорящий о том, что очередь соответствующего типа создавать
   // не надо. Используется в QueueSource
