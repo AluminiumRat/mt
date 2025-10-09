@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <array>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -8,9 +9,9 @@
 
 #include <vk_mem_alloc.h>
 
+#include <vkr/queue/CommandQueue.h>
 #include <vkr/queue/QueueSources.h>
 #include <vkr/queue/QueueTypes.h>
-//#include <mtt/render/CommandQueue/CommandQueue.h>
 //#include <mtt/render/CommandQueue/CommandProducer.h>
 
 namespace mt
@@ -47,14 +48,17 @@ namespace mt
 
     inline PhysicalDevice& physicalDevice() const noexcept;
 
-    /*inline CommandQueue& drawQueue() noexcept;
-    inline const CommandQueue& drawQueue() const noexcept;
+    inline CommandQueue* graphicQueue() noexcept;
+    inline const CommandQueue* graphicQueue() const noexcept;
+
+    inline CommandQueue* computeQueue() noexcept;
+    inline const CommandQueue* computeQueue() const noexcept;
 
     inline CommandQueue* presentationQueue() noexcept;
     inline const CommandQueue* presentationQueue() const noexcept;
 
-    inline ShaderCache& shaderCache() noexcept;
-    inline const ShaderCache& shaderCache() const noexcept;*/
+    inline CommandQueue* transferQueue() noexcept;
+    inline const CommandQueue* transferQueue() const noexcept;
 
     /// Synchronized access to the separate transfer command queue.
     /// The command will executed on the GPU immediately and control
@@ -83,9 +87,9 @@ namespace mt
 
     // Общий мьютекс для очередей. Добавлен так как очереди поддерживают
     // многопоток и под капотом могут взаимодействовать друг с другом.
-    std::mutex _commoтQueuesMutex;
-    //CommandQueue* _queuesByTypes[QueueTypeCount];
-    //std::vector<std::unique_ptr<CommandQueue>> _queues;
+    std::mutex _commonQueuesMutex;
+    std::vector<std::unique_ptr<CommandQueue>> _queues;
+    std::array<CommandQueue*, QueueTypeCount> _queuesByTypes;
   };
 
   inline VkDevice Device::handle() const noexcept
@@ -98,8 +102,7 @@ namespace mt
     return _allocator;
   }
 
-  inline const VkPhysicalDeviceFeatures& Device::features()
-                                                                  const noexcept
+  inline const VkPhysicalDeviceFeatures& Device::features() const noexcept
   {
     return _features;
   }
@@ -109,35 +112,45 @@ namespace mt
     return _physicalDevice;
   }
 
-  /*inline CommandQueue& Device::drawQueue() noexcept
+  inline CommandQueue* Device::graphicQueue() noexcept
   {
-    return *_drawQueue;
+    return _queuesByTypes[GRAPHIC_QUEUE];
   }
 
-  inline const CommandQueue& Device::drawQueue() const noexcept
+  inline const CommandQueue* Device::graphicQueue() const noexcept
   {
-    return *_drawQueue;
+    return _queuesByTypes[GRAPHIC_QUEUE];
+  }
+
+  inline CommandQueue* Device::computeQueue() noexcept
+  {
+    return _queuesByTypes[COMPUTE_QUEUE];
+  }
+
+  inline const CommandQueue* Device::computeQueue() const noexcept
+  {
+    return _queuesByTypes[COMPUTE_QUEUE];
   }
 
   inline CommandQueue* Device::presentationQueue() noexcept
   {
-    return _presentationQueue;
+    return _queuesByTypes[PRESENTATION_QUEUE];
   }
 
   inline const CommandQueue* Device::presentationQueue() const noexcept
   {
-    return _presentationQueue;
+    return _queuesByTypes[PRESENTATION_QUEUE];
   }
 
-  inline ShaderCache& Device::shaderCache() noexcept
+  inline CommandQueue* Device::transferQueue() noexcept
   {
-    return _shaderCache;
+    return _queuesByTypes[TRANSFER_QUEUE];
   }
 
-  inline const ShaderCache& Device::shaderCache() const noexcept
+  inline const CommandQueue* Device::transferQueue() const noexcept
   {
-    return _shaderCache;
-  }*/
+    return _queuesByTypes[TRANSFER_QUEUE];
+  }
 
   /*template<typename TransferCommand>
   inline void Device::runTransferCommand(TransferCommand command)

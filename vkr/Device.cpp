@@ -19,8 +19,8 @@ Device::Device( PhysicalDevice& physicalDevice,
   _physicalDevice(physicalDevice),
   _handle(VK_NULL_HANDLE),
   _allocator(VK_NULL_HANDLE),
-  _features(requiredFeatures)
-  //_queuesByTypes{}
+  _features(requiredFeatures),
+  _queuesByTypes{}
 {
   try
   {
@@ -126,47 +126,47 @@ void Device::_initVMA()
 
 void Device::_buildQueues(const QueueSources& queueSources)
 {
-  /*_drawQueueIndex = 0;
-  std::unique_ptr<CommandQueue> newQueue(new CommandQueue(
-                                                  *this,
-                                                  uint32_t(_drawFamilyIndex),
-                                                  _drawQueueIndex,
-                                                  DRAW_POOL_SIZE));
-  _drawQueue = newQueue.get();
-  _queues.push_back(std::move(newQueue));
+  // Счетчик, сколько для какого семейства уже создано очередей
+  std::vector<uint32_t> queueCounters(_physicalDevice.queuesInfo().size(), 0);
 
-  _transferQueueIndex = 0;
-  if(_transferFamilyIndex == _drawFamilyIndex) _transferQueueIndex++;
-  newQueue.reset(new CommandQueue(*this,
-                                  uint32_t(_transferFamilyIndex),
-                                  _transferQueueIndex,
-                                  TRANSFER_POOL_SIZE));
-  _transferQueue = newQueue.get();
-  _queues.push_back(std::move(newQueue));
-
-  if(presentationEnabled)
+  // Для начала обходим все типы очередей и создаем уникальные очереди
+  for(int queueTypeIndex = 0; queueTypeIndex < QueueTypeCount; queueTypeIndex++)
   {
-    if(_presentationFamilyIndex == _drawFamilyIndex)
+    // Проверяем, нужно ли создавать отдельный объект CommandQueue для этого
+    // типа очереди.
+    const QueueSource& source = queueSources[queueTypeIndex];
+    if (const QueueFamily* const* family =
+                                        std::get_if<const QueueFamily*>(&source))
     {
-      _presentationQueueIndex = _drawQueueIndex;
-      _presentationQueue = _drawQueue;
-    }
-    else
-    {
-      _presentationQueueIndex = 0;
-      if(_presentationFamilyIndex == _transferFamilyIndex)
-      {
-        _presentationQueueIndex++;
-      }
-      newQueue.reset(new CommandQueue(*this,
-                                      uint32_t(_presentationFamilyIndex),
-                                      _presentationQueueIndex,
-                                      DRAW_POOL_SIZE));
-      _presentationQueue = newQueue.get();
+      uint32_t familyIndex = (*family)->index();
+      std::unique_ptr<CommandQueue> newQueue(new CommandQueue(
+                                                    *this,
+                                                    familyIndex,
+                                                    queueCounters[familyIndex],
+                                                    **family,
+                                                    _commonQueuesMutex));
+      queueCounters[familyIndex]++;
+      _queuesByTypes[queueTypeIndex] = newQueue.get();
       _queues.push_back(std::move(newQueue));
     }
   }
-  else _presentationQueue = nullptr;*/
+
+  // Теперь, когда все уникальные очереди уже созданы, мы можем ещё раз пройтись
+  // по всем типам очередей и раскидать указатели в тех случаях, когда вместо
+  // выделенной очереди используется какая-то ещё
+  for (int queueTypeIndex = 0; queueTypeIndex < QueueTypeCount; queueTypeIndex++)
+  {
+    // Если в сорсе указан другой тип очереди, значит та очередь должна
+    // использоваться по нескольким назначениям. Например, графическая очередь
+    // будет использоваться ещё и как трансфер.
+    const QueueSource& source = queueSources[queueTypeIndex];
+    if (const QueueType* alternateType = std::get_if<QueueType>(&source))
+    {
+      CommandQueue* alternate = _queuesByTypes[*alternateType];
+      MT_ASSERT((alternate != nullptr) && "Device::_buildQueues: Alternate queue is not created");
+      _queuesByTypes[queueTypeIndex] = alternate;
+    }
+  }
 }
 
 Device::~Device() noexcept
@@ -176,8 +176,8 @@ Device::~Device() noexcept
 
 void Device::_cleanup() noexcept
 {
-  //_queuesByTypes = {};
-  //_queues.clear();
+  _queuesByTypes = {};
+  _queues.clear();
 
   if (_allocator != VK_NULL_HANDLE)
   {
