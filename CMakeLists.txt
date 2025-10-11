@@ -41,6 +41,7 @@ add_executable (vkTest
                 "vkr/queue/QueueSources.cpp"
                 "vkr/queue/Semaphore.cpp"
                 "vkr/Device.cpp"
+                "vkr/Image.cpp"
                 "vkr/PhysicalDevice.cpp"
                 "vkr/VKRLib.cpp"
                 "vkr/WindowSurface.cpp"

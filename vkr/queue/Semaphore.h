@@ -21,6 +21,7 @@ namespace mt
 
   public:
     inline VkSemaphore handle() const noexcept;
+    inline Device& device() const noexcept;
 
   private:
     void _clear() noexcept;
@@ -33,5 +34,10 @@ namespace mt
   inline VkSemaphore Semaphore::handle() const noexcept
   {
     return _handle;
+  }
+
+  inline Device& Semaphore::device() const noexcept
+  {
+    return _device;
   }
 }

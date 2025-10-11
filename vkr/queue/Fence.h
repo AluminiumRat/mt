@@ -23,6 +23,7 @@ namespace mt
 
   public:
     inline VkFence handle() const noexcept;
+    inline Device& device() const noexcept;
 
     // Ждать, пока фэнс не выставит сигнал со стороны GPU
     // timeout в наносекундах
@@ -42,5 +43,10 @@ namespace mt
   inline VkFence Fence::handle() const noexcept
   {
     return _handle;
+  }
+
+  inline Device& Fence::device() const noexcept
+  {
+    return _device;
   }
 }
