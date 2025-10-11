@@ -4,22 +4,22 @@
 
 namespace mt
 {
-  // Счетчик ссылок. Работает вместе с RefCntrReference и шаблоном Ref
+  // Счетчик ссылок. Работает вместе с RefCounterReference и шаблоном Ref
   // Позволяет реализовать систему умных указателей с подсчетом ссылок
   // внутри объекта
-  class RefCntr
+  class RefCounter
   {
   public:
-    friend class RefCntrReference;
+    friend class RefCounterReference;
 
-    inline RefCntr() noexcept;
-    RefCntr(const RefCntr&) = delete;
-    RefCntr& operator = (const RefCntr&) = delete;
+    inline RefCounter() noexcept;
+    RefCounter(const RefCounter&) = delete;
+    RefCounter& operator = (const RefCounter&) = delete;
 
   protected:
     // Уничтожить объект может только указатель. Деструкторы наследников
     // также необходимо помещать в protected секцию
-    virtual ~RefCntr() noexcept = default;
+    virtual ~RefCounter() noexcept = default;
 
   private:
     // Инкрементить и декрементить счетчики могут только указатели
@@ -33,17 +33,17 @@ namespace mt
     mutable std::atomic<int> _counter;
   };
 
-  inline RefCntr::RefCntr() noexcept :
+  inline RefCounter::RefCounter() noexcept :
     _counter(0)
   {
   }
 
-  inline void RefCntr::_incrementCounter() const noexcept
+  inline void RefCounter::_incrementCounter() const noexcept
   {
     ++_counter;
   }
 
-  inline int RefCntr::_decrementCounter() const noexcept
+  inline int RefCounter::_decrementCounter() const noexcept
   {
     return --_counter;
   }
