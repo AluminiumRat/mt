@@ -62,8 +62,53 @@ void CommandQueue::_cleanup() noexcept
   vkQueueWaitIdle(_handle);
 }
 
+void CommandQueue::addSignalSemaphore(Semaphore& semaphore)
+{
+  std::lock_guard lock(_commonMutex);
+
+  VkSubmitInfo submitInfo{};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submitInfo.commandBufferCount = 0;
+  submitInfo.pCommandBuffers = nullptr;
+  submitInfo.signalSemaphoreCount = 1;
+  VkSemaphore signalSemaphores[] = { semaphore.handle() };
+  submitInfo.pSignalSemaphores = signalSemaphores;
+  if (vkQueueSubmit(_handle,
+                    1,
+                    &submitInfo,
+                    VK_NULL_HANDLE) != VK_SUCCESS)
+  {
+    throw std::runtime_error("CommandQueue: Failed to submit semaphore signal");
+  }
+}
+
+void CommandQueue::addWaitSemaphore(
+  Semaphore& semaphore,
+  VkPipelineStageFlags waitStages)
+{
+  std::lock_guard lock(_commonMutex);
+
+  VkSubmitInfo submitInfo{};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submitInfo.waitSemaphoreCount = 1;
+  VkSemaphore waitSemaphores[] = { semaphore.handle() };
+  submitInfo.pWaitSemaphores = waitSemaphores;
+  submitInfo.pWaitDstStageMask = &waitStages;
+  submitInfo.commandBufferCount = 0;
+  submitInfo.pCommandBuffers = nullptr;
+  if (vkQueueSubmit(handle(),
+                    1,
+                    &submitInfo,
+                    VK_NULL_HANDLE) != VK_SUCCESS)
+  {
+    throw std::runtime_error("CommandQueue: Failed to submit semaphore wait");
+  }
+}
+
 void CommandQueue::waitIdle() const
 {
+  std::lock_guard lock(_commonMutex);
+
   if(vkQueueWaitIdle(_handle) != VK_SUCCESS)
   {
     throw std::runtime_error("CommandQueue: Failed to wait device queue.");

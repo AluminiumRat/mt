@@ -6,6 +6,7 @@
 #include <GLFW/glfw3native.h>
 
 #include <util/util.h>
+#include <vkr/SwapChain.h>
 #include <vkr/VKRLib.h>
 #include <vkr/Win32WindowSurface.h>
 #include <dumpHardware.h>
@@ -29,21 +30,31 @@ int main(int argc, char* argv[])
 
     mt::Win32WindowSurface surface(glfwGetWin32Window(window));
 
-    dumpHardware( false,      // dumpLayers
+    /*dumpHardware( false,      // dumpLayers
                   false,      // dumpExtensions
                   true,       // dumpDevices
                   true,       // dumpQueues
                   false,      // dumpMemory
-                  &surface);
+                  &surface);*/
 
     std::unique_ptr<mt::Device> device = vkrLib.createDevice(
                                             {}, {}, true, true, true, &surface);
 
+    mt::Ref<mt::SwapChain> swapChain(new mt::SwapChain(
+                                        *device,
+                                        surface,
+                                        std::nullopt,
+                                        std::nullopt));
+
     while (!glfwWindowShouldClose(window))
     {
       glfwPollEvents();
+
+      mt::SwapChain::FrameAccess frame(*swapChain);
+      frame.present();
     }
 
+    swapChain.reset();
     device.reset();
 
     glfwDestroyWindow(window);

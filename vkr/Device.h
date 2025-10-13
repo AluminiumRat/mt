@@ -9,6 +9,7 @@
 
 #include <vk_mem_alloc.h>
 
+#include <util/Assert.h>
 #include <vkr/queue/CommandQueue.h>
 #include <vkr/queue/QueueSources.h>
 #include <vkr/queue/QueueTypes.h>
@@ -59,6 +60,12 @@ namespace mt
 
     inline CommandQueue* transferQueue() noexcept;
     inline const CommandQueue* transferQueue() const noexcept;
+
+    // Очередь, через которую происходит основная работа на GPU
+    // Обычно это graphicQueue, но если пользователь сказал не создавать
+    // графическую очередб, то основной становится compute
+    inline CommandQueue& primaryQueue() noexcept;
+    inline const CommandQueue& primaryQueue() const noexcept;
 
     /// Synchronized access to the separate transfer command queue.
     /// The command will executed on the GPU immediately and control
@@ -150,6 +157,32 @@ namespace mt
   inline const CommandQueue* Device::transferQueue() const noexcept
   {
     return _queuesByTypes[TRANSFER_QUEUE];
+  }
+
+  inline CommandQueue& Device::primaryQueue() noexcept
+  {
+    if(_queuesByTypes[GRAPHIC_QUEUE] != nullptr)
+    {
+      return *_queuesByTypes[GRAPHIC_QUEUE];
+    }
+    if (_queuesByTypes[COMPUTE_QUEUE] != nullptr)
+    {
+      return *_queuesByTypes[COMPUTE_QUEUE];
+    }
+    MT_ASSERT(false && "At least one of the graphic queue or the compute queue must exists");
+  }
+
+  inline const CommandQueue& Device::primaryQueue() const noexcept
+  {
+    if(_queuesByTypes[GRAPHIC_QUEUE] != nullptr)
+    {
+      return *_queuesByTypes[GRAPHIC_QUEUE];
+    }
+    if (_queuesByTypes[COMPUTE_QUEUE] != nullptr)
+    {
+      return *_queuesByTypes[COMPUTE_QUEUE];
+    }
+    MT_ASSERT(false && "At least one of the graphic queue or the compute queue must exists");
   }
 
   /*template<typename TransferCommand>

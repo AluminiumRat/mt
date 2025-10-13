@@ -43,6 +43,7 @@ add_executable (vkTest
                 "vkr/Device.cpp"
                 "vkr/Image.cpp"
                 "vkr/PhysicalDevice.cpp"
+                "vkr/SwapChain.cpp"
                 "vkr/VKRLib.cpp"
                 "vkr/WindowSurface.cpp"
                 "vkr/Win32WindowSurface.cpp"

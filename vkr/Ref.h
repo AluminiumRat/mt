@@ -24,7 +24,7 @@ namespace mt
 
     inline void reset() noexcept;
 
-    explicit operator bool() const noexcept;
+    inline explicit operator bool() const noexcept;
 
   protected:
     inline const RefCounter* resource() const noexcept;
@@ -172,7 +172,7 @@ namespace mt
     unref();
   }
 
-  RefCounterReference::operator bool() const noexcept
+  inline RefCounterReference::operator bool() const noexcept
   {
     return resource() != nullptr;
   }

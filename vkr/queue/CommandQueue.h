@@ -10,6 +10,7 @@
 //#include <mtt/render/CommandQueue/CommandProducer.h>
 //#include <mtt/render/CommandQueue/Fence.h>
 #include <vkr/queue/QueueFamiliesInfo.h>
+#include "vkr/queue/Semaphore.h"
 //#include <mtt/render/Ref.h>
 
 namespace mt
@@ -38,6 +39,11 @@ namespace mt
     inline VkQueue handle() const;
     inline Device& device() const;
     inline const QueueFamily& family() const;
+
+    // Добавить команду, переводящую семафор в состояние "signaled"
+    void addSignalSemaphore(Semaphore& semaphore);
+    void addWaitSemaphore(Semaphore& semaphore,
+                          VkPipelineStageFlags waitStages);
 
     /*std::unique_ptr<CommandProducer> startCommands();
     /// You should use producer that was created from this queue
