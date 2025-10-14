@@ -31,7 +31,7 @@ CommandQueue::CommandQueue( Device& device,
                             uint32_t familyIndex,
                             uint32_t queueIndex,
                             const QueueFamily& family,
-                            std::mutex& commonMutex) :
+                            std::recursive_mutex& commonMutex) :
   _handle(VK_NULL_HANDLE),
   _device(device),
   _family(family),

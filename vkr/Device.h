@@ -94,7 +94,7 @@ namespace mt
 
     // Общий мьютекс для очередей. Добавлен так как очереди поддерживают
     // многопоток и под капотом могут взаимодействовать друг с другом.
-    std::mutex _commonQueuesMutex;
+    std::recursive_mutex _commonQueuesMutex;
     std::vector<std::unique_ptr<CommandQueue>> _queues;
     std::array<CommandQueue*, QueueTypeCount> _queuesByTypes;
   };

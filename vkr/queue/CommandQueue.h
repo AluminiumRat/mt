@@ -30,7 +30,7 @@ namespace mt
                   uint32_t familyIndex,
                   uint32_t queueIndex,
                   const QueueFamily& family,
-                  std::mutex& commonMutex);
+                  std::recursive_mutex& commonMutex);
   public:
     CommandQueue(const CommandQueue&) = delete;
     CommandQueue& operator = (const CommandQueue&) = delete;
@@ -89,7 +89,9 @@ namespace mt
 
     //using Resources = std::vector<LockableReference>;
     //Resources _attachedResources;
-    std::mutex& _commonMutex;
+    // Мьютекс, общий для всех очередей одного логического устройства.
+    // Служит для синхронизации межпотока между очередями.
+    std::recursive_mutex& _commonMutex;
   };
 
   inline VkQueue CommandQueue::handle() const
