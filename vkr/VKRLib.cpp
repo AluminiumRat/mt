@@ -343,6 +343,14 @@ bool VKRLib::_isDeviceSuitable(
     return false;
   }
 
+  // Обязательно должны поддерживаться таймлайн семафоры, на них построена
+  // синхронизация очередей
+  if (!device.areTimelineSemaphoresSupported())
+  {
+    Log::info() << "Device " << device.properties().deviceName << " doesn't support timeline semaphores";
+    return false;
+  }
+
   // Проверяем, что карта поддерживает все требуемые расширения
   for (const std::string& extensionName : requiredExtensions)
   {

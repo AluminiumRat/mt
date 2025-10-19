@@ -7,10 +7,12 @@
 using namespace mt;
 
 PhysicalDevice::PhysicalDevice(VkPhysicalDevice deviceHandle) :
-  _handle(deviceHandle)
+  _handle(deviceHandle),
+  _timelineSemaphoreSupport(false)
 {
   vkGetPhysicalDeviceProperties(_handle, &_properties);
-  vkGetPhysicalDeviceFeatures(_handle, &_features);
+
+  _getFeatures();
 
   _fillMemoryInfo();
 
@@ -23,6 +25,22 @@ PhysicalDevice::PhysicalDevice(VkPhysicalDevice deviceHandle) :
   {
     _queuesInfo.emplace_back(*this, queueFamilyIndex);
   }
+}
+
+void PhysicalDevice::_getFeatures()
+{
+  // Сразу с фичами проверяем поддержку таймлайн семафоров
+  VkPhysicalDeviceTimelineSemaphoreFeatures semaphoreFeature{};
+  semaphoreFeature.sType =
+                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+
+  VkPhysicalDeviceFeatures2 features{};
+  features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+  features.pNext = &semaphoreFeature;
+  vkGetPhysicalDeviceFeatures2(_handle, &features);
+
+  _features = features.features;
+  _timelineSemaphoreSupport = semaphoreFeature.timelineSemaphore;
 }
 
 void PhysicalDevice::_fillMemoryInfo()

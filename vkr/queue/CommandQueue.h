@@ -6,17 +6,14 @@
 
 #include <vulkan/vulkan.h>
 
-//#include <mtt/render/CommandQueue/CommandPool.h>
-//#include <mtt/render/CommandQueue/CommandProducer.h>
-//#include <mtt/render/CommandQueue/Fence.h>
 #include <vkr/queue/QueueFamiliesInfo.h>
-#include "vkr/queue/Semaphore.h"
-//#include <mtt/render/Ref.h>
+#include <vkr/queue/Semaphore.h>
+#include <vkr/queue/SyncPoint.h>
+#include <vkr/queue/TimelineSemaphore.h>
 
 namespace mt
 {
   class Device;
-  //class Semaphore;
 
   // Класс отвечает за отправку команд на GPU. По факту - толстая обертка вокруг
   // VkQueue
@@ -42,8 +39,11 @@ namespace mt
 
     // Добавить команду, переводящую семафор в состояние "signaled"
     void addSignalSemaphore(Semaphore& semaphore);
-    void addWaitSemaphore(Semaphore& semaphore,
-                          VkPipelineStageFlags waitStages);
+    void addWaitForSemaphore( Semaphore& semaphore,
+                              VkPipelineStageFlags waitStages);
+
+    SyncPoint createSyncPoint();
+    void addWaitingForSyncPoint(const SyncPoint& syncPoint);
 
     /*std::unique_ptr<CommandProducer> startCommands();
     /// You should use producer that was created from this queue
@@ -85,10 +85,11 @@ namespace mt
 
     QueueFamily _family;
 
-    //size_t _nextPoolIndex;
+    // Основной семафор очереди команд, существующий на протяжении всей
+    // жизни очереди. Основное средство синхронизации очередей между собой.
+    Ref<TimelineSemaphore> _semaphore;
+    uint64_t _lastSemaphoreValue;
 
-    //using Resources = std::vector<LockableReference>;
-    //Resources _attachedResources;
     // Мьютекс, общий для всех очередей одного логического устройства.
     // Служит для синхронизации межпотока между очередями.
     std::recursive_mutex& _commonMutex;

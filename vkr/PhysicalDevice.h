@@ -42,6 +42,7 @@ namespace mt
     inline const VkPhysicalDeviceFeatures& features() const noexcept;
     bool areFeaturesSupported(
                       const VkPhysicalDeviceFeatures& features) const noexcept;
+    inline bool areTimelineSemaphoresSupported() const noexcept;
 
     inline const MemoryInfo& memoryInfo() const noexcept;
 
@@ -54,6 +55,7 @@ namespace mt
     inline bool isSurfaceSuitable(const WindowSurface& surface) const;
 
   private:
+    void _getFeatures();
     void _fillMemoryInfo();
 
   private:
@@ -61,6 +63,7 @@ namespace mt
 
     VkPhysicalDeviceProperties _properties;
     VkPhysicalDeviceFeatures _features;
+    bool _timelineSemaphoreSupport;
     MemoryInfo _memoryInfo;
     QueueFamiliesInfo _queuesInfo;
   };
@@ -80,6 +83,11 @@ namespace mt
                                       PhysicalDevice::features() const noexcept
   {
     return _features;
+  }
+
+  inline bool PhysicalDevice::areTimelineSemaphoresSupported() const noexcept
+  {
+    return _timelineSemaphoreSupport;
   }
 
   inline const MemoryInfo& PhysicalDevice::memoryInfo() const noexcept

@@ -40,6 +40,7 @@ add_executable (vkTest
                 "vkr/queue/QueueFamiliesInfo.cpp"
                 "vkr/queue/QueueSources.cpp"
                 "vkr/queue/Semaphore.cpp"
+                "vkr/queue/TimelineSemaphore.cpp"
                 "vkr/Device.cpp"
                 "vkr/Image.cpp"
                 "vkr/PhysicalDevice.cpp"

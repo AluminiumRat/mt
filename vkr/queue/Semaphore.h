@@ -8,7 +8,8 @@ namespace mt
 {
   class Device;
 
-  // Обертка вокруг VkSemaphore
+  // Обертка вокруг VkSemaphore, реализующая семафор с двумя сотояниями "signal"
+  // и "unsignal" (не timeline semaphore).
   // Примитив синхронизации очередей на стороне GPU
   class Semaphore : public RefCounter
   {

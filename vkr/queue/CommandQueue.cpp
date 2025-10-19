@@ -7,25 +7,7 @@
 #include <vkr/Device.h>
 #include <vkr/PhysicalDevice.h>
 
-/*#include <mtt/render/CommandQueue/Semaphore.h>
-#include <mtt/render/CommandQueue/UniformMemoryPool.h>
-*/
-
 using namespace mt;
-
-/*CommandQueue::Producer::Producer( CommandPool& pool,
-                                  CommandQueue& queue,
-                                  size_t poolIndex) :
-  CommandProducer(pool, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT),
-  _queue(queue),
-  _poolIndex(poolIndex)
-{
-}
-
-CommandQueue::Producer::~Producer()
-{
-  _queue._unlockPool(_poolIndex);
-}*/
 
 CommandQueue::CommandQueue( Device& device,
                             uint32_t familyIndex,
@@ -35,6 +17,8 @@ CommandQueue::CommandQueue( Device& device,
   _handle(VK_NULL_HANDLE),
   _device(device),
   _family(family),
+  _semaphore(new TimelineSemaphore(0, device)),
+  _lastSemaphoreValue(0),
   _commonMutex(commonMutex)
 {
   try
@@ -82,7 +66,7 @@ void CommandQueue::addSignalSemaphore(Semaphore& semaphore)
   }
 }
 
-void CommandQueue::addWaitSemaphore(
+void CommandQueue::addWaitForSemaphore(
   Semaphore& semaphore,
   VkPipelineStageFlags waitStages)
 {
@@ -102,6 +86,65 @@ void CommandQueue::addWaitSemaphore(
                     VK_NULL_HANDLE) != VK_SUCCESS)
   {
     throw std::runtime_error("CommandQueue: Failed to submit semaphore wait");
+  }
+}
+
+SyncPoint CommandQueue::createSyncPoint()
+{
+  std::lock_guard lock(_commonMutex);
+
+  VkTimelineSemaphoreSubmitInfo timelineInfo{};
+  timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+  timelineInfo.signalSemaphoreValueCount = 1;
+  uint64_t nextSemaphoreValue = _lastSemaphoreValue + 1;
+  timelineInfo.pSignalSemaphoreValues = &nextSemaphoreValue;
+
+  VkSubmitInfo submitInfo{};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submitInfo.pNext = &timelineInfo;
+  submitInfo.signalSemaphoreCount  = 1;
+  VkSemaphore semaphore = _semaphore->handle();
+  submitInfo.pSignalSemaphores = &semaphore;
+
+  if (vkQueueSubmit(handle(),
+                    1,
+                    &submitInfo,
+                    VK_NULL_HANDLE) != VK_SUCCESS)
+  {
+    throw std::runtime_error("CommandQueue: Failed to submit timeline semaphore increment.");
+  }
+
+  _lastSemaphoreValue = nextSemaphoreValue;
+
+  return SyncPoint{ .semaphore = _semaphore,
+                    .semaphoreValue = nextSemaphoreValue};
+}
+
+void CommandQueue::addWaitingForSyncPoint(const SyncPoint& syncPoint)
+{
+  MT_ASSERT (syncPoint.semaphore != nullptr);
+
+  std::lock_guard lock(_commonMutex);
+
+  VkTimelineSemaphoreSubmitInfo timelineInfo{};
+  timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+  timelineInfo.pNext = NULL;
+  timelineInfo.waitSemaphoreValueCount = 1;
+  timelineInfo.pWaitSemaphoreValues = &syncPoint.semaphoreValue;
+
+  VkSubmitInfo submitInfo{};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submitInfo.pNext = &timelineInfo;
+  submitInfo.waitSemaphoreCount = 1;
+  VkSemaphore semaphore = syncPoint.semaphore->handle();
+  submitInfo.pWaitSemaphores = &semaphore;
+
+  if (vkQueueSubmit(handle(),
+                    1,
+                    &submitInfo,
+                    VK_NULL_HANDLE) != VK_SUCCESS)
+  {
+    throw std::runtime_error("CommandQueue: Failed to submit waiting for the timeline semaphore.");
   }
 }
 

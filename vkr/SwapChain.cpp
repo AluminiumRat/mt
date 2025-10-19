@@ -275,8 +275,8 @@ Image& SwapChain::lockFrame()
   // Привязываем новые семафоры к фрэйму
   _frames[frameIndex].semaphores = newSemaphores;
 
-  _primaryQueue->addWaitSemaphore(*newSemaphores.startDrawing,
-                                  VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+  _primaryQueue->addWaitForSemaphore( *newSemaphores.startDrawing,
+                                      VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
   _lockedFrameIndex = frameIndex;
   return *_frames[frameIndex].image;

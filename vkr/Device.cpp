@@ -70,11 +70,23 @@ void Device::_createHandle( const std::vector<std::string>& requiredExtensions,
     }
   }
 
+  // Таймлайн семафоры обязаны быть включенными, на них работает синхронизация
+  // очередей
+  VkPhysicalDeviceTimelineSemaphoreFeatures semaphoreFeature{};
+  semaphoreFeature.sType =
+                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+  semaphoreFeature.timelineSemaphore = VK_TRUE;
+
+  VkPhysicalDeviceFeatures2 features{};
+  features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+  features.features = _features;
+  features.pNext = &semaphoreFeature;
+
   VkDeviceCreateInfo createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
   createInfo.pQueueCreateInfos = queueCreateInfos.data();
   createInfo.queueCreateInfoCount = uint32_t(queueCreateInfos.size());
-  createInfo.pEnabledFeatures = &_features;
+  createInfo.pNext = &features;
 
   // Заполняем инфу об расширениях
   std::vector<const char*> extensions;
