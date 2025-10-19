@@ -124,6 +124,9 @@ void CommandQueue::addWaitingForSyncPoint(const SyncPoint& syncPoint)
 {
   MT_ASSERT (syncPoint.semaphore != nullptr);
 
+  // Это синкпоинт этой же очереди, не надо ничего ждать
+  if (syncPoint.semaphore.get() == _semaphore) return;
+
   std::lock_guard lock(_commonMutex);
 
   VkTimelineSemaphoreSubmitInfo timelineInfo{};
