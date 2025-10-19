@@ -38,6 +38,13 @@ namespace mt
   template <typename Resource>
   concept RefCounterChild = std::is_base_of<RefCounter, Resource>::value;
 
+  // Концепт рандомного умного указателя. Определяем по наличию метода get
+  template <typename CheckedClass>
+  concept SmartRef = requires(CheckedClass object)
+  {
+    object.get();
+  };
+
   // Умный указатель на неконстантный объект
   template <RefCounterChild Resource>
   class Ref : public RefCounterReference
@@ -60,10 +67,25 @@ namespace mt
     inline Resource& operator*() const noexcept;
     inline Resource* operator->() const noexcept;
   };
+  // Сравнение с nullptr
   template <RefCounterChild Resource>
   inline bool operator == (const Ref<Resource>& x, nullptr_t y);
   template <RefCounterChild Resource>
   inline bool operator != (const Ref<Resource>& x, nullptr_t y);
+  // Сравнение с сырым указателем
+  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  inline bool operator == (const Ref<Resource>& x, const OtherResource* y);
+  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  inline bool operator != (const Ref<Resource>& x, const OtherResource* y);
+  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  inline bool operator == (const Resource* x, const Ref<OtherResource>& y);
+  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  inline bool operator != (const Resource* x, const Ref<OtherResource>& y);
+  // Сравнение с другим умным указателем
+  template <RefCounterChild Resource, SmartRef OtherPointer>
+  inline bool operator == (const Ref<Resource>& x, const OtherPointer& y);
+  template <RefCounterChild Resource, SmartRef OtherPointer>
+  inline bool operator != (const Ref<Resource>& x, const OtherPointer& y);
 
   // Умный указатель на константный объект
   template <RefCounterChild Resource>
@@ -96,10 +118,25 @@ namespace mt
     inline const Resource& operator*() const noexcept;
     inline const Resource* operator->() const noexcept;
   };
+  // Сравнение с nullptr
   template <RefCounterChild Resource>
   inline bool operator == (const ConstRef<Resource>& x, nullptr_t y);
   template <RefCounterChild Resource>
   inline bool operator != (const ConstRef<Resource>& x, nullptr_t y);
+  // Сравнение с сырым указателем
+  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  inline bool operator == (const ConstRef<Resource>& x, const OtherResource* y);
+  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  inline bool operator != (const ConstRef<Resource>& x, const OtherResource* y);
+  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  inline bool operator == (const Resource* x, const ConstRef<OtherResource>& y);
+  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  inline bool operator != (const Resource* x, const ConstRef<OtherResource>& y);
+  // Сравнение с другим умным указателем
+  template <RefCounterChild Resource, SmartRef OtherPointer>
+  inline bool operator == (const ConstRef<Resource>& x, const OtherPointer& y);
+  template <RefCounterChild Resource, SmartRef OtherPointer>
+  inline bool operator != (const ConstRef<Resource>& x, const OtherPointer& y);
 
   //--------------------------------------------------------------------------
   // Дальше идут реализации методов
@@ -262,6 +299,42 @@ namespace mt
     return *static_cast<Resource*>(const_cast<RefCounter*>(resource()));
   }
 
+  template <RefCounterChild Resource, SmartRef OtherPointer>
+  inline bool operator == (const Ref<Resource>& x, const OtherPointer& y)
+  {
+    return x.get() == y.get();
+  }
+
+  template <RefCounterChild Resource, SmartRef OtherPointer>
+  inline bool operator != (const Ref<Resource>& x, const OtherPointer& y)
+  {
+    return x.get() != y.get();
+  }
+
+  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  inline bool operator == (const Ref<Resource>& x, const OtherResource* y)
+  {
+    return x.get() == y;
+  }
+
+  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  inline bool operator != (const Ref<Resource>& x, const OtherResource* y)
+  {
+    return x.get() != y;
+  }
+
+  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  inline bool operator == (const Resource* x, const Ref<OtherResource>& y)
+  {
+    return x == y.get();
+  }
+
+  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  inline bool operator != (const Resource* x, const Ref<OtherResource>& y)
+  {
+    return x != y.get();
+  }
+
   template <RefCounterChild Resource>
   inline bool operator == (const Ref<Resource>& x, nullptr_t y)
   {
@@ -396,5 +469,42 @@ namespace mt
   inline bool operator != (const ConstRef<Resource>& x, nullptr_t y)
   {
     return x.get() != y;
+  }
+
+  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  inline bool operator == (const ConstRef<Resource>& x, const OtherResource* y)
+  {
+    return x.get() == y;
+  }
+
+  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  inline bool operator != (const ConstRef<Resource>& x, const OtherResource* y)
+  {
+    return x.get() != y;
+  }
+
+  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  inline bool operator == (const Resource* x, const ConstRef<OtherResource>& y)
+  {
+    return x == y.get();
+  }
+
+  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  inline bool operator != (const Resource* x, const ConstRef<OtherResource>& y)
+  {
+    return x != y.get();
+  }
+
+  // Сравнение с другим умным указателем
+  template <RefCounterChild Resource, SmartRef OtherPointer>
+  inline bool operator == (const ConstRef<Resource>& x, const OtherPointer& y)
+  {
+    return x.get() == y.get();
+  }
+
+  template <RefCounterChild Resource, SmartRef OtherPointer>
+  inline bool operator != (const ConstRef<Resource>& x, const OtherPointer& y)
+  {
+    return x.get() != y.get();
   }
 }
