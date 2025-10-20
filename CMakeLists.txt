@@ -35,6 +35,8 @@ include_directories(.
 
 add_executable (vkTest
                 "util/Log.cpp"
+                "vkr/queue/CommandBuffer.cpp"
+                "vkr/queue/CommandPool.cpp"
                 "vkr/queue/CommandQueue.cpp"
                 "vkr/queue/Fence.cpp"
                 "vkr/queue/QueueFamiliesInfo.cpp"
