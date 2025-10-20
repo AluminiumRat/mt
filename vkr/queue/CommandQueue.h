@@ -66,7 +66,8 @@ namespace mt
     // точки синхронизации.
     // Если обе очереди - это одна очередь, то в неё просто будет добавлен синк
     // поинт(равноситьно строгому барьеру) без ожиданий.
-    void addWaitingForQueue(CommandQueue& queue);
+    void addWaitingForQueue(CommandQueue& queue,
+                            VkPipelineStageFlags waitStages);
 
     void waitIdle() const;
 
@@ -90,7 +91,8 @@ namespace mt
     // ВНИМАНИЕ!!! Этот метод не захватывает владение семафором, он работает
     // только с семафорами очередей и предполагает, что семафоры будут удалены
     // только вместе с очередями и девайсом.
-    void _addWaitingForSyncPoint(const SyncPoint& syncPoint);
+    void _addWaitingForSyncPoint( const SyncPoint& syncPoint,
+                                  VkPipelineStageFlags waitStages);
 
   private:
     VkQueue _handle;

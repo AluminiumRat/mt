@@ -120,7 +120,9 @@ SyncPoint CommandQueue::createSyncPoint()
                     .semaphoreValue = nextSemaphoreValue};
 }
 
-void CommandQueue::addWaitingForQueue(CommandQueue& queue)
+void CommandQueue::addWaitingForQueue(
+  CommandQueue& queue,
+  VkPipelineStageFlags waitStages)
 {
   std::lock_guard lock(_commonMutex);
 
@@ -131,11 +133,13 @@ void CommandQueue::addWaitingForQueue(CommandQueue& queue)
   else
   {
     SyncPoint syncPoint = queue.createSyncPoint();
-    _addWaitingForSyncPoint(syncPoint);
+    _addWaitingForSyncPoint(syncPoint, waitStages);
   }
 }
 
-void CommandQueue::_addWaitingForSyncPoint(const SyncPoint& syncPoint)
+void CommandQueue::_addWaitingForSyncPoint(
+  const SyncPoint& syncPoint,
+  VkPipelineStageFlags waitStages)
 {
   MT_ASSERT (syncPoint.semaphore != nullptr);
 
@@ -151,6 +155,7 @@ void CommandQueue::_addWaitingForSyncPoint(const SyncPoint& syncPoint)
   submitInfo.waitSemaphoreCount = 1;
   VkSemaphore semaphore = syncPoint.semaphore->handle();
   submitInfo.pWaitSemaphores = &semaphore;
+  submitInfo.pWaitDstStageMask = &waitStages;
 
   if (vkQueueSubmit(handle(),
                     1,
