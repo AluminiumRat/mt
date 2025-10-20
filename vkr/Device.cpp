@@ -188,6 +188,19 @@ Device::~Device() noexcept
 
 void Device::_cleanup() noexcept
 {
+  // Перед удалением остановим все очереди
+  for(std::unique_ptr<CommandQueue>& queue : _queues)
+  {
+    try
+    {
+      queue->waitIdle();
+    }
+    catch (std::exception& error)
+    {
+      Log::error() << error.what();
+    }
+  }
+
   _queuesByTypes = {};
   _queues.clear();
 

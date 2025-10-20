@@ -235,6 +235,7 @@ SwapChain::~SwapChain() noexcept
 
 void SwapChain::_cleanup() noexcept
 {
+  _primaryQueue->waitIdle();
   _presentQueue->waitIdle();
 
   _frames.clear();
