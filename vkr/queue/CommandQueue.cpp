@@ -116,8 +116,7 @@ SyncPoint CommandQueue::createSyncPoint()
 
   _lastSemaphoreValue = nextSemaphoreValue;
 
-  return SyncPoint{ .semaphore = _semaphore,
-                    .semaphoreValue = nextSemaphoreValue};
+  return SyncPoint(*_semaphore, nextSemaphoreValue);
 }
 
 void CommandQueue::addWaitingForQueue(
@@ -141,19 +140,18 @@ void CommandQueue::_addWaitingForSyncPoint(
   const SyncPoint& syncPoint,
   VkPipelineStageFlags waitStages)
 {
-  MT_ASSERT (syncPoint.semaphore != nullptr);
-
   VkTimelineSemaphoreSubmitInfo timelineInfo{};
   timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
   timelineInfo.pNext = NULL;
   timelineInfo.waitSemaphoreValueCount = 1;
-  timelineInfo.pWaitSemaphoreValues = &syncPoint.semaphoreValue;
+  uint64_t semaphoreValue = syncPoint.waitingValue();
+  timelineInfo.pWaitSemaphoreValues = &semaphoreValue;
 
   VkSubmitInfo submitInfo{};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
   submitInfo.pNext = &timelineInfo;
   submitInfo.waitSemaphoreCount = 1;
-  VkSemaphore semaphore = syncPoint.semaphore->handle();
+  VkSemaphore semaphore = syncPoint.semaphore().handle();
   submitInfo.pWaitSemaphores = &semaphore;
   submitInfo.pWaitDstStageMask = &waitStages;
 

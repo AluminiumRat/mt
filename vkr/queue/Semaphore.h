@@ -11,6 +11,9 @@ namespace mt
   // Обертка вокруг VkSemaphore, реализующая семафор с двумя сотояниями "signal"
   // и "unsignal" (не timeline semaphore).
   // Примитив синхронизации очередей на стороне GPU
+  // Вместо этого класса лучше использовать синхронизацию через
+  // TimelineSemaphore и SyncPoint. Класс оставлен в основном ради синхронизации
+  // со свапчейном.
   class Semaphore : public RefCounter
   {
   public:
