@@ -45,7 +45,6 @@ namespace mt
                               VkPipelineStageFlags waitStages);
 
     SyncPoint createSyncPoint();
-    void addWaitingForSyncPoint(const SyncPoint& syncPoint);
 
     /*std::unique_ptr<CommandProducer> startCommands();
     /// You should use producer that was created from this queue
@@ -60,6 +59,14 @@ namespace mt
                 VkPipelineStageFlags dstStageMask,
                 Semaphore* endSignalSemaphore,
                 Fence* endSignalFence);*/
+
+    // Добавить место синхронизации с другой очередью. Если очереди разные, то
+    // в переданную очередь будет добавлена точка синхронизации (SyncPoint), а
+    // в текущую очередь (для которой вызван метод), будет добавлено ожидание
+    // точки синхронизации.
+    // Если обе очереди - это одна очередь, то в неё просто будет добавлен синк
+    // поинт(равноситьно строгому барьеру) без ожиданий.
+    void addWaitingForQueue(CommandQueue& queue);
 
     void waitIdle() const;
 
@@ -80,6 +87,10 @@ namespace mt
 
   private:
     void _cleanup() noexcept;
+    // ВНИМАНИЕ!!! Этот метод не захватывает владение семафором, он работает
+    // только с семафорами очередей и предполагает, что семафоры будут удалены
+    // только вместе с очередями и девайсом.
+    void _addWaitingForSyncPoint(const SyncPoint& syncPoint);
 
   private:
     VkQueue _handle;

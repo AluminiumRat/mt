@@ -120,14 +120,24 @@ SyncPoint CommandQueue::createSyncPoint()
                     .semaphoreValue = nextSemaphoreValue};
 }
 
-void CommandQueue::addWaitingForSyncPoint(const SyncPoint& syncPoint)
+void CommandQueue::addWaitingForQueue(CommandQueue& queue)
+{
+  std::lock_guard lock(_commonMutex);
+
+  if(&queue == this)
+  {
+    createSyncPoint();
+  }
+  else
+  {
+    SyncPoint syncPoint = queue.createSyncPoint();
+    _addWaitingForSyncPoint(syncPoint);
+  }
+}
+
+void CommandQueue::_addWaitingForSyncPoint(const SyncPoint& syncPoint)
 {
   MT_ASSERT (syncPoint.semaphore != nullptr);
-
-  // Это синкпоинт этой же очереди, не надо ничего ждать
-  if (syncPoint.semaphore.get() == _semaphore) return;
-
-  std::lock_guard lock(_commonMutex);
 
   VkTimelineSemaphoreSubmitInfo timelineInfo{};
   timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
