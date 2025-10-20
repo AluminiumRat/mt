@@ -37,7 +37,16 @@ namespace mt
     class Mapper
     {
     public:
-      Mapper(PlainBuffer& buffer);
+      // Направление, в котором будут перемещаться данные.
+      enum TransferDirection
+      {
+        CPU_TO_GPU,
+        GPU_TO_CPU,
+        BIDIRECTIONAL
+      };
+
+    public:
+      Mapper(PlainBuffer& buffer, TransferDirection transferDirection);
       Mapper(const Mapper&) = delete;
       Mapper& operator = (const Mapper&) = delete;
       ~Mapper();
@@ -47,6 +56,7 @@ namespace mt
     private:
       PlainBuffer& _buffer;
       void* _data;
+      TransferDirection _transferDirection;
     };
 
   public:

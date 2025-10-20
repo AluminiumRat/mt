@@ -43,6 +43,7 @@ add_executable (vkTest
                 "vkr/queue/QueueSources.cpp"
                 "vkr/queue/Semaphore.cpp"
                 "vkr/queue/TimelineSemaphore.cpp"
+                "vkr/queue/UniformMemoryPool.cpp"
                 "vkr/Device.cpp"
                 "vkr/Image.cpp"
                 "vkr/PhysicalDevice.cpp"

@@ -8,9 +8,11 @@
 
 using namespace mt;
 
-PlainBuffer::Mapper::Mapper(PlainBuffer& buffer) :
+PlainBuffer::Mapper::Mapper(PlainBuffer& buffer,
+                            TransferDirection transferDirection) :
   _buffer(buffer),
-  _data(nullptr)
+  _data(nullptr),
+  _transferDirection(transferDirection)
 {
   if(vmaMapMemory(_buffer._device.allocator(),
                   _buffer._allocation,
@@ -19,12 +21,16 @@ PlainBuffer::Mapper::Mapper(PlainBuffer& buffer) :
     throw std::runtime_error("PlainBuffer: Failed to map buffer's memory.");
   }
 
-  if(vmaInvalidateAllocation( _buffer._device.allocator(),
-                              _buffer._allocation,
-                              0,
-                              _buffer.size()) != VK_SUCCESS)
+  if (_transferDirection == GPU_TO_CPU ||
+      _transferDirection == BIDIRECTIONAL)
   {
-    throw std::runtime_error("PlainBuffer: Failed to vmaInvalidateAllocation");
+    if(vmaInvalidateAllocation( _buffer._device.allocator(),
+                                _buffer._allocation,
+                                0,
+                                _buffer.size()) != VK_SUCCESS)
+    {
+      throw std::runtime_error("PlainBuffer: Failed to vmaInvalidateAllocation");
+    }
   }
 }
 
@@ -32,12 +38,16 @@ PlainBuffer::Mapper::~Mapper()
 {
   if(_data != nullptr)
   {
-    if(vmaFlushAllocation(_buffer._device.allocator(),
-                          _buffer._allocation,
-                          0,
-                          _buffer.size()) != VK_SUCCESS)
+    if (_transferDirection == CPU_TO_GPU ||
+        _transferDirection == BIDIRECTIONAL)
     {
-      MT_ASSERT(false && "PlainBuffer: Failed to vmaFlushAllocation");
+      if(vmaFlushAllocation(_buffer._device.allocator(),
+                            _buffer._allocation,
+                            0,
+                            _buffer.size()) != VK_SUCCESS)
+      {
+        MT_ASSERT(false && "PlainBuffer: Failed to vmaFlushAllocation");
+      }
     }
 
     vmaUnmapMemory(_buffer._device.allocator(), _buffer._allocation);
