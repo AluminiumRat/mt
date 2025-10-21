@@ -12,7 +12,6 @@ CommandBuffer::CommandBuffer( VkCommandPool pool,
   _pool(pool),
   _device(device),
   _level(level)/*,
-  _uniformMemoryPool(256 * 1024, device),
   _volatileDescriptorPool({ 10,   //samplers
                             512,  //combinedImageSamplers
                             10,   //sampledImage

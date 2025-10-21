@@ -4,7 +4,6 @@
 
 #include <vulkan/vulkan.h>
 
-//#include <mtt/render/CommandQueue/UniformMemoryPool.h>
 //#include <mtt/render/CommandQueue/ScaledVolatileDescriptorPool.h>
 #include <vkr/RefCounter.h>
 #include <vkr/Ref.h>
@@ -29,7 +28,6 @@ namespace mt
     inline VkCommandBufferLevel level() const;
     inline void lockResource(RefCounter& resource);
     inline void releaseResources();
-    //inline UniformMemoryPool& uniformMemoryPool() noexcept;
     //inline ScaledVolatileDescriptorPool& volatileDescriptorPool() noexcept;
 
   private:
@@ -43,7 +41,6 @@ namespace mt
 
     std::vector<RefCounterReference> _lockedResources;
 
-    //UniformMemoryPool _uniformMemoryPool;
     //ScaledVolatileDescriptorPool _volatileDescriptorPool;
   };
 
@@ -67,11 +64,7 @@ namespace mt
     _lockedResources.clear();
   }
 
-  /*inline UniformMemoryPool& CommandBuffer::uniformMemoryPool() noexcept
-  {
-    return _uniformMemoryPool;
-  }
-
+  /*
   inline ScaledVolatileDescriptorPool&
                                 CommandBuffer::volatileDescriptorPool() noexcept
   {

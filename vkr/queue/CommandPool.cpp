@@ -6,9 +6,12 @@
 
 using namespace mt;
 
+static constexpr size_t uniformBufferPoolInitialSize = 32 * 1024;
+
 CommandPool::CommandPool(CommandQueue& queue) :
   _handle(VK_NULL_HANDLE),
   _device(queue.device()),
+  _memoryPool(uniformBufferPoolInitialSize, _device),
   _nextBuffer(0)
 {
   try
