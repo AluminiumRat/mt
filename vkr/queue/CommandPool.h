@@ -31,6 +31,12 @@ namespace mt
     CommandPool& operator = (const CommandPool&) = delete;
     virtual ~CommandPool() noexcept;
 
+    inline UniformMemoryPool& memoryPool() noexcept;
+    inline const UniformMemoryPool& memoryPool() const noexcept;
+
+    inline VolatileDescriptorPool& descriptorPool() noexcept;
+    inline const VolatileDescriptorPool& descriptorPool() const noexcept;
+
     // Взять из пула не используемый буфер или создать новый, если свободных
     // нет.
     CommandBuffer& getNextBuffer();
@@ -55,4 +61,25 @@ namespace mt
     Buffers _buffers;
     size_t _nextBuffer;
   };
+
+  inline UniformMemoryPool& CommandPool::memoryPool() noexcept
+  {
+    return _memoryPool;
+  }
+
+  inline const UniformMemoryPool& CommandPool::memoryPool() const noexcept
+  {
+    return _memoryPool;
+  }
+
+  inline VolatileDescriptorPool& CommandPool::descriptorPool() noexcept
+  {
+    return _descriptorPool;
+  }
+
+  inline const VolatileDescriptorPool&
+                                  CommandPool::descriptorPool() const noexcept
+  {
+    return _descriptorPool;
+  }
 };

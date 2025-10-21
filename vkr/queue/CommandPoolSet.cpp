@@ -1,4 +1,8 @@
-﻿#include <vkr/queue/CommandPoolSet.h>
+﻿#include <stdexcept>
+
+#include <util/Assert.h>
+#include <util/Log.h>
+#include <vkr/queue/CommandPoolSet.h>
 #include <vkr/queue/CommandQueue.h>
 
 using namespace mt;
@@ -18,6 +22,7 @@ CommandPool& CommandPoolSet::getPool()
     if(iPool->releasePoint.isReady())
     {
       CommandPool* pool = iPool->pool;
+      pool->reset();
       _waitingPools.erase(iPool);
       return *pool;
     }
@@ -31,27 +36,35 @@ CommandPool& CommandPoolSet::getPool()
 }
 
 void CommandPoolSet::returnPool(CommandPool& pool,
-                                const SyncPoint& releasePoint)
+                                const SyncPoint& releasePoint) noexcept
 {
-  // Для начала проверим, что пул был создан этим сетом
-  bool poolFound = false;
-  for(std::unique_ptr<CommandPool>& myPool : _pools)
+  try
   {
-    if(myPool.get() == &pool)
+    // Для начала проверим, что пул был создан этим сетом
+    bool poolFound = false;
+    for(std::unique_ptr<CommandPool>& myPool : _pools)
     {
-      poolFound = true;
-      break;
+      if(myPool.get() == &pool)
+      {
+        poolFound = true;
+        break;
+      }
     }
-  }
-  MT_ASSERT(poolFound);
+    MT_ASSERT(poolFound);
 
-  // Теперь проверим, что пула ещё нет в списке ожидания
-  for(WaitingPool& waitingPool : _waitingPools)
+    // Теперь проверим, что пула ещё нет в списке ожидания
+    for(WaitingPool& waitingPool : _waitingPools)
+    {
+      MT_ASSERT(waitingPool.pool != &pool);
+    }
+
+    // Всё хорошо, пул можно добавлять в лист ожидания
+    _waitingPools.push_back(WaitingPool{.pool = &pool,
+                                        .releasePoint = releasePoint});
+  }
+  catch (std::runtime_error& exception)
   {
-    MT_ASSERT(waitingPool.pool != &pool);
+    Log::error() << "CommandPoolSet::returnPool: " << exception.what();
+    MT_ASSERT(false && "Unable to return Command pool to CommandPoolSet");
   }
-
-  // Всё хорошо, пул можно добавлять в лист ожидания
-  _waitingPools.push_back(WaitingPool{.pool = &pool,
-                                      .releasePoint = releasePoint});
 }

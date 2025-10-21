@@ -50,7 +50,12 @@ int main(int argc, char* argv[])
     {
       glfwPollEvents();
 
+      std::unique_ptr<mt::CommandProducer> producer = device->primaryQueue().startCommands();
+
       mt::SwapChain::FrameAccess frame(*swapChain);
+
+      device->primaryQueue().submitCommands(std::move(producer));
+
       frame.present();
     }
 

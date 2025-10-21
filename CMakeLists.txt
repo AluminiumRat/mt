@@ -38,6 +38,7 @@ add_executable (vkTest
                 "vkr/queue/CommandBuffer.cpp"
                 "vkr/queue/CommandPool.cpp"
                 "vkr/queue/CommandPoolSet.cpp"
+                "vkr/queue/CommandProducer.cpp"
                 "vkr/queue/CommandQueue.cpp"
                 "vkr/queue/Fence.cpp"
                 "vkr/queue/QueueFamiliesInfo.cpp"

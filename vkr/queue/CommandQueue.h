@@ -6,6 +6,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include <vkr/queue/CommandPoolSet.h>
+#include <vkr/queue/CommandProducer.h>
 #include <vkr/queue/QueueFamiliesInfo.h>
 #include <vkr/queue/Semaphore.h>
 #include <vkr/queue/SyncPoint.h>
@@ -14,6 +16,7 @@
 namespace mt
 {
   class Device;
+  class CommandBuffer;
 
   // Класс отвечает за отправку команд на GPU. По факту - толстая обертка вокруг
   // VkQueue
@@ -44,21 +47,23 @@ namespace mt
     void addWaitForSemaphore( Semaphore& semaphore,
                               VkPipelineStageFlags waitStages);
 
+    //  Добавляет инкремент встроенного таймлайн семафора в конец очереди и
+    //  возвращает соответствующую пару семафор-значение
     SyncPoint createSyncPoint();
 
-    /*std::unique_ptr<CommandProducer> startCommands();
-    /// You should use producer that was created from this queue
-    /// Returns fence to wait end of command execution.
-    Fence& submit(std::unique_ptr<CommandProducer> commandProducer,
-                  Semaphore* startSemaphore,
-                  VkPipelineStageFlags dstStageMask,
-                  Semaphore* endSignalSemaphore);
+    //  Начать заполнение буфера команд.
+    //  Возвращает CommandProducer, через который заполняются буферы команд.
+    //  Для того, чтобы отправить команды на исполнение в очередь, необходимо
+    //    вернуть продюсер в очередь через метод submitCommands
+    //  Вы можете запросить несколько продюсеров и использовать их параллельно,
+    //    в том числе из разных потоков. Очередность отправки команд на
+    //    выполненение определяется тем, в какой очередности продюсеры будут
+    //    возвращены в очередь.
+    std::unique_ptr<CommandProducer> startCommands();
 
-    void submit(CommandBuffer& buffer,
-                Semaphore* startSemaphore,
-                VkPipelineStageFlags dstStageMask,
-                Semaphore* endSignalSemaphore,
-                Fence* endSignalFence);*/
+    //  Отправить собранный в продюсере буфер команд на исполнение и
+    //    финализировать работу с продюсером.
+    void submitCommands(std::unique_ptr<CommandProducer> producer);
 
     // Добавить место синхронизации с другой очередью. Если очереди разные, то
     // в переданную очередь будет добавлена точка синхронизации (SyncPoint), а
@@ -69,6 +74,8 @@ namespace mt
     void addWaitingForQueue(CommandQueue& queue,
                             VkPipelineStageFlags waitStages);
 
+    //  Приостановить работу текущего потока пока не будут выполнены все команды
+    //  из очереди
     void waitIdle() const;
 
   private:
@@ -89,6 +96,10 @@ namespace mt
     // жизни очереди. Основное средство синхронизации очередей между собой.
     Ref<TimelineSemaphore> _semaphore;
     uint64_t _lastSemaphoreValue;
+
+    // Пулы команд общего назначения, из них создаются комманд продюсеры,
+    // которые отдаются наружу.
+    CommandPoolSet _commonPoolSet;
 
     // Мьютекс, общий для всех очередей одного логического устройства.
     // Служит для синхронизации межпотока между очередями.

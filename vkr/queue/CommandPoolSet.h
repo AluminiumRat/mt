@@ -23,6 +23,8 @@ namespace mt
     CommandPoolSet& operator = (const CommandPoolSet&) = delete;
     ~CommandPoolSet() noexcept = default;
 
+    inline CommandQueue& queue() const noexcept;
+
     CommandPool& getPool();
 
     //  Вернуть пул обратно в сет на передержку.
@@ -30,7 +32,7 @@ namespace mt
     //    переиспользовать.
     //  Возвращать можно только те пулы, которые были созданы этим сетом.
     //  На один getPool должно приходиться не больше одного returnPool
-    void returnPool(CommandPool& pool, const SyncPoint& releasePoint);
+    void returnPool(CommandPool& pool, const SyncPoint& releasePoint) noexcept;
 
   private:
     CommandQueue& _queue;
@@ -45,7 +47,12 @@ namespace mt
     };
     using WaitingPools = std::vector<WaitingPool>;
     // Пулы, находящиеся на передержке и ждущие, когда очередь команд закончит
-    // оаботу с ними
+    // работу с ними
     WaitingPools _waitingPools;
   };
+
+  inline CommandQueue& CommandPoolSet::queue() const noexcept
+  {
+    return _queue;
+  }
 }

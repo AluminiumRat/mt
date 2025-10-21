@@ -4,6 +4,7 @@
 #include <util/Log.h>
 
 #include <vkr/queue/CommandQueue.h>
+#include <vkr/queue/CommandBuffer.h>
 #include <vkr/Device.h>
 #include <vkr/PhysicalDevice.h>
 
@@ -19,6 +20,7 @@ CommandQueue::CommandQueue( Device& device,
   _family(family),
   _semaphore(new TimelineSemaphore(0, device)),
   _lastSemaphoreValue(0),
+  _commonPoolSet(*this),
   _commonMutex(commonMutex)
 {
   try
@@ -93,11 +95,12 @@ SyncPoint CommandQueue::createSyncPoint()
 {
   std::lock_guard lock(_commonMutex);
 
+  _lastSemaphoreValue++;
+
   VkTimelineSemaphoreSubmitInfo timelineInfo{};
   timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
   timelineInfo.signalSemaphoreValueCount = 1;
-  uint64_t nextSemaphoreValue = _lastSemaphoreValue + 1;
-  timelineInfo.pSignalSemaphoreValues = &nextSemaphoreValue;
+  timelineInfo.pSignalSemaphoreValues = &_lastSemaphoreValue;
 
   VkSubmitInfo submitInfo{};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -114,9 +117,58 @@ SyncPoint CommandQueue::createSyncPoint()
     throw std::runtime_error("CommandQueue: Failed to submit timeline semaphore increment.");
   }
 
-  _lastSemaphoreValue = nextSemaphoreValue;
+  return SyncPoint(*_semaphore, _lastSemaphoreValue);
+}
 
-  return SyncPoint(*_semaphore, nextSemaphoreValue);
+std::unique_ptr<CommandProducer> CommandQueue::startCommands()
+{
+  std::lock_guard lock(_commonMutex);
+  return std::make_unique<CommandProducer>(_commonPoolSet);
+}
+
+void CommandQueue::submitCommands(std::unique_ptr<CommandProducer> producer)
+{
+  MT_ASSERT(producer != nullptr);
+  MT_ASSERT(&producer->queue() == this);
+
+  // Проверка на случай, если продюсер был запрошен, но команды в него не
+  // уходили
+  CommandBuffer* commandBuffer = producer->commandBuffer();
+  if (commandBuffer == nullptr) return;
+
+  // Перед тем как отправлять команды на исполнение, необходимо гарантировать,
+  // что юниформ буферы, которые они используют, доступны на ГПУ
+  producer->flushUniformData();
+
+  std::lock_guard lock(_commonMutex);
+
+  //  Одновременно с сабмитом буфера продвигаем наш таймлайн семафор
+  //  для того чтобы получить синк поинт, на котором можно чистить пулы
+  _lastSemaphoreValue++;
+  VkTimelineSemaphoreSubmitInfo timelineInfo{};
+  timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+  timelineInfo.signalSemaphoreValueCount = 1;
+  timelineInfo.pSignalSemaphoreValues = &_lastSemaphoreValue;
+
+  VkSubmitInfo submitInfo{};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submitInfo.pNext = &timelineInfo;
+  submitInfo.signalSemaphoreCount  = 1;
+  VkSemaphore semaphore = _semaphore->handle();
+  submitInfo.pSignalSemaphores = &semaphore;
+  submitInfo.commandBufferCount = 1;
+  VkCommandBuffer bufferHandle = commandBuffer->handle();
+  submitInfo.pCommandBuffers = &bufferHandle;
+
+  if (vkQueueSubmit(handle(),
+                    1,
+                    &submitInfo,
+                    VK_NULL_HANDLE) != VK_SUCCESS)
+  {
+    throw std::runtime_error("CommandQueue: Failed to submit timeline semaphore increment.");
+  }
+
+  producer->release(SyncPoint(*_semaphore, _lastSemaphoreValue));
 }
 
 void CommandQueue::addWaitingForQueue(
