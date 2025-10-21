@@ -49,12 +49,17 @@ namespace mt
       Mapper(PlainBuffer& buffer, TransferDirection transferDirection);
       Mapper(const Mapper&) = delete;
       Mapper& operator = (const Mapper&) = delete;
+      inline Mapper(Mapper&& other) noexcept;
+      inline Mapper& operator = (Mapper&& other) noexcept;
       ~Mapper();
 
       inline void* data() const;
 
     private:
-      PlainBuffer& _buffer;
+      void _unmap() noexcept;
+
+    private:
+      PlainBuffer* _buffer;
       void* _data;
       TransferDirection _transferDirection;
     };
@@ -95,6 +100,30 @@ namespace mt
 
     VmaAllocation _allocation;
   };
+
+  inline PlainBuffer::Mapper::Mapper(PlainBuffer::Mapper&& other) noexcept :
+    _buffer(other._buffer),
+    _data(other._data),
+    _transferDirection(other._transferDirection)
+  {
+    other._buffer = nullptr;
+    other._data = nullptr;
+  }
+
+  inline PlainBuffer::Mapper& PlainBuffer::Mapper::operator = (
+                                          PlainBuffer::Mapper&& other) noexcept
+  {
+    _unmap();
+
+    _buffer = other._buffer;
+    _data = other._data;
+    _transferDirection = other._transferDirection;
+
+    other._buffer = nullptr;
+    other._data = nullptr;
+
+    return *this;
+  }
 
   inline VkBuffer PlainBuffer::handle() const
   {

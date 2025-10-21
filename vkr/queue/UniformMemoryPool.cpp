@@ -5,63 +5,51 @@
 
 using namespace mt;
 
-UniformMemoryPool::UniformMemoryPool( size_t initialSize, Device& device) :
-  _device(device),
-  _granularity(device.physicalDevice().properties().
-                                        limits.minUniformBufferOffsetAlignment),
-  _bufferSize(initialSize),
+UniformMemoryPool::Session::Session(UniformMemoryPool& pool) :
+  _pool(&pool),
   _currentBufferIndex(0),
   _currentBuffer(nullptr),
   _bufferCursor(0)
 {
-  _bufferSize += _granularity - (_bufferSize % _granularity);
-}
+  MT_ASSERT(!_pool->_isSessionOpened);
 
-void UniformMemoryPool::start()
-{
-  MT_ASSERT(!_mapper.has_value());
-  if(_buffers.size() == 0) _addBuffer();
+  if (_pool->_buffers.empty()) _pool->_addBuffer();
   _openBuffer(0);
+
+  _pool->_isSessionOpened = true;
 }
 
-void UniformMemoryPool::_addBuffer()
-{
-  Ref<PlainBuffer> newBuffer(new PlainBuffer(
-                                        _device,
-                                        _bufferSize,
-                                        PlainBuffer::VOLATILE_UNIFORM_BUFFER));
-  _buffers.push_back(std::move(newBuffer));
-}
-
-void UniformMemoryPool::_openBuffer(size_t bufferIndex)
+void UniformMemoryPool::Session::_openBuffer(size_t bufferIndex)
 {
   _currentBufferIndex = bufferIndex;
-  _currentBuffer = _buffers[bufferIndex].get();
+  _currentBuffer = _pool->_buffers[bufferIndex].get();
   _bufferCursor = 0;
   _mapper.emplace(*_currentBuffer, PlainBuffer::Mapper::CPU_TO_GPU);
 }
 
-void UniformMemoryPool::finish() noexcept
+UniformMemoryPool::MemoryInfo UniformMemoryPool::Session::write(
+                                                              const char* data,
+                                                              size_t dataSize)
 {
+  MT_ASSERT(_pool != nullptr);
   MT_ASSERT(_mapper.has_value());
-  _mapper.reset();
-}
 
-UniformMemoryPool::MemoryInfo UniformMemoryPool::write( const char* data,
-                                                        size_t dataSize)
-{
+  // Определяем, сколько памяти в буфере нам надо, чтобы сохранить данные
   size_t chunkSize = dataSize;
-  if(dataSize % _granularity != 0)
+  if(dataSize % _pool->_granularity != 0)
   {
-    chunkSize += _granularity - (dataSize % _granularity);
+    chunkSize += _pool->_granularity - (dataSize % _pool->_granularity);
   }
+  MT_ASSERT(chunkSize <= _pool->_bufferSize);
 
-  MT_ASSERT(_mapper.has_value());
-  MT_ASSERT(chunkSize <= _bufferSize);
-
-  if(_bufferCursor + chunkSize > _bufferSize)
+  // Проверка, хватит ли места в текущем буфере
+  if(_bufferCursor + chunkSize > _pool->_bufferSize)
   {
-    if(_currentBufferIndex == _buffers.size() - 1) _addBuffer();
+    // Если места не хватает и в пуле закончились буферы, то создаем новый буфер
+    if(_currentBufferIndex == _pool->_buffers.size() - 1)
+    {
+      _pool->_addBuffer();
+    }
     _openBuffer(_currentBufferIndex + 1);
   }
 
@@ -73,4 +61,35 @@ UniformMemoryPool::MemoryInfo UniformMemoryPool::write( const char* data,
   _bufferCursor += chunkSize;
 
   return writeInfo;
+}
+
+void UniformMemoryPool::Session::finish() noexcept
+{
+  if(_pool == nullptr) return;
+  _mapper.reset();
+  _pool->_isSessionOpened = false;
+  _pool = nullptr;
+}
+
+UniformMemoryPool::UniformMemoryPool( size_t initialSize, Device& device) :
+  _device(device),
+  _granularity(device.physicalDevice().properties().
+                                        limits.minUniformBufferOffsetAlignment),
+  _bufferSize(initialSize),
+  _isSessionOpened(false)
+{
+  // Размер буфера должен быть кратен limits.minUniformBufferOffsetAlignment
+  if(_bufferSize % _granularity != 0)
+  {
+    _bufferSize += _granularity - (_bufferSize % _granularity);
+  }
+}
+
+void UniformMemoryPool::_addBuffer()
+{
+  Ref<PlainBuffer> newBuffer(new PlainBuffer(
+                                        _device,
+                                        _bufferSize,
+                                        PlainBuffer::VOLATILE_UNIFORM_BUFFER));
+  _buffers.push_back(std::move(newBuffer));
 }

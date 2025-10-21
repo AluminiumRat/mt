@@ -10,12 +10,12 @@ using namespace mt;
 
 PlainBuffer::Mapper::Mapper(PlainBuffer& buffer,
                             TransferDirection transferDirection) :
-  _buffer(buffer),
+  _buffer(&buffer),
   _data(nullptr),
   _transferDirection(transferDirection)
 {
-  if(vmaMapMemory(_buffer._device.allocator(),
-                  _buffer._allocation,
+  if(vmaMapMemory(_buffer->_device.allocator(),
+                  _buffer->_allocation,
                   &_data) != VK_SUCCESS)
   {
     throw std::runtime_error("PlainBuffer: Failed to map buffer's memory.");
@@ -24,34 +24,42 @@ PlainBuffer::Mapper::Mapper(PlainBuffer& buffer,
   if (_transferDirection == GPU_TO_CPU ||
       _transferDirection == BIDIRECTIONAL)
   {
-    if(vmaInvalidateAllocation( _buffer._device.allocator(),
-                                _buffer._allocation,
+    if(vmaInvalidateAllocation( _buffer->_device.allocator(),
+                                _buffer->_allocation,
                                 0,
-                                _buffer.size()) != VK_SUCCESS)
+                                _buffer->size()) != VK_SUCCESS)
     {
       throw std::runtime_error("PlainBuffer: Failed to vmaInvalidateAllocation");
     }
   }
 }
 
-PlainBuffer::Mapper::~Mapper()
+void PlainBuffer::Mapper::_unmap() noexcept
 {
   if(_data != nullptr)
   {
     if (_transferDirection == CPU_TO_GPU ||
         _transferDirection == BIDIRECTIONAL)
     {
-      if(vmaFlushAllocation(_buffer._device.allocator(),
-                            _buffer._allocation,
+      if(vmaFlushAllocation(_buffer->_device.allocator(),
+                            _buffer->_allocation,
                             0,
-                            _buffer.size()) != VK_SUCCESS)
+                            _buffer->size()) != VK_SUCCESS)
       {
         MT_ASSERT(false && "PlainBuffer: Failed to vmaFlushAllocation");
       }
     }
 
-    vmaUnmapMemory(_buffer._device.allocator(), _buffer._allocation);
+    vmaUnmapMemory(_buffer->_device.allocator(), _buffer->_allocation);
+
+    _data = nullptr;
+    _buffer = nullptr;
   }
+}
+
+PlainBuffer::Mapper::~Mapper()
+{
+  _unmap();
 }
 
 static VkBufferUsageFlags getUsageFlags(PlainBuffer::Usage usage)
