@@ -4,7 +4,6 @@
 
 #include <vulkan/vulkan.h>
 
-//#include <mtt/render/CommandQueue/ScaledVolatileDescriptorPool.h>
 #include <vkr/RefCounter.h>
 #include <vkr/Ref.h>
 
@@ -12,6 +11,8 @@ namespace mt
 {
   class Device;
 
+  // Отдельный буфер команд для GPU
+  // Обертка вокруг VkCommandBuffer
   class CommandBuffer : public RefCounter
   {
   public:
@@ -28,7 +29,6 @@ namespace mt
     inline VkCommandBufferLevel level() const;
     inline void lockResource(RefCounter& resource);
     inline void releaseResources();
-    //inline ScaledVolatileDescriptorPool& volatileDescriptorPool() noexcept;
 
   private:
     void _cleanup() noexcept;
@@ -40,8 +40,6 @@ namespace mt
     VkCommandBufferLevel _level;
 
     std::vector<RefCounterReference> _lockedResources;
-
-    //ScaledVolatileDescriptorPool _volatileDescriptorPool;
   };
 
   inline VkCommandBuffer CommandBuffer::handle() const
@@ -63,11 +61,4 @@ namespace mt
   {
     _lockedResources.clear();
   }
-
-  /*
-  inline ScaledVolatileDescriptorPool&
-                                CommandBuffer::volatileDescriptorPool() noexcept
-  {
-    return _volatileDescriptorPool;
-  }*/
 }

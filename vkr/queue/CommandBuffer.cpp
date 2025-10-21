@@ -11,18 +11,7 @@ CommandBuffer::CommandBuffer( VkCommandPool pool,
   _handle(VK_NULL_HANDLE),
   _pool(pool),
   _device(device),
-  _level(level)/*,
-  _volatileDescriptorPool({ 10,   //samplers
-                            512,  //combinedImageSamplers
-                            10,   //sampledImage
-                            10,   //storageImage
-                            10,   //uniformTexelBuffers
-                            10,   //storageTexelBuffers
-                            2048, //uniformBuffers
-                            10,   //storageBuffers
-                            20 },  //inputAttachments
-                          1024,
-                          device)*/
+  _level(level)
 {
   try
   {

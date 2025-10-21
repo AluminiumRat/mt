@@ -7,6 +7,7 @@
 #include <vkr/Ref.h>
 #include <vkr/queue/CommandBuffer.h>
 #include <vkr/queue/UniformMemoryPool.h>
+#include <vkr/queue/VolatileDescriptorPool.h>
 
 namespace mt
 {
@@ -47,6 +48,7 @@ namespace mt
     Device& _device;
 
     UniformMemoryPool _memoryPool;
+    VolatileDescriptorPool _descriptorPool;
 
     using Buffers = std::vector<Ref<CommandBuffer>>;
     Buffers _buffers;

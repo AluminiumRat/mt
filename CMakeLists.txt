@@ -44,6 +44,7 @@ add_executable (vkTest
                 "vkr/queue/Semaphore.cpp"
                 "vkr/queue/TimelineSemaphore.cpp"
                 "vkr/queue/UniformMemoryPool.cpp"
+                "vkr/queue/VolatileDescriptorPool.cpp"
                 "vkr/DescriptorCounter.cpp"
                 "vkr/DescriptorPool.cpp"
                 "vkr/Device.cpp"

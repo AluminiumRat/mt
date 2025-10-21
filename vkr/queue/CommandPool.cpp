@@ -12,6 +12,17 @@ CommandPool::CommandPool(CommandQueue& queue) :
   _handle(VK_NULL_HANDLE),
   _device(queue.device()),
   _memoryPool(uniformBufferPoolInitialSize, _device),
+  _descriptorPool({ .samplers = 1024,
+                    .combinedImageSamplers = 512,
+                    .sampledImages = 1024,
+                    .storageImages = 10,
+                    .uniformTexelBuffers = 10,
+                    .storageTexelBuffers = 10,
+                    .uniformBuffers = 1024,
+                    .storageBuffers = 10,
+                    .inputAttachments = 20 },
+                  1024,
+                  _device),
   _nextBuffer(0)
 {
   try
