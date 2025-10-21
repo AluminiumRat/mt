@@ -74,6 +74,9 @@ void CommandPool::reset()
   {
     throw std::runtime_error("CommandPool: Unable to reset command pool");
   }
+
+  _descriptorPool.reset();
+
   _nextBuffer = 0;
 }
 

@@ -72,21 +72,6 @@ namespace mt
     void waitIdle() const;
 
   private:
-    /*class Producer : public CommandProducer
-    {
-    public:
-      Producer( CommandPool& pool,
-                CommandQueue& queue,
-                size_t poolIndex);
-      Producer(const Producer&) = delete;
-      Producer& operator = (const Producer&) = delete;
-      virtual ~Producer();
-
-      CommandQueue& _queue;
-      size_t _poolIndex;
-    };*/
-
-  private:
     void _cleanup() noexcept;
     // ВНИМАНИЕ!!! Этот метод не захватывает владение семафором, он работает
     // только с семафорами очередей и предполагает, что семафоры будут удалены
