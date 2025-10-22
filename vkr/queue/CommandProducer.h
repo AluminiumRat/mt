@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 
 #include <vkr/queue/UniformMemoryPool.h>
+#include <vkr/Image.h>
 
 namespace mt
 {
@@ -12,7 +13,6 @@ namespace mt
   class CommandPool;
   class CommandPoolSet;
   class CommandQueue;
-  class Image;
   class SyncPoint;
   class VolatileDescriptorPool;
 
@@ -44,11 +44,12 @@ namespace mt
     void imageBarrier(Image& image,
                       VkImageLayout srcLayout,
                       VkImageLayout dstLayout,
-                      VkImageAspectFlags aspectMask,
-                      uint32_t baseMip = 0,
-                      uint32_t mipCount = VK_REMAINING_MIP_LEVELS,
-                      uint32_t baseArrayLayer = 0,
-                      uint32_t layerCount = VK_REMAINING_ARRAY_LAYERS,
+                      ImageSlice slice = ImageSlice{
+                          .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                          .baseMipLevel = 0,
+                          .levelCount = VK_REMAINING_MIP_LEVELS,
+                          .baseArrayLayer = 0,
+                          .layerCount = VK_REMAINING_ARRAY_LAYERS },
                       VkPipelineStageFlags srcStages =
                                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                       VkPipelineStageFlags dstStages =

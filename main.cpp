@@ -52,11 +52,10 @@ int main(int argc, char* argv[])
                                             true,
                                             *device));
 
-    mt::Ref<mt::SwapChain> swapChain(new mt::SwapChain(
-                                        *device,
-                                        surface,
-                                        std::nullopt,
-                                        std::nullopt));
+    mt::Ref<mt::SwapChain> swapChain(new mt::SwapChain( *device,
+                                                        surface,
+                                                        std::nullopt,
+                                                        std::nullopt));
 
     while (!glfwWindowShouldClose(window))
     {
@@ -70,11 +69,12 @@ int main(int argc, char* argv[])
       producer->imageBarrier( *frame.image(),
                               VK_IMAGE_LAYOUT_UNDEFINED,
                               VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                              VK_IMAGE_ASPECT_COLOR_BIT,
-                              0,
-                              1,
-                              0,
-                              1,
+                              ImageSlice {
+                                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                                .baseMipLevel = 0,
+                                .levelCount = 1,
+                                .baseArrayLayer = 0,
+                                .layerCount = 1},
                               VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                               VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                               VK_ACCESS_MEMORY_WRITE_BIT,

@@ -18,9 +18,18 @@ namespace mt
   class CommandQueue;
   class Device;
 
-  // Обертка вокруг VkImage
-  // Фиксированный кусок памяти, который используется как изображение
-  // (поддерживает чтение через сэмплеры и поддерживает лэйауты)
+  //  Некоторая часть Image-а, которая может рассматриваться как отдельный
+  //  объект. В частности, может иметь собственный layout или служить
+  //  источником данных для ImageView.
+  using ImageSlice = VkImageSubresourceRange;
+  inline bool operator == (
+                  const ImageSlice& first, const ImageSlice& second) noexcept;
+  inline bool operator != (
+                  const ImageSlice& first, const ImageSlice& second) noexcept;
+
+  //  Обертка вокруг VkImage
+  //  Фиксированный кусок памяти, который используется как изображение
+  //  (поддерживает чтение через сэмплеры и поддерживает лэйауты)
   class Image : public RefCounter
   {
   public:
@@ -120,6 +129,23 @@ namespace mt
 
     Device& _device;
   };
+
+  inline bool operator == (
+                  const ImageSlice& first, const ImageSlice& second) noexcept
+  {
+    return  first.aspectMask == second.aspectMask &&
+            first.baseMipLevel == second.baseMipLevel &&
+            first.levelCount == second.levelCount &&
+            first.baseArrayLayer == second.baseArrayLayer &&
+            first.layerCount == second.layerCount;
+  }
+
+  inline bool operator != (
+                  const ImageSlice& first, const ImageSlice& second) noexcept
+  {
+    return !(first == second);
+  }
+
 
   inline Device& Image::device() const noexcept
   {

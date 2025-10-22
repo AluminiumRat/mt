@@ -8,7 +8,6 @@
 #include <vkr/queue/CommandProducer.h>
 #include <vkr/queue/CommandQueue.h>
 #include <vkr/queue/VolatileDescriptorPool.h>
-#include <vkr/Image.h>
 
 using namespace mt;
 
@@ -100,11 +99,7 @@ CommandBuffer& CommandProducer::_getOrCreateBuffer()
 void CommandProducer::imageBarrier( Image& image,
                                     VkImageLayout srcLayout,
                                     VkImageLayout dstLayout,
-                                    VkImageAspectFlags aspectMask,
-                                    uint32_t baseMip,
-                                    uint32_t mipCount,
-                                    uint32_t baseArrayLayer,
-                                    uint32_t layerCount,
+                                    VkImageSubresourceRange slice,
                                     VkPipelineStageFlags srcStages,
                                     VkPipelineStageFlags dstStages,
                                     VkAccessFlags srcAccesMask,
@@ -130,11 +125,7 @@ void CommandProducer::imageBarrier( Image& image,
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
   }
   barrier.image = image.handle();
-  barrier.subresourceRange.aspectMask = aspectMask;
-  barrier.subresourceRange.baseMipLevel = baseMip;
-  barrier.subresourceRange.levelCount = mipCount;
-  barrier.subresourceRange.baseArrayLayer = baseArrayLayer;
-  barrier.subresourceRange.layerCount = layerCount;
+  barrier.subresourceRange = slice;
 
   barrier.srcAccessMask = srcAccesMask;
   barrier.dstAccessMask = dstAccesMask;
