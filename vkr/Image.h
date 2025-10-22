@@ -24,7 +24,22 @@ namespace mt
   class Image : public RefCounter
   {
   public:
-    //  Создать объект-обертку вокруг уже существующего Image
+    //  Создать пустой Image и выделить под него память на GPU
+    //  VK_IMAGE_LAYOUT_UNDEFINED, VK_SHARING_MODE_EXCLUSIVE
+    //  Память будет выделена по возможности в GPU-only куче, доступ со
+    //    стороны CPU только через staging буферы
+    Image(VkImageType imageType,
+          VkImageUsageFlags usageFlags,
+          VkImageCreateFlags createFlags,
+          VkFormat format,
+          glm::uvec3 extent,
+          VkSampleCountFlagBits samples,
+          uint32_t arraySize,
+          uint32_t mipmapCount,
+          bool enableLayoutAutoControl,
+          Device& device);
+
+    //  Создать объект-обертку вокруг уже существующего VkImage
     //  owner - очередь, к которой привязан Image. Если ни одна из очередей
     //    ещё не захватила владение image-ем, то необходимо передать nullptr
     //    если sharingMode == VK_SHARING_MODE_EXCLUSIVE, то необходимо передать

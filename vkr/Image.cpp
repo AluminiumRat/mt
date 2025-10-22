@@ -6,6 +6,77 @@
 
 using namespace mt;
 
+Image::Image( VkImageType imageType,
+              VkImageUsageFlags usageFlags,
+              VkImageCreateFlags createFlags,
+              VkFormat format,
+              glm::uvec3 extent,
+              VkSampleCountFlagBits samples,
+              uint32_t arraySize,
+              uint32_t mipmapCount,
+              bool enableLayoutAutoControl,
+              Device& device) :
+  _handle(VK_NULL_HANDLE),
+  _allocation(VK_NULL_HANDLE),
+  _memorySize(0),
+  _imageType(imageType),
+  _format(format),
+  _extent(extent),
+  _samples(samples),
+  _arraySize(arraySize),
+  _mipmapCount(mipmapCount),
+  _sharingMode(VK_SHARING_MODE_EXCLUSIVE),
+  _owner(nullptr),
+  _layoutAutoControlEnabled(enableLayoutAutoControl),
+  _lastLayoutInQueue(VK_IMAGE_LAYOUT_UNDEFINED),
+  _device(device)
+{
+  MT_ASSERT(extent.x > 0 && extent.y > 0 && extent.z > 0);
+  MT_ASSERT(arraySize > 0);
+  MT_ASSERT(mipmapCount > 0);
+
+  try
+  {
+    VkImageCreateInfo imageInfo{};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = _imageType;
+    imageInfo.extent.width = uint32_t(_extent.x);
+    imageInfo.extent.height = uint32_t(_extent.y);
+    imageInfo.extent.depth = uint32_t(_extent.z);;
+    imageInfo.mipLevels = _mipmapCount;
+    imageInfo.arrayLayers = _arraySize;
+    imageInfo.format = _format;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = usageFlags;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageInfo.samples = _samples;
+    imageInfo.flags = createFlags;
+
+    VmaAllocationCreateInfo allocCreateInfo{};
+    allocCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+    VmaAllocationInfo allocInfo{};
+
+    if(vmaCreateImage(_device.allocator(),
+                      &imageInfo,
+                      &allocCreateInfo,
+                      &_handle,
+                      &_allocation,
+                      &allocInfo) != VK_SUCCESS)
+    {
+      throw std::runtime_error("Image: Failed to create image.");
+    }
+
+    _memorySize = allocInfo.size;
+  }
+  catch(...)
+  {
+    _cleanup();
+    throw;
+  }
+}
+
 Image::Image( VkImage handle,
               VkImageType imageType,
               VkFormat format,
