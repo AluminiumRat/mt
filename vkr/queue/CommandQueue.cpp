@@ -138,7 +138,7 @@ void CommandQueue::submitCommands(std::unique_ptr<CommandProducer> producer)
 
   // Перед тем как отправлять команды на исполнение, необходимо гарантировать,
   // что юниформ буферы, которые они используют, доступны на ГПУ
-  producer->flushUniformData();
+  producer->finalize();
 
   std::lock_guard lock(_commonMutex);
 

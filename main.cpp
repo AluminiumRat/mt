@@ -50,9 +50,23 @@ int main(int argc, char* argv[])
     {
       glfwPollEvents();
 
+      mt::SwapChain::FrameAccess frame(*swapChain);
+      MT_ASSERT(frame.image() != nullptr);
+
       std::unique_ptr<mt::CommandProducer> producer = device->primaryQueue().startCommands();
 
-      mt::SwapChain::FrameAccess frame(*swapChain);
+      producer->imageBarrier( *frame.image(),
+                              VK_IMAGE_LAYOUT_UNDEFINED,
+                              VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                              VK_IMAGE_ASPECT_COLOR_BIT,
+                              0,
+                              1,
+                              0,
+                              1,
+                              VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                              VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                              VK_ACCESS_MEMORY_WRITE_BIT,
+                              VK_ACCESS_NONE);
 
       device->primaryQueue().submitCommands(std::move(producer));
 

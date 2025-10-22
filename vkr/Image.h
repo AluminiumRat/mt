@@ -44,7 +44,7 @@ namespace mt
           uint32_t arraySize,
           uint32_t mipmapCount,
           VkSharingMode sharingMode,
-          const CommandQueue* owner,
+          CommandQueue* owner,
           bool enableLayoutAutoControl,
           VkImageLayout lastLayoutInQueue,
           Device& device);
@@ -75,7 +75,7 @@ namespace mt
     inline uint32_t arraySize() const noexcept;
 
     inline VkSharingMode sharingMode() const noexcept;
-    inline const CommandQueue* owner() const noexcept;
+    inline CommandQueue* owner() const noexcept;
     inline bool isLayoutAutoControlEnabled() const noexcept;
     inline VkImageLayout lastLayoutInQueue() const noexcept;
 
@@ -99,7 +99,7 @@ namespace mt
     uint32_t _mipmapCount;
 
     VkSharingMode _sharingMode;
-    const CommandQueue* _owner;
+    CommandQueue* _owner;
     bool _layoutAutoControlEnabled;
     VkImageLayout _lastLayoutInQueue;
 
@@ -165,7 +165,7 @@ namespace mt
     return _sharingMode;
   }
 
-  inline const CommandQueue* Image::owner() const noexcept
+  inline CommandQueue* Image::owner() const noexcept
   {
     return _owner;
   }

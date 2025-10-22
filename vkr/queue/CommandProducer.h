@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#include <vulkan/vulkan.h>
+
 #include <vkr/queue/UniformMemoryPool.h>
 
 namespace mt
@@ -10,6 +12,7 @@ namespace mt
   class CommandPool;
   class CommandPoolSet;
   class CommandQueue;
+  class Image;
   class SyncPoint;
   class VolatileDescriptorPool;
 
@@ -36,25 +39,45 @@ namespace mt
 
     inline CommandQueue& queue() const noexcept;
 
+    //  Перевод имэйджа из одного лайоута в другой. Можно использовать
+    //    только на имэйджах с отключенным автоконтролем лэйаута.
+    void imageBarrier(Image& image,
+                      VkImageLayout srcLayout,
+                      VkImageLayout dstLayout,
+                      VkImageAspectFlags aspectMask,
+                      uint32_t baseMip = 0,
+                      uint32_t mipCount = VK_REMAINING_MIP_LEVELS,
+                      uint32_t baseArrayLayer = 0,
+                      uint32_t layerCount = VK_REMAINING_ARRAY_LAYERS,
+                      VkPipelineStageFlags srcStages =
+                                            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                      VkPipelineStageFlags dstStages =
+                                            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                      VkAccessFlags srcAccesMask =
+                                            VK_ACCESS_MEMORY_WRITE_BIT,
+                      VkAccessFlags dstAccesMask =
+                                            VK_ACCESS_MEMORY_READ_BIT);
+
   private:
     //  Отправка буфера на выполнение и релиз продюсера должны выполняться
-    //  под мьютексом очередей команд.
+    //  под мьютексом очередей команд, поэжтому доступ только из очереди
     friend class CommandQueue;
-    inline CommandBuffer* commandBuffer() const noexcept;
     //  Сбросить на GPU все данные для юниформ буферов перед отправкой
-    //  команд в очередь
-    void flushUniformData();
+    //  в очередь команд и финализировать текущий буфер команд.
+    void finalize();
+    inline CommandBuffer* commandBuffer() const noexcept;
     //  Отправить пулы на передержку до достижения releasePoint
     void release(const SyncPoint& releasePoint);
 
   private:
-    CommandBuffer& getOrCreateBuffer();
+    CommandBuffer& _getOrCreateBuffer();
 
   private:
     CommandPoolSet& _commandPoolSet;
     CommandQueue& _queue;
     CommandPool* _commandPool;
     CommandBuffer* _commandBuffer;
+    bool _bufferInProcess;
     VolatileDescriptorPool* _descriptorPool;
     std::optional<UniformMemoryPool::Session> _uniformMemorySession;
   };

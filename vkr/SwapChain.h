@@ -60,8 +60,9 @@ namespace mt
       //    VK_IMAGE_LAYOUT_UNDEFINED
       inline Image* image() const noexcept;
 
-      // Вернуть захваченный кадр обратно в свапчейн и отправить его на
-      // презентацию
+      //  Вернуть захваченный кадр обратно в свапчейн и отправить его на
+      //  презентацию. Image к этому времени должен быть переведен в
+      //  VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
       inline void present();
 
     private:

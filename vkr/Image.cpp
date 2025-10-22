@@ -14,7 +14,7 @@ Image::Image( VkImage handle,
               uint32_t arraySize,
               uint32_t mipmapCount,
               VkSharingMode sharingMode,
-              const CommandQueue* owner,
+              CommandQueue* owner,
               bool enableLayoutAutoControl,
               VkImageLayout lastLayoutInQueue,
               Device& device) :

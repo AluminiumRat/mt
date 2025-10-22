@@ -11,8 +11,8 @@ namespace mt
 {
   class Device;
 
-  // Отдельный буфер команд для GPU
-  // Обертка вокруг VkCommandBuffer
+  //  Отдельный буфер команд для GPU
+  //  Обертка вокруг VkCommandBuffer
   class CommandBuffer : public RefCounter
   {
   public:
@@ -27,7 +27,15 @@ namespace mt
   public:
     inline VkCommandBuffer handle() const;
     inline VkCommandBufferLevel level() const;
+
+    //  Захватить владение ресурсом. Это продляет жизнь ресурса и позволяет
+    //  предотвратить его удаление, пока буфер находится на исполнении в
+    //  очереди команд
     inline void lockResource(RefCounter& resource);
+
+    //  Освободить все захваченные ресурсы. Необходимо вызывать, когда
+    //  исполнение буфера в очереди команд уже закончено и используемые в
+    //  нем ресурсы могут быть удалены.
     inline void releaseResources();
 
   private:
