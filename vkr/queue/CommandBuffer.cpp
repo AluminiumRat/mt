@@ -1,5 +1,6 @@
 ﻿#include <stdexcept>
 
+#include <util/Assert.h>
 #include <vkr/queue/CommandBuffer.h>
 #include <vkr/Device.h>
 #include <vkr/Image.h>
@@ -13,7 +14,8 @@ CommandBuffer::CommandBuffer( VkCommandPool pool,
   _handle(VK_NULL_HANDLE),
   _pool(pool),
   _device(device),
-  _level(level)
+  _level(level),
+  _bufferInProcess(false)
 {
   try
   {
@@ -44,6 +46,8 @@ CommandBuffer::~CommandBuffer()
 
 void CommandBuffer::_cleanup() noexcept
 {
+  endBuffer();
+
   if(_handle != VK_NULL_HANDLE)
   {
     vkFreeCommandBuffers( _device.handle(),
@@ -54,13 +58,40 @@ void CommandBuffer::_cleanup() noexcept
   }
 }
 
+void CommandBuffer::startOnetimeBuffer() noexcept
+{
+  VkCommandBufferBeginInfo beginInfo{};
+  beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+  beginInfo.pInheritanceInfo = nullptr;
+
+  if (vkBeginCommandBuffer(_handle, &beginInfo) != VK_SUCCESS)
+  {
+    MT_ASSERT(false && "CommandProducer: Failed to begin recording command buffer.");
+  }
+
+  _bufferInProcess = true;
+}
+
+void CommandBuffer::endBuffer() noexcept
+{
+  if(_bufferInProcess)
+  {
+    if (vkEndCommandBuffer(_handle) != VK_SUCCESS)
+    {
+      MT_ASSERT(false && "CommandProducer: Failed to end command buffer");
+    }
+    _bufferInProcess = false;
+  }
+}
+
 void CommandBuffer::imageBarrier( const ImageSlice& slice,
                                   VkImageLayout srcLayout,
                                   VkImageLayout dstLayout,
                                   VkPipelineStageFlags srcStages,
                                   VkPipelineStageFlags dstStages,
                                   VkAccessFlags srcAccesMask,
-                                  VkAccessFlags dstAccesMask) noexcept
+                                  VkAccessFlags dstAccesMask) const noexcept
 {
   VkImageMemoryBarrier barrier{};
   barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;

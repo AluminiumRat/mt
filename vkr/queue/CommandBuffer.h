@@ -39,6 +39,14 @@ namespace mt
     //  нем ресурсы могут быть удалены.
     inline void releaseResources();
 
+    //  Стартовать запись команд для однократного использования
+    void startOnetimeBuffer() noexcept;
+    //  Финализировать запись команд в буфер
+    void endBuffer() noexcept;
+
+    //  Буфер находится в состоянии записи команд
+    inline bool isBufferInProcess() const noexcept;
+
     //  Просто добавляет барьер в буфер команд без всякой рутины, согласований и
     //    захвата ресурсов. Без разницы, используется ли автоконтроль лэйаута
     //    или нет.
@@ -51,7 +59,7 @@ namespace mt
                       VkPipelineStageFlags srcStages,
                       VkPipelineStageFlags dstStages,
                       VkAccessFlags srcAccesMask,
-                      VkAccessFlags dstAccesMask) noexcept;
+                      VkAccessFlags dstAccesMask) const noexcept;
   private:
     void _cleanup() noexcept;
 
@@ -60,6 +68,8 @@ namespace mt
     VkCommandPool _pool;
     Device& _device;
     VkCommandBufferLevel _level;
+
+    bool _bufferInProcess;
 
     std::vector<RefCounterReference> _lockedResources;
   };
@@ -82,5 +92,10 @@ namespace mt
   inline void CommandBuffer::releaseResources()
   {
     _lockedResources.clear();
+  }
+
+  inline bool CommandBuffer::isBufferInProcess() const noexcept
+  {
+    return _bufferInProcess;
   }
 }
