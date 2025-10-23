@@ -47,7 +47,7 @@ namespace mt
 
     //  Проверить, что part полностью входит в этот слайс
     //  Сравнивать можно только слайсы одного имэйджа.
-    inline bool isSubset(const ImageSlice& part) const noexcept;
+    inline bool contains(const ImageSlice& part) const noexcept;
 
     //  Проверить пересекаются ли два слайса. То есть проверить, есть ли данные,
     //    которые входят и в первый и во второй слайт.
@@ -127,7 +127,7 @@ namespace mt
     return !(first == second);
   }
 
-  inline bool ImageSlice::isSubset(const ImageSlice& part) const noexcept
+  inline bool ImageSlice::contains(const ImageSlice& part) const noexcept
   {
     MT_ASSERT(_image == part._image);
 

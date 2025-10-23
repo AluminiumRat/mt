@@ -8,6 +8,7 @@
 #include <vkr/queue/CommandProducer.h>
 #include <vkr/queue/CommandQueue.h>
 #include <vkr/queue/VolatileDescriptorPool.h>
+#include <vkr/Image.h>
 
 using namespace mt;
 
@@ -96,48 +97,141 @@ CommandBuffer& CommandProducer::_getOrCreateBuffer()
   return *_commandBuffer;
 }
 
-void CommandProducer::imageBarrier( Image& image,
+void CommandProducer::_addImageUsage( const ImageSlice& slice,
+                                      VkImageLayout requiredLayout,
+                                      VkPipelineStageFlags readStagesMask,
+                                      VkAccessFlags readAccessMask,
+                                      VkPipelineStageFlags writeStagesMask,
+                                      VkAccessFlags writeAccessMask)
+{
+  CommandBuffer& buffer = _getOrCreateBuffer();
+
+  // В любом случае, если используем Image, то блочим его удаление
+  buffer.lockResource(slice.image());
+
+  if(slice.image().isLayoutAutoControlEnabled())
+  {
+    auto insertion = _imageStates.emplace(&slice.image(), ImageLayoutState());
+    bool isNewRecord = insertion.second;
+    ImageLayoutState& imageState = insertion.first->second;
+    if(isNewRecord)
+    {
+      // Image ещё не использовался в этом комманд буфере, просто заполняем
+      // требования по входному лэйоуту. Преобразование будет делать очередь
+      // команд при сшивании буферов команд.
+      imageState.requiredIncomingLayout = requiredLayout;
+      imageState.outcomingLayout = requiredLayout;
+      imageState.readStagesMask = readStagesMask;
+      imageState.readAccessMask = readAccessMask;
+      imageState.writeStagesMask = writeStagesMask;
+      imageState.writeAccessMask = writeAccessMask;
+    }
+    else
+    {
+      // Image уже использовался в этом буфере команд
+      if(imageState.needToChangeLayout(slice, requiredLayout))
+      {
+        _addImageLayoutTransform( slice,
+                                  imageState,
+                                  requiredLayout,
+                                  readStagesMask,
+                                  readAccessMask,
+                                  writeStagesMask,
+                                  writeAccessMask);
+      }
+      else
+      {
+        // Не надо преобразовавать лэйауты,просто ужесточаем требования по
+        // барьерам до и после буфера команд.
+        imageState.writeStagesMask |= writeStagesMask;
+        imageState.writeAccessMask |= writeAccessMask;
+        if(!imageState.isLayoutChanged)
+        {
+          imageState.readStagesMask |= readStagesMask;
+          imageState.readAccessMask |= readAccessMask;
+        }
+      }
+    }
+  }
+}
+
+void CommandProducer::_addImageLayoutTransform(
+                                          const ImageSlice& slice,
+                                          ImageLayoutState& imageState,
+                                          VkImageLayout requiredLayout,
+                                          VkPipelineStageFlags readStagesMask,
+                                          VkAccessFlags readAccessMask,
+                                          VkPipelineStageFlags writeStagesMask,
+                                          VkAccessFlags writeAccessMask)
+{
+  CommandBuffer& buffer = _getOrCreateBuffer();
+
+  // Для начала, если в image есть поменянный слайс - откатим его
+  if(imageState.changedSlice.has_value())
+  {
+    buffer.imageBarrier(*imageState.changedSlice,
+                        imageState.sliceLayout,
+                        imageState.outcomingLayout,
+                        imageState.writeStagesMask,
+                        readStagesMask,
+                        imageState.writeAccessMask,
+                        readAccessMask);
+    imageState.changedSlice.reset();
+  }
+
+  // Основное преобразование лэйаута
+  buffer.imageBarrier(slice,
+                      imageState.outcomingLayout,
+                      requiredLayout,
+                      imageState.writeStagesMask,
+                      readStagesMask,
+                      imageState.writeAccessMask,
+                      readAccessMask);
+
+  // Обновляем информацию по image-у
+  if(slice.isSliceFull())
+  {
+    // Мы только что поменяли лэйаут для всего image
+    imageState.outcomingLayout = requiredLayout;
+  }
+  else
+  {
+    // Мы поменяли только часть image
+    imageState.changedSlice = slice;
+    imageState.sliceLayout = requiredLayout;
+  }
+
+  // Мы только что прошли через барьер памяти, поэтому маски на флаш кэша
+  // после буфера полностью обновляются
+  imageState.writeStagesMask = writeStagesMask;
+  imageState.writeAccessMask = writeAccessMask;
+
+  imageState.isLayoutChanged = true;
+}
+
+void CommandProducer::imageBarrier(const ImageSlice& slice,
                                     VkImageLayout srcLayout,
                                     VkImageLayout dstLayout,
-                                    VkImageSubresourceRange slice,
                                     VkPipelineStageFlags srcStages,
                                     VkPipelineStageFlags dstStages,
                                     VkAccessFlags srcAccesMask,
                                     VkAccessFlags dstAccesMask)
 {
-  MT_ASSERT(!image.isLayoutAutoControlEnabled());
+  MT_ASSERT(!slice.image().isLayoutAutoControlEnabled());
+
+  _addImageUsage( slice,
+                  dstLayout,
+                  dstStages,
+                  dstAccesMask,
+                  srcStages,
+                  srcAccesMask);
 
   CommandBuffer& buffer = _getOrCreateBuffer();
-  buffer.lockResource(image);
-
-  VkImageMemoryBarrier barrier{};
-  barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-  barrier.oldLayout = srcLayout;
-  barrier.newLayout = dstLayout;
-  if(image.sharingMode() == VK_SHARING_MODE_EXCLUSIVE)
-  {
-    barrier.srcQueueFamilyIndex = _queue.family().index();
-    barrier.dstQueueFamilyIndex = _queue.family().index();
-  }
-  else
-  {
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-  }
-  barrier.image = image.handle();
-  barrier.subresourceRange = slice;
-
-  barrier.srcAccessMask = srcAccesMask;
-  barrier.dstAccessMask = dstAccesMask;
-
-  vkCmdPipelineBarrier( buffer.handle(),
-                        srcStages,
-                        dstStages,
-                        0,
-                        0,
-                        nullptr,
-                        0,
-                        nullptr,
-                        1,
-                        &barrier);
+  buffer.imageBarrier(slice,
+                      srcLayout,
+                      dstLayout,
+                      srcStages,
+                      dstStages,
+                      srcAccesMask,
+                      dstAccesMask);
 }

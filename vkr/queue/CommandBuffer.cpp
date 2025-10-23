@@ -2,6 +2,8 @@
 
 #include <vkr/queue/CommandBuffer.h>
 #include <vkr/Device.h>
+#include <vkr/Image.h>
+#include <vkr/ImageSlice.h>
 
 using namespace mt;
 
@@ -50,4 +52,36 @@ void CommandBuffer::_cleanup() noexcept
                           &_handle);
     _handle = VK_NULL_HANDLE;
   }
+}
+
+void CommandBuffer::imageBarrier( const ImageSlice& slice,
+                                  VkImageLayout srcLayout,
+                                  VkImageLayout dstLayout,
+                                  VkPipelineStageFlags srcStages,
+                                  VkPipelineStageFlags dstStages,
+                                  VkAccessFlags srcAccesMask,
+                                  VkAccessFlags dstAccesMask) noexcept
+{
+  VkImageMemoryBarrier barrier{};
+  barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+  barrier.oldLayout = srcLayout;
+  barrier.newLayout = dstLayout;
+  barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  barrier.image = slice.image().handle();
+  barrier.subresourceRange = slice.makeRange();
+
+  barrier.srcAccessMask = srcAccesMask;
+  barrier.dstAccessMask = dstAccesMask;
+
+  vkCmdPipelineBarrier( _handle,
+                        srcStages,
+                        dstStages,
+                        0,
+                        0,
+                        nullptr,
+                        0,
+                        nullptr,
+                        1,
+                        &barrier);
 }

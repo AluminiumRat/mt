@@ -10,6 +10,7 @@
 namespace mt
 {
   class Device;
+  class ImageSlice;
 
   //  Отдельный буфер команд для GPU
   //  Обертка вокруг VkCommandBuffer
@@ -31,13 +32,26 @@ namespace mt
     //  Захватить владение ресурсом. Это продляет жизнь ресурса и позволяет
     //  предотвратить его удаление, пока буфер находится на исполнении в
     //  очереди команд
-    inline void lockResource(RefCounter& resource);
+    inline void lockResource(const RefCounter& resource);
 
     //  Освободить все захваченные ресурсы. Необходимо вызывать, когда
     //  исполнение буфера в очереди команд уже закончено и используемые в
     //  нем ресурсы могут быть удалены.
     inline void releaseResources();
 
+    //  Просто добавляет барьер в буфер команд без всякой рутины, согласований и
+    //    захвата ресурсов. Без разницы, используется ли автоконтроль лэйаута
+    //    или нет.
+    //  ВНИМАНИЕ!!! Убедитесь, что вы не ломаете систему автоконтроля
+    //    лэйаутов и обеспечиваете время жизни image до конца выполнения
+    //    этого буфера
+    void imageBarrier(const ImageSlice& slice,
+                      VkImageLayout srcLayout,
+                      VkImageLayout dstLayout,
+                      VkPipelineStageFlags srcStages,
+                      VkPipelineStageFlags dstStages,
+                      VkAccessFlags srcAccesMask,
+                      VkAccessFlags dstAccesMask) noexcept;
   private:
     void _cleanup() noexcept;
 
@@ -60,7 +74,7 @@ namespace mt
     return _level;
   }
 
-  inline void CommandBuffer::lockResource(RefCounter& resource)
+  inline void CommandBuffer::lockResource(const RefCounter& resource)
   {
     _lockedResources.push_back(RefCounterReference(&resource));
   }

@@ -1,11 +1,13 @@
 ﻿#pragma once
 
 #include <memory>
+#include <unordered_map>
 
 #include <vulkan/vulkan.h>
 
+#include <vkr/queue/ImageLayoutState.h>
 #include <vkr/queue/UniformMemoryPool.h>
-#include <vkr/Image.h>
+#include <vkr/ImageSlice.h>
 
 namespace mt
 {
@@ -13,6 +15,7 @@ namespace mt
   class CommandPool;
   class CommandPoolSet;
   class CommandQueue;
+  class Image;
   class SyncPoint;
   class VolatileDescriptorPool;
 
@@ -41,23 +44,13 @@ namespace mt
 
     //  Перевод имэйджа из одного лайоута в другой. Можно использовать
     //    только на имэйджах с отключенным автоконтролем лэйаута.
-    void imageBarrier(Image& image,
+    void imageBarrier(const ImageSlice& slice,
                       VkImageLayout srcLayout,
                       VkImageLayout dstLayout,
-                      ImageSlice slice = ImageSlice{
-                          .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                          .baseMipLevel = 0,
-                          .levelCount = VK_REMAINING_MIP_LEVELS,
-                          .baseArrayLayer = 0,
-                          .layerCount = VK_REMAINING_ARRAY_LAYERS },
-                      VkPipelineStageFlags srcStages =
-                                            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                      VkPipelineStageFlags dstStages =
-                                            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                      VkAccessFlags srcAccesMask =
-                                            VK_ACCESS_MEMORY_WRITE_BIT,
-                      VkAccessFlags dstAccesMask =
-                                            VK_ACCESS_MEMORY_READ_BIT);
+                      VkPipelineStageFlags srcStages,
+                      VkPipelineStageFlags dstStages,
+                      VkAccessFlags srcAccesMask,
+                      VkAccessFlags dstAccesMask);
 
   private:
     //  Отправка буфера на выполнение и релиз продюсера должны выполняться
@@ -73,6 +66,24 @@ namespace mt
   private:
     CommandBuffer& _getOrCreateBuffer();
 
+    //  Сделать все необходимые отметки и настройки перед использованием
+    //  Image в буфере команд.
+    void _addImageUsage(const ImageSlice& slice,
+                        VkImageLayout requiredLayout,
+                        VkPipelineStageFlags readStagesMask,
+                        VkAccessFlags readAccessMask,
+                        VkPipelineStageFlags writeStagesMask,
+                        VkAccessFlags writeAccessMask);
+
+    //  Перевести слайс в нужный layout и сделать отметку об этом в imageState
+    void _addImageLayoutTransform(const ImageSlice& slice,
+                                  ImageLayoutState& imageState,
+                                  VkImageLayout requiredLayout,
+                                  VkPipelineStageFlags readStagesMask,
+                                  VkAccessFlags readAccessMask,
+                                  VkPipelineStageFlags writeStagesMask,
+                                  VkAccessFlags writeAccessMask);
+
   private:
     CommandPoolSet& _commandPoolSet;
     CommandQueue& _queue;
@@ -81,6 +92,9 @@ namespace mt
     bool _bufferInProcess;
     VolatileDescriptorPool* _descriptorPool;
     std::optional<UniformMemoryPool::Session> _uniformMemorySession;
+
+    using ImageStates = std::unordered_map<const Image*, ImageLayoutState>;
+    ImageStates _imageStates;
   };
 
   inline CommandQueue& CommandProducer::queue() const noexcept
