@@ -23,7 +23,7 @@ namespace mt
     // Создать слайс, который полностью закрывает весь Image
     explicit ImageSlice(const Image& image) noexcept;
     // Создать слайс, который закрывает только часть Image
-    ImageSlice( Image& image,
+    ImageSlice( const Image& image,
                 VkImageAspectFlags aspectMask,
                 uint32_t baseMipLevel,
                 uint32_t baseArrayLayer,

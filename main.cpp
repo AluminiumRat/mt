@@ -42,15 +42,16 @@ int main(int argc, char* argv[])
 
     mt::Ref<mt::Image> image(new mt::Image( VK_IMAGE_TYPE_2D,
                                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                                              VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                                              VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                              VK_IMAGE_USAGE_SAMPLED_BIT,
                                             0,
                                             VK_FORMAT_B8G8R8A8_SRGB,
                                             VK_IMAGE_ASPECT_COLOR_BIT,
                                             glm::uvec3(8, 8, 1),
                                             VK_SAMPLE_COUNT_1_BIT,
                                             1,
-                                            1,
-                                            true,
+                                            2,
+                                            false,
                                             *device));
 
     mt::Ref<mt::SwapChain> swapChain(new mt::SwapChain( *device,

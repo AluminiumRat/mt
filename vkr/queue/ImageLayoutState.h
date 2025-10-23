@@ -43,9 +43,6 @@ namespace mt
 
     //  Если внутри Image содержится слайс с Layout-ом, отличным от 
     //    outcomingLayout, то здесь будет храниться описание этого слайса.
-    //  CommandProducer обязан убрать слайс во время финализации, так что
-    //    changedSlice при передаче буфера команд в очередь должен быть
-    //    nullopt
     std::optional<ImageSlice> changedSlice;
     //  Лэйаут changedSlice
     VkImageLayout sliceLayout = VK_IMAGE_LAYOUT_UNDEFINED;

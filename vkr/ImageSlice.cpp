@@ -15,7 +15,7 @@ ImageSlice::ImageSlice(const Image& image) noexcept :
 {
 }
 
-ImageSlice::ImageSlice( Image& image,
+ImageSlice::ImageSlice( const Image& image,
                         VkImageAspectFlags aspectMask,
                         uint32_t baseMipLevel,
                         uint32_t baseArrayLayer,
@@ -27,12 +27,12 @@ ImageSlice::ImageSlice( Image& image,
   _lastMipLevel(levelCount == VK_REMAINING_MIP_LEVELS ?
                                               image.mipmapCount() - 1 :
                                               _baseMipLevel + levelCount - 1),
-  _levelCount(_lastMipLevel - _lastMipLevel),
+  _levelCount(_lastMipLevel - _lastMipLevel + 1),
   _baseArrayLayer(baseArrayLayer),
   _lastArrayLayer(layerCount == VK_REMAINING_ARRAY_LAYERS ?
                                             image.arraySize() - 1 :
                                             _baseArrayLayer + layerCount - 1),
-  _layerCount(_lastArrayLayer - _baseArrayLayer)
+  _layerCount(_lastArrayLayer - _baseArrayLayer + 1)
 {
   // aspectMask дожна быть строго подмножеством image.aspectMask
   MT_ASSERT((aspectMask & image.aspectMask()) != 0);

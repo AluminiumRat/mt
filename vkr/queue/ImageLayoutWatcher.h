@@ -17,6 +17,9 @@ namespace mt
   class ImageLayoutWatcher
   {
   public:
+    using ImageStates = std::unordered_map<const Image*, ImageLayoutState>;
+
+  public:
     ImageLayoutWatcher() noexcept = default;
     ImageLayoutWatcher(const ImageLayoutWatcher&) = delete;
     ImageLayoutWatcher& operator = (const ImageLayoutWatcher&) = delete;
@@ -32,6 +35,9 @@ namespace mt
                         VkAccessFlags writeAccessMask,
                         const CommandBuffer& commandBuffer);
 
+    //  Закончить слежение за лэйоутами и вернуть результаты
+    inline ImageStates finalize() noexcept;
+
   private:
     //  Перевести слайс в нужный layout и сделать отметку об этом в imageState
     void _addImageLayoutTransform(const ImageSlice& slice,
@@ -43,7 +49,11 @@ namespace mt
                                   VkAccessFlags writeAccessMask,
                                   const CommandBuffer& commandBuffer);
   private:
-    using ImageStates = std::unordered_map<const Image*, ImageLayoutState>;
     ImageStates _imageStates;
   };
+
+  inline ImageLayoutWatcher::ImageStates ImageLayoutWatcher::finalize() noexcept
+  {
+    return std::move(_imageStates);
+  }
 }

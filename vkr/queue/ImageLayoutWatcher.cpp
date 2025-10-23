@@ -70,27 +70,37 @@ void ImageLayoutWatcher::_addImageLayoutTransform(
                                           VkAccessFlags writeAccessMask,
                                           const CommandBuffer& commandBuffer)
 {
-  // Для начала, если в image есть поменянный слайс - откатим его
   if(imageState.changedSlice.has_value())
   {
+    // Если в image есть поменянный слайс - преобразование с откатом слайса
     commandBuffer.imageBarrier( *imageState.changedSlice,
                                 imageState.sliceLayout,
                                 imageState.outcomingLayout,
                                 imageState.writeStagesMask,
                                 readStagesMask,
                                 imageState.writeAccessMask,
+                                VK_ACCESS_NONE);
+    // Основное преобразование лэйаута
+    commandBuffer.imageBarrier( slice,
+                                imageState.outcomingLayout,
+                                requiredLayout,
+                                imageState.writeStagesMask,
+                                readStagesMask,
+                                VK_ACCESS_NONE,
                                 readAccessMask);
     imageState.changedSlice.reset();
   }
-
-  // Основное преобразование лэйаута
-  commandBuffer.imageBarrier( slice,
-                              imageState.outcomingLayout,
-                              requiredLayout,
-                              imageState.writeStagesMask,
-                              readStagesMask,
-                              imageState.writeAccessMask,
-                              readAccessMask);
+  else
+  {
+    // Преобразование без отката слайса
+    commandBuffer.imageBarrier( slice,
+                                imageState.outcomingLayout,
+                                requiredLayout,
+                                imageState.writeStagesMask,
+                                readStagesMask,
+                                imageState.writeAccessMask,
+                                readAccessMask);
+  }
 
   // Обновляем информацию по image-у
   if(slice.isSliceFull())
