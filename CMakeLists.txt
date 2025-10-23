@@ -51,6 +51,7 @@ add_executable (vkTest
                 "vkr/DescriptorPool.cpp"
                 "vkr/Device.cpp"
                 "vkr/Image.cpp"
+                "vkr/ImageSlice.cpp"
                 "vkr/PhysicalDevice.cpp"
                 "vkr/PlainBuffer.cpp"
                 "vkr/SwapChain.cpp"

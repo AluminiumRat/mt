@@ -45,6 +45,7 @@ int main(int argc, char* argv[])
                                               VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                                             0,
                                             VK_FORMAT_B8G8R8A8_SRGB,
+                                            VK_IMAGE_ASPECT_COLOR_BIT,
                                             glm::uvec3(8, 8, 1),
                                             VK_SAMPLE_COUNT_1_BIT,
                                             1,

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <cmath>
+#include <limits>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -18,15 +19,6 @@ namespace mt
   class CommandQueue;
   class Device;
 
-  //  Некоторая часть Image-а, которая может рассматриваться как отдельный
-  //  объект. В частности, может иметь собственный layout или служить
-  //  источником данных для ImageView.
-  using ImageSlice = VkImageSubresourceRange;
-  inline bool operator == (
-                  const ImageSlice& first, const ImageSlice& second) noexcept;
-  inline bool operator != (
-                  const ImageSlice& first, const ImageSlice& second) noexcept;
-
   //  Обертка вокруг VkImage
   //  Фиксированный кусок памяти, который используется как изображение
   //  (поддерживает чтение через сэмплеры и поддерживает лэйауты)
@@ -41,6 +33,7 @@ namespace mt
           VkImageUsageFlags usageFlags,
           VkImageCreateFlags createFlags,
           VkFormat format,
+          VkImageAspectFlags aspectMask,
           glm::uvec3 extent,
           VkSampleCountFlagBits samples,
           uint32_t arraySize,
@@ -63,6 +56,7 @@ namespace mt
     Image(VkImage handle,
           VkImageType imageType,
           VkFormat format,
+          VkImageAspectFlags aspectMask,
           glm::uvec3 extent,
           VkSampleCountFlagBits samples,
           uint32_t arraySize,
@@ -86,14 +80,16 @@ namespace mt
 
     inline VkImageType imageType() const noexcept;
     inline VkFormat format() const noexcept;
-    
+
+    inline VkImageAspectFlags aspectMask() const noexcept;
+
     // Размер самого подробного мипа
     inline const glm::uvec3& extent() const noexcept;
 
     inline uint32_t mipmapCount() const noexcept;
     // Размер мипа
     inline glm::uvec3 extent(uint32_t mipLevel) const noexcept;
-    
+
     inline VkSampleCountFlagBits samples() const noexcept;
 
     inline uint32_t arraySize() const noexcept;
@@ -117,6 +113,8 @@ namespace mt
     VkImageType _imageType;
     VkFormat _format;
 
+    VkImageAspectFlags _aspectMask;
+
     glm::uvec3 _extent;
     VkSampleCountFlagBits _samples;
     uint32_t _arraySize;
@@ -129,23 +127,6 @@ namespace mt
 
     Device& _device;
   };
-
-  inline bool operator == (
-                  const ImageSlice& first, const ImageSlice& second) noexcept
-  {
-    return  first.aspectMask == second.aspectMask &&
-            first.baseMipLevel == second.baseMipLevel &&
-            first.levelCount == second.levelCount &&
-            first.baseArrayLayer == second.baseArrayLayer &&
-            first.layerCount == second.layerCount;
-  }
-
-  inline bool operator != (
-                  const ImageSlice& first, const ImageSlice& second) noexcept
-  {
-    return !(first == second);
-  }
-
 
   inline Device& Image::device() const noexcept
   {
@@ -165,6 +146,11 @@ namespace mt
   inline VkFormat Image::format() const noexcept
   {
     return _format;
+  }
+
+  inline VkImageAspectFlags Image::aspectMask() const noexcept
+  {
+    return _aspectMask;
   }
 
   inline const glm::uvec3& Image::extent() const noexcept
