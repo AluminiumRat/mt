@@ -12,6 +12,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
+#include <vkr/queue/ImageLayoutState.h>
 #include <vkr/RefCounter.h>
 
 namespace mt
@@ -49,10 +50,10 @@ namespace mt
     //  enableLayoutAutoControl - необходимо ли производить автоматический
     //    контроль лэйаута. Работает только если sharingMode равен
     //    VK_SHARING_MODE_EXCLUSIVE
-    //  lastLayoutInQueue - тот лэйаут, в который будет переведен Image после
+    //  layoutState - состояние лэйаута, в которое будет переведен Image после
     //    выполнения текущей очереди команд. Работает только для sharingMode
     //    VK_SHARING_MODE_EXCLUSIVE и включенного автоконтроля лэйаута. В
-    //    остальных случаях следут передавать VK_IMAGE_LAYOUT_UNDEFINED
+    //    остальных случаях следут передавать ImageLayoutStateInQueue()
     Image(VkImage handle,
           VkImageType imageType,
           VkFormat format,
@@ -62,9 +63,9 @@ namespace mt
           uint32_t arraySize,
           uint32_t mipmapCount,
           VkSharingMode sharingMode,
-          CommandQueue* owner,
+          CommandQueue* theOwner,
           bool enableLayoutAutoControl,
-          VkImageLayout lastLayoutInQueue,
+          ImageLayoutStateInQueue theLayoutState,
           Device& device);
     Image(const Image&) = delete;
     Image& operator = (const Image&) = delete;
@@ -95,14 +96,21 @@ namespace mt
     inline uint32_t arraySize() const noexcept;
 
     inline VkSharingMode sharingMode() const noexcept;
-    inline CommandQueue* owner() const noexcept;
+    inline CommandQueue* ownerQueue() const noexcept;
     inline bool isLayoutAutoControlEnabled() const noexcept;
-    inline VkImageLayout lastLayoutInQueue() const noexcept;
 
     inline static uint32_t calculateMipNumber(const glm::uvec2& extent);
 
   private:
     void _cleanup() noexcept;
+
+  private:
+    //  Эти данные полностью контролируются классом CommandQueue и используются
+    //  для автоматического преобразования лэйаутов. Это скорее ассоциированные
+    //  с Image внешние данные, чем его внутреннее состояние.
+    friend class CommandQueue;
+    CommandQueue* owner;
+    ImageLayoutStateInQueue layoutState;
 
   private:
     VkImage _handle;
@@ -121,9 +129,7 @@ namespace mt
     uint32_t _mipmapCount;
 
     VkSharingMode _sharingMode;
-    CommandQueue* _owner;
     bool _layoutAutoControlEnabled;
-    VkImageLayout _lastLayoutInQueue;
 
     Device& _device;
   };
@@ -192,19 +198,14 @@ namespace mt
     return _sharingMode;
   }
 
-  inline CommandQueue* Image::owner() const noexcept
+  inline CommandQueue* Image::ownerQueue() const noexcept
   {
-    return _owner;
+    return owner;
   }
 
   inline bool Image::isLayoutAutoControlEnabled() const noexcept
   {
     return _layoutAutoControlEnabled;
-  }
-
-  inline VkImageLayout Image::lastLayoutInQueue() const noexcept
-  {
-    return _lastLayoutInQueue;
   }
 
   inline uint32_t Image::calculateMipNumber(const glm::uvec2& extent)

@@ -5,6 +5,11 @@
 
 using namespace mt;
 
+ImageLayoutWatcher::ImageLayoutWatcher() noexcept :
+  _imageStates(1087)
+{
+}
+
 void ImageLayoutWatcher::addImageUsage( const ImageSlice& slice,
                                         VkImageLayout requiredLayout,
                                         VkPipelineStageFlags readStagesMask,
@@ -15,9 +20,10 @@ void ImageLayoutWatcher::addImageUsage( const ImageSlice& slice,
 {
   if(slice.image().isLayoutAutoControlEnabled())
   {
-    auto insertion = _imageStates.emplace(&slice.image(), ImageLayoutState());
+    auto insertion = _imageStates.emplace(&slice.image(),
+                                          ImageLayoutStateInBuffer());
     bool isNewRecord = insertion.second;
-    ImageLayoutState& imageState = insertion.first->second;
+    ImageLayoutStateInBuffer& imageState = insertion.first->second;
     if(isNewRecord)
     {
       // Image ещё не использовался в этом комманд буфере, просто заполняем
@@ -62,7 +68,7 @@ void ImageLayoutWatcher::addImageUsage( const ImageSlice& slice,
 
 void ImageLayoutWatcher::_addImageLayoutTransform(
                                           const ImageSlice& slice,
-                                          ImageLayoutState& imageState,
+                                          ImageLayoutStateInBuffer& imageState,
                                           VkImageLayout requiredLayout,
                                           VkPipelineStageFlags readStagesMask,
                                           VkAccessFlags readAccessMask,

@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include <unordered_map>
-
 #include <vulkan/vulkan.h>
 
 #include <vkr/queue/ImageLayoutState.h>
@@ -17,10 +15,7 @@ namespace mt
   class ImageLayoutWatcher
   {
   public:
-    using ImageStates = std::unordered_map<const Image*, ImageLayoutState>;
-
-  public:
-    ImageLayoutWatcher() noexcept = default;
+    ImageLayoutWatcher() noexcept;
     ImageLayoutWatcher(const ImageLayoutWatcher&) = delete;
     ImageLayoutWatcher& operator = (const ImageLayoutWatcher&) = delete;
     ~ImageLayoutWatcher() noexcept = default;
@@ -36,12 +31,12 @@ namespace mt
                         const CommandBuffer& commandBuffer);
 
     //  Закончить слежение за лэйоутами и вернуть результаты
-    inline ImageStates finalize() noexcept;
+    inline ImageLayoutStateSet finalize() noexcept;
 
   private:
     //  Перевести слайс в нужный layout и сделать отметку об этом в imageState
     void _addImageLayoutTransform(const ImageSlice& slice,
-                                  ImageLayoutState& imageState,
+                                  ImageLayoutStateInBuffer& imageState,
                                   VkImageLayout requiredLayout,
                                   VkPipelineStageFlags readStagesMask,
                                   VkAccessFlags readAccessMask,
@@ -49,10 +44,10 @@ namespace mt
                                   VkAccessFlags writeAccessMask,
                                   const CommandBuffer& commandBuffer);
   private:
-    ImageStates _imageStates;
+    ImageLayoutStateSet _imageStates;
   };
 
-  inline ImageLayoutWatcher::ImageStates ImageLayoutWatcher::finalize() noexcept
+  inline ImageLayoutStateSet ImageLayoutWatcher::finalize() noexcept
   {
     return std::move(_imageStates);
   }

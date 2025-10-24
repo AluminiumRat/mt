@@ -223,7 +223,7 @@ void SwapChain::_createHandle(
                                           createInfo.imageSharingMode,
                                           nullptr,
                                           false,
-                                          VK_IMAGE_LAYOUT_UNDEFINED,
+                                          ImageLayoutStateInQueue(),
                                           _device);
   }
 }

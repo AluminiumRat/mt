@@ -17,6 +17,7 @@ Image::Image( VkImageType imageType,
               uint32_t mipmapCount,
               bool enableLayoutAutoControl,
               Device& device) :
+  owner(nullptr),
   _handle(VK_NULL_HANDLE),
   _allocation(VK_NULL_HANDLE),
   _memorySize(0),
@@ -28,9 +29,7 @@ Image::Image( VkImageType imageType,
   _arraySize(arraySize),
   _mipmapCount(mipmapCount),
   _sharingMode(VK_SHARING_MODE_EXCLUSIVE),
-  _owner(nullptr),
   _layoutAutoControlEnabled(enableLayoutAutoControl),
-  _lastLayoutInQueue(VK_IMAGE_LAYOUT_UNDEFINED),
   _device(device)
 {
   MT_ASSERT(extent.x > 0 && extent.y > 0 && extent.z > 0);
@@ -88,10 +87,12 @@ Image::Image( VkImage handle,
               uint32_t arraySize,
               uint32_t mipmapCount,
               VkSharingMode sharingMode,
-              CommandQueue* owner,
+              CommandQueue* theOwner,
               bool enableLayoutAutoControl,
-              VkImageLayout lastLayoutInQueue,
+              ImageLayoutStateInQueue theLayoutState,
               Device& device) :
+  owner(theOwner),
+  layoutState(theLayoutState),
   _handle(handle),
   _allocation(VK_NULL_HANDLE),
   _memorySize(0),
@@ -103,9 +104,7 @@ Image::Image( VkImage handle,
   _arraySize(arraySize),
   _mipmapCount(mipmapCount),
   _sharingMode(sharingMode),
-  _owner(owner),
   _layoutAutoControlEnabled(enableLayoutAutoControl),
-  _lastLayoutInQueue(lastLayoutInQueue),
   _device(device)
 {
   MT_ASSERT(_handle != VK_NULL_HANDLE)
