@@ -49,7 +49,7 @@ std::optional<CommandProducer::FinalizeResult>
     _commandBuffer->endBuffer();
     _commandBuffer = nullptr;
 
-    result.approvingBuffer = _commandBuffer = &_commandPool->getNextBuffer();
+    result.approvingBuffer = &_commandPool->getNextBuffer();
     result.imageStates = &_layoutWatcher.imageStates();
 
     return result;
