@@ -5,9 +5,14 @@
 
 using namespace mt;
 
-ImageLayoutWatcher::ImageLayoutWatcher() noexcept :
-  _imageStates(1087)
+ImageLayoutWatcher::ImageLayoutWatcher() noexcept
 {
+  reset();
+}
+
+void ImageLayoutWatcher::reset()
+{
+  _imageStates = ImageLayoutStateSet(1087);
 }
 
 void ImageLayoutWatcher::addImageUsage( const ImageSlice& slice,
@@ -52,7 +57,7 @@ void ImageLayoutWatcher::addImageUsage( const ImageSlice& slice,
       }
       else
       {
-        // Не надо преобразовавать лэйауты,просто ужесточаем требования по
+        // Не надо преобразовавать лэйауты, ужесточаем требования по
         // барьерам до и после буфера команд.
         imageState.writeStagesMask |= writeStagesMask;
         imageState.writeAccessMask |= writeAccessMask;

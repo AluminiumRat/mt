@@ -9,14 +9,15 @@
 #include <vkr/queue/CommandPoolSet.h>
 #include <vkr/queue/CommandProducer.h>
 #include <vkr/queue/QueueFamiliesInfo.h>
+#include <vkr/queue/ImageLayoutState.h>
 #include <vkr/queue/Semaphore.h>
 #include <vkr/queue/SyncPoint.h>
 #include <vkr/queue/TimelineSemaphore.h>
 
 namespace mt
 {
-  class Device;
   class CommandBuffer;
+  class Device;
 
   // Класс отвечает за отправку команд на GPU. По факту - толстая обертка вокруг
   // VkQueue
@@ -85,6 +86,11 @@ namespace mt
     // только вместе с очередями и девайсом.
     void _addWaitingForSyncPoint( const SyncPoint& syncPoint,
                                   VkPipelineStageFlags waitStages);
+
+    // Сделать согласование по Image-ам с автоконтролем лэйаутов перед
+    // отправкой буфера команд на исполнение
+    void _approveLayouts( CommandBuffer& approvingBuffer,
+                          const ImageLayoutStateSet& imageStates) noexcept;
 
   private:
     VkQueue _handle;

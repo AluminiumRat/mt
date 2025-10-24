@@ -51,14 +51,48 @@ namespace mt
                       VkAccessFlags srcAccesMask,
                       VkAccessFlags dstAccesMask);
 
+    //  Зафорсить перевод Image-а в конкретный лэйаут
+    //  Можно использовать только на Image-ах со включенным автоконтролем
+    //    лэйаута
+    //  readStages, readAccessMask, writeStages, writeAccessMask определяют,
+    //    на каких стадиях и через какие кэши будет происходить чтение и запись
+    //    после смены лэйаута.
+    void forceLayout( const ImageSlice& slice,
+                      VkImageLayout dstLayout,
+                      VkPipelineStageFlags readStages,
+                      VkAccessFlags readAccessMask,
+                      VkPipelineStageFlags writeStages,
+                      VkAccessFlags writeAccessMask);
+
   private:
     //  Отправка буфера на выполнение и релиз продюсера должны выполняться
     //  под мьютексом очередей команд, поэжтому доступ только из очереди
     friend class CommandQueue;
-    //  Сбросить на GPU все данные для юниформ буферов перед отправкой
-    //  в очередь команд и финализировать текущий буфер команд.
-    void finalize();
-    inline CommandBuffer* commandBuffer() const noexcept;
+
+    struct FinalizeResult
+    {
+      //  Буфер, в который были записаны команды во время работы продюсера
+      //  Всегда не nullptr
+      //  Если не nulllptr, то буфер находится в завершенном состоянии,
+      //    то есть с уже вызванным CommandBuffer::endBuffer
+      CommandBuffer* primaryBuffer = nullptr;
+      //  Пустой буфер команд, предназначенный для согласования предыдущих
+      //    буферов с только что заполненным. То есть он предназначен для
+      //    барьеров.
+      //  Всегда не nullptr
+      //  Буфер возвращается в нестартованном состоянии, то есть для него
+      //    необходимо вызвать CommandBuffer::startOnetimeBuffer
+      CommandBuffer* approvingBuffer = nullptr;
+
+      //  Информация об Image-ах с автоконтролем Layout-ов
+      //  Всегда не nullptr
+      const ImageLayoutStateSet* imageStates;
+    };
+
+    //  Завершить запись команд. Здесь происходит сброс на ГПУ данных
+    //    uiform буферов и финализация текущего буфера команд.
+    //  Если не было записано ни одной команды, то вернет nullopt
+    std::optional<FinalizeResult> finalize() noexcept;
     //  Отправить пулы на передержку до достижения releasePoint
     void release(const SyncPoint& releasePoint);
 
@@ -78,10 +112,5 @@ namespace mt
   inline CommandQueue& CommandProducer::queue() const noexcept
   {
     return _queue;
-  }
-
-  inline CommandBuffer* CommandProducer::commandBuffer() const noexcept
-  {
-    return _commandBuffer;
   }
 }

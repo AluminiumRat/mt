@@ -109,8 +109,8 @@ namespace mt
     //  для автоматического преобразования лэйаутов. Это скорее ассоциированные
     //  с Image внешние данные, чем его внутреннее состояние.
     friend class CommandQueue;
-    CommandQueue* owner;
-    ImageLayoutStateInQueue layoutState;
+    mutable CommandQueue* owner;
+    mutable ImageLayoutStateInQueue layoutState;
 
   private:
     VkImage _handle;

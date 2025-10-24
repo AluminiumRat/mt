@@ -22,16 +22,33 @@ CommandProducer::CommandProducer(CommandPoolSet& poolSet) :
 {
 }
 
-void CommandProducer::finalize()
+std::optional<CommandProducer::FinalizeResult>
+                                          CommandProducer::finalize() noexcept
 {
-  if(_uniformMemorySession.has_value())
+  try
   {
-    _uniformMemorySession.reset();
-  }
+    if(_uniformMemorySession.has_value())
+    {
+      _uniformMemorySession.reset();
+    }
 
-  if(_commandBuffer != nullptr)
-  {
+    if(_commandBuffer == nullptr) return std::nullopt;
+
+    MT_ASSERT(_commandPool != nullptr);
+
     _commandBuffer->endBuffer();
+
+    FinalizeResult result;
+    result.primaryBuffer = _commandBuffer;
+    result.approvingBuffer = _commandBuffer = &_commandPool->getNextBuffer();
+    result.imageStates = &_layoutWatcher.imageStates();
+
+    return result;
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << "CommandProducer::finalize: " << error.what();
+    MT_ASSERT(false && "Unable to finalize CommandProducer");
   }
 }
 
@@ -41,6 +58,8 @@ void CommandProducer::release(const SyncPoint& releasePoint)
 
   _descriptorPool = nullptr;
   _commandBuffer = nullptr;
+
+  _layoutWatcher.reset();
 
   if(_commandPool != nullptr)
   {
@@ -98,14 +117,6 @@ void CommandProducer::imageBarrier(const ImageSlice& slice,
 
   buffer.lockResource(slice.image());
 
-  _layoutWatcher.addImageUsage( slice,
-                                dstLayout,
-                                dstStages,
-                                dstAccesMask,
-                                srcStages,
-                                srcAccesMask,
-                                buffer);
-
   buffer.imageBarrier(slice,
                       srcLayout,
                       dstLayout,
@@ -113,4 +124,26 @@ void CommandProducer::imageBarrier(const ImageSlice& slice,
                       dstStages,
                       srcAccesMask,
                       dstAccesMask);
+}
+
+void CommandProducer::forceLayout(const ImageSlice& slice,
+                                  VkImageLayout dstLayout,
+                                  VkPipelineStageFlags readStages,
+                                  VkAccessFlags readAccessMask,
+                                  VkPipelineStageFlags writeStages,
+                                  VkAccessFlags writeAccessMask)
+{
+  MT_ASSERT(slice.image().isLayoutAutoControlEnabled());
+
+  CommandBuffer& buffer = _getOrCreateBuffer();
+
+  buffer.lockResource(slice.image());
+
+  _layoutWatcher.addImageUsage( slice,
+                                dstLayout,
+                                readStages,
+                                readAccessMask,
+                                writeStages,
+                                writeAccessMask,
+                                buffer);
 }

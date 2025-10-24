@@ -30,8 +30,10 @@ namespace mt
                         VkAccessFlags writeAccessMask,
                         const CommandBuffer& commandBuffer);
 
-    //  Закончить слежение за лэйоутами и вернуть результаты
-    inline ImageLayoutStateSet finalize() noexcept;
+    inline const ImageLayoutStateSet& imageStates() const noexcept;
+
+    //  Сбросить все накопленные данные
+    void reset();
 
   private:
     //  Перевести слайс в нужный layout и сделать отметку об этом в imageState
@@ -47,8 +49,9 @@ namespace mt
     ImageLayoutStateSet _imageStates;
   };
 
-  inline ImageLayoutStateSet ImageLayoutWatcher::finalize() noexcept
+  inline const ImageLayoutStateSet&
+                              ImageLayoutWatcher::imageStates() const noexcept
   {
-    return std::move(_imageStates);
+    return _imageStates;
   }
 }
