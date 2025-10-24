@@ -20,26 +20,35 @@ CommandProducer::CommandProducer(CommandPoolSet& poolSet) :
   _commandBuffer(nullptr),
   _descriptorPool(nullptr)
 {
+  try
+  {
+    _commandPool = &_commandPoolSet.getPool();
+    _descriptorPool = &_commandPool->descriptorPool();
+    _uniformMemorySession.emplace(_commandPool->memoryPool());
+  }
+  catch (std::exception& error)
+  {
+    Log::error() << "CommandProducer: " << error.what();
+    MT_ASSERT(false && "Unable to create CommandProducer");
+  }
 }
 
 std::optional<CommandProducer::FinalizeResult>
                                           CommandProducer::finalize() noexcept
 {
+  MT_ASSERT(_commandPool != nullptr);
+
   try
   {
-    if(_uniformMemorySession.has_value())
-    {
-      _uniformMemorySession.reset();
-    }
+    _uniformMemorySession.reset();
 
     if(_commandBuffer == nullptr) return std::nullopt;
 
-    MT_ASSERT(_commandPool != nullptr);
-
-    _commandBuffer->endBuffer();
-
     FinalizeResult result;
     result.primaryBuffer = _commandBuffer;
+    _commandBuffer->endBuffer();
+    _commandBuffer = nullptr;
+
     result.approvingBuffer = _commandBuffer = &_commandPool->getNextBuffer();
     result.imageStates = &_layoutWatcher.imageStates();
 
@@ -55,9 +64,6 @@ std::optional<CommandProducer::FinalizeResult>
 void CommandProducer::release(const SyncPoint& releasePoint)
 {
   finalize();
-
-  _descriptorPool = nullptr;
-  _commandBuffer = nullptr;
 
   _layoutWatcher.reset();
 
@@ -87,17 +93,11 @@ CommandProducer::~CommandProducer() noexcept
 
 CommandBuffer& CommandProducer::_getOrCreateBuffer()
 {
+  MT_ASSERT(_commandPool != nullptr);
+
   if(_commandBuffer != nullptr) return *_commandBuffer;
 
-  if(_commandPool == nullptr) _commandPool = &_commandPoolSet.getPool();
-  if(_descriptorPool == nullptr)
-  {
-    _descriptorPool = &_commandPool->descriptorPool();
-  }
-
-  _uniformMemorySession.emplace(_commandPool->memoryPool());
   _commandBuffer = &_commandPool->getNextBuffer();
-
   _commandBuffer->startOnetimeBuffer();
 
   return *_commandBuffer;
