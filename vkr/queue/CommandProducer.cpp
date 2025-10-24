@@ -93,6 +93,8 @@ CommandProducer::~CommandProducer() noexcept
 
 CommandBuffer& CommandProducer::_getOrCreateBuffer()
 {
+  // Нельзя создавать новый буфер после финализации
+  MT_ASSERT(_uniformMemorySession.has_value());
   MT_ASSERT(_commandPool != nullptr);
 
   if(_commandBuffer != nullptr) return *_commandBuffer;
