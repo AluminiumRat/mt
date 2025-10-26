@@ -85,6 +85,45 @@ void CommandBuffer::endBuffer() noexcept
   }
 }
 
+void CommandBuffer::pipelineBarrier(
+                                VkPipelineStageFlags srcStages,
+                                VkPipelineStageFlags dstStages) const noexcept
+{
+  vkCmdPipelineBarrier( _handle,
+                        srcStages,
+                        dstStages,
+                        0,
+                        0,
+                        nullptr,
+                        0,
+                        nullptr,
+                        0,
+                        nullptr);
+}
+
+void CommandBuffer::memoryBarrier(VkPipelineStageFlags srcStages,
+                                  VkPipelineStageFlags dstStages,
+                                  VkAccessFlags srcAccesMask,
+                                  VkAccessFlags dstAccesMask) const noexcept
+{
+  VkMemoryBarrier barrier{};
+  barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+
+  barrier.srcAccessMask = srcAccesMask;
+  barrier.dstAccessMask = dstAccesMask;
+
+  vkCmdPipelineBarrier( _handle,
+                        srcStages,
+                        dstStages,
+                        0,
+                        1,
+                        &barrier,
+                        0,
+                        nullptr,
+                        0,
+                        nullptr);
+}
+
 void CommandBuffer::imageBarrier( const ImageSlice& slice,
                                   VkImageLayout srcLayout,
                                   VkImageLayout dstLayout,

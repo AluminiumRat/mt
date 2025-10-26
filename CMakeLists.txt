@@ -41,6 +41,7 @@ add_executable (vkTest
                 "vkr/queue/CommandProducer.cpp"
                 "vkr/queue/CommandQueue.cpp"
                 "vkr/queue/Fence.cpp"
+                "vkr/queue/ImageAccess.cpp"
                 "vkr/queue/ImageLayoutWatcher.cpp"
                 "vkr/queue/QueueFamiliesInfo.cpp"
                 "vkr/queue/QueueSources.cpp"

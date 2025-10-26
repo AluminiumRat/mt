@@ -47,6 +47,19 @@ namespace mt
     //  Буфер находится в состоянии записи команд
     inline bool isBufferInProcess() const noexcept;
 
+    //  Чистый пайплайн барьер, то есть просто разделяем поток исполнения
+    //    команд без сброса кэшей
+    void pipelineBarrier( VkPipelineStageFlags srcStages,
+                          VkPipelineStageFlags dstStages) const noexcept;
+
+    //  Барьер памяти. То есть разделяем поток исполнения команд плюс
+    //    флашим кэши srcAccesMask и инвалидируем кэши dstAccesMask
+    void memoryBarrier( VkPipelineStageFlags srcStages,
+                        VkPipelineStageFlags dstStages,
+                        VkAccessFlags srcAccesMask,
+                        VkAccessFlags dstAccesMask) const noexcept;
+
+    //  Image барьер. То есть барьер памяти плюс преобразование лэйаута
     //  Просто добавляет барьер в буфер команд без всякой рутины, согласований и
     //    захвата ресурсов. Без разницы, используется ли автоконтроль лэйаута
     //    или нет.
@@ -60,6 +73,7 @@ namespace mt
                       VkPipelineStageFlags dstStages,
                       VkAccessFlags srcAccesMask,
                       VkAccessFlags dstAccesMask) const noexcept;
+
   private:
     void _cleanup() noexcept;
 
