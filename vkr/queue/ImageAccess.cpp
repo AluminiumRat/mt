@@ -55,7 +55,12 @@ void ApprovingPoint::makeApprove( const Image& image,
   }
 
   //  Надо преобразовывать layout-ы
-  VkImageMemoryBarrier barriers[2];
+  VkMemoryBarrier memoryBarrier;
+  memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+  memoryBarrier.srcAccessMask = previousAccess.memoryAccess.writeAccessMask;
+  memoryBarrier.dstAccessMask = nextAccess.memoryAccess.readAccessMask;
+
+  VkImageMemoryBarrier imageBarriers[2];
   uint32_t barriersCount = 0;
 
   if(layoutTranslation.needToCollapseSlice)
@@ -64,15 +69,14 @@ void ApprovingPoint::makeApprove( const Image& image,
     MT_ASSERT(previousAccess.requiredLayouts.changedSlice.has_value());
     MT_ASSERT(&previousAccess.requiredLayouts.changedSlice->image() == &image);
 
-    barriers[0] = VkImageMemoryBarrier{};
-    barriers[0].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    barriers[0].oldLayout = previousAccess.requiredLayouts.changedSliceLayout;
-    barriers[0].newLayout = previousAccess.requiredLayouts.primaryLayout;
-    barriers[0].image = image.handle();
-    barriers[0].subresourceRange =
+    imageBarriers[0] = VkImageMemoryBarrier{};
+    imageBarriers[0].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    imageBarriers[0].oldLayout =
+                              previousAccess.requiredLayouts.changedSliceLayout;
+    imageBarriers[0].newLayout = previousAccess.requiredLayouts.primaryLayout;
+    imageBarriers[0].image = image.handle();
+    imageBarriers[0].subresourceRange =
                       previousAccess.requiredLayouts.changedSlice->makeRange();
-    barriers[0].srcAccessMask = previousAccess.memoryAccess.writeAccessMask;
-    barriers[0].dstAccessMask = nextAccess.memoryAccess.readAccessMask;
     barriersCount++;
   }
 
@@ -87,14 +91,13 @@ void ApprovingPoint::makeApprove( const Image& image,
                                 nextAccess.requiredLayouts.changedSliceLayout :
                                 nextAccess.requiredLayouts.primaryLayout;
 
-    barriers[0] = VkImageMemoryBarrier{};
-    barriers[0].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    barriers[0].oldLayout = previousAccess.requiredLayouts.primaryLayout;
-    barriers[0].newLayout = newLayout;
-    barriers[0].image = image.handle();
-    barriers[0].subresourceRange = slice.makeRange();
-    barriers[0].srcAccessMask = previousAccess.memoryAccess.writeAccessMask;
-    barriers[0].dstAccessMask = nextAccess.memoryAccess.readAccessMask;
+    imageBarriers[barriersCount] = VkImageMemoryBarrier{};
+    imageBarriers[barriersCount].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    imageBarriers[barriersCount].oldLayout =
+                                  previousAccess.requiredLayouts.primaryLayout;
+    imageBarriers[barriersCount].newLayout = newLayout;
+    imageBarriers[barriersCount].image = image.handle();
+    imageBarriers[barriersCount].subresourceRange = slice.makeRange();
     barriersCount++;
   }
 
@@ -108,10 +111,10 @@ void ApprovingPoint::makeApprove( const Image& image,
                         nextAccess.memoryAccess.readStagesMask |
                                         nextAccess.memoryAccess.writeStagesMask,
                         0,
-                        0,
-                        nullptr,
+                        1,
+                        &memoryBarrier,
                         0,
                         nullptr,
                         barriersCount,
-                        barriers);
+                        imageBarriers);
 }

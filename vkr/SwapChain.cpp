@@ -223,7 +223,7 @@ void SwapChain::_createHandle(
                                           createInfo.imageSharingMode,
                                           nullptr,
                                           false,
-                                          ImageLayoutStateInQueue(),
+                                          ImageAccess(),
                                           _device);
   }
 }

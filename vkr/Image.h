@@ -12,7 +12,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
-#include <vkr/queue/ImageLayoutState.h>
+#include <vkr/queue/ImageAccess.h>
 #include <vkr/RefCounter.h>
 
 namespace mt
@@ -50,10 +50,10 @@ namespace mt
     //  enableLayoutAutoControl - необходимо ли производить автоматический
     //    контроль лэйаута. Работает только если sharingMode равен
     //    VK_SHARING_MODE_EXCLUSIVE
-    //  layoutState - состояние лэйаута, в которое будет переведен Image после
-    //    выполнения текущей очереди команд. Работает только для sharingMode
-    //    VK_SHARING_MODE_EXCLUSIVE и включенного автоконтроля лэйаута. В
-    //    остальных случаях следут передавать ImageLayoutStateInQueue()
+    //  theLastAccess - последнее состояние лэйаута, в которое переведен Image
+    //    после выполнения текущей очереди команд. Работает только для
+    //    sharingMode VK_SHARING_MODE_EXCLUSIVE и включенного автоконтроля
+    //    лэйаута. В остальных случаях следут передавать ImageAccess()
     Image(VkImage handle,
           VkImageType imageType,
           VkFormat format,
@@ -65,7 +65,7 @@ namespace mt
           VkSharingMode sharingMode,
           CommandQueue* theOwner,
           bool enableLayoutAutoControl,
-          ImageLayoutStateInQueue theLayoutState,
+          const ImageAccess& theLastAccess,
           Device& device);
     Image(const Image&) = delete;
     Image& operator = (const Image&) = delete;
@@ -110,7 +110,7 @@ namespace mt
     //  с Image внешние данные, чем его внутреннее состояние.
     friend class CommandQueue;
     mutable CommandQueue* owner;
-    mutable ImageLayoutStateInQueue layoutState;
+    mutable ImageAccess lastAccess;
 
   private:
     VkImage _handle;

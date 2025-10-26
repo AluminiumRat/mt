@@ -138,12 +138,20 @@ void CommandQueue::submitCommands(std::unique_ptr<CommandProducer> producer)
                                                           producer->finalize();
   if(!finalizeResult.has_value()) return;
 
-  //_approveLayouts(*finalizeResult->approvingBuffer,
-  //                *finalizeResult->imageStates);
+  _approveLayouts(*finalizeResult->approvingBuffer,
+                  *finalizeResult->imageStates);
 
-  //  Одновременно с сабмитом буфера продвигаем наш таймлайн семафор
+  // Собираем список буферов команд
+  std::vector<VkCommandBuffer> buffersHandles;
+  buffersHandles.reserve(finalizeResult->commandSequence->size());
+  for(const CommandBuffer* buffer : *finalizeResult->commandSequence)
+  {
+    buffersHandles.push_back(buffer->handle());
+  }
+
+  //  Одновременно с сабмитом буферов продвигаем наш таймлайн семафор
   //  для того чтобы получить синк поинт, на котором можно чистить пулы
-  /*_lastSemaphoreValue++;
+  _lastSemaphoreValue++;
   VkTimelineSemaphoreSubmitInfo timelineInfo{};
   timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
   timelineInfo.signalSemaphoreValueCount = 1;
@@ -155,9 +163,8 @@ void CommandQueue::submitCommands(std::unique_ptr<CommandProducer> producer)
   submitInfo.signalSemaphoreCount  = 1;
   VkSemaphore semaphore = _semaphore->handle();
   submitInfo.pSignalSemaphores = &semaphore;
-  submitInfo.commandBufferCount = 1;
-  VkCommandBuffer bufferHandle = finalizeResult->primaryBuffer->handle();
-  submitInfo.pCommandBuffers = &bufferHandle;
+  submitInfo.commandBufferCount = uint32_t(buffersHandles.size());
+  submitInfo.pCommandBuffers = buffersHandles.data();
 
   if (vkQueueSubmit(handle(),
                     1,
@@ -167,47 +174,18 @@ void CommandQueue::submitCommands(std::unique_ptr<CommandProducer> producer)
     MT_ASSERT(false && "CommandQueue: Failed to submit command buffer.");
   }
 
-  producer->release(SyncPoint(*_semaphore, _lastSemaphoreValue));*/
+  producer->release(SyncPoint(*_semaphore, _lastSemaphoreValue));
 }
 
-void CommandQueue::_approveLayouts(
-                                CommandBuffer& approvingBuffer,
-                                const ImageLayoutStateSet& imageStates) noexcept
+void CommandQueue::_approveLayouts( CommandBuffer& approvingBuffer,
+                                    const ImageAccessMap& imageStates) noexcept
 {
-  // Барьеры будем выдавать пачками максимум по 128 штук
-  VkImageMemoryBarrier barriers[128];
-  uint32_t barrierCount = 0;
-  VkPipelineStageFlags srcStages = 0;
-  VkPipelineStageFlags dstStages = 0;
-
-  auto flushBarriers = [&]()
-    {
-      if (barrierCount != 0)
-      {
-        if(!approvingBuffer.isBufferInProcess())
-        {
-          approvingBuffer.startOnetimeBuffer();
-        }
-
-        vkCmdPipelineBarrier( approvingBuffer.handle(),
-                              srcStages,
-                              dstStages,
-                              0,
-                              0,
-                              nullptr,
-                              0,
-                              nullptr,
-                              barrierCount,
-                              barriers);
-        barrierCount = 0;
-        srcStages = 0;
-        dstStages = 0;
-      }
-    };
+  approvingBuffer.startOnetimeBuffer();
+  bool barriersAdded = false;
 
   // Обходим все Image, которые используются в новом буфере команд, и подгоняем
   // их под требования буфера
-  for(ImageLayoutStateSet::const_iterator iState = imageStates.begin();
+  for(ImageAccessMap::const_iterator iState = imageStates.begin();
       iState != imageStates.end();
       iState++)
   {
@@ -215,74 +193,42 @@ void CommandQueue::_approveLayouts(
     MT_ASSERT(image->owner == nullptr || image->owner == this);
     image->owner = this;
 
-    const ImageLayoutStateInBuffer& stateInBuffer = iState->second;
-    ImageLayoutStateInQueue& stateInQueue = image->layoutState;
+    ImageAccess& accessInQueue = image->lastAccess;
 
-    bool barrierIsAdded = false;
+    const ImageAccess& accessInBuffer = *iState->second.initialAccess;
+    MT_ASSERT(!accessInBuffer.requiredLayouts.changedSlice.has_value());
 
-    // Если в image-е есть посторонний слайс, то откатываем его к общему layout-у
-    if(stateInQueue.changedSlice.has_value())
+    LayoutTranslation layoutTranslation = getLayoutTranslation(
+                                  accessInQueue.requiredLayouts,
+                                  ImageSlice(*image),
+                                  accessInBuffer.requiredLayouts.primaryLayout);
+    if(layoutTranslation.translationType.needToDoAnything() ||
+        accessInQueue.memoryAccess.needBarrier(accessInBuffer.memoryAccess))
     {
-      barriers[barrierCount].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-      barriers[barrierCount].oldLayout = stateInQueue.sliceLayout;
-      barriers[barrierCount].newLayout = stateInQueue.layout;
-      barriers[barrierCount].image = image->handle();
-      barriers[barrierCount].subresourceRange =
-                                        stateInQueue.changedSlice->makeRange();
-      barriers[barrierCount].srcAccessMask = stateInQueue.writeAccessMask;
-      barriers[barrierCount].dstAccessMask = stateInBuffer.readAccessMask;
+      // Надо добавить барьер, воспользуемся готовым функционалом
+      ApprovingPoint approvingPoint{
+                        .approvingBuffer = &approvingBuffer,
+                        .previousAccess = accessInQueue,
+                        .layoutTranslation = layoutTranslation.translationType};
+      approvingPoint.makeApprove(*image, accessInBuffer);
 
-      srcStages |= stateInQueue.writeStagesMask;
-      dstStages |= stateInBuffer.readStagesMask;
+      // После барьера текущий доступ к Image полностью обновляется
+      accessInQueue = accessInBuffer;
 
-      barrierCount++;
-      barrierIsAdded = true;
-
-      if(barrierCount == 128) flushBarriers();
-    }
-
-    // Если у Image неподходящий лэйаут, то поменяем его
-    if(stateInQueue.layout != stateInBuffer.requiredIncomingLayout)
-    {
-      barriers[barrierCount].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-      barriers[barrierCount].oldLayout = stateInQueue.layout;
-      barriers[barrierCount].newLayout = stateInBuffer.requiredIncomingLayout;
-      barriers[barrierCount].image = image->handle();
-      barriers[barrierCount].subresourceRange = ImageSlice(*image).makeRange();
-      barriers[barrierCount].srcAccessMask = stateInQueue.writeAccessMask;
-      barriers[barrierCount].dstAccessMask = stateInBuffer.readAccessMask;
-
-      srcStages |= stateInQueue.writeStagesMask;
-      dstStages |= stateInBuffer.readStagesMask;
-
-      barrierCount++;
-      barrierIsAdded = true;
-
-      if (barrierCount == 128) flushBarriers();
-    }
-
-    // Сохраним информацию об изменениях, произошедших в буфере
-    stateInQueue.layout = stateInBuffer.outcomingLayout;
-    if(barrierIsAdded)
-    {
-      stateInQueue.writeStagesMask = stateInBuffer.writeStagesMask;
-      stateInQueue.writeAccessMask = stateInBuffer.writeAccessMask;
+      barriersAdded = true;
     }
     else
     {
-      stateInQueue.writeStagesMask |= stateInBuffer.writeStagesMask;
-      stateInQueue.writeAccessMask |= stateInBuffer.writeAccessMask;
+      // Барьер не нужен, дополняем текущий доступ доступом из буфера
+      accessInQueue.memoryAccess.merge(accessInBuffer.memoryAccess);
     }
-    stateInQueue.changedSlice = stateInBuffer.changedSlice;
-    stateInQueue.sliceLayout = stateInBuffer.sliceLayout;
   }
 
-  flushBarriers();
+  approvingBuffer.endBuffer();
 
-  // Если к этому месту буфер стартован в работу, значит его надо засабмитить
+  // Если был записан хотябы один барьер, то сабмитим буфер команд
   if(approvingBuffer.isBufferInProcess())
   {
-    approvingBuffer.endBuffer();
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;

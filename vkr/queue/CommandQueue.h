@@ -9,7 +9,7 @@
 #include <vkr/queue/CommandPoolSet.h>
 #include <vkr/queue/CommandProducer.h>
 #include <vkr/queue/QueueFamiliesInfo.h>
-#include <vkr/queue/ImageLayoutState.h>
+#include <vkr/queue/ImageAccess.h>
 #include <vkr/queue/Semaphore.h>
 #include <vkr/queue/SyncPoint.h>
 #include <vkr/queue/TimelineSemaphore.h>
@@ -90,7 +90,7 @@ namespace mt
     // Сделать согласование по Image-ам с автоконтролем лэйаутов перед
     // отправкой буфера команд на исполнение
     void _approveLayouts( CommandBuffer& approvingBuffer,
-                          const ImageLayoutStateSet& imageStates) noexcept;
+                          const ImageAccessMap& imageStates) noexcept;
 
   private:
     VkQueue _handle;

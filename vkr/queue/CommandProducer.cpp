@@ -27,6 +27,7 @@ CommandProducer::CommandProducer(CommandPoolSet& poolSet) :
     _commandPool = &_commandPoolSet.getPool();
     _descriptorPool = &_commandPool->descriptorPool();
     _uniformMemorySession.emplace(_commandPool->memoryPool());
+    _commandSequence.reserve(1024);
   }
   catch (std::exception& error)
   {
