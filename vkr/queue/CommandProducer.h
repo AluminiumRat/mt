@@ -4,7 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <vkr/queue/ImageLayoutWatcher.h>
+#include <vkr/queue/ImageAccessWatcher.h>
 #include <vkr/queue/UniformMemoryPool.h>
 
 namespace mt
@@ -71,26 +71,27 @@ namespace mt
 
     struct FinalizeResult
     {
-      //  Буфер, в который были записаны команды во время работы продюсера
-      //  Всегда не nullptr
-      //  Если не nulllptr, то буфер находится в завершенном состоянии,
-      //    то есть с уже вызванным CommandBuffer::endBuffer
-      CommandBuffer* primaryBuffer = nullptr;
+      //  Буферы, в которые были записаны команды во время работы продюсера
+      //  Всегда не nullptr, и всегда в завершенном состоянии, то есть с уже
+      //    вызванным CommandBuffer::endBuffer
+      const std::vector<CommandBuffer*>* commandSequence;
       //  Пустой буфер команд, предназначенный для согласования предыдущих
-      //    буферов с только что заполненным. То есть он предназначен для
+      //    буферов с только что заполненными. То есть он предназначен для
       //    барьеров.
       //  Всегда не nullptr
       //  Буфер возвращается в нестартованном состоянии, то есть для него
-      //    необходимо вызвать CommandBuffer::startOnetimeBuffer
+      //    необходимо вызвать CommandBuffer::startOnetimeBuffer.
       CommandBuffer* approvingBuffer = nullptr;
 
       //  Информация об Image-ах с автоконтролем Layout-ов
       //  Всегда не nullptr
-      const ImageLayoutStateSet* imageStates;
+      const ImageAccessMap* imageStates;
     };
 
     //  Завершить запись команд. Здесь происходит сброс на ГПУ данных
-    //    uiform буферов и финализация текущего буфера команд.
+    //    uiform буферов и финализация буферов команд.
+    //  После вызова finalize использовать CommanProducer для записи команд
+    //    уже нельзя.
     //  Если не было записано ни одной команды, то вернет nullopt
     std::optional<FinalizeResult> finalize() noexcept;
     //  Отправить пулы на передержку до достижения releasePoint
@@ -98,15 +99,25 @@ namespace mt
 
   private:
     CommandBuffer& _getOrCreateBuffer();
+    void _addImageUsage(const SliceAccess& sliceAccess);
 
   private:
     CommandPoolSet& _commandPoolSet;
     CommandQueue& _queue;
     CommandPool* _commandPool;
-    CommandBuffer* _commandBuffer;
     VolatileDescriptorPool* _descriptorPool;
     std::optional<UniformMemoryPool::Session> _uniformMemorySession;
-    ImageLayoutWatcher _layoutWatcher;
+    ImageAccessWatcher _accessWatcher;
+
+    //  Буферы команд в том порядке, в котором их необходимо добавлять
+    //  в очередь
+    std::vector<CommandBuffer*> _commandSequence;
+    //  Текущий заполняемый буфер команд
+    CommandBuffer* _currentPrimaryBuffer;
+    //  Зарезервированный, но ещё не, использованный буфер для согласования
+    CommandBuffer* _currentApprovingBuffer;
+
+    bool _isFinalized;
   };
 
   inline CommandQueue& CommandProducer::queue() const noexcept

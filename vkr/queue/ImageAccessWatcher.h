@@ -40,7 +40,7 @@ namespace mt
     //  approvingBuffer непосредственно в вызове заполняться не будет, поэтому
     //    его можно стартовать только когда будет возвращен NEED_TO_APPROVE
     MemoryConflict addImageAccess(const SliceAccess& sliceAccess,
-                                  CommandBuffer& approvingBuffer);
+                                  CommandBuffer& approvingBuffer) noexcept;
 
     //  Закончить работу, записать все необходимые барьеры и привести
     //    ImageAccessMap в вид, пригодный для внешнего использования.

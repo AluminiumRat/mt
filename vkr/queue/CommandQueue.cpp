@@ -138,12 +138,12 @@ void CommandQueue::submitCommands(std::unique_ptr<CommandProducer> producer)
                                                           producer->finalize();
   if(!finalizeResult.has_value()) return;
 
-  _approveLayouts(*finalizeResult->approvingBuffer,
-                  *finalizeResult->imageStates);
+  //_approveLayouts(*finalizeResult->approvingBuffer,
+  //                *finalizeResult->imageStates);
 
   //  Одновременно с сабмитом буфера продвигаем наш таймлайн семафор
   //  для того чтобы получить синк поинт, на котором можно чистить пулы
-  _lastSemaphoreValue++;
+  /*_lastSemaphoreValue++;
   VkTimelineSemaphoreSubmitInfo timelineInfo{};
   timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
   timelineInfo.signalSemaphoreValueCount = 1;
@@ -167,7 +167,7 @@ void CommandQueue::submitCommands(std::unique_ptr<CommandProducer> producer)
     MT_ASSERT(false && "CommandQueue: Failed to submit command buffer.");
   }
 
-  producer->release(SyncPoint(*_semaphore, _lastSemaphoreValue));
+  producer->release(SyncPoint(*_semaphore, _lastSemaphoreValue));*/
 }
 
 void CommandQueue::_approveLayouts(

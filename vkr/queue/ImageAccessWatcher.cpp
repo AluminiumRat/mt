@@ -3,6 +3,7 @@
 #include <util/Assert.h>
 #include <util/Log.h>
 #include <vkr/queue/ImageAccessWatcher.h>
+#include <vkr/Image.h>
 
 using namespace mt;
 
@@ -21,6 +22,7 @@ ImageAccessWatcher::MemoryConflict ImageAccessWatcher::addImageAccess(
   try
   {
     const Image& image = sliceAccess.slice.image();
+    MT_ASSERT(image.isLayoutAutoControlEnabled());
 
     auto insertion = _accessMap.emplace(&image, ImageAccessLayoutState());
     bool isNewRecord = insertion.second;

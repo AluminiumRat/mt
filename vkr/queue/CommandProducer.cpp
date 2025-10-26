@@ -17,8 +17,10 @@ CommandProducer::CommandProducer(CommandPoolSet& poolSet) :
   _commandPoolSet(poolSet),
   _queue(_commandPoolSet.queue()),
   _commandPool(nullptr),
-  _commandBuffer(nullptr),
-  _descriptorPool(nullptr)
+  _currentPrimaryBuffer(nullptr),
+  _currentApprovingBuffer(nullptr),
+  _descriptorPool(nullptr),
+  _isFinalized(false)
 {
   try
   {
@@ -36,21 +38,30 @@ CommandProducer::CommandProducer(CommandPoolSet& poolSet) :
 std::optional<CommandProducer::FinalizeResult>
                                           CommandProducer::finalize() noexcept
 {
-  MT_ASSERT(_commandPool != nullptr);
+  MT_ASSERT(!_isFinalized);
 
   try
   {
+    _isFinalized = true;
+
     _uniformMemorySession.reset();
 
-    if(_commandBuffer == nullptr) return std::nullopt;
+    if(_commandSequence.empty()) return std::nullopt;
+
+    for(CommandBuffer* buffer : _commandSequence)
+    {
+      buffer->endBuffer();
+    }
+
+    if(_currentApprovingBuffer == nullptr)
+    {
+      _currentApprovingBuffer = &_commandPool->getNextBuffer();
+    }
 
     FinalizeResult result;
-    result.primaryBuffer = _commandBuffer;
-    _commandBuffer->endBuffer();
-    _commandBuffer = nullptr;
-
-    result.approvingBuffer = &_commandPool->getNextBuffer();
-    result.imageStates = &_layoutWatcher.imageStates();
+    result.commandSequence = &_commandSequence;
+    result.approvingBuffer = _currentApprovingBuffer;
+    result.imageStates = &_accessWatcher.finalize();
 
     return result;
   }
@@ -63,9 +74,7 @@ std::optional<CommandProducer::FinalizeResult>
 
 void CommandProducer::release(const SyncPoint& releasePoint)
 {
-  finalize();
-
-  _layoutWatcher.reset();
+  if(!_isFinalized) finalize();
 
   if(_commandPool != nullptr)
   {
@@ -94,18 +103,38 @@ CommandProducer::~CommandProducer() noexcept
 CommandBuffer& CommandProducer::_getOrCreateBuffer()
 {
   // Нельзя создавать новый буфер после финализации
-  MT_ASSERT(_uniformMemorySession.has_value());
-  MT_ASSERT(_commandPool != nullptr);
+  MT_ASSERT(!_isFinalized);
 
-  if(_commandBuffer != nullptr) return *_commandBuffer;
+  if(_currentPrimaryBuffer != nullptr) return *_currentPrimaryBuffer;
 
-  _commandBuffer = &_commandPool->getNextBuffer();
-  _commandBuffer->startOnetimeBuffer();
+  _currentPrimaryBuffer = &_commandPool->getNextBuffer();
+  _currentPrimaryBuffer->startOnetimeBuffer();
+  _commandSequence.push_back(_currentPrimaryBuffer);
 
-  return *_commandBuffer;
+  return *_currentPrimaryBuffer;
 }
 
-void CommandProducer::imageBarrier(const ImageSlice& slice,
+void CommandProducer::_addImageUsage(const SliceAccess& sliceAccess)
+{
+  if(_currentApprovingBuffer == nullptr)
+  {
+    _currentApprovingBuffer = &_commandPool->getNextBuffer();
+  }
+
+  if(_accessWatcher.addImageAccess( sliceAccess,
+                                    *_currentApprovingBuffer) ==
+                                          ImageAccessWatcher::NEED_TO_APPROVE)
+  {
+    // Обнаружили место, где будет барьер
+    CommandBuffer* approvingBuffer = _currentApprovingBuffer;
+    _currentApprovingBuffer = nullptr;
+    _currentPrimaryBuffer = nullptr;
+    approvingBuffer->startOnetimeBuffer();
+    _commandSequence.push_back(approvingBuffer);
+  }
+}
+
+void CommandProducer::imageBarrier( const ImageSlice& slice,
                                     VkImageLayout srcLayout,
                                     VkImageLayout dstLayout,
                                     VkPipelineStageFlags srcStages,
@@ -138,14 +167,13 @@ void CommandProducer::forceLayout(const ImageSlice& slice,
   MT_ASSERT(slice.image().isLayoutAutoControlEnabled());
 
   CommandBuffer& buffer = _getOrCreateBuffer();
-
   buffer.lockResource(slice.image());
 
-  _layoutWatcher.addImageUsage( slice,
-                                dstLayout,
-                                readStages,
-                                readAccessMask,
-                                writeStages,
-                                writeAccessMask,
-                                buffer);
+  _addImageUsage(SliceAccess{ .slice = slice,
+                              .requiredLayout = dstLayout,
+                              .memoryAccess = ResourceAccess{
+                                        .readStagesMask = readStages,
+                                        .readAccessMask = readAccessMask,
+                                        .writeStagesMask = writeStages,
+                                        .writeAccessMask = writeAccessMask}});
 }
