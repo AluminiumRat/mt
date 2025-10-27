@@ -50,15 +50,8 @@ namespace mt
     inline MemoryAccess merge(const MemoryAccess& nextAccess) const noexcept;
   };
 
-  //  Описание доступа к отдельному слайсу Image-а
-  struct SliceAccess
-  {
-    ImageSlice slice;
-    VkImageLayout requiredLayout;
-    MemoryAccess memoryAccess;
-  };
-
-  //  Описание доступа ко всему Image
+  //  Описание доступа ко всему Image, одновременно и описание слайсов,
+  //  которые выделенны в Image
   struct ImageAccess
   {
     // Подсказака о том, как один ImageAccess можно перевести в другой
@@ -85,8 +78,9 @@ namespace mt
     TransformHint mergeWithBarriers(const ImageAccess& nextAccess) noexcept;
   };
 
-  //  Точка, в которой нужно будет согласовать доступы к Image после того
-  //  как текущий доступ будет полностью закончен
+  //  Точка согласования, в которой нужно будет согласовать предыдущий и
+  //  текущий доступы к Image, после того как текущий доступ будет полностью
+  //  закончен
   struct MatchingPoint
   {
     //  Буфер, в который надо будет записать барьеры

@@ -116,7 +116,7 @@ CommandBuffer& CommandProducer::_getOrCreateBuffer()
 }
 
 void CommandProducer::_addImageUsage( const Image& image,
-                                      const SliceAccess& sliceAccess)
+                                      const ImageAccess& access)
 {
   if(!image.isLayoutAutoControlEnabled())
   {
@@ -129,7 +129,7 @@ void CommandProducer::_addImageUsage( const Image& image,
   }
 
   if(_accessWatcher.addImageAccess( image,
-                                    sliceAccess,
+                                    access,
                                     *_currentMatchingBuffer) ==
                                           ImageAccessWatcher::NEED_TO_MATCHING)
   {
@@ -180,12 +180,15 @@ void CommandProducer::forceLayout(const Image& image,
   CommandBuffer& buffer = _getOrCreateBuffer();
   buffer.lockResource(image);
 
-  _addImageUsage( image,
-                  SliceAccess{.slice = slice,
-                              .requiredLayout = dstLayout,
-                              .memoryAccess = MemoryAccess{
-                                        .readStagesMask = readStages,
-                                        .readAccessMask = readAccessMask,
-                                        .writeStagesMask = writeStages,
-                                        .writeAccessMask = writeAccessMask}});
+  ImageAccess imageAccess;
+  imageAccess.slices[0] = slice;
+  imageAccess.layouts[0] = dstLayout;
+  imageAccess.memoryAccess[0] = MemoryAccess{
+                                  .readStagesMask = readStages,
+                                  .readAccessMask = readAccessMask,
+                                  .writeStagesMask = writeStages,
+                                  .writeAccessMask = writeAccessMask};
+  imageAccess.slicesCount = 1;
+
+  _addImageUsage( image, imageAccess);
 }

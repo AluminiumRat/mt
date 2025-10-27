@@ -101,7 +101,7 @@ namespace mt
 
   private:
     CommandBuffer& _getOrCreateBuffer();
-    void _addImageUsage(const Image& image, const SliceAccess& sliceAccess);
+    void _addImageUsage(const Image& image, const ImageAccess& access);
 
   private:
     CommandPoolSet& _commandPoolSet;

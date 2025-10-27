@@ -15,53 +15,58 @@ ImageAccessWatcher::ImageAccessWatcher() noexcept :
 
 ImageAccessWatcher::MemoryConflict ImageAccessWatcher::addImageAccess(
                                         const Image& image,
-                                        const SliceAccess& sliceAccess,
+                                        const ImageAccess& newAccess,
                                         CommandBuffer& matchingBuffer) noexcept
 {
   MT_ASSERT(!_isFinalized);
 
   try
   {
-/*    const Image& image = sliceAccess.slice.image();
-    MT_ASSERT(image.isLayoutAutoControlEnabled());
-
-    auto insertion = _accessMap.emplace(&image, ImageAccessLayoutState());
+    auto insertion = _accessMap.emplace(&image, ImageAccessState());
     bool isNewRecord = insertion.second;
-    ImageAccessLayoutState& imageState = insertion.first->second;
+    ImageAccessState& imageState = insertion.first->second;
 
     if(isNewRecord)
     {
-      //  Image ещё не использовался. Просто заполняем требования доступа
-      imageState.currentAccess.requiredLayouts.primaryLayout =
-                                                    sliceAccess.requiredLayout;
-      imageState.currentAccess.memoryAccess = sliceAccess.memoryAccess;
+      //  Image ещё не использовался в текущей сессии
+      imageState.currentAccess = newAccess;
       return NO_MEMORY_CONFLICT;
     }
 
-    ImageAccess& currentImageAccess = imageState.currentAccess;
+    ImageAccess& currentAccess = imageState.currentAccess;
 
-    // Смотрим, что нужно сделать, чтобы получить слайс в нужном лэйауте
-    LayoutTranslation layoutTranslation =
-                                  getLayoutTranslation(
-                                            currentImageAccess.requiredLayouts,
-                                            sliceAccess.slice,
-                                            sliceAccess.requiredLayout);
-    if(!layoutTranslation.translationType.needToDoAnything())
+    //  Для начала пытаемся поженить предыдущий и следующий доступы без барьеров
+    if(currentAccess.mergeNoBarriers(newAccess))
     {
-      // Лэйауты менять не надо. Возможно есть конфликт доступа к памяти
-      if(!currentImageAccess.memoryAccess.needBarrier(sliceAccess.memoryAccess))
-      {
-        // Барьер добавлять не надо. Просто добавляем требования по доступу
-        currentImageAccess.memoryAccess.merge(sliceAccess.memoryAccess);
-        return NO_MEMORY_CONFLICT;
-      }
+      return NO_MEMORY_CONFLICT;
     }
 
-    _addApprovingPoint( image,
-                        imageState,
-                        approvingBuffer,
-                        layoutTranslation,
-                        sliceAccess.memoryAccess);*/
+    //  Без барьера объединить не получилось
+    //  Для начала резолвим предыдущую точку согласования
+    if (imageState.lastMatchingPoint.has_value())
+    {
+      imageState.lastMatchingPoint->makeMatch(image, currentAccess);
+      imageState.lastMatchingPoint.reset();
+    }
+    else
+    {
+      //  Точки согласования нет, значит это был первый доступ в сессии,
+      //  сохраним его
+      imageState.initialAccess = currentAccess;
+    }
+
+    //  Готовим новую точку согласования между текущим доступом и следующим
+    //  transformHint здесь временный, мы его пока ещё не знаем
+    imageState.lastMatchingPoint = MatchingPoint{
+                                .matchingBuffer = &matchingBuffer,
+                                .previousAccess = imageState.currentAccess,
+                                .transformHint = ImageAccess::RESET_SLICES };
+
+    //  Из текущего доступа и нового пришедшего изобретаем новое состояние
+    //  лэйаутов так, чтобы преобразовывать потребовалось поменьше
+    imageState.lastMatchingPoint->transformHint =
+                          imageState.currentAccess.mergeWithBarriers(newAccess);
+
     return NEED_TO_MATCHING;
   }
   catch (std::exception& error)
@@ -71,39 +76,9 @@ ImageAccessWatcher::MemoryConflict ImageAccessWatcher::addImageAccess(
   }
 }
 
-/*void ImageAccessWatcher::_addApprovingPoint(
-                                        const Image& image,
-                                        ImageAccessLayoutState& imageState,
-                                        CommandBuffer& approvingBuffer,
-                                        const LayoutTranslation& translation,
-                                        const MemoryAccess& newMemoryAccess)
-{
-  if(imageState.lastApprovingPoint.has_value())
-  {
-    // Существует не законченная точка апрува. Закроем её, так как мы уже
-    // знаем про все доступы в текущей серии(мы её сейчас закроем)
-    imageState.lastApprovingPoint->makeApprove(image, imageState.currentAccess);
-    imageState.lastApprovingPoint.reset();
-  }
-  else
-  {
-    // Это был первая серия доступов, надо сохранить её
-    imageState.initialAccess = imageState.currentAccess;
-  }
-
-  imageState.lastApprovingPoint = ApprovingPoint{
-                              .approvingBuffer = &approvingBuffer,
-                              .previousAccess = imageState.currentAccess,
-                              .layoutTranslation = translation.translationType};
-
-  // Обновляем текущую серию доступов
-  imageState.currentAccess.requiredLayouts = translation.nextState;
-  imageState.currentAccess.memoryAccess = newMemoryAccess;
-}*/
-
 const ImageAccessMap& ImageAccessWatcher::finalize() noexcept
 {
-  // Выставить initailAcces у всех image, у кого не выставлен
+  // Выставить initailAcces у всех image, у кого ещё не выставлен
   // Закрыть все MatchingPoint-ы
   try
   {

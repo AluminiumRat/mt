@@ -40,7 +40,7 @@ namespace mt
     //  matchingBuffer непосредственно в вызове заполняться не будет, поэтому
     //    его можно стартовать только когда будет возвращен NEED_TO_MATCHING
     MemoryConflict addImageAccess(const Image& image, 
-                                  const SliceAccess& sliceAccess,
+                                  const ImageAccess& newAccess,
                                   CommandBuffer& matchingBuffer) noexcept;
 
     //  Закончить работу, записать все необходимые барьеры и привести
@@ -48,13 +48,6 @@ namespace mt
     //  ВНИМАНИЕ! После финализации добавлять новую информацию о доступе
     //    нельзя.
     const ImageAccessMap& finalize() noexcept;
-
-  private:
-    /*void _addApprovingPoint(const Image& image,
-                            ImageAccessLayoutState& imageState,
-                            CommandBuffer& approvingBuffer,
-                            const LayoutTranslation& translation,
-                            const MemoryAccess& newMemoryAccess);*/
 
   private:
     ImageAccessMap _accessMap;
