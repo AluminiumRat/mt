@@ -117,6 +117,11 @@ CommandBuffer& CommandProducer::_getOrCreateBuffer()
 
 void CommandProducer::_addImageUsage(const SliceAccess& sliceAccess)
 {
+  if(!sliceAccess.slice.image().isLayoutAutoControlEnabled())
+  {
+    return;
+  }
+
   if(_currentApprovingBuffer == nullptr)
   {
     _currentApprovingBuffer = &_commandPool->getNextBuffer();
