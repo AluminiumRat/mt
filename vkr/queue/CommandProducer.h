@@ -43,7 +43,8 @@ namespace mt
     //  Перевод имэйджа из одного лайоута в другой.
     //  Можно использовать только на имэйджах с отключенным автоконтролем
     //    лэйаута.
-    void imageBarrier(const ImageSlice& slice,
+    void imageBarrier(const Image& image,
+                      const ImageSlice& slice,
                       VkImageLayout srcLayout,
                       VkImageLayout dstLayout,
                       VkPipelineStageFlags srcStages,
@@ -57,7 +58,8 @@ namespace mt
     //  readStages, readAccessMask, writeStages, writeAccessMask определяют,
     //    на каких стадиях и через какие кэши будет происходить чтение и запись
     //    после смены лэйаута.
-    void forceLayout( const ImageSlice& slice,
+    void forceLayout( const Image& image,
+                      const ImageSlice& slice,
                       VkImageLayout dstLayout,
                       VkPipelineStageFlags readStages,
                       VkAccessFlags readAccessMask,
@@ -81,7 +83,7 @@ namespace mt
       //  Всегда не nullptr
       //  Буфер возвращается в нестартованном состоянии, то есть для него
       //    необходимо вызвать CommandBuffer::startOnetimeBuffer.
-      CommandBuffer* approvingBuffer = nullptr;
+      CommandBuffer* matchingBuffer = nullptr;
 
       //  Информация об Image-ах с автоконтролем Layout-ов
       //  Всегда не nullptr
@@ -99,7 +101,7 @@ namespace mt
 
   private:
     CommandBuffer& _getOrCreateBuffer();
-    void _addImageUsage(const SliceAccess& sliceAccess);
+    void _addImageUsage(const Image& image, const SliceAccess& sliceAccess);
 
   private:
     CommandPoolSet& _commandPoolSet;
@@ -115,7 +117,7 @@ namespace mt
     //  Текущий заполняемый буфер команд
     CommandBuffer* _currentPrimaryBuffer;
     //  Зарезервированный, но ещё не, использованный буфер для согласования
-    CommandBuffer* _currentApprovingBuffer;
+    CommandBuffer* _currentMatchingBuffer;
 
     bool _isFinalized;
   };

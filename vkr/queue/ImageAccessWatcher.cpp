@@ -14,14 +14,15 @@ ImageAccessWatcher::ImageAccessWatcher() noexcept :
 }
 
 ImageAccessWatcher::MemoryConflict ImageAccessWatcher::addImageAccess(
+                                        const Image& image,
                                         const SliceAccess& sliceAccess,
-                                        CommandBuffer& approvingBuffer) noexcept
+                                        CommandBuffer& matchingBuffer) noexcept
 {
   MT_ASSERT(!_isFinalized);
 
   try
   {
-    const Image& image = sliceAccess.slice.image();
+/*    const Image& image = sliceAccess.slice.image();
     MT_ASSERT(image.isLayoutAutoControlEnabled());
 
     auto insertion = _accessMap.emplace(&image, ImageAccessLayoutState());
@@ -60,8 +61,8 @@ ImageAccessWatcher::MemoryConflict ImageAccessWatcher::addImageAccess(
                         imageState,
                         approvingBuffer,
                         layoutTranslation,
-                        sliceAccess.memoryAccess);
-    return NEED_TO_APPROVE;
+                        sliceAccess.memoryAccess);*/
+    return NEED_TO_MATCHING;
   }
   catch (std::exception& error)
   {
@@ -70,12 +71,12 @@ ImageAccessWatcher::MemoryConflict ImageAccessWatcher::addImageAccess(
   }
 }
 
-void ImageAccessWatcher::_addApprovingPoint(
+/*void ImageAccessWatcher::_addApprovingPoint(
                                         const Image& image,
                                         ImageAccessLayoutState& imageState,
                                         CommandBuffer& approvingBuffer,
                                         const LayoutTranslation& translation,
-                                        const ResourceAccess& newMemoryAccess)
+                                        const MemoryAccess& newMemoryAccess)
 {
   if(imageState.lastApprovingPoint.has_value())
   {
@@ -98,12 +99,12 @@ void ImageAccessWatcher::_addApprovingPoint(
   // Обновляем текущую серию доступов
   imageState.currentAccess.requiredLayouts = translation.nextState;
   imageState.currentAccess.memoryAccess = newMemoryAccess;
-}
+}*/
 
 const ImageAccessMap& ImageAccessWatcher::finalize() noexcept
 {
   // Выставить initailAcces у всех image, у кого не выставлен
-  // Закрыть все ApprovingPoint-ы
+  // Закрыть все MatchingPoint-ы
   try
   {
     for(ImageAccessMap::iterator iImageState = _accessMap.begin();
@@ -111,18 +112,18 @@ const ImageAccessMap& ImageAccessWatcher::finalize() noexcept
         iImageState++)
     {
       const Image* image = iImageState->first;
-      ImageAccessLayoutState& imageState = iImageState->second;
+      ImageAccessState& imageState = iImageState->second;
 
       if(!imageState.initialAccess.has_value())
       {
         imageState.initialAccess = imageState.currentAccess;
       }
 
-      if(imageState.lastApprovingPoint.has_value())
+      if(imageState.lastMatchingPoint.has_value())
       {
-        imageState.lastApprovingPoint->makeApprove( *image,
-                                                    imageState.currentAccess);
-        imageState.lastApprovingPoint.reset();
+        imageState.lastMatchingPoint->makeMatch(*image,
+                                                imageState.currentAccess);
+        imageState.lastMatchingPoint.reset();
       }
     }
 

@@ -89,8 +89,8 @@ namespace mt
 
     // Сделать согласование по Image-ам с автоконтролем лэйаутов перед
     // отправкой буфера команд на исполнение
-    void _approveLayouts( CommandBuffer& approvingBuffer,
-                          const ImageAccessMap& imageStates) noexcept;
+    void _matchLayouts( CommandBuffer& matchingBuffer,
+                        const ImageAccessMap& imageStates) noexcept;
 
   private:
     VkQueue _handle;

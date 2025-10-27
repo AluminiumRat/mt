@@ -68,7 +68,8 @@ int main(int argc, char* argv[])
 
       std::unique_ptr<mt::CommandProducer> producer = device->primaryQueue().startCommands();
 
-      producer->imageBarrier( ImageSlice(*frame.image()),
+      producer->imageBarrier( *frame.image(),
+                              ImageSlice(*frame.image()),
                               VK_IMAGE_LAYOUT_UNDEFINED,
                               VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
                               VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,

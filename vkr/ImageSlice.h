@@ -11,15 +11,14 @@ namespace mt
   //  Некоторая часть Image-а, которая может рассматриваться как отдельный
   //    объект. В частности, может иметь собственный layout или служить
   //    источником данных для ImageView.
-  //  Обратите внимание, ImageSlice не захватывает владение Image-ем, а только
-  //    ссылается на него. Необходимо обеспечить время жизни Image большее, чем
-  //    слайсов.
   //  Обратите внимание, ImageSlice не использует VK_REMAINING_MIP_LEVELS и
   //    VK_REMAINING_ARRAY_LAYERS для хранения данных, геттеры не возвращают
   //    никаких магических чисел
   class ImageSlice
   {
   public:
+    // Пустой слайс
+    inline ImageSlice() noexcept;
     // Создать слайс, который полностью закрывает весь Image
     explicit ImageSlice(const Image& image) noexcept;
     // Создать слайс, который закрывает только часть Image
@@ -33,7 +32,6 @@ namespace mt
     ImageSlice& operator = (const ImageSlice&) noexcept = default;
     ~ImageSlice() noexcept = default;
 
-    inline const Image& image() const noexcept;
     inline VkImageAspectFlags aspectMask() const noexcept;
     inline uint32_t baseMipLevel() const noexcept;
     inline uint32_t lastMipLevel() const noexcept;
@@ -42,11 +40,10 @@ namespace mt
     inline uint32_t lastArrayLayer() const noexcept;
     inline uint32_t layerCount() const noexcept;
 
-    // Проверить, закрывает ли слайс весь Image
-    bool isSliceFull() const noexcept;
+    // Проверить, закрывает ли слайс весь image
+    bool isSliceFull(const Image& image) const noexcept;
 
     //  Проверить, что part полностью входит в этот слайс
-    //  Сравнивать можно только слайсы одного имэйджа.
     inline bool contains(const ImageSlice& part) const noexcept;
 
     //  Проверить пересекаются ли два слайса. То есть проверить, есть ли данные,
@@ -56,7 +53,6 @@ namespace mt
     inline VkImageSubresourceRange makeRange() const noexcept;
 
   private:
-    const Image* _image;
     VkImageAspectFlags _aspectMask;
     uint32_t _baseMipLevel;
     uint32_t _lastMipLevel;
@@ -71,9 +67,15 @@ namespace mt
   inline bool operator != (
                   const ImageSlice& first, const ImageSlice& second) noexcept;
 
-  inline const Image& ImageSlice::image() const noexcept
+  inline ImageSlice::ImageSlice() noexcept :
+    _aspectMask(0),
+    _baseMipLevel(0),
+    _lastMipLevel(0),
+    _levelCount(1),
+    _baseArrayLayer(0),
+    _lastArrayLayer(0),
+    _layerCount(1)
   {
-    return *_image;
   }
 
   inline VkImageAspectFlags ImageSlice::aspectMask() const noexcept
@@ -129,8 +131,6 @@ namespace mt
 
   inline bool ImageSlice::contains(const ImageSlice& part) const noexcept
   {
-    MT_ASSERT(_image == part._image);
-
     if((_aspectMask & part._aspectMask) != part._aspectMask) return false;
 
     if(_baseMipLevel > part._baseMipLevel) return false;
@@ -144,8 +144,6 @@ namespace mt
 
   inline bool ImageSlice::isIntersected(const ImageSlice& other) const noexcept
   {
-    MT_ASSERT(_image == other._image);
-
     if ((_aspectMask & other._aspectMask) == 0) return false;
     if (_lastMipLevel < other._baseMipLevel) return false;
     if (other._lastMipLevel < _baseMipLevel) return false;

@@ -18,7 +18,7 @@ CommandProducer::CommandProducer(CommandPoolSet& poolSet) :
   _queue(_commandPoolSet.queue()),
   _commandPool(nullptr),
   _currentPrimaryBuffer(nullptr),
-  _currentApprovingBuffer(nullptr),
+  _currentMatchingBuffer(nullptr),
   _descriptorPool(nullptr),
   _isFinalized(false)
 {
@@ -54,14 +54,14 @@ std::optional<CommandProducer::FinalizeResult>
       buffer->endBuffer();
     }
 
-    if(_currentApprovingBuffer == nullptr)
+    if(_currentMatchingBuffer == nullptr)
     {
-      _currentApprovingBuffer = &_commandPool->getNextBuffer();
+      _currentMatchingBuffer = &_commandPool->getNextBuffer();
     }
 
     FinalizeResult result;
     result.commandSequence = &_commandSequence;
-    result.approvingBuffer = _currentApprovingBuffer;
+    result.matchingBuffer = _currentMatchingBuffer;
     result.imageStates = &_accessWatcher.finalize();
 
     return result;
@@ -115,32 +115,35 @@ CommandBuffer& CommandProducer::_getOrCreateBuffer()
   return *_currentPrimaryBuffer;
 }
 
-void CommandProducer::_addImageUsage(const SliceAccess& sliceAccess)
+void CommandProducer::_addImageUsage( const Image& image,
+                                      const SliceAccess& sliceAccess)
 {
-  if(!sliceAccess.slice.image().isLayoutAutoControlEnabled())
+  if(!image.isLayoutAutoControlEnabled())
   {
     return;
   }
 
-  if(_currentApprovingBuffer == nullptr)
+  if(_currentMatchingBuffer == nullptr)
   {
-    _currentApprovingBuffer = &_commandPool->getNextBuffer();
+    _currentMatchingBuffer = &_commandPool->getNextBuffer();
   }
 
-  if(_accessWatcher.addImageAccess( sliceAccess,
-                                    *_currentApprovingBuffer) ==
-                                          ImageAccessWatcher::NEED_TO_APPROVE)
+  if(_accessWatcher.addImageAccess( image,
+                                    sliceAccess,
+                                    *_currentMatchingBuffer) ==
+                                          ImageAccessWatcher::NEED_TO_MATCHING)
   {
     // Обнаружили место, где будет барьер
-    CommandBuffer* approvingBuffer = _currentApprovingBuffer;
-    _currentApprovingBuffer = nullptr;
+    CommandBuffer* matchingBuffer = _currentMatchingBuffer;
+    _currentMatchingBuffer = nullptr;
     _currentPrimaryBuffer = nullptr;
-    approvingBuffer->startOnetimeBuffer();
-    _commandSequence.push_back(approvingBuffer);
+    matchingBuffer->startOnetimeBuffer();
+    _commandSequence.push_back(matchingBuffer);
   }
 }
 
-void CommandProducer::imageBarrier( const ImageSlice& slice,
+void CommandProducer::imageBarrier( const Image& image,
+                                    const ImageSlice& slice,
                                     VkImageLayout srcLayout,
                                     VkImageLayout dstLayout,
                                     VkPipelineStageFlags srcStages,
@@ -148,13 +151,14 @@ void CommandProducer::imageBarrier( const ImageSlice& slice,
                                     VkAccessFlags srcAccesMask,
                                     VkAccessFlags dstAccesMask)
 {
-  MT_ASSERT(!slice.image().isLayoutAutoControlEnabled());
+  MT_ASSERT(!image.isLayoutAutoControlEnabled());
 
   CommandBuffer& buffer = _getOrCreateBuffer();
 
-  buffer.lockResource(slice.image());
+  buffer.lockResource(image);
 
-  buffer.imageBarrier(slice,
+  buffer.imageBarrier(image,
+                      slice,
                       srcLayout,
                       dstLayout,
                       srcStages,
@@ -163,21 +167,23 @@ void CommandProducer::imageBarrier( const ImageSlice& slice,
                       dstAccesMask);
 }
 
-void CommandProducer::forceLayout(const ImageSlice& slice,
+void CommandProducer::forceLayout(const Image& image,
+                                  const ImageSlice& slice,
                                   VkImageLayout dstLayout,
                                   VkPipelineStageFlags readStages,
                                   VkAccessFlags readAccessMask,
                                   VkPipelineStageFlags writeStages,
                                   VkAccessFlags writeAccessMask)
 {
-  MT_ASSERT(slice.image().isLayoutAutoControlEnabled());
+  MT_ASSERT(image.isLayoutAutoControlEnabled());
 
   CommandBuffer& buffer = _getOrCreateBuffer();
-  buffer.lockResource(slice.image());
+  buffer.lockResource(image);
 
-  _addImageUsage(SliceAccess{ .slice = slice,
+  _addImageUsage( image,
+                  SliceAccess{.slice = slice,
                               .requiredLayout = dstLayout,
-                              .memoryAccess = ResourceAccess{
+                              .memoryAccess = MemoryAccess{
                                         .readStagesMask = readStages,
                                         .readAccessMask = readAccessMask,
                                         .writeStagesMask = writeStages,

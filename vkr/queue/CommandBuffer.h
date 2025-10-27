@@ -10,6 +10,7 @@
 namespace mt
 {
   class Device;
+  class Image;
   class ImageSlice;
 
   //  Отдельный буфер команд для GPU
@@ -66,7 +67,8 @@ namespace mt
     //  ВНИМАНИЕ!!! Убедитесь, что вы не ломаете систему автоконтроля
     //    лэйаутов и обеспечиваете время жизни image до конца выполнения
     //    этого буфера
-    void imageBarrier(const ImageSlice& slice,
+    void imageBarrier(const Image& image,
+                      const ImageSlice& slice,
                       VkImageLayout srcLayout,
                       VkImageLayout dstLayout,
                       VkPipelineStageFlags srcStages,

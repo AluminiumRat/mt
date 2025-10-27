@@ -18,7 +18,7 @@ namespace mt
     enum MemoryConflict
     {
       NO_MEMORY_CONFLICT,
-      NEED_TO_APPROVE
+      NEED_TO_MATCHING
     };
 
   public:
@@ -29,18 +29,19 @@ namespace mt
 
     //  Добавить информацию об использовании Image-а и создать барьеры при
     //    необходимости.
-    //  Если возвращает NEED_TO_APPROVE, то approvingBuffer будет
+    //  Если возвращает NEED_TO_MATCHING, то matchingBuffer будет
     //    сохранен для использования в качестве точки
-    //    согласования (ApprovingPoint), и должен быть добавлен в очередь команд
+    //    согласования (MatchingPoint), и должен быть добавлен в очередь команд
     //    до описываемого использования Image-а. Непосредственно во время этого
     //    вызова буфер не будет заполнен, так требования по согласованию могут
     //    ужесточаться по мере добавления новых команд.
-    //  Если возвращает NO_MEMORY_CONFLICT, то approvingBuffer в вызове не
+    //  Если возвращает NO_MEMORY_CONFLICT, то matchingBuffer в вызове не
     //    использовался, и он можеть быть переиспользован для чего-то другого.
-    //  approvingBuffer непосредственно в вызове заполняться не будет, поэтому
-    //    его можно стартовать только когда будет возвращен NEED_TO_APPROVE
-    MemoryConflict addImageAccess(const SliceAccess& sliceAccess,
-                                  CommandBuffer& approvingBuffer) noexcept;
+    //  matchingBuffer непосредственно в вызове заполняться не будет, поэтому
+    //    его можно стартовать только когда будет возвращен NEED_TO_MATCHING
+    MemoryConflict addImageAccess(const Image& image, 
+                                  const SliceAccess& sliceAccess,
+                                  CommandBuffer& matchingBuffer) noexcept;
 
     //  Закончить работу, записать все необходимые барьеры и привести
     //    ImageAccessMap в вид, пригодный для внешнего использования.
@@ -49,11 +50,11 @@ namespace mt
     const ImageAccessMap& finalize() noexcept;
 
   private:
-    void _addApprovingPoint(const Image& image,
+    /*void _addApprovingPoint(const Image& image,
                             ImageAccessLayoutState& imageState,
                             CommandBuffer& approvingBuffer,
                             const LayoutTranslation& translation,
-                            const ResourceAccess& newMemoryAccess);
+                            const MemoryAccess& newMemoryAccess);*/
 
   private:
     ImageAccessMap _accessMap;

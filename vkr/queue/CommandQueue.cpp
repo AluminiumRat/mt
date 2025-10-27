@@ -138,8 +138,8 @@ void CommandQueue::submitCommands(std::unique_ptr<CommandProducer> producer)
                                                           producer->finalize();
   if(!finalizeResult.has_value()) return;
 
-  _approveLayouts(*finalizeResult->approvingBuffer,
-                  *finalizeResult->imageStates);
+  _matchLayouts(*finalizeResult->matchingBuffer,
+                *finalizeResult->imageStates);
 
   // Собираем список буферов команд
   std::vector<VkCommandBuffer> buffersHandles;
@@ -177,10 +177,10 @@ void CommandQueue::submitCommands(std::unique_ptr<CommandProducer> producer)
   producer->release(SyncPoint(*_semaphore, _lastSemaphoreValue));
 }
 
-void CommandQueue::_approveLayouts( CommandBuffer& approvingBuffer,
-                                    const ImageAccessMap& imageStates) noexcept
+void CommandQueue::_matchLayouts( CommandBuffer& matchingBuffer,
+                                  const ImageAccessMap& imageStates) noexcept
 {
-  approvingBuffer.startOnetimeBuffer();
+/*  approvingBuffer.startOnetimeBuffer();
   bool barriersAdded = false;
 
   // Обходим все Image, которые используются в новом буфере команд, и подгоняем
@@ -242,7 +242,7 @@ void CommandQueue::_approveLayouts( CommandBuffer& approvingBuffer,
     {
       MT_ASSERT(false && "CommandQueue: Failed to submit approving command buffer.");
     }
-  }
+  }*/
 }
 
 void CommandQueue::addWaitingForQueue(

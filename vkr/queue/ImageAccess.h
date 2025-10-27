@@ -4,8 +4,10 @@
 //  Используется для автоматической расстановки барьеров при работе с Image-ми,
 //    для которых включен автоконтроль лэйаутов
 
+#include <array>
 #include <optional>
 #include <unordered_map>
+#include <vector>
 
 #include <vulkan/vulkan.h>
 
@@ -17,7 +19,7 @@ namespace mt
   class Image;
 
   // Описание доступа к памяти ресурса во время каких-либо операций
-  struct ResourceAccess
+  struct MemoryAccess
   {
     // Стадии, на которых происходит чтение из ресурса
     VkPipelineStageFlags readStagesMask = VK_PIPELINE_STAGE_NONE;
@@ -30,15 +32,22 @@ namespace mt
     VkAccessFlags writeAccessMask = VK_ACCESS_NONE;
 
     //  Нужен ли барьер памяти между двумя доступами к ресурсу
-    inline bool needBarrier(const ResourceAccess& nextAccess) const noexcept;
+    inline bool needBarrier(const MemoryAccess& nextAccess) const noexcept;
 
     //  Создает в commandBuffer барьер памяти, разделяющий два доступа
-    void createBarrier( const ResourceAccess& nextAccess,
+    void createBarrier( const MemoryAccess& nextAccess,
                         const CommandBuffer& commandBuffer) const noexcept;
 
+    //  Добавляет к параметрам барьера памяти те маски, которые должны быть
+    //  выставлены для разделения текущего доступа и nextAccess
+    void updateBarrierMasks(const MemoryAccess& nextAccess,
+                            VkPipelineStageFlags& srcStages,
+                            VkPipelineStageFlags& dstStages,
+                            VkAccessFlags& srcAccess,
+                            VkAccessFlags& dstAccess) const noexcept;
+
     //  Объединить два доступа в один (без проверок, нужен ли барьер).
-    inline ResourceAccess merge(
-                              const ResourceAccess& nextAccess) const noexcept;
+    inline MemoryAccess merge(const MemoryAccess& nextAccess) const noexcept;
   };
 
   //  Описание доступа к отдельному слайсу Image-а
@@ -46,80 +55,52 @@ namespace mt
   {
     ImageSlice slice;
     VkImageLayout requiredLayout;
-    ResourceAccess memoryAccess;
+    MemoryAccess memoryAccess;
   };
-
-  // Описание того, в каких лэйаутах находится Image и какой-то отдельный
-  // его слайс(не больше одного слайса на Image)
-  struct ImageLayoutState
-  {
-    VkImageLayout primaryLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-    std::optional<ImageSlice> changedSlice;
-    VkImageLayout changedSliceLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-  };
-
-  //  Нужно ли удалить выделенный слайс для того чтобы перевести часть Image-а
-  //  в нужный лэйаут
-  inline bool needToCollapseSlice(const ImageLayoutState& srcState,
-                                  const ImageSlice& requiredSlice,
-                                  VkImageLayout requiredLayout) noexcept;
-
-  //  Какие преобразования нужно сделать с лэйаутами Image-а, чтобы получить
-  //  в нем слайс с нужным лэйаутом
-  struct LayoutTranslationType
-  {
-    bool needToCollapseSlice = false;
-    bool needToCreateSlice = false;
-    inline bool needToDoAnything() const noexcept;
-  };
-  inline LayoutTranslationType getLayoutTranslationType(
-                                const ImageLayoutState& srcState,
-                                const ImageSlice& requiredSlice,
-                                VkImageLayout requiredLayout) noexcept;
-
-  // Описание изменений, которые происходят с ImageLayoutState
-  struct LayoutTranslation
-  {
-    LayoutTranslationType translationType;
-    //  Состояние лэйаутов, в которое перейдет Image, после того, как произойдет
-    //  преобразование.
-    ImageLayoutState nextState;
-  };
-  // Определить, какие изменения надо провести, чтобы в sourceState получить
-  // слайс requiredSlice с лэйаутом requiredLayout
-  inline LayoutTranslation getLayoutTranslation(
-                                      const ImageLayoutState& sourceState,
-                                      const ImageSlice& requiredSlice,
-                                      VkImageLayout requiredLayout) noexcept;
 
   //  Описание доступа ко всему Image
   struct ImageAccess
   {
-    ImageLayoutState requiredLayouts;
-    ResourceAccess memoryAccess;
+    // Подсказака о том, как один ImageAccess можно перевести в другой
+    // Используется при согласовании двух доступов в MatchingPoint
+    enum TransformHint
+    {
+      RESET_SLICES,     // Необходимо сбросить все слайсы и пересоздать новые
+      REUSE_SLICES     // К уже существующим слфйсам надо добавить новые
+    };
+
+    static constexpr uint32_t maxSlices = 4;
+
+    std::array<ImageSlice, maxSlices> slices;
+    std::array<VkImageLayout, maxSlices> layouts;
+    std::array<MemoryAccess, maxSlices> memoryAccess;
+    uint32_t slicesCount = 0;
+
+    // Объединить 2 доступа в 1 без использования барьеров.
+    // Возвращает false, если объединить не удалось.
+    bool mergeNoBarriers(const ImageAccess& nextAccess) noexcept;
+
+    //  Сделать доступ, который полностью включает в себя nextAccess, и
+    //  переносит по возможности слайсы из текущего доступа
+    TransformHint mergeWithBarriers(const ImageAccess& nextAccess) noexcept;
   };
 
   //  Точка, в которой нужно будет согласовать доступы к Image после того
   //  как текущий доступ будет полностью закончен
-  struct ApprovingPoint
+  struct MatchingPoint
   {
     //  Буфер, в который надо будет записать барьеры
-    const CommandBuffer* approvingBuffer;
+    const CommandBuffer* matchingBuffer;
     ImageAccess previousAccess;
+    ImageAccess::TransformHint transformHint;
 
-    //  Преобразования лэйаутов, которые должны содержаться в барьерах.
-    //  Известно уже на этапе создания ApprovingPoint, здесь просто временно
-    //  хранится, чтобы не вычислять повторно на этапе согласования.
-    LayoutTranslationType layoutTranslation;
-
-    // Записать в approvingBuffer необходимые барьеры
-    void makeApprove( const Image& image,
-                      const ImageAccess& nextAccess) const noexcept;
+    // Записать в matchingBuffer необходимые барьеры
+    void makeMatch( const Image& image,
+                    const ImageAccess& nextAccess) const noexcept;
   };
 
   //  Описание доступа к Image-у на протяжении работы CommandProducer-а
-  struct ImageAccessLayoutState
+  struct ImageAccessState
   {
     //  Самый первый доступ к Image-у. Храним его, чтобы потом можно было сшить
     //  буферы команд внутри очереди. Пока хотябы один доступ не будет
@@ -128,18 +109,17 @@ namespace mt
 
     //  Последняя созданная точка согласования. Она уже создана, но буфер ещё не
     //  заполнен, так как текущий доступ ещё полностью не сформирован
-    std::optional<ApprovingPoint> lastApprovingPoint;
+    std::optional<MatchingPoint> lastMatchingPoint;
 
     //  Текущий, ещё формируемый запрос
     ImageAccess currentAccess;
   };
 
   //  Соответствие Image->доступ к нему для всех отслеживаемых Image-ей
-  using ImageAccessMap =
-                      std::unordered_map<const Image*, ImageAccessLayoutState>;
+  using ImageAccessMap = std::unordered_map<const Image*, ImageAccessState>;
 
-  inline bool ResourceAccess::needBarrier(
-                                const ResourceAccess& nextAccess) const noexcept
+  inline bool MemoryAccess::needBarrier(
+                                const MemoryAccess& nextAccess) const noexcept
   {
     // Если никто ничего не пишет - то и конфликта быть не может
     if(writeAccessMask == 0 && nextAccess.writeAccessMask == 0) return false;
@@ -158,106 +138,13 @@ namespace mt
     return true;
   }
 
-  inline ResourceAccess ResourceAccess::merge(
-                                const ResourceAccess& nextAccess) const noexcept
+  inline MemoryAccess MemoryAccess::merge(
+                                const MemoryAccess& nextAccess) const noexcept
   {
-    return ResourceAccess{
+    return MemoryAccess{
       .readStagesMask = readStagesMask | nextAccess.readStagesMask,
       .readAccessMask = readAccessMask | nextAccess.readAccessMask,
       .writeStagesMask = writeStagesMask | nextAccess.writeStagesMask,
       .writeAccessMask = writeAccessMask | nextAccess.writeAccessMask};
-  }
-
-  inline bool needToCollapseSlice(const ImageLayoutState& srcState,
-                                  const ImageSlice& requiredSlice,
-                                  VkImageLayout requiredLayout) noexcept
-  {
-    // Если слайса нет, то и схлапывать нечего
-    if(!srcState.changedSlice.has_value()) return false;
-
-    if(srcState.changedSliceLayout == requiredLayout &&
-        srcState.changedSlice->contains(requiredSlice))
-    {
-      // Слайс существует, но он полностью покрывает требуемый
-      return false;
-    }
-
-    if(srcState.primaryLayout == requiredLayout &&
-        !srcState.changedSlice->isIntersected(requiredSlice))
-    {
-      // Слайс существует, но требуемый слайс лежит полностью вне его
-      return false;
-    }
-
-    return true;
-  }
-
-  inline bool LayoutTranslationType::needToDoAnything() const noexcept
-  {
-    return needToCollapseSlice || needToCreateSlice;
-  }
-
-  inline LayoutTranslationType getLayoutTranslationType(
-                                        const ImageLayoutState& srcState,
-                                        const ImageSlice& requiredSlice,
-                                        VkImageLayout requiredLayout) noexcept
-  {
-    LayoutTranslationType translationType{};
-    if(needToCollapseSlice(srcState, requiredSlice, requiredLayout))
-    {
-      // Мы будем схлапывать слайс до primaryLayout-а. Создавать новый слайс
-      //  надо, если этот лэйаут нам не подходит
-      translationType.needToCollapseSlice = true;
-      translationType.needToCreateSlice =
-                                      requiredLayout != srcState.primaryLayout;
-    }
-    else
-    {
-      //  Схлапывать существующий слайс не надо. У нас два варианта - слайс
-      //    слайс существует, тогда вообще не надо ничего делать, всё и так
-      //    находится в нужных лэйаутах.
-      //  Если слайса нет, тогда его надо создать, если основной лэйаут нам не
-      //    подходит.
-      if (!srcState.changedSlice.has_value())
-      {
-        translationType.needToCreateSlice =
-                                      requiredLayout != srcState.primaryLayout;
-      }
-    }
-    return translationType;
-  };
-
-  inline LayoutTranslation getLayoutTranslation(
-                                        const ImageLayoutState& sourceState,
-                                        const ImageSlice& requiredSlice,
-                                        VkImageLayout requiredLayout) noexcept
-  {
-    LayoutTranslation resultTranslation{};
-    resultTranslation.translationType =
-                                    getLayoutTranslationType( sourceState,
-                                                              requiredSlice,
-                                                              requiredLayout);
-  
-    resultTranslation.nextState = sourceState;
-
-    if(resultTranslation.translationType.needToCollapseSlice)
-    {
-      resultTranslation.nextState.changedSlice.reset();
-    }
-
-    if(resultTranslation.translationType.needToCreateSlice)
-    {
-      if(requiredSlice.isSliceFull())
-      {
-        resultTranslation.nextState.primaryLayout = requiredLayout;
-      }
-      else
-      {
-        resultTranslation.nextState.changedSlice = requiredSlice;
-        resultTranslation.nextState.changedSliceLayout = requiredLayout;
-      }
-    }
-
-    return resultTranslation;
   }
 }

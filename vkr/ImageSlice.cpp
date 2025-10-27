@@ -4,7 +4,6 @@
 using namespace mt;
 
 ImageSlice::ImageSlice(const Image& image) noexcept :
-  _image(&image),
   _aspectMask(image.aspectMask()),
   _baseMipLevel(0),
   _lastMipLevel(image.mipmapCount() - 1),
@@ -21,7 +20,6 @@ ImageSlice::ImageSlice( const Image& image,
                         uint32_t baseArrayLayer,
                         uint32_t levelCount,
                         uint32_t layerCount) noexcept :
-  _image(&image),
   _aspectMask(aspectMask),
   _baseMipLevel(baseMipLevel),
   _lastMipLevel(levelCount == VK_REMAINING_MIP_LEVELS ?
@@ -45,11 +43,11 @@ ImageSlice::ImageSlice( const Image& image,
   MT_ASSERT(_lastArrayLayer < image.arraySize());
 }
 
-bool ImageSlice::isSliceFull() const noexcept
+bool ImageSlice::isSliceFull(const Image& image) const noexcept
 {
-  return  _aspectMask == _image->aspectMask() &&
+  return  _aspectMask == image.aspectMask() &&
           _baseMipLevel == 0 &&
-          _levelCount == _image->mipmapCount() &&
+          _levelCount == image.mipmapCount() &&
           _baseArrayLayer == 0 &&
-          _layerCount == _image->arraySize();
+          _layerCount == image.arraySize();
 }

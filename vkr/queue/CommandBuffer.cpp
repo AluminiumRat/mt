@@ -124,7 +124,8 @@ void CommandBuffer::memoryBarrier(VkPipelineStageFlags srcStages,
                         nullptr);
 }
 
-void CommandBuffer::imageBarrier( const ImageSlice& slice,
+void CommandBuffer::imageBarrier( const Image& image,
+                                  const ImageSlice& slice,
                                   VkImageLayout srcLayout,
                                   VkImageLayout dstLayout,
                                   VkPipelineStageFlags srcStages,
@@ -138,7 +139,7 @@ void CommandBuffer::imageBarrier( const ImageSlice& slice,
   barrier.newLayout = dstLayout;
   barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
   barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-  barrier.image = slice.image().handle();
+  barrier.image = image.handle();
   barrier.subresourceRange = slice.makeRange();
 
   barrier.srcAccessMask = srcAccesMask;
