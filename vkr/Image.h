@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <limits>
+#include <optional>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -110,7 +111,7 @@ namespace mt
     //  с Image внешние данные, чем его внутреннее состояние.
     friend class CommandQueue;
     mutable CommandQueue* owner;
-    mutable ImageAccess lastAccess;
+    mutable std::optional<ImageAccess> lastAccess;
 
   private:
     VkImage _handle;

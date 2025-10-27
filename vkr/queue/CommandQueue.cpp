@@ -180,11 +180,13 @@ void CommandQueue::submitCommands(std::unique_ptr<CommandProducer> producer)
 void CommandQueue::_matchLayouts( CommandBuffer& matchingBuffer,
                                   const ImageAccessMap& imageStates) noexcept
 {
-/*  approvingBuffer.startOnetimeBuffer();
+  if(imageStates.empty()) return;
+
+  matchingBuffer.startOnetimeBuffer();
   bool barriersAdded = false;
 
-  // Обходим все Image, которые используются в новом буфере команд, и подгоняем
-  // их под требования буфера
+  //  Обходим все Image, которые используются в новой последовательности команд,
+  //  и подгоняем их под требования буфера
   for(ImageAccessMap::const_iterator iState = imageStates.begin();
       iState != imageStates.end();
       iState++)
@@ -193,46 +195,40 @@ void CommandQueue::_matchLayouts( CommandBuffer& matchingBuffer,
     MT_ASSERT(image->owner == nullptr || image->owner == this);
     image->owner = this;
 
-    ImageAccess& accessInQueue = image->lastAccess;
-
-    const ImageAccess& accessInBuffer = *iState->second.initialAccess;
-    MT_ASSERT(!accessInBuffer.requiredLayouts.changedSlice.has_value());
-
-    LayoutTranslation layoutTranslation = getLayoutTranslation(
-                                  accessInQueue.requiredLayouts,
+    // Если Image ещё нигде не использовался - инициализируем лэйаут.
+    if(!image->lastAccess.has_value())
+    {
+      matchingBuffer.imageBarrier(*image,
                                   ImageSlice(*image),
-                                  accessInBuffer.requiredLayouts.primaryLayout);
-    if(layoutTranslation.translationType.needToDoAnything() ||
-        accessInQueue.memoryAccess.needBarrier(accessInBuffer.memoryAccess))
-    {
-      // Надо добавить барьер, воспользуемся готовым функционалом
-      ApprovingPoint approvingPoint{
-                        .approvingBuffer = &approvingBuffer,
-                        .previousAccess = accessInQueue,
-                        .layoutTranslation = layoutTranslation.translationType};
-      approvingPoint.makeApprove(*image, accessInBuffer);
-
-      // После барьера текущий доступ к Image полностью обновляется
-      accessInQueue = accessInBuffer;
-
-      barriersAdded = true;
+                                  VK_IMAGE_LAYOUT_UNDEFINED,
+                                  VK_IMAGE_LAYOUT_GENERAL,
+                                  0,0,0,0);
+      image->lastAccess = ImageAccess();
     }
-    else
-    {
-      // Барьер не нужен, дополняем текущий доступ доступом из буфера
-      accessInQueue.memoryAccess.merge(accessInBuffer.memoryAccess);
-    }
+
+    ImageAccess& accessInQueue = *image->lastAccess;
+    const ImageAccess& accessInBuffer = *iState->second.initialAccess;
+    ImageAccess::TransformHint transformHint =
+                              accessInQueue.hasSameLayouts(accessInBuffer) ?
+                                                    ImageAccess::REUSE_SLICES :
+                                                    ImageAccess::RESET_SLICES;
+    MatchingPoint accessMatcher{.matchingBuffer = &matchingBuffer,
+                                .previousAccess = accessInQueue,
+                                .transformHint = transformHint};
+    accessMatcher.makeMatch(*image, accessInBuffer);
+    accessInQueue = iState->second.currentAccess;
+    barriersAdded = true;
   }
 
-  approvingBuffer.endBuffer();
+  matchingBuffer.endBuffer();
 
   // Если был записан хотябы один барьер, то сабмитим буфер команд
-  if(approvingBuffer.isBufferInProcess())
+  if(matchingBuffer.isBufferInProcess())
   {
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
-    VkCommandBuffer bufferHandle = approvingBuffer.handle();
+    VkCommandBuffer bufferHandle = matchingBuffer.handle();
     submitInfo.pCommandBuffers = &bufferHandle;
 
     if (vkQueueSubmit(handle(),
@@ -240,9 +236,9 @@ void CommandQueue::_matchLayouts( CommandBuffer& matchingBuffer,
                       &submitInfo,
                       VK_NULL_HANDLE) != VK_SUCCESS)
     {
-      MT_ASSERT(false && "CommandQueue: Failed to submit approving command buffer.");
+      MT_ASSERT(false && "CommandQueue: Failed to submit matching command buffer.");
     }
-  }*/
+  }
 }
 
 void CommandQueue::addWaitingForQueue(

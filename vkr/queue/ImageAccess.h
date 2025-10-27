@@ -69,6 +69,10 @@ namespace mt
     std::array<MemoryAccess, maxSlices> memoryAccess;
     uint32_t slicesCount = 0;
 
+    //  Проверить, что два доступа используют полностью одинаковые
+    //  слайсы в одинаковых лэйаутах
+    inline bool hasSameLayouts(const ImageAccess& other) const noexcept;
+
     // Объединить 2 доступа в 1 без использования барьеров.
     // Возвращает false, если объединить не удалось.
     bool mergeNoBarriers(const ImageAccess& nextAccess) noexcept;
@@ -140,5 +144,17 @@ namespace mt
       .readAccessMask = readAccessMask | nextAccess.readAccessMask,
       .writeStagesMask = writeStagesMask | nextAccess.writeStagesMask,
       .writeAccessMask = writeAccessMask | nextAccess.writeAccessMask};
+  }
+
+  inline bool ImageAccess::hasSameLayouts(
+                                      const ImageAccess& other) const noexcept
+  {
+    if(slicesCount != other.slicesCount) return false;
+    for(uint32_t i = 0; i < slicesCount; i++)
+    {
+      if(layouts[i] != other.layouts[i]) return false;
+      if(slices[i] != other.slices[i]) return false;
+    }
+    return true;
   }
 }
