@@ -17,8 +17,8 @@ ImageSlice::ImageSlice(const Image& image) noexcept :
 ImageSlice::ImageSlice( const Image& image,
                         VkImageAspectFlags aspectMask,
                         uint32_t baseMipLevel,
-                        uint32_t baseArrayLayer,
                         uint32_t levelCount,
+                        uint32_t baseArrayLayer,
                         uint32_t layerCount) noexcept :
   _aspectMask(aspectMask),
   _baseMipLevel(baseMipLevel),

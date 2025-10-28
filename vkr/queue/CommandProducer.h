@@ -117,7 +117,7 @@ namespace mt
     //  Текущий заполняемый буфер команд
     CommandBuffer* _currentPrimaryBuffer;
     //  Зарезервированный, но ещё не, использованный буфер для согласования
-    CommandBuffer* _currentMatchingBuffer;
+    CommandBuffer* _cachedMatchingBuffer;
 
     bool _isFinalized;
   };

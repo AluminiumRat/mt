@@ -25,8 +25,8 @@ namespace mt
     ImageSlice( const Image& image,
                 VkImageAspectFlags aspectMask,
                 uint32_t baseMipLevel,
-                uint32_t baseArrayLayer,
                 uint32_t levelCount = VK_REMAINING_MIP_LEVELS,
+                uint32_t baseArrayLayer = 0,
                 uint32_t layerCount = VK_REMAINING_ARRAY_LAYERS) noexcept;
     ImageSlice(const ImageSlice&) noexcept = default;
     ImageSlice& operator = (const ImageSlice&) noexcept = default;

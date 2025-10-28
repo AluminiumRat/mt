@@ -1,8 +1,7 @@
 ﻿#pragma once
 //  Здесь лежит набор мелких вспомогательных структур и функций, описывающих
-//    доступ к памяти Image в контексту layout-ов и кэшей.
-//  Используется для автоматической расстановки барьеров при работе с Image-ми,
-//    для которых включен автоконтроль лэйаутов
+//    доступ к памяти Image в контексте layout-ов и кэшей.
+//  Используется для автоматической расстановки барьеров при работе с Image-ми
 
 #include <array>
 #include <optional>
@@ -121,6 +120,13 @@ namespace mt
   {
     // Если никто ничего не пишет - то и конфликта быть не может
     if(writeAccessMask == 0 && nextAccess.writeAccessMask == 0) return false;
+    // Если на предыдущем или последующем доступе ресурс вообще не используется,
+    // то конфликта так же быть не может
+    if(writeAccessMask == 0 && readAccessMask == 0) return false;
+    if(nextAccess.writeAccessMask == 0 && nextAccess.readAccessMask == 0)
+    {
+      return false;
+    }
 
     if(writeAccessMask == nextAccess.writeAccessMask)
     {

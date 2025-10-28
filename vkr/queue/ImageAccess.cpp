@@ -11,12 +11,16 @@ void MemoryAccess::createBarrier(
 {
   if(nextAccess.writeStagesMask == 0)
   {
-    //  В следующем доступе нет записи в память, поэтому нет смысла зищищать
-    //  чтение в предыдущем
-    commandBuffer.memoryBarrier(writeStagesMask,
-                                nextAccess.readStagesMask,
-                                writeAccessMask,
-                                nextAccess.readAccessMask);
+    // Отбрасываем чтение после чтения, тут вообще ничего защищать не надо
+    if (writeStagesMask != 0)
+    {
+      //  В следующем доступе нет записи в память, поэтому нет смысла зищищать
+      //  чтение в предыдущем
+      commandBuffer.memoryBarrier(writeStagesMask,
+                                  nextAccess.readStagesMask,
+                                  writeAccessMask,
+                                  nextAccess.readAccessMask);
+    }
   }
   else
   {
@@ -48,12 +52,16 @@ void MemoryAccess::updateBarrierMasks(const MemoryAccess& nextAccess,
 {
   if(nextAccess.writeStagesMask == 0)
   {
-    //  В следующем доступе нет записи в память, поэтому нет смысла зищищать
-    //  чтение в предыдущем
-    srcStages |= writeStagesMask;
-    dstStages |= nextAccess.readStagesMask;
-    srcAccess |= writeAccessMask;
-    dstAccess |= nextAccess.readAccessMask;
+    // Отбрасываем чтение после чтения, тут вообще ничего защищать не надо
+    if(writeStagesMask != 0)
+    {
+      //  В следующем доступе нет записи в память, поэтому нет смысла зищищать
+      //  чтение в предыдущем
+      srcStages |= writeStagesMask;
+      dstStages |= nextAccess.readStagesMask;
+      srcAccess |= writeAccessMask;
+      dstAccess |= nextAccess.readAccessMask;
+    }
   }
   else
   {
@@ -219,12 +227,15 @@ void MatchingPoint::makeMatch(const Image& image,
     // памяти
     for (uint32_t i = 0; i < previousAccess.slicesCount; i++)
     {
-      previousAccess.memoryAccess[i].updateBarrierMasks(
+      if(previousAccess.memoryAccess[i].needBarrier(nextAccess.memoryAccess[i]))
+      {
+        previousAccess.memoryAccess[i].updateBarrierMasks(
                                                   nextAccess.memoryAccess[i],
                                                   srcStages,
                                                   dstStages,
                                                   memoryBarrier.srcAccessMask,
                                                   memoryBarrier.dstAccessMask);
+      }
     }
     firstNewSliceIndex = previousAccess.slicesCount;
   }

@@ -18,7 +18,7 @@ CommandProducer::CommandProducer(CommandPoolSet& poolSet) :
   _queue(_commandPoolSet.queue()),
   _commandPool(nullptr),
   _currentPrimaryBuffer(nullptr),
-  _currentMatchingBuffer(nullptr),
+  _cachedMatchingBuffer(nullptr),
   _descriptorPool(nullptr),
   _isFinalized(false)
 {
@@ -49,20 +49,20 @@ std::optional<CommandProducer::FinalizeResult>
 
     if(_commandSequence.empty()) return std::nullopt;
 
+    FinalizeResult result;
+    result.commandSequence = &_commandSequence;
+    result.matchingBuffer = _cachedMatchingBuffer != nullptr ?
+                                                _cachedMatchingBuffer :
+                                                &_commandPool->getNextBuffer();
+    result.imageStates = &_accessWatcher.finalize();
+
+    //  EndBuffer стоит после _accessWatcher.finalize, так как finalize
+    //  ещё может писать в буферы команд(согласование предпоследнего и
+    //  последнего доступов)
     for(CommandBuffer* buffer : _commandSequence)
     {
       buffer->endBuffer();
     }
-
-    if(_currentMatchingBuffer == nullptr)
-    {
-      _currentMatchingBuffer = &_commandPool->getNextBuffer();
-    }
-
-    FinalizeResult result;
-    result.commandSequence = &_commandSequence;
-    result.matchingBuffer = _currentMatchingBuffer;
-    result.imageStates = &_accessWatcher.finalize();
 
     return result;
   }
@@ -118,28 +118,31 @@ CommandBuffer& CommandProducer::_getOrCreateBuffer()
 void CommandProducer::_addImageUsage( const Image& image,
                                       const ImageAccess& access)
 {
-  if(!image.isLayoutAutoControlEnabled())
+  if(image.isLayoutAutoControlEnabled())
   {
-    return;
-  }
+    if(_cachedMatchingBuffer == nullptr)
+    {
+      _cachedMatchingBuffer = &_commandPool->getNextBuffer();
+    }
 
-  if(_currentMatchingBuffer == nullptr)
-  {
-    _currentMatchingBuffer = &_commandPool->getNextBuffer();
-  }
-
-  if(_accessWatcher.addImageAccess( image,
-                                    access,
-                                    *_currentMatchingBuffer) ==
+    if(_accessWatcher.addImageAccess( image,
+                                      access,
+                                      *_cachedMatchingBuffer) ==
                                           ImageAccessWatcher::NEED_TO_MATCHING)
-  {
-    // Обнаружили место, где будет барьер
-    CommandBuffer* matchingBuffer = _currentMatchingBuffer;
-    _currentMatchingBuffer = nullptr;
-    _currentPrimaryBuffer = nullptr;
-    matchingBuffer->startOnetimeBuffer();
-    _commandSequence.push_back(matchingBuffer);
+    {
+      // Обнаружили место, где будет барьер
+      CommandBuffer* matchingBuffer = _cachedMatchingBuffer;
+      _cachedMatchingBuffer = nullptr;
+      _currentPrimaryBuffer = nullptr;
+      matchingBuffer->startOnetimeBuffer();
+      _commandSequence.push_back(matchingBuffer);
+    }
   }
+
+  // Захватываем владение, чтобы Image не удалился во время выполнения буфера
+  // Захватываем уже новым буфером команд после барьера
+  CommandBuffer& buffer = _getOrCreateBuffer();
+  buffer.lockResource(image);
 }
 
 void CommandProducer::imageBarrier( const Image& image,
@@ -153,10 +156,18 @@ void CommandProducer::imageBarrier( const Image& image,
 {
   MT_ASSERT(!image.isLayoutAutoControlEnabled());
 
+  ImageAccess imageAccess;
+  imageAccess.slices[0] = slice;
+  imageAccess.layouts[0] = dstLayout;
+  imageAccess.memoryAccess[0] = MemoryAccess{
+                                  .readStagesMask = dstStages,
+                                  .readAccessMask = dstAccesMask,
+                                  .writeStagesMask = dstStages,
+                                  .writeAccessMask = dstAccesMask};
+
+  _addImageUsage(image, imageAccess);
+
   CommandBuffer& buffer = _getOrCreateBuffer();
-
-  buffer.lockResource(image);
-
   buffer.imageBarrier(image,
                       slice,
                       srcLayout,
@@ -176,9 +187,6 @@ void CommandProducer::forceLayout(const Image& image,
                                   VkAccessFlags writeAccessMask)
 {
   MT_ASSERT(image.isLayoutAutoControlEnabled());
-
-  CommandBuffer& buffer = _getOrCreateBuffer();
-  buffer.lockResource(image);
 
   ImageAccess imageAccess;
   imageAccess.slices[0] = slice;

@@ -223,7 +223,7 @@ void CommandQueue::_matchLayouts( CommandBuffer& matchingBuffer,
   matchingBuffer.endBuffer();
 
   // Если был записан хотябы один барьер, то сабмитим буфер команд
-  if(matchingBuffer.isBufferInProcess())
+  if(barriersAdded)
   {
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

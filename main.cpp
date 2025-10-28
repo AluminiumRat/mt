@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
                                             VK_SAMPLE_COUNT_1_BIT,
                                             1,
                                             2,
-                                            false,
+                                            true,
                                             *device));
 
     mt::Ref<mt::SwapChain> swapChain(new mt::SwapChain( *device,
