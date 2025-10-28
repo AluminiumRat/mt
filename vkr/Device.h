@@ -169,7 +169,7 @@ namespace mt
     {
       return *_queuesByTypes[COMPUTE_QUEUE];
     }
-    MT_ASSERT(false && "At least one of the graphic queue or the compute queue must exists");
+    Abort("At least one of the graphic queue or the compute queue must exists");
   }
 
   inline const CommandQueue& Device::primaryQueue() const noexcept

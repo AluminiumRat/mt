@@ -2,4 +2,8 @@
 
 #include "util/Abort.h"
 
-#define MT_ASSERT(expression) if(!(expression)) {mt::Abort(#expression);}
+#ifdef _DEBUG
+  #define MT_ASSERT(expression) if(!(expression)) {mt::Abort(#expression);}
+#else
+  #define MT_ASSERT(expression)
+#endif

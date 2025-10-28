@@ -84,7 +84,7 @@ static VkBufferUsageFlags getUsageFlags(PlainBuffer::Usage usage)
       return  VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
   }
 
-  MT_ASSERT(false && "PlainBuffer::getUsageFlags: unknown usage");
+  Abort("PlainBuffer::getUsageFlags: unknown usage");
 };
 
 static VmaAllocationCreateInfo getVmaCreateInfo(PlainBuffer::Usage usage)

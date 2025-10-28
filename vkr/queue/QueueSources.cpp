@@ -87,7 +87,7 @@ static QueueType getPrimaryQueue(const QueueSources& sources) noexcept
   }
 
   // Если нет ни графической, ни компьют очереди - это ошибка
-  MT_ASSERT(false && "getPrimaryQueue: Both the graphic que and the compute queue are nullptr");
+  Abort("getPrimaryQueue: Both the graphic que and the compute queue are nullptr");
 }
 
 static bool findPresentationQueue(

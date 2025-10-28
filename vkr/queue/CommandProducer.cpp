@@ -69,7 +69,7 @@ std::optional<CommandProducer::FinalizeResult>
   catch(std::exception& error)
   {
     Log::error() << "CommandProducer::finalize: " << error.what();
-    MT_ASSERT(false && "Unable to finalize CommandProducer");
+    Abort("Unable to finalize CommandProducer");
   }
 }
 

@@ -72,7 +72,7 @@ ImageAccessWatcher::MemoryConflict ImageAccessWatcher::addImageAccess(
   catch (std::exception& error)
   {
     Log::error() << "ImageAccessWatcher::addImageAccess: unable to add image access: " << error.what();
-    MT_ASSERT(false && "Unable to add image access");
+    Abort("Unable to add image access");
   }
 }
 
