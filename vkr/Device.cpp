@@ -77,10 +77,17 @@ void Device::_createHandle( const std::vector<std::string>& requiredExtensions,
                   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
   semaphoreFeature.timelineSemaphore = VK_TRUE;
 
+  // Обязательно включить synchronization2
+  VkPhysicalDeviceSynchronization2Features synchronization2Feature{};
+  synchronization2Feature.sType =
+                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
+  synchronization2Feature.synchronization2 = VK_TRUE;
+  synchronization2Feature.pNext = &semaphoreFeature;
+
   VkPhysicalDeviceFeatures2 features{};
   features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
   features.features = _features;
-  features.pNext = &semaphoreFeature;
+  features.pNext = &synchronization2Feature;
 
   VkDeviceCreateInfo createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

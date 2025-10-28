@@ -351,6 +351,12 @@ bool VKRLib::_isDeviceSuitable(
     return false;
   }
 
+  if (!device.isSynchronization2Supported())
+  {
+    Log::info() << "Device " << device.properties().deviceName << " doesn't support synchronization2";
+    return false;
+  }
+
   // Проверяем, что карта поддерживает все требуемые расширения
   for (const std::string& extensionName : requiredExtensions)
   {

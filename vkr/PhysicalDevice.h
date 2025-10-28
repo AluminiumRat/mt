@@ -43,6 +43,7 @@ namespace mt
     bool areFeaturesSupported(
                       const VkPhysicalDeviceFeatures& features) const noexcept;
     inline bool areTimelineSemaphoresSupported() const noexcept;
+    inline bool isSynchronization2Supported() const noexcept;
 
     inline const MemoryInfo& memoryInfo() const noexcept;
 
@@ -64,6 +65,7 @@ namespace mt
     VkPhysicalDeviceProperties _properties;
     VkPhysicalDeviceFeatures _features;
     bool _timelineSemaphoreSupport;
+    bool _synchronization2Support;
     MemoryInfo _memoryInfo;
     QueueFamiliesInfo _queuesInfo;
   };
@@ -88,6 +90,11 @@ namespace mt
   inline bool PhysicalDevice::areTimelineSemaphoresSupported() const noexcept
   {
     return _timelineSemaphoreSupport;
+  }
+
+  inline bool PhysicalDevice::isSynchronization2Supported() const noexcept
+  {
+    return _synchronization2Support;
   }
 
   inline const MemoryInfo& PhysicalDevice::memoryInfo() const noexcept

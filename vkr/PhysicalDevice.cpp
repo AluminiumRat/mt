@@ -8,7 +8,8 @@ using namespace mt;
 
 PhysicalDevice::PhysicalDevice(VkPhysicalDevice deviceHandle) :
   _handle(deviceHandle),
-  _timelineSemaphoreSupport(false)
+  _timelineSemaphoreSupport(false),
+  _synchronization2Support(false)
 {
   vkGetPhysicalDeviceProperties(_handle, &_properties);
 
@@ -34,13 +35,20 @@ void PhysicalDevice::_getFeatures()
   semaphoreFeature.sType =
                   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
 
+  // И поддержку synchronization2
+  VkPhysicalDeviceSynchronization2Features synchronization2Feature{};
+  synchronization2Feature.sType =
+                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
+  synchronization2Feature.pNext = &semaphoreFeature;
+
   VkPhysicalDeviceFeatures2 features{};
   features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-  features.pNext = &semaphoreFeature;
+  features.pNext = &synchronization2Feature;
   vkGetPhysicalDeviceFeatures2(_handle, &features);
 
   _features = features.features;
   _timelineSemaphoreSupport = semaphoreFeature.timelineSemaphore;
+  _synchronization2Support = synchronization2Feature.synchronization2;
 }
 
 void PhysicalDevice::_fillMemoryInfo()
