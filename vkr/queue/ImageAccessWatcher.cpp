@@ -14,66 +14,58 @@ ImageAccessWatcher::ImageAccessWatcher() noexcept :
 }
 
 ImageAccessWatcher::MemoryConflict ImageAccessWatcher::addImageAccess(
-                                        const Image& image,
-                                        const ImageAccess& newAccess,
-                                        CommandBuffer& matchingBuffer) noexcept
+                                                  const Image& image,
+                                                  const ImageAccess& newAccess,
+                                                  CommandBuffer& matchingBuffer)
 {
   MT_ASSERT(!_isFinalized);
 
-  try
+  auto insertion = _accessMap.emplace(&image, ImageAccessState());
+  bool isNewRecord = insertion.second;
+  ImageAccessState& imageState = insertion.first->second;
+
+  if(isNewRecord)
   {
-    auto insertion = _accessMap.emplace(&image, ImageAccessState());
-    bool isNewRecord = insertion.second;
-    ImageAccessState& imageState = insertion.first->second;
-
-    if(isNewRecord)
-    {
-      //  Image ещё не использовался в текущей сессии
-      imageState.currentAccess = newAccess;
-      return NO_MEMORY_CONFLICT;
-    }
-
-    ImageAccess& currentAccess = imageState.currentAccess;
-
-    //  Для начала пытаемся поженить предыдущий и следующий доступы без барьеров
-    if(currentAccess.mergeNoBarriers(newAccess))
-    {
-      return NO_MEMORY_CONFLICT;
-    }
-
-    //  Без барьера объединить не получилось
-    //  Для начала резолвим предыдущую точку согласования
-    if (imageState.lastMatchingPoint.has_value())
-    {
-      imageState.lastMatchingPoint->makeMatch(image, currentAccess);
-      imageState.lastMatchingPoint.reset();
-    }
-    else
-    {
-      //  Точки согласования нет, значит это был первый доступ в сессии,
-      //  сохраним его
-      imageState.initialAccess = currentAccess;
-    }
-
-    //  Готовим новую точку согласования между текущим доступом и следующим
-    //  transformHint здесь временный, мы его пока ещё не знаем
-    imageState.lastMatchingPoint = MatchingPoint{
-                                .matchingBuffer = &matchingBuffer,
-                                .previousAccess = imageState.currentAccess,
-                                .transformHint = ImageAccess::RESET_SLICES };
-
-    //  Из текущего доступа и нового пришедшего изобретаем новое состояние
-    //  лэйаутов так, чтобы преобразовывать потребовалось поменьше
-    imageState.lastMatchingPoint->transformHint =
-                          imageState.currentAccess.mergeWithBarriers(newAccess);
-
-    return NEED_TO_MATCHING;
+    //  Image ещё не использовался в текущей сессии
+    imageState.currentAccess = newAccess;
+    return NO_MEMORY_CONFLICT;
   }
-  catch (std::exception& error)
+
+  ImageAccess& currentAccess = imageState.currentAccess;
+
+  //  Для начала пытаемся поженить предыдущий и следующий доступы без барьеров
+  if(currentAccess.mergeNoBarriers(newAccess))
   {
-    Log::error() << "ImageAccessWatcher::addImageAccess: unable to add image access: " << error.what();
-    Abort("Unable to add image access");
+    return NO_MEMORY_CONFLICT;
   }
+
+  //  Без барьера объединить не получилось
+  //  Для начала резолвим предыдущую точку согласования
+  if (imageState.lastMatchingPoint.has_value())
+  {
+    imageState.lastMatchingPoint->makeMatch(image, currentAccess);
+    imageState.lastMatchingPoint.reset();
+  }
+  else
+  {
+    //  Точки согласования нет, значит это был первый доступ в сессии,
+    //  сохраним его
+    imageState.initialAccess = currentAccess;
+  }
+
+  //  Готовим новую точку согласования между текущим доступом и следующим
+  //  transformHint здесь временный, мы его пока ещё не знаем
+  imageState.lastMatchingPoint = MatchingPoint{
+                              .matchingBuffer = &matchingBuffer,
+                              .previousAccess = imageState.currentAccess,
+                              .transformHint = ImageAccess::RESET_SLICES };
+
+  //  Из текущего доступа и нового пришедшего изобретаем новое состояние
+  //  лэйаутов так, чтобы преобразовывать потребовалось поменьше
+  imageState.lastMatchingPoint->transformHint =
+                        imageState.currentAccess.mergeWithBarriers(newAccess);
+
+  return NEED_TO_MATCHING;
 }
 
 const ImageAccessMap& ImageAccessWatcher::finalize() noexcept

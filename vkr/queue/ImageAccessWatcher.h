@@ -41,7 +41,7 @@ namespace mt
     //    его можно стартовать только когда будет возвращен NEED_TO_MATCHING
     MemoryConflict addImageAccess(const Image& image, 
                                   const ImageAccess& newAccess,
-                                  CommandBuffer& matchingBuffer) noexcept;
+                                  CommandBuffer& matchingBuffer);
 
     //  Закончить работу, записать все необходимые барьеры и привести
     //    ImageAccessMap в вид, пригодный для внешнего использования.
