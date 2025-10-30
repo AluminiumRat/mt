@@ -137,8 +137,6 @@ void CommandBuffer::imageBarrier( const Image& image,
   barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
   barrier.oldLayout = srcLayout;
   barrier.newLayout = dstLayout;
-  barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-  barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
   barrier.image = image.handle();
   barrier.subresourceRange = slice.makeRange();
 

@@ -296,3 +296,99 @@ void CommandQueue::waitIdle() const
   }
 }
 
+void CommandQueue::_makeFullMemoryBarrier()
+{
+  std::unique_ptr<CommandProducer> producer = startCommands();
+  producer->memoryBarrier(VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                          VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                          VK_ACCESS_MEMORY_WRITE_BIT,
+                          VK_ACCESS_MEMORY_READ_BIT);
+  submitCommands(std::move(producer));
+}
+
+SyncPoint CommandQueue::ownershipTransfer(CommandQueue& oldQueue,
+                                          CommandQueue& newQueue,
+                                          const Image& image)
+{
+  MT_ASSERT(image.owner == nullptr || image.owner == &oldQueue);
+
+  std::lock_guard lock(oldQueue._commonMutex);
+
+  if(oldQueue.family().index() == newQueue.family().index())
+  {
+    // Трансфер не нужен, просто ставим полный барьер памяти
+    oldQueue._makeFullMemoryBarrier();
+    SyncPoint syncPoint = oldQueue.createSyncPoint();
+    image.owner = &newQueue;
+    return syncPoint;
+  }
+
+  // Первая половина трансфера - освобождаем владение старой очередью
+  std::unique_ptr<CommandProducer> releaseProducer = oldQueue.startCommands();
+  releaseProducer->halfOwnershipTransfer( image,
+                                          oldQueue.family().index(),
+                                          newQueue.family().index());
+  oldQueue.submitCommands(std::move(releaseProducer));
+  image.owner = nullptr;
+
+  // У нас уже есть половина трансфера, который мы не можем откатить. Любые
+  // ошибки во второй половине трансфера приводят к пату
+  try
+  {
+    // Вторая половина трансфера - захватываем владение новой очередью
+    newQueue.addWaitingForQueue(oldQueue, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    std::unique_ptr<CommandProducer> acquireProducer = newQueue.startCommands();
+    acquireProducer->halfOwnershipTransfer( image,
+                                            oldQueue.family().index(),
+                                            newQueue.family().index());
+    newQueue.submitCommands(std::move(acquireProducer));
+    image.owner = &newQueue;
+    return newQueue.createSyncPoint();
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << "CommandQueue::ownershipTransfer: " << error.what();
+    Abort("CommandQueue::ownershipTransfer: unable to acquire image ownership");
+  }
+}
+
+SyncPoint CommandQueue::ownershipTransfer(CommandQueue& oldQueue,
+                                          CommandQueue& newQueue,
+                                          const PlainBuffer& buffer)
+{
+  std::lock_guard lock(oldQueue._commonMutex);
+
+  if(oldQueue.family().index() == newQueue.family().index())
+  {
+    // Трансфер не нужен, просто ставим полный барьер памяти
+    oldQueue._makeFullMemoryBarrier();
+    SyncPoint syncPoint = oldQueue.createSyncPoint();
+    return syncPoint;
+  }
+
+  // Первая половина трансфера - освобождаем владение старой очередью
+  std::unique_ptr<CommandProducer> releaseProducer = oldQueue.startCommands();
+  releaseProducer->halfOwnershipTransfer( buffer,
+                                          oldQueue.family().index(),
+                                          newQueue.family().index());
+  oldQueue.submitCommands(std::move(releaseProducer));
+
+  // У нас уже есть половина трансфера, который мы не можем откатить. Любые
+  // ошибки во второй половине трансфера приводят к пату
+  try
+  {
+    // Вторая половина трансфера - захватываем владение новой очередью
+    newQueue.addWaitingForQueue(oldQueue, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    std::unique_ptr<CommandProducer> acquireProducer = newQueue.startCommands();
+    acquireProducer->halfOwnershipTransfer( buffer,
+                                            oldQueue.family().index(),
+                                            newQueue.family().index());
+    newQueue.submitCommands(std::move(acquireProducer));
+    return newQueue.createSyncPoint();
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << "CommandQueue::ownershipTransfer: " << error.what();
+    Abort("CommandQueue::ownershipTransfer: unable to acquire buffer ownership");
+  }
+}

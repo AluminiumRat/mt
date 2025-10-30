@@ -18,6 +18,8 @@ namespace mt
 {
   class CommandBuffer;
   class Device;
+  class Image;
+  class PlainBuffer;
 
   // Класс отвечает за отправку команд на GPU. По факту - толстая обертка вокруг
   // VkQueue
@@ -75,6 +77,26 @@ namespace mt
     void addWaitingForQueue(CommandQueue& queue,
                             VkPipelineStageFlags waitStages);
 
+    //  Перенести владение Image-ем из oldQueue в newQueue. Обертка вокруг Queue
+    //    Family Ownership Transfer вулкана.
+    //  Если oldQueue и newQueue принадлежат одному семейству (или это вообще
+    //    одна и та же очередь), то просто будет добавлен максимально жесткий
+    //    барьер памяти
+    //  Возвращает SyncPoint из newQueue, на котором трансфер будет завершен
+    static SyncPoint ownershipTransfer( CommandQueue& oldQueue,
+                                        CommandQueue& newQueue,
+                                        const Image& image);
+
+    //  Перенести владение буфером из oldQueue в newQueue. Обертка вокруг Queue
+    //    Family Ownership Transfer вулкана.
+    //  Если oldQueue и newQueue принадлежат одному семейству (или это вообще
+    //    одна и та же очередь), то просто будет добавлен максимально жесткий
+    //    барьер памяти
+    //  Возвращает SyncPoint из newQueue, на котором трансфер будет завершен
+    static SyncPoint ownershipTransfer( CommandQueue& oldQueue,
+                                        CommandQueue& newQueue,
+                                        const PlainBuffer& buffer);
+
     //  Приостановить работу текущего потока пока не будут выполнены все команды
     //  из очереди
     void waitIdle() const;
@@ -91,6 +113,8 @@ namespace mt
     // отправкой буфера команд на исполнение
     void _matchLayouts( CommandBuffer& matchingBuffer,
                         const ImageAccessMap& imageStates) noexcept;
+
+    void _makeFullMemoryBarrier();
 
   private:
     VkQueue _handle;

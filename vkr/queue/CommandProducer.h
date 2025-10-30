@@ -43,6 +43,13 @@ namespace mt
 
     inline CommandQueue& queue() const noexcept;
 
+    //  Барьер памяти. То есть разделяем поток исполнения команд плюс
+    //    флашим кэши srcAccesMask и инвалидируем кэши dstAccesMask
+    void memoryBarrier( VkPipelineStageFlags srcStages,
+                        VkPipelineStageFlags dstStages,
+                        VkAccessFlags srcAccesMask,
+                        VkAccessFlags dstAccesMask);
+
     //  Перевод имэйджа из одного лайоута в другой.
     //  Можно использовать только на имэйджах с отключенным автоконтролем
     //    лэйаута.
@@ -147,6 +154,18 @@ namespace mt
     std::optional<FinalizeResult> finalize() noexcept;
     //  Отправить пулы на передержку до достижения releasePoint
     void release(const SyncPoint& releasePoint);
+
+    //  Половина трансфера владения (vulkan Queue Family Ownership Transfer)
+    //  Команды, исполняемые на каждой из очередей, участвующих в трансфере
+    void halfOwnershipTransfer( const Image& image,
+                                uint32_t oldFamilyIndex,
+                                uint32_t newFamilyIndex);
+
+    //  Половина трансфера владения (vulkan Queue Family Ownership Transfer)
+    //  Команды, исполняемые на каждой из очередей, участвующих в трансфере
+    void halfOwnershipTransfer( const PlainBuffer& buffer,
+                                uint32_t oldFamilyIndex,
+                                uint32_t newFamilyIndex);
 
   private:
     CommandBuffer& _getOrCreateBuffer();

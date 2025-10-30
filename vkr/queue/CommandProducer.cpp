@@ -151,6 +151,15 @@ void CommandProducer::_addBufferUsage(const PlainBuffer& buffer)
   commandbuffer.lockResource(buffer);
 }
 
+void CommandProducer::memoryBarrier(VkPipelineStageFlags srcStages,
+                                    VkPipelineStageFlags dstStages,
+                                    VkAccessFlags srcAccesMask,
+                                    VkAccessFlags dstAccesMask)
+{
+  CommandBuffer& buffer = _getOrCreateBuffer();
+  buffer.memoryBarrier(srcStages, dstStages, srcAccesMask, dstAccesMask);
+}
+
 void CommandProducer::imageBarrier( const Image& image,
                                     const ImageSlice& slice,
                                     VkImageLayout srcLayout,
@@ -316,4 +325,67 @@ void CommandProducer::copyFromImageToBuffer(const Image& srcImage,
                           dstBuffer.handle(),
                           1,
                           &region);
+}
+
+void CommandProducer::halfOwnershipTransfer(const Image& image,
+                                            uint32_t oldFamilyIndex,
+                                            uint32_t newFamilyIndex)
+{
+  CommandBuffer& buffer = _getOrCreateBuffer();
+  buffer.lockResource(image);
+
+  VkMemoryBarrier memoryBarrier{};
+  memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+  memoryBarrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+  memoryBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+
+  VkImageMemoryBarrier imageBarrier{};
+  imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+  imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  imageBarrier.newLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  imageBarrier.srcQueueFamilyIndex = oldFamilyIndex;
+  imageBarrier.dstQueueFamilyIndex = newFamilyIndex;
+  imageBarrier.image = image.handle();
+  imageBarrier.subresourceRange = ImageSlice(image).makeRange();
+  imageBarrier.srcAccessMask = 0;
+  imageBarrier.dstAccessMask = 0;
+
+  vkCmdPipelineBarrier( buffer.handle(),
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        0,
+                        1,
+                        &memoryBarrier,
+                        0,
+                        nullptr,
+                        1,
+                        &imageBarrier);
+}
+
+void CommandProducer::halfOwnershipTransfer(const PlainBuffer& buffer,
+                                            uint32_t oldFamilyIndex,
+                                            uint32_t newFamilyIndex)
+{
+  CommandBuffer& commandBuffer = _getOrCreateBuffer();
+  commandBuffer.lockResource(buffer);
+
+  VkBufferMemoryBarrier bufferBarrier{};
+  bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+  bufferBarrier.srcQueueFamilyIndex = oldFamilyIndex;
+  bufferBarrier.dstQueueFamilyIndex = newFamilyIndex;
+  bufferBarrier.buffer = buffer.handle();
+  bufferBarrier.size = buffer.size();
+  bufferBarrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+  bufferBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+
+  vkCmdPipelineBarrier( commandBuffer.handle(),
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        0,
+                        0,
+                        nullptr,
+                        1,
+                        &bufferBarrier,
+                        0,
+                        nullptr);
 }
