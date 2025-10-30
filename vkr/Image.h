@@ -31,7 +31,8 @@ namespace mt
     //  VK_IMAGE_LAYOUT_UNDEFINED, VK_SHARING_MODE_EXCLUSIVE
     //  Память будет выделена по возможности в GPU-only куче, доступ со
     //    стороны CPU только через staging буферы
-    Image(VkImageType imageType,
+    Image(Device& device,
+          VkImageType imageType,
           VkImageUsageFlags usageFlags,
           VkImageCreateFlags createFlags,
           VkFormat format,
@@ -40,8 +41,7 @@ namespace mt
           VkSampleCountFlagBits samples,
           uint32_t arraySize,
           uint32_t mipmapCount,
-          bool enableLayoutAutoControl,
-          Device& device);
+          bool enableLayoutAutoControl);
 
     //  Создать объект-обертку вокруг уже существующего VkImage
     //  owner - очередь, к которой привязан Image. Если ни одна из очередей
@@ -55,7 +55,8 @@ namespace mt
     //    после выполнения текущей очереди команд. Работает только для
     //    sharingMode VK_SHARING_MODE_EXCLUSIVE и включенного автоконтроля
     //    лэйаута. В остальных случаях следут передавать ImageAccess()
-    Image(VkImage handle,
+    Image(Device& device,
+          VkImage handle,
           VkImageType imageType,
           VkFormat format,
           VkImageAspectFlags aspectMask,
@@ -66,8 +67,7 @@ namespace mt
           VkSharingMode sharingMode,
           CommandQueue* theOwner,
           bool enableLayoutAutoControl,
-          const ImageAccess& theLastAccess,
-          Device& device);
+          const ImageAccess& theLastAccess);
     Image(const Image&) = delete;
     Image& operator = (const Image&) = delete;
   protected:

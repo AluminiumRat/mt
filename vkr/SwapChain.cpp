@@ -212,7 +212,8 @@ void SwapChain::_createHandle(
   _frames.resize(imageCount);
   for(size_t frameIndex = 0; frameIndex < _frames.size(); frameIndex++)
   {
-    _frames[frameIndex].image = new Image(images[frameIndex],
+    _frames[frameIndex].image = new Image(_device,
+                                          images[frameIndex],
                                           VK_IMAGE_TYPE_2D,
                                           _imageFormat.format,
                                           VK_IMAGE_ASPECT_COLOR_BIT,
@@ -223,8 +224,7 @@ void SwapChain::_createHandle(
                                           createInfo.imageSharingMode,
                                           nullptr,
                                           false,
-                                          ImageAccess(),
-                                          _device);
+                                          ImageAccess());
   }
 }
 

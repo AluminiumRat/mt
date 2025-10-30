@@ -6,7 +6,8 @@
 
 using namespace mt;
 
-Image::Image( VkImageType imageType,
+Image::Image( Device& device,
+              VkImageType imageType,
               VkImageUsageFlags usageFlags,
               VkImageCreateFlags createFlags,
               VkFormat format,
@@ -15,8 +16,7 @@ Image::Image( VkImageType imageType,
               VkSampleCountFlagBits samples,
               uint32_t arraySize,
               uint32_t mipmapCount,
-              bool enableLayoutAutoControl,
-              Device& device) :
+              bool enableLayoutAutoControl) :
   owner(nullptr),
   _handle(VK_NULL_HANDLE),
   _allocation(VK_NULL_HANDLE),
@@ -78,7 +78,8 @@ Image::Image( VkImageType imageType,
   }
 }
 
-Image::Image( VkImage handle,
+Image::Image( Device& device,
+              VkImage handle,
               VkImageType imageType,
               VkFormat format,
               VkImageAspectFlags aspectMask,
@@ -89,8 +90,7 @@ Image::Image( VkImage handle,
               VkSharingMode sharingMode,
               CommandQueue* theOwner,
               bool enableLayoutAutoControl,
-              const ImageAccess& theLastAccess,
-              Device& device) :
+              const ImageAccess& theLastAccess) :
   owner(theOwner),
   lastAccess(theLastAccess),
   _handle(handle),
