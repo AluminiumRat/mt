@@ -4,6 +4,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include <glm/glm.hpp>
+
 #include <vkr/queue/ImageAccessWatcher.h>
 #include <vkr/queue/UniformMemoryPool.h>
 
@@ -14,6 +16,7 @@ namespace mt
   class CommandPoolSet;
   class CommandQueue;
   class ImageSlice;
+  class PlainBuffer;
   class SyncPoint;
   class VolatileDescriptorPool;
 
@@ -66,6 +69,26 @@ namespace mt
                       VkPipelineStageFlags writeStages,
                       VkAccessFlags writeAccessMask);
 
+    //  Копирование из буфера в Image
+    //  srcRowLength - ширина изображения, записанного в буфере, в текселях.
+    //    Используется для определения начала следующей строки при копировании 2D
+    //    и 3D изображений, когда dstExtent не совпадает с размерами изображения
+    //    в буфере.
+    //  srcImageHeight - высота изображения, записанного в буфере, в текселях.
+    //    Используется для определения начала следующего слоя при копировании 3D
+    //    изображений, когда dstExtent не совпадает с размерами изображения
+    //    в буфере.
+    void copyFromBufferToImage( const PlainBuffer& srcBuffer,
+                                VkDeviceSize srcBufferOffset,
+                                uint32_t srcRowLength,
+                                uint32_t srcImageHeight,
+                                const Image& dstImage,
+                                VkImageAspectFlags dstAspectMask,
+                                uint32_t dstArrayIndex,
+                                uint32_t dstMipLevel,
+                                glm::uvec3 dstOffset,
+                                glm::uvec3 dstExtent);
+
   private:
     //  Отправка буфера на выполнение и релиз продюсера должны выполняться
     //  под мьютексом очередей команд, поэтому доступ только из очереди команд
@@ -102,6 +125,7 @@ namespace mt
   private:
     CommandBuffer& _getOrCreateBuffer();
     void _addImageUsage(const Image& image, const ImageAccess& access);
+    void _addBufferUsage(const PlainBuffer& buffer);
 
   private:
     CommandPoolSet& _commandPoolSet;
