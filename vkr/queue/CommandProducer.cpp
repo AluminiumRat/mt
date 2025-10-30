@@ -262,3 +262,58 @@ void CommandProducer::copyFromBufferToImage(const PlainBuffer& srcBuffer,
                           1,
                           &region);
 }
+
+void CommandProducer::copyFromImageToBuffer(const Image& srcImage,
+                                            VkImageAspectFlags srcAspectMask,
+                                            uint32_t srcArrayIndex,
+                                            uint32_t srcMipLevel,
+                                            glm::uvec3 srcOffset,
+                                            glm::uvec3 srcExtent,
+                                            const PlainBuffer& dstBuffer,
+                                            VkDeviceSize dstBufferOffset,
+                                            uint32_t dstRowLength,
+                                            uint32_t dstImageHeight)
+{
+  ImageAccess imageAccess;
+  imageAccess.slices[0] = ImageSlice( srcImage,
+                                      srcAspectMask,
+                                      srcMipLevel,
+                                      1,
+                                      srcArrayIndex,
+                                      1);
+  imageAccess.layouts[0] = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+  imageAccess.memoryAccess[0] = MemoryAccess{
+                              .readStagesMask = VK_PIPELINE_STAGE_TRANSFER_BIT,
+                              .readAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
+                              .writeStagesMask = 0,
+                              .writeAccessMask = 0};
+  imageAccess.slicesCount = 1;
+  _addImageUsage(srcImage, imageAccess);
+  _addBufferUsage(dstBuffer);
+
+  VkBufferImageCopy region{};
+  region.bufferOffset = dstBufferOffset;
+  region.bufferRowLength = dstRowLength;
+  region.bufferImageHeight = dstImageHeight;
+
+  region.imageSubresource.aspectMask = srcAspectMask;
+  region.imageSubresource.mipLevel = srcMipLevel;
+  region.imageSubresource.baseArrayLayer = srcArrayIndex;
+  region.imageSubresource.layerCount = 1;
+
+  region.imageOffset.x = uint32_t(srcOffset.x);
+  region.imageOffset.y = uint32_t(srcOffset.y);
+  region.imageOffset.z = uint32_t(srcOffset.z);
+
+  region.imageExtent.width = uint32_t(srcExtent.x);
+  region.imageExtent.height = uint32_t(srcExtent.y);
+  region.imageExtent.depth = uint32_t(srcExtent.z);
+
+  CommandBuffer& buffer = _getOrCreateBuffer();
+  vkCmdCopyImageToBuffer( buffer.handle(),
+                          srcImage.handle(),
+                          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                          dstBuffer.handle(),
+                          1,
+                          &region);
+}
