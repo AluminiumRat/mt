@@ -44,10 +44,6 @@ namespace mt
           bool enableLayoutAutoControl);
 
     //  Создать объект-обертку вокруг уже существующего VkImage
-    //  owner - очередь, к которой привязан Image. Если ни одна из очередей
-    //    ещё не захватила владение image-ем, то необходимо передать nullptr
-    //    если sharingMode == VK_SHARING_MODE_EXCLUSIVE, то необходимо передать
-    //    nullptr
     //  enableLayoutAutoControl - необходимо ли производить автоматический
     //    контроль лэйаута. Работает только если sharingMode равен
     //    VK_SHARING_MODE_EXCLUSIVE
@@ -65,7 +61,6 @@ namespace mt
           uint32_t arraySize,
           uint32_t mipmapCount,
           VkSharingMode sharingMode,
-          CommandQueue* theOwner,
           bool enableLayoutAutoControl,
           const ImageAccess& theLastAccess);
     Image(const Image&) = delete;
@@ -97,7 +92,6 @@ namespace mt
     inline uint32_t arraySize() const noexcept;
 
     inline VkSharingMode sharingMode() const noexcept;
-    inline CommandQueue* ownerQueue() const noexcept;
     inline bool isLayoutAutoControlEnabled() const noexcept;
 
     inline static uint32_t calculateMipNumber(const glm::uvec2& extent);
@@ -197,11 +191,6 @@ namespace mt
   inline VkSharingMode Image::sharingMode() const noexcept
   {
     return _sharingMode;
-  }
-
-  inline CommandQueue* Image::ownerQueue() const noexcept
-  {
-    return owner;
   }
 
   inline bool Image::isLayoutAutoControlEnabled() const noexcept
