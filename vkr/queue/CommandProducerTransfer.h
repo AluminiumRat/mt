@@ -26,7 +26,7 @@ namespace mt
     //    Используется для определения начала следующего слоя при копировании 3D
     //    изображений, когда dstExtent не совпадает с размерами изображения
     //    в буфере.
-    void copyFromBufferToImage( const PlainBuffer& srcBuffer,
+    void copyFromBufferToImage( const DataBuffer& srcBuffer,
                                 VkDeviceSize srcBufferOffset,
                                 uint32_t srcRowLength,
                                 uint32_t srcImageHeight,
@@ -55,7 +55,7 @@ namespace mt
                                 uint32_t srcMipLevel,
                                 glm::uvec3 srcOffset,
                                 glm::uvec3 srcExtent,
-                                const PlainBuffer& dstBuffer,
+                                const DataBuffer& dstBuffer,
                                 VkDeviceSize dstBufferOffset,
                                 uint32_t dstRowLength,
                                 uint32_t dstImageHeight);

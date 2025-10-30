@@ -136,7 +136,7 @@ void CommandProducer::halfOwnershipTransfer(const Image& image,
                         &imageBarrier);
 }
 
-void CommandProducer::halfOwnershipTransfer(const PlainBuffer& buffer,
+void CommandProducer::halfOwnershipTransfer(const DataBuffer& buffer,
                                             uint32_t oldFamilyIndex,
                                             uint32_t newFamilyIndex)
 {
@@ -266,7 +266,7 @@ void CommandProducer::addMultipleImagesUsage(MultipleImageUsage usages)
   }
 }
 
-void CommandProducer::addBufferUsage(const PlainBuffer& buffer)
+void CommandProducer::addBufferUsage(const DataBuffer& buffer)
 {
   CommandBuffer& commandbuffer = getOrCreateBuffer();
   commandbuffer.lockResource(buffer);

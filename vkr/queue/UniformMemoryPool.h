@@ -3,13 +3,13 @@
 #include <optional>
 #include <vector>
 
-#include <vkr/PlainBuffer.h>
+#include <vkr/DataBuffer.h>
 #include <vkr/Ref.h>
 
 namespace mt
 {
   //  Набор переиспользуемых юниформ-буферов с часто меняемыми данными
-  //    (PlainBuffer::VOLATILE_UNIFORM_BUFFER)
+  //    (DataBuffer::VOLATILE_UNIFORM_BUFFER)
   //  Используется во время заполнения буферов комманд для передачи юниформ
   //    переменных.
   //  Предполагает использование сессиями. Сессия начинается с создания класса
@@ -28,7 +28,7 @@ namespace mt
     // Информация о том, где можно забрать записанные данные на стороне GPU.
     struct MemoryInfo
     {
-      PlainBuffer* buffer;
+      DataBuffer* buffer;
       size_t offset;
     };
 
@@ -67,10 +67,10 @@ namespace mt
       UniformMemoryPool* _pool;
 
       size_t _currentBufferIndex;
-      PlainBuffer* _currentBuffer;
+      DataBuffer* _currentBuffer;
       size_t _bufferCursor;
 
-      std::optional<PlainBuffer::Mapper> _mapper;
+      std::optional<DataBuffer::Mapper> _mapper;
     };
 
   public:
@@ -86,8 +86,8 @@ namespace mt
     Device& _device;
     size_t _granularity;
     size_t _bufferSize;
-  
-    using Buffers = std::vector<Ref<PlainBuffer>>;
+
+    using Buffers = std::vector<Ref<DataBuffer>>;
     Buffers _buffers;
 
     bool _isSessionOpened;

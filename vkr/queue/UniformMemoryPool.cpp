@@ -24,7 +24,7 @@ void UniformMemoryPool::Session::_openBuffer(size_t bufferIndex)
   _currentBufferIndex = bufferIndex;
   _currentBuffer = _pool->_buffers[bufferIndex].get();
   _bufferCursor = 0;
-  _mapper.emplace(*_currentBuffer, PlainBuffer::Mapper::CPU_TO_GPU);
+  _mapper.emplace(*_currentBuffer, DataBuffer::Mapper::CPU_TO_GPU);
 }
 
 UniformMemoryPool::MemoryInfo UniformMemoryPool::Session::write(
@@ -87,9 +87,9 @@ UniformMemoryPool::UniformMemoryPool( size_t initialSize, Device& device) :
 
 void UniformMemoryPool::_addBuffer()
 {
-  Ref<PlainBuffer> newBuffer(new PlainBuffer(
+  Ref<DataBuffer> newBuffer(new DataBuffer(
                                         _device,
                                         _bufferSize,
-                                        PlainBuffer::VOLATILE_UNIFORM_BUFFER));
+                                        DataBuffer::VOLATILE_UNIFORM_BUFFER));
   _buffers.push_back(std::move(newBuffer));
 }

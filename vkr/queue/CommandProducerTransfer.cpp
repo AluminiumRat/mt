@@ -10,7 +10,7 @@ CommandProducerTransfer::CommandProducerTransfer(CommandPoolSet& poolSet) :
 }
 
 void CommandProducerTransfer::copyFromBufferToImage(
-                                            const PlainBuffer& srcBuffer,
+                                            const DataBuffer& srcBuffer,
                                             VkDeviceSize srcBufferOffset,
                                             uint32_t srcRowLength,
                                             uint32_t srcImageHeight,
@@ -73,7 +73,7 @@ void CommandProducerTransfer::copyFromImageToBuffer(
                                             uint32_t srcMipLevel,
                                             glm::uvec3 srcOffset,
                                             glm::uvec3 srcExtent,
-                                            const PlainBuffer& dstBuffer,
+                                            const DataBuffer& dstBuffer,
                                             VkDeviceSize dstBufferOffset,
                                             uint32_t dstRowLength,
                                             uint32_t dstImageHeight)

@@ -354,7 +354,7 @@ SyncPoint CommandQueue::ownershipTransfer(CommandQueue& oldQueue,
 
 SyncPoint CommandQueue::ownershipTransfer(CommandQueue& oldQueue,
                                           CommandQueue& newQueue,
-                                          const PlainBuffer& buffer)
+                                          const DataBuffer& buffer)
 {
   std::lock_guard lock(oldQueue.commonMutex);
 

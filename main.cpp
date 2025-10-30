@@ -48,11 +48,11 @@ int main(int argc, char* argv[])
                                                         std::nullopt,
                                                         std::nullopt));
 
-    mt::Ref<mt::PlainBuffer> uploadBuffer(
-                                new mt::PlainBuffer(
+    mt::Ref<mt::DataBuffer> uploadBuffer(
+                                new mt::DataBuffer(
                                             *device,
                                             2 * 2 * 4,
-                                            mt::PlainBuffer::UPLOADING_BUFFER));
+                                            mt::DataBuffer::UPLOADING_BUFFER));
     std::vector<uint32_t> data = {0xFFFFFFFF, 0xFF0000FF, 0xFF00FF00, 0xFFFF0000};
     uploadBuffer->uploadData(data.data(), 0, data.size() * 4);
 

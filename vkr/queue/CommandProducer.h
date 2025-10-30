@@ -18,7 +18,7 @@ namespace mt
   class CommandPoolSet;
   class CommandQueue;
   class ImageSlice;
-  class PlainBuffer;
+  class DataBuffer;
   class SyncPoint;
   class VolatileDescriptorPool;
 
@@ -123,7 +123,7 @@ namespace mt
 
     //  Половина трансфера владения (vulkan Queue Family Ownership Transfer)
     //  Команды, исполняемые на каждой из очередей, участвующих в трансфере
-    void halfOwnershipTransfer( const PlainBuffer& buffer,
+    void halfOwnershipTransfer( const DataBuffer& buffer,
                                 uint32_t oldFamilyIndex,
                                 uint32_t newFamilyIndex);
 
@@ -145,7 +145,7 @@ namespace mt
 
     //  Зарегистрировать использование буфера данных. Защита от
     //  преждевременного удаления буфера
-    void addBufferUsage(const PlainBuffer& buffer);
+    void addBufferUsage(const DataBuffer& buffer);
 
   private:
     CommandPoolSet& _commandPoolSet;

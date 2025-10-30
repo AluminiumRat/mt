@@ -19,7 +19,7 @@ namespace mt
   class CommandBuffer;
   class Device;
   class Image;
-  class PlainBuffer;
+  class DataBuffer;
 
   //  Класс отвечает за отправку команд на GPU. По факту - толстая обертка вокруг
   //    VkQueue
@@ -99,7 +99,7 @@ namespace mt
     //  Возвращает SyncPoint из newQueue, на котором трансфер будет завершен
     static SyncPoint ownershipTransfer( CommandQueue& oldQueue,
                                         CommandQueue& newQueue,
-                                        const PlainBuffer& buffer);
+                                        const DataBuffer& buffer);
 
     //  Приостановить работу текущего потока пока не будут выполнены все команды
     //  из очереди
