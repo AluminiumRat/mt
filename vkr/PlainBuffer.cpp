@@ -66,10 +66,10 @@ static VkBufferUsageFlags getUsageFlags(PlainBuffer::Usage usage)
 {
   switch (usage)
   {
-    case PlainBuffer::UPLOAD_BUFFER:
+    case PlainBuffer::UPLOADING_BUFFER:
       return VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
-    case PlainBuffer::DOWNLOAD_BUFFER:
+    case PlainBuffer::DOWNLOADING_BUFFER:
       return VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
     case PlainBuffer::INDICES_BUFFER:
@@ -93,13 +93,13 @@ static VmaAllocationCreateInfo getVmaCreateInfo(PlainBuffer::Usage usage)
 
   switch (usage)
   {
-    case PlainBuffer::UPLOAD_BUFFER:
+    case PlainBuffer::UPLOADING_BUFFER:
     case PlainBuffer::VOLATILE_UNIFORM_BUFFER:
       info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
       info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
       break;
 
-    case PlainBuffer::DOWNLOAD_BUFFER:
+    case PlainBuffer::DOWNLOADING_BUFFER:
       info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
       info.preferredFlags = VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
       break;

@@ -17,8 +17,8 @@ namespace mt
   public:
     enum Usage
     {
-      UPLOAD_BUFFER,
-      DOWNLOAD_BUFFER,
+      UPLOADING_BUFFER,
+      DOWNLOADING_BUFFER,
       INDICES_BUFFER,
       UNIFORM_BUFFER,
       VOLATILE_UNIFORM_BUFFER
