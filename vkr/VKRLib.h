@@ -74,11 +74,10 @@ namespace mt
     //    системой. Если передать nullptr, то проверка на совместимость не будет
     //    производиться
     PhysicalDevice* getBestPhysicalDevice(
-      VkPhysicalDeviceFeatures requiredFeatures,
-      const std::vector<std::string>& requiredExtensions,
-      bool requireGraphic,
-      bool requireCompute,
-      const WindowSurface* testSurface) const;
+                            VkPhysicalDeviceFeatures requiredFeatures,
+                            const std::vector<std::string>& requiredExtensions,
+                            QueuesConfiguration configuration,
+                            const WindowSurface* testSurface) const;
 
     // Создать логическое устройство из наиболее сильного физического
     // Может вернуть nullptr, если не нашлось ни одного подходящего устройства
@@ -89,12 +88,10 @@ namespace mt
     //    презентации. Если testSurface == nullptr, то созданное устройство не
     //    будет поддерживать вывод в оконную систему
     std::unique_ptr<Device> createDevice(
-      const VkPhysicalDeviceFeatures& requiredFeatures,
-      const std::vector<std::string>& requiredExtensions,
-      bool createGraphicQueue,
-      bool createComputeQueue,
-      bool createTransferQueue,
-      const WindowSurface* testSurface) const;
+                            const VkPhysicalDeviceFeatures& requiredFeatures,
+                            const std::vector<std::string>& requiredExtensions,
+                            QueuesConfiguration configuration,
+                            const WindowSurface* testSurface) const;
 
     // Создать логическое устройство из конкретного физического
     // Всегда возвращает валидный указатель или выбрасывает исключение
@@ -103,13 +100,11 @@ namespace mt
     //    Если testSurface == nullptr, то созданное устройство не
     //    будет поддерживать вывод в оконную систему
     std::unique_ptr<Device> createDevice(
-      PhysicalDevice& physicalDevice,
-      VkPhysicalDeviceFeatures requiredFeatures,
-      const std::vector<std::string>& enabledExtensions,
-      bool createGraphicQueue,
-      bool createComputeQueue,
-      bool createTransferQueue,
-      const WindowSurface* testSurface) const;
+                              PhysicalDevice& physicalDevice,
+                              VkPhysicalDeviceFeatures requiredFeatures,
+                              const std::vector<std::string>& enabledExtensions,
+                              QueuesConfiguration configuration,
+                              const WindowSurface* testSurface) const;
 
     static std::vector<VkLayerProperties> availableLayers();
     inline static bool isLayerSupported(const char* layerName);
@@ -136,12 +131,11 @@ namespace mt
                               bool needPresent) const;
 
     static bool _isDeviceSuitable(
-      const PhysicalDevice& device,
-      const VkPhysicalDeviceFeatures& requiredFeatures,
-      const std::set<std::string>& requiredExtensions,
-      bool requireGraphic,
-      bool requireCompute,
-      const WindowSurface* testSurface);
+                              const PhysicalDevice& device,
+                              const VkPhysicalDeviceFeatures& requiredFeatures,
+                              const std::set<std::string>& requiredExtensions,
+                              QueuesConfiguration configuration,
+                              const WindowSurface* testSurface);
 
   private:
     VkInstance _handle;

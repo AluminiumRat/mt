@@ -35,28 +35,33 @@ namespace mt
   // makeQueueSources
   using QueueSources = std::array<QueueSource, QueueTypeCount>;
 
+  // Возможные наборы очередей, которые могут быть созданы на устройстве
+  enum QueuesConfiguration
+  {
+    //  Графическая очередь, компьют очередь, трансфер очередь и опционально
+    //    очередь презентации
+    //  Если какая-либо из компьют, трансфер и очереди презентации не
+    //    поддерживается как отдельная очередь, то будет переиспользована
+    //    какая-либо из поддерживаемых.
+    GRAPHICS_CONFIGURATION,
+    //  Графическая очередь не создается, создаются только компьют, трансфер
+    //    очередь и опционально очередь презентации
+    //  Если трансфер или очередь презентации не поддерживается как отдельная
+    //    очередь, то будет переиспользована какая-либо из поддерживаемых.
+    COMPUTE_ONLY_CONFIGURATION
+  };
+
   //  Автогенерация QueueSources для конкретного PhysicalDevice и для
   //    потребностей пользователя
-  //  queuesInfo - информация о семействах очередей, поддерживаемых
+  //  familiesInfo - информация о семействах очередей, поддерживаемых
   //    устройством. Возьмите его у нужного PhysicalDevice
-  //  makeGraphic, makeCompute и makePresentation - это
-  //    только желание со стороны пользователя иметь отдельные очереди команд.
-  //    Если по каким-то причинам не получается создать отдельную очередь,
-  //    то какая-то из очередей будет использоваться для нескольких назначений.
-  //    Например, если не удастся создать отдельную transfer очередь, то вместо
-  //    неё будет использоваться GRAPHIC_QUEUE(или COMPUTE_QUEUE если GRAPHIC_QUE
-  //    не создается)
   //  testSurface - тестовая поверхность для проверки, может ли очередь
   //    служить в качестве present очереди. Если указатель не равен nullptr,
   //    то будет выделена(или переиспользована) очередь для презентации.
-  //  graphicQueue и computeQueue не могут одновременно быть false (зачем вообще
-  //    такое нужно?)
-  //  Если для данного queuesInfo не удалось сгенерировать QueueSources,
-  //    то будет nullopt
+  //  Если для данного familiesInfo не удалось сгенерировать QueueSources,
+  //    то будет возвращен nullopt
   std::optional<QueueSources> makeQueueSources(
-    const QueueFamiliesInfo& familiesInfo,
-    bool makeGraphic,
-    bool makeCompute,
-    bool makeTransfer,
-    const WindowSurface* testSurface);
+                                        const QueueFamiliesInfo& familiesInfo,
+                                        QueuesConfiguration configuration,
+                                        const WindowSurface* testSurface);
 }

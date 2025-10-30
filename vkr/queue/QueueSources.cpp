@@ -90,10 +90,9 @@ static QueueType getPrimaryQueue(const QueueSources& sources) noexcept
   Abort("getPrimaryQueue: Both the graphic que and the compute queue are nullptr");
 }
 
-static bool findPresentationQueue(
-  const WindowSurface& testSurface,
-  Slots& slots,
-  QueueSources& sources)
+static bool findPresentationQueue(const WindowSurface& testSurface,
+                                  Slots& slots,
+                                  QueueSources& sources)
 {
   // Для начала пытаемся найти отдельную очередь
   for(Slots::iterator iSlot = slots.begin();
@@ -192,24 +191,19 @@ static bool findSecondaryComputeQueue(Slots& slots, QueueSources& sources)
 }
 
 std::optional<QueueSources> mt::makeQueueSources(
-  const QueueFamiliesInfo& familiesInfo,
-  bool makeGraphic,
-  bool makeCompute,
-  bool makeTransfer,
-  const WindowSurface* testSurface)
+                                        const QueueFamiliesInfo& familiesInfo,
+                                        QueuesConfiguration configuration,
+                                        const WindowSurface* testSurface)
 {
-  MT_ASSERT((makeGraphic || makeCompute) && "You must create at least one of these queues");
-
-  QueueSources sources{
-    DoNotCreateQueue(),
-    DoNotCreateQueue(),
-    DoNotCreateQueue(),
-    DoNotCreateQueue()};
+  QueueSources sources{ DoNotCreateQueue(),
+                        DoNotCreateQueue(),
+                        DoNotCreateQueue(),
+                        DoNotCreateQueue()};
 
   Slots slots = makeSlots(familiesInfo);
 
   // Создаем основную очередь. Это может быть как графическая, так и компьют
-  if(makeGraphic)
+  if(configuration == GRAPHICS_CONFIGURATION)
   { 
     if(!findGraphic(slots, sources)) return std::nullopt;
   }
@@ -218,7 +212,7 @@ std::optional<QueueSources> mt::makeQueueSources(
     if(!findPrimaryCompute(slots, sources)) return std::nullopt;
   }
 
-  // Очередб презентации
+  // Очередь презентации
   if(testSurface != nullptr)
   {
     if(!findPresentationQueue(*testSurface, slots, sources))
@@ -228,13 +222,10 @@ std::optional<QueueSources> mt::makeQueueSources(
   }
 
   // Трансфер очередь
-  if(makeTransfer)
-  {
-    if(!findTransferQueue(slots, sources)) return std::nullopt;
-  }
+  if(!findTransferQueue(slots, sources)) return std::nullopt;
 
-  // Выделенная компьют очередь
-  if(makeGraphic && makeCompute)
+  // Отдельная компьют очередь для графической конфигурации
+  if (configuration == GRAPHICS_CONFIGURATION)
   {
     if(!findSecondaryComputeQueue(slots, sources)) return std::nullopt;
   }

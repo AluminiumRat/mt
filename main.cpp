@@ -38,7 +38,10 @@ int main(int argc, char* argv[])
                   &surface);*/
 
     std::unique_ptr<mt::Device> device = vkrLib.createDevice(
-                                            {}, {}, true, true, true, &surface);
+                                                        {},
+                                                        {},
+                                                        GRAPHICS_CONFIGURATION,
+                                                        &surface);
 
     mt::Ref<mt::SwapChain> swapChain(new mt::SwapChain( *device,
                                                         surface,

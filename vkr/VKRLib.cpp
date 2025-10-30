@@ -310,12 +310,11 @@ std::set<std::string> VKRLib::_extendRequiredExtensions(
 }
 
 bool VKRLib::_isDeviceSuitable(
-  const PhysicalDevice& device,
-  const VkPhysicalDeviceFeatures& requiredFeatures,
-  const std::set<std::string>& requiredExtensions,
-  bool requireGraphic,
-  bool requireCompute,
-  const WindowSurface* testSurface)
+                              const PhysicalDevice& device,
+                              const VkPhysicalDeviceFeatures& requiredFeatures,
+                              const std::set<std::string>& requiredExtensions,
+                              QueuesConfiguration configuration,
+                              const WindowSurface* testSurface)
 {
   // Для начала проверяем, что карта может отрисовывать в окно
   if (testSurface != nullptr && !device.isSurfaceSuitable(*testSurface))
@@ -327,9 +326,7 @@ bool VKRLib::_isDeviceSuitable(
   // Проверяем, что карта поддерживает все требуемые виды очередей
   // makeTransfer в false, так как трансфер всегда можно найти
   if (!makeQueueSources(device.queuesInfo(),
-                        requireGraphic,
-                        requireCompute,
-                        false,            // makeTransfer
+                        configuration,
                         testSurface).has_value())
   {
     Log::info() << "Device " << device.properties().deviceName << " doesn't support all required queue types";
@@ -373,8 +370,7 @@ bool VKRLib::_isDeviceSuitable(
 PhysicalDevice* VKRLib::getBestPhysicalDevice(
                       VkPhysicalDeviceFeatures requiredFeatures,
                       const std::vector<std::string>& requiredExtensions,
-                      bool requireGraphic,
-                      bool requireCompute,
+                      QueuesConfiguration configuration,
                       const WindowSurface* testSurface) const
 {
   // Формируем список расширений, которые должны поддерживаться устройством
@@ -394,8 +390,7 @@ PhysicalDevice* VKRLib::getBestPhysicalDevice(
     if(!_isDeviceSuitable(*device,
                           requiredFeatures,
                           extensions,
-                          requireGraphic,
-                          requireCompute,
+                          configuration,
                           testSurface))
     {
       continue;
@@ -428,37 +423,30 @@ PhysicalDevice* VKRLib::getBestPhysicalDevice(
 }
 
 std::unique_ptr<Device> VKRLib::createDevice(
-  const VkPhysicalDeviceFeatures& requiredFeatures,
-  const std::vector<std::string>& requiredExtensions,
-  bool createGraphicQueue,
-  bool createComputeQueue,
-  bool createTransferQueue,
-  const WindowSurface* testSurface) const
+                            const VkPhysicalDeviceFeatures& requiredFeatures,
+                            const std::vector<std::string>& requiredExtensions,
+                            QueuesConfiguration configuration,
+                            const WindowSurface* testSurface) const
 {
   PhysicalDevice* physicalDevice = getBestPhysicalDevice( requiredFeatures,
                                                           requiredExtensions,
-                                                          createGraphicQueue,
-                                                          createComputeQueue,
+                                                          configuration,
                                                           testSurface);
   if(physicalDevice == nullptr) return nullptr;
 
   return createDevice(*physicalDevice,
                       requiredFeatures,
                       requiredExtensions,
-                      createGraphicQueue,
-                      createComputeQueue,
-                      createTransferQueue,
+                      configuration,
                       testSurface);
 }
 
 std::unique_ptr<Device> VKRLib::createDevice(
-  PhysicalDevice& physicalDevice,
-  VkPhysicalDeviceFeatures requiredFeatures,
-  const std::vector<std::string>& enabledExtensions,
-  bool createGraphicQueue,
-  bool createComputeQueue,
-  bool createTransferQueue,
-  const WindowSurface* testSurface) const
+                              PhysicalDevice& physicalDevice,
+                              VkPhysicalDeviceFeatures requiredFeatures,
+                              const std::vector<std::string>& enabledExtensions,
+                              QueuesConfiguration configuration,
+                              const WindowSurface* testSurface) const
 {
   // Формируем список расширений, которые должны поддерживаться устройством
   std::set<std::string> extensionsSet = _extendRequiredExtensions(
@@ -477,9 +465,7 @@ std::unique_ptr<Device> VKRLib::createDevice(
   // Распределяем очереди
   std::optional<QueueSources> queueSources = makeQueueSources(
                                                     physicalDevice.queuesInfo(),
-                                                    createGraphicQueue,
-                                                    createComputeQueue,
-                                                    createTransferQueue,
+                                                    configuration,
                                                     testSurface);
   MT_ASSERT(queueSources.has_value() && "VKRLib::createDevice: unable to create queue sources")
 
