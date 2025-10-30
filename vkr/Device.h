@@ -11,14 +11,16 @@
 
 #include <util/Assert.h>
 #include <vkr/queue/CommandQueue.h>
+#include <vkr/queue/CommandQueueCompute.h>
+#include <vkr/queue/CommandQueueGraphic.h>
+#include <vkr/queue/CommandQueueTransfer.h>
 #include <vkr/queue/QueueSources.h>
 #include <vkr/queue/QueueTypes.h>
-//#include <mtt/render/CommandQueue/CommandProducer.h>
 
 namespace mt
 {
   class PhysicalDevice;
-  class RenderSurface;
+  class WindowSurface;
 
   // Логическое устройство, обертка вокруг вулкановского VkDevice
   // Основной класс, через который происходит взаимодействие с видеокартой
@@ -49,32 +51,25 @@ namespace mt
 
     inline PhysicalDevice& physicalDevice() const noexcept;
 
-    inline CommandQueue* graphicQueue() noexcept;
-    inline const CommandQueue* graphicQueue() const noexcept;
+    inline CommandQueueGraphic* graphicQueue() noexcept;
+    inline const CommandQueueGraphic* graphicQueue() const noexcept;
 
-    inline CommandQueue* computeQueue() noexcept;
-    inline const CommandQueue* computeQueue() const noexcept;
+    inline CommandQueueCompute& computeQueue() noexcept;
+    inline const CommandQueueCompute& computeQueue() const noexcept;
 
     inline CommandQueue* presentationQueue() noexcept;
     inline const CommandQueue* presentationQueue() const noexcept;
 
-    inline CommandQueue* transferQueue() noexcept;
-    inline const CommandQueue* transferQueue() const noexcept;
+    inline CommandQueueTransfer& transferQueue() noexcept;
+    inline const CommandQueueTransfer& transferQueue() const noexcept;
 
     // Очередь, через которую происходит основная работа на GPU
     // Обычно это graphicQueue, но если пользователь сказал не создавать
-    // графическую очередб, то основной становится compute
-    inline CommandQueue& primaryQueue() noexcept;
-    inline const CommandQueue& primaryQueue() const noexcept;
+    // графическую очередь, то основной становится compute
+    inline CommandQueueCompute& primaryQueue() noexcept;
+    inline const CommandQueueCompute& primaryQueue() const noexcept;
 
-    /// Synchronized access to the separate transfer command queue.
-    /// The command will executed on the GPU immediately and control
-    /// will returned after execution.
-    /// command is callable object with signature void(CommandProducer&)
-    //template<typename TransferCommand>
-    //inline void runTransferCommand(TransferCommand command);
-
-    bool isSurfaceSuitable(const RenderSurface& surface) const;
+    bool isSurfaceSuitable(const WindowSurface& surface) const;
 
   private:
     void _cleanup() noexcept;
@@ -119,24 +114,26 @@ namespace mt
     return _physicalDevice;
   }
 
-  inline CommandQueue* Device::graphicQueue() noexcept
+  inline CommandQueueGraphic* Device::graphicQueue() noexcept
   {
-    return _queuesByTypes[GRAPHIC_QUEUE];
+    return static_cast<CommandQueueGraphic*>(_queuesByTypes[GRAPHIC_QUEUE]);
   }
 
-  inline const CommandQueue* Device::graphicQueue() const noexcept
+  inline const CommandQueueGraphic* Device::graphicQueue() const noexcept
   {
-    return _queuesByTypes[GRAPHIC_QUEUE];
+    return static_cast<CommandQueueGraphic*>(_queuesByTypes[GRAPHIC_QUEUE]);
   }
 
-  inline CommandQueue* Device::computeQueue() noexcept
+  inline CommandQueueCompute& Device::computeQueue() noexcept
   {
-    return _queuesByTypes[COMPUTE_QUEUE];
+    MT_ASSERT(_queuesByTypes[COMPUTE_QUEUE] != nullptr);
+    return *static_cast<CommandQueueCompute*>(_queuesByTypes[COMPUTE_QUEUE]);
   }
 
-  inline const CommandQueue* Device::computeQueue() const noexcept
+  inline const CommandQueueCompute& Device::computeQueue() const noexcept
   {
-    return _queuesByTypes[COMPUTE_QUEUE];
+    MT_ASSERT(_queuesByTypes[COMPUTE_QUEUE] != nullptr);
+    return *static_cast<CommandQueueCompute*>(_queuesByTypes[COMPUTE_QUEUE]);
   }
 
   inline CommandQueue* Device::presentationQueue() noexcept
@@ -149,52 +146,41 @@ namespace mt
     return _queuesByTypes[PRESENTATION_QUEUE];
   }
 
-  inline CommandQueue* Device::transferQueue() noexcept
+  inline CommandQueueTransfer& Device::transferQueue() noexcept
   {
-    return _queuesByTypes[TRANSFER_QUEUE];
+    MT_ASSERT(_queuesByTypes[TRANSFER_QUEUE] != nullptr);
+    return *static_cast<CommandQueueTransfer*>(_queuesByTypes[TRANSFER_QUEUE]);
   }
 
-  inline const CommandQueue* Device::transferQueue() const noexcept
+  inline const CommandQueueTransfer& Device::transferQueue() const noexcept
   {
-    return _queuesByTypes[TRANSFER_QUEUE];
+    MT_ASSERT(_queuesByTypes[TRANSFER_QUEUE] != nullptr);
+    return *static_cast<CommandQueueTransfer*>(_queuesByTypes[TRANSFER_QUEUE]);
   }
 
-  inline CommandQueue& Device::primaryQueue() noexcept
+  inline CommandQueueCompute& Device::primaryQueue() noexcept
   {
     if(_queuesByTypes[GRAPHIC_QUEUE] != nullptr)
     {
-      return *_queuesByTypes[GRAPHIC_QUEUE];
+      return *static_cast<CommandQueueCompute*>(_queuesByTypes[GRAPHIC_QUEUE]);
     }
     if (_queuesByTypes[COMPUTE_QUEUE] != nullptr)
     {
-      return *_queuesByTypes[COMPUTE_QUEUE];
+      return *static_cast<CommandQueueCompute*>(_queuesByTypes[COMPUTE_QUEUE]);
     }
     Abort("At least one of the graphic queue or the compute queue must exists");
   }
 
-  inline const CommandQueue& Device::primaryQueue() const noexcept
+  inline const CommandQueueCompute& Device::primaryQueue() const noexcept
   {
     if(_queuesByTypes[GRAPHIC_QUEUE] != nullptr)
     {
-      return *_queuesByTypes[GRAPHIC_QUEUE];
+      return *static_cast<CommandQueueCompute*>(_queuesByTypes[GRAPHIC_QUEUE]);
     }
     if (_queuesByTypes[COMPUTE_QUEUE] != nullptr)
     {
-      return *_queuesByTypes[COMPUTE_QUEUE];
+      return *static_cast<CommandQueueCompute*>(_queuesByTypes[COMPUTE_QUEUE]);
     }
     MT_ASSERT(false && "At least one of the graphic queue or the compute queue must exists");
   }
-
-  /*template<typename TransferCommand>
-  inline void Device::runTransferCommand(TransferCommand command)
-  {
-    std::lock_guard lock(_transferQueueMutex);
-    std::unique_ptr<CommandProducer> producer = _transferQueue->startCommands();
-    command(*producer);
-    _transferQueue->submit( std::move(producer),
-                            nullptr,
-                            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                            nullptr);
-    _transferQueue->waitIdle();
-  }*/
 }

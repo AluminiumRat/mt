@@ -105,7 +105,7 @@ void CommandProducer::halfOwnershipTransfer(const Image& image,
                                             uint32_t oldFamilyIndex,
                                             uint32_t newFamilyIndex)
 {
-  CommandBuffer& buffer = _getOrCreateBuffer();
+  CommandBuffer& buffer = getOrCreateBuffer();
   buffer.lockResource(image);
 
   VkMemoryBarrier memoryBarrier{};
@@ -140,7 +140,7 @@ void CommandProducer::halfOwnershipTransfer(const PlainBuffer& buffer,
                                             uint32_t oldFamilyIndex,
                                             uint32_t newFamilyIndex)
 {
-  CommandBuffer& commandBuffer = _getOrCreateBuffer();
+  CommandBuffer& commandBuffer = getOrCreateBuffer();
   commandBuffer.lockResource(buffer);
 
   VkBufferMemoryBarrier bufferBarrier{};
@@ -164,7 +164,7 @@ void CommandProducer::halfOwnershipTransfer(const PlainBuffer& buffer,
                         nullptr);
 }
 
-CommandBuffer& CommandProducer::_getOrCreateBuffer()
+CommandBuffer& CommandProducer::getOrCreateBuffer()
 {
   // Нельзя создавать новый буфер после финализации
   MT_ASSERT(!_isFinalized);
@@ -178,7 +178,7 @@ CommandBuffer& CommandProducer::_getOrCreateBuffer()
   return *_currentPrimaryBuffer;
 }
 
-void CommandProducer::_addImageUsage( const Image& image,
+void CommandProducer::addImageUsage( const Image& image,
                                       const ImageAccess& access)
 {
   if(image.isLayoutAutoControlEnabled())
@@ -204,11 +204,11 @@ void CommandProducer::_addImageUsage( const Image& image,
 
   // Захватываем владение, чтобы Image не удалился во время выполнения буфера
   // Захватываем уже новым буфером команд после барьера
-  CommandBuffer& buffer = _getOrCreateBuffer();
+  CommandBuffer& buffer = getOrCreateBuffer();
   buffer.lockResource(image);
 }
 
-void CommandProducer::_addMultipleImagesUsage(MultipleImageUsage usages)
+void CommandProducer::addMultipleImagesUsage(MultipleImageUsage usages)
 {
   if (_cachedMatchingBuffer == nullptr)
   {
@@ -250,7 +250,7 @@ void CommandProducer::_addMultipleImagesUsage(MultipleImageUsage usages)
     // Второй обход. Захватываем владение, чтобы Image не удалили во время
     // выполнения буфера команд. Захватываем уже новым буфером команд после
     // барьеров
-    CommandBuffer& buffer = _getOrCreateBuffer();
+    CommandBuffer& buffer = getOrCreateBuffer();
     for (const ImageUsage& usage : usages)
     {
       const Image* image = usage.first;
@@ -266,9 +266,9 @@ void CommandProducer::_addMultipleImagesUsage(MultipleImageUsage usages)
   }
 }
 
-void CommandProducer::_addBufferUsage(const PlainBuffer& buffer)
+void CommandProducer::addBufferUsage(const PlainBuffer& buffer)
 {
-  CommandBuffer& commandbuffer = _getOrCreateBuffer();
+  CommandBuffer& commandbuffer = getOrCreateBuffer();
   commandbuffer.lockResource(buffer);
 }
 
@@ -277,7 +277,7 @@ void CommandProducer::memoryBarrier(VkPipelineStageFlags srcStages,
                                     VkAccessFlags srcAccesMask,
                                     VkAccessFlags dstAccesMask)
 {
-  CommandBuffer& buffer = _getOrCreateBuffer();
+  CommandBuffer& buffer = getOrCreateBuffer();
   buffer.memoryBarrier(srcStages, dstStages, srcAccesMask, dstAccesMask);
 }
 
@@ -301,9 +301,9 @@ void CommandProducer::imageBarrier( const Image& image,
                                   .writeStagesMask = dstStages,
                                   .writeAccessMask = dstAccesMask};
 
-  _addImageUsage(image, imageAccess);
+  addImageUsage(image, imageAccess);
 
-  CommandBuffer& buffer = _getOrCreateBuffer();
+  CommandBuffer& buffer = getOrCreateBuffer();
   buffer.imageBarrier(image,
                       slice,
                       srcLayout,
@@ -334,237 +334,5 @@ void CommandProducer::forceLayout(const Image& image,
                                   .writeAccessMask = writeAccessMask};
   imageAccess.slicesCount = 1;
 
-  _addImageUsage( image, imageAccess);
-}
-
-void CommandProducer::copyFromBufferToImage(const PlainBuffer& srcBuffer,
-                                            VkDeviceSize srcBufferOffset,
-                                            uint32_t srcRowLength,
-                                            uint32_t srcImageHeight,
-                                            const Image& dstImage,
-                                            VkImageAspectFlags dstAspectMask,
-                                            uint32_t dstArrayIndex,
-                                            uint32_t dstMipLevel,
-                                            glm::uvec3 dstOffset,
-                                            glm::uvec3 dstExtent)
-{
-  ImageAccess imageAccess;
-  imageAccess.slices[0] = ImageSlice( dstImage,
-                                      dstAspectMask,
-                                      dstMipLevel,
-                                      1,
-                                      dstArrayIndex,
-                                      1);
-  imageAccess.layouts[0] = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-  imageAccess.memoryAccess[0] = MemoryAccess{
-                              .readStagesMask = 0,
-                              .readAccessMask = 0,
-                              .writeStagesMask = VK_PIPELINE_STAGE_TRANSFER_BIT,
-                              .writeAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT};
-  imageAccess.slicesCount = 1;
-  _addImageUsage(dstImage, imageAccess);
-  _addBufferUsage(srcBuffer);
-
-  VkBufferImageCopy region{};
-  region.bufferOffset = srcBufferOffset;
-  region.bufferRowLength = srcRowLength;
-  region.bufferImageHeight = srcImageHeight;
-
-  region.imageSubresource.aspectMask = dstAspectMask;
-  region.imageSubresource.mipLevel = dstMipLevel;
-  region.imageSubresource.baseArrayLayer = dstArrayIndex;
-  region.imageSubresource.layerCount = 1;
-
-  region.imageOffset.x = uint32_t(dstOffset.x);
-  region.imageOffset.y = uint32_t(dstOffset.y);
-  region.imageOffset.z = uint32_t(dstOffset.z);
-
-  region.imageExtent.width = uint32_t(dstExtent.x);
-  region.imageExtent.height = uint32_t(dstExtent.y);
-  region.imageExtent.depth = uint32_t(dstExtent.z);
-
-  CommandBuffer& buffer = _getOrCreateBuffer();
-
-  vkCmdCopyBufferToImage( buffer.handle(),
-                          srcBuffer.handle(),
-                          dstImage.handle(),
-                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                          1,
-                          &region);
-}
-
-void CommandProducer::copyFromImageToBuffer(const Image& srcImage,
-                                            VkImageAspectFlags srcAspectMask,
-                                            uint32_t srcArrayIndex,
-                                            uint32_t srcMipLevel,
-                                            glm::uvec3 srcOffset,
-                                            glm::uvec3 srcExtent,
-                                            const PlainBuffer& dstBuffer,
-                                            VkDeviceSize dstBufferOffset,
-                                            uint32_t dstRowLength,
-                                            uint32_t dstImageHeight)
-{
-  ImageAccess imageAccess;
-  imageAccess.slices[0] = ImageSlice( srcImage,
-                                      srcAspectMask,
-                                      srcMipLevel,
-                                      1,
-                                      srcArrayIndex,
-                                      1);
-  imageAccess.layouts[0] = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-  imageAccess.memoryAccess[0] = MemoryAccess{
-                              .readStagesMask = VK_PIPELINE_STAGE_TRANSFER_BIT,
-                              .readAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
-                              .writeStagesMask = 0,
-                              .writeAccessMask = 0};
-  imageAccess.slicesCount = 1;
-  _addImageUsage(srcImage, imageAccess);
-  _addBufferUsage(dstBuffer);
-
-  VkBufferImageCopy region{};
-  region.bufferOffset = dstBufferOffset;
-  region.bufferRowLength = dstRowLength;
-  region.bufferImageHeight = dstImageHeight;
-
-  region.imageSubresource.aspectMask = srcAspectMask;
-  region.imageSubresource.mipLevel = srcMipLevel;
-  region.imageSubresource.baseArrayLayer = srcArrayIndex;
-  region.imageSubresource.layerCount = 1;
-
-  region.imageOffset.x = uint32_t(srcOffset.x);
-  region.imageOffset.y = uint32_t(srcOffset.y);
-  region.imageOffset.z = uint32_t(srcOffset.z);
-
-  region.imageExtent.width = uint32_t(srcExtent.x);
-  region.imageExtent.height = uint32_t(srcExtent.y);
-  region.imageExtent.depth = uint32_t(srcExtent.z);
-
-  CommandBuffer& buffer = _getOrCreateBuffer();
-  vkCmdCopyImageToBuffer( buffer.handle(),
-                          srcImage.handle(),
-                          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                          dstBuffer.handle(),
-                          1,
-                          &region);
-}
-
-void CommandProducer::blitImage(const Image& srcImage,
-                                VkImageAspectFlags srcAspect,
-                                uint32_t srcArrayIndex,
-                                uint32_t srcMipLevel,
-                                const glm::uvec3& srcOffset,
-                                const glm::uvec3& srcExtent,
-                                const Image& dstImage,
-                                VkImageAspectFlags dstAspect,
-                                uint32_t dstArrayIndex,
-                                uint32_t dstMipLevel,
-                                const glm::uvec3& dstOffset,
-                                const glm::uvec3& dstExtent,
-                                VkFilter filter)
-{
-  // Для начала подготовим доступ к Image-ам
-  if(&srcImage == &dstImage)
-  {
-    // Мы копируем внутри одного Image-а
-    ImageAccess imageAccess;
-    imageAccess.slices[0] = ImageSlice( srcImage,
-                                        srcAspect,
-                                        srcMipLevel,
-                                        1,
-                                        srcArrayIndex,
-                                        1);
-    imageAccess.layouts[0] = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    imageAccess.memoryAccess[0] = MemoryAccess{
-                              .readStagesMask = VK_PIPELINE_STAGE_TRANSFER_BIT,
-                              .readAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
-                              .writeStagesMask = 0,
-                              .writeAccessMask = 0};
-
-    imageAccess.slices[1] = ImageSlice( dstImage,
-                                        dstAspect,
-                                        dstMipLevel,
-                                        1,
-                                        dstArrayIndex,
-                                        1);
-    imageAccess.layouts[1] = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    imageAccess.memoryAccess[1] = MemoryAccess{
-                              .readStagesMask = 0,
-                              .readAccessMask = 0,
-                              .writeStagesMask = VK_PIPELINE_STAGE_TRANSFER_BIT,
-                              .writeAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT};
-    imageAccess.slicesCount = 2;
-    _addImageUsage(srcImage, imageAccess);
-  }
-  else
-  {
-    // Два разных Image
-    ImageAccess srcImageAccess;
-    srcImageAccess.slices[0] = ImageSlice(srcImage,
-                                          srcAspect,
-                                          srcMipLevel,
-                                          1,
-                                          srcArrayIndex,
-                                          1);
-    srcImageAccess.layouts[0] = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    srcImageAccess.memoryAccess[0] = MemoryAccess{
-                              .readStagesMask = VK_PIPELINE_STAGE_TRANSFER_BIT,
-                              .readAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
-                              .writeStagesMask = 0,
-                              .writeAccessMask = 0};
-    srcImageAccess.slicesCount = 1;
-
-    ImageAccess dstImageAccess;
-    dstImageAccess.slices[0] = ImageSlice(dstImage,
-                                          dstAspect,
-                                          dstMipLevel,
-                                          1,
-                                          dstArrayIndex,
-                                          1);
-    dstImageAccess.layouts[0] = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    dstImageAccess.memoryAccess[0] = MemoryAccess{
-                              .readStagesMask = 0,
-                              .readAccessMask = 0,
-                              .writeStagesMask = VK_PIPELINE_STAGE_TRANSFER_BIT,
-                              .writeAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT};
-    dstImageAccess.slicesCount = 1;
-
-    std::pair<const Image*, const ImageAccess*> accesses[2] =
-                                              { {&srcImage, &srcImageAccess},
-                                                {&dstImage, &dstImageAccess}};
-    _addMultipleImagesUsage(accesses);
-  }
-
-  // Дальше собственно сама операция блита
-  VkImageBlit region{};
-  region.srcSubresource.aspectMask = srcAspect;
-  region.srcSubresource.mipLevel = srcMipLevel;
-  region.srcSubresource.baseArrayLayer = srcArrayIndex;
-  region.srcSubresource.layerCount = 1;
-  region.srcOffsets[0].x = uint32_t(srcOffset.x);
-  region.srcOffsets[0].y = uint32_t(srcOffset.y);
-  region.srcOffsets[0].z = uint32_t(srcOffset.z);
-  region.srcOffsets[1].x = uint32_t(srcOffset.x + srcExtent.x);
-  region.srcOffsets[1].y = uint32_t(srcOffset.y + srcExtent.y);
-  region.srcOffsets[1].z = uint32_t(srcOffset.z + srcExtent.z);
-
-  region.dstSubresource.aspectMask = dstAspect;
-  region.dstSubresource.mipLevel = dstMipLevel;
-  region.dstSubresource.baseArrayLayer = dstArrayIndex;
-  region.dstSubresource.layerCount = 1;
-  region.dstOffsets[0].x = uint32_t(dstOffset.x);
-  region.dstOffsets[0].y = uint32_t(dstOffset.y);
-  region.dstOffsets[0].z = uint32_t(dstOffset.z);
-  region.dstOffsets[1].x = uint32_t(dstOffset.x + dstExtent.x);
-  region.dstOffsets[1].y = uint32_t(dstOffset.y + dstExtent.y);
-  region.dstOffsets[1].z = uint32_t(dstOffset.z + dstExtent.z);
-
-  CommandBuffer& buffer = _getOrCreateBuffer();
-  vkCmdBlitImage( buffer.handle(),
-                  srcImage.handle(),
-                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                  dstImage.handle(),
-                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                  1,
-                  &region,
-                  filter);
+  addImageUsage( image, imageAccess);
 }

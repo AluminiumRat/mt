@@ -8,9 +8,6 @@
 
 using namespace mt;
 
-/*const size_t DRAW_POOL_SIZE = 5;
-const size_t TRANSFER_POOL_SIZE = 2;*/
-
 Device::Device( PhysicalDevice& physicalDevice,
                 VkPhysicalDeviceFeatures requiredFeatures,
                 const std::vector<std::string>& requiredExtensions,
@@ -155,15 +152,42 @@ void Device::_buildQueues(const QueueSources& queueSources)
     // типа очереди.
     const QueueSource& source = queueSources[queueTypeIndex];
     if (const QueueFamily* const* family =
-                                        std::get_if<const QueueFamily*>(&source))
+                                      std::get_if<const QueueFamily*>(&source))
     {
       uint32_t familyIndex = (*family)->index();
-      std::unique_ptr<CommandQueue> newQueue(new CommandQueue(
-                                                    *this,
-                                                    familyIndex,
-                                                    queueCounters[familyIndex],
-                                                    **family,
-                                                    _commonQueuesMutex));
+      std::unique_ptr<CommandQueue> newQueue;
+      switch(queueTypeIndex)
+      {
+        case GRAPHIC_QUEUE:
+          newQueue.reset(new CommandQueueGraphic( *this,
+                                                  familyIndex,
+                                                  queueCounters[familyIndex],
+                                                  **family,
+                                                  _commonQueuesMutex));
+          break;
+        case COMPUTE_QUEUE:
+          newQueue.reset(new CommandQueueCompute( *this,
+                                                  familyIndex,
+                                                  queueCounters[familyIndex],
+                                                  **family,
+                                                  _commonQueuesMutex));
+          break;
+        case PRESENTATION_QUEUE:
+          newQueue.reset(new CommandQueue(*this,
+                                          familyIndex,
+                                          queueCounters[familyIndex],
+                                          **family,
+                                          _commonQueuesMutex));
+          break;
+        case TRANSFER_QUEUE:
+          newQueue.reset(new CommandQueueTransfer(*this,
+                                                  familyIndex,
+                                                  queueCounters[familyIndex],
+                                                  **family,
+                                                  _commonQueuesMutex));
+          break;
+      }
+      MT_ASSERT(newQueue != nullptr);
       queueCounters[familyIndex]++;
       _queuesByTypes[queueTypeIndex] = newQueue.get();
       _queues.push_back(std::move(newQueue));
@@ -225,13 +249,12 @@ void Device::_cleanup() noexcept
   }
 }
 
-bool Device::isSurfaceSuitable(const RenderSurface& surface) const
+bool Device::isSurfaceSuitable(const WindowSurface& surface) const
 {
-  /*if(!_physicalDevice.isSurfaceSuitable(surface)) return false;
+  if(!_physicalDevice.isSurfaceSuitable(surface)) return false;
 
-  PhysicalDevice::QueuesInfo queuesInfo = _physicalDevice.queuesInfo();
-  if(_presentationFamilyIndex == queuesInfo.size()) return false;
+  if(_queuesByTypes[PRESENTATION_QUEUE] == nullptr) return false;
 
-  return queuesInfo[_presentationFamilyIndex].isPresentSupported(surface);*/
-  return false;
+  return
+      _queuesByTypes[PRESENTATION_QUEUE]->family().isPresentSupported(surface);
 }

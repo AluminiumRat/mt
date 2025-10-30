@@ -21,11 +21,15 @@ namespace mt
   class Image;
   class PlainBuffer;
 
-  // Класс отвечает за отправку команд на GPU. По факту - толстая обертка вокруг
-  // VkQueue
+  //  Класс отвечает за отправку команд на GPU. По факту - толстая обертка вокруг
+  //    VkQueue
+  //  Здесь только базовый функционал взаимодействия с продюссерами,
+  //    синхронизации и работа с ресурсами. От этого класса унаследованы
+  //  CommandQueueTransfer, CommandQueueCompute и CommandQueueGraphic,
+  //    фактически являющиеся фабриками для соответствующих продюсеров.
   class CommandQueue
   {
-  private:
+  protected:
     // Логический девайс создает очереди в конструкторе. Это единственный
     // способ создания очередей.
     friend class Device;
@@ -37,7 +41,7 @@ namespace mt
   public:
     CommandQueue(const CommandQueue&) = delete;
     CommandQueue& operator = (const CommandQueue&) = delete;
-    ~CommandQueue() noexcept;
+    virtual ~CommandQueue() noexcept;
 
     inline VkQueue handle() const;
     inline Device& device() const;
@@ -116,6 +120,15 @@ namespace mt
 
     void _makeFullMemoryBarrier();
 
+  protected:
+    // Пулы команд общего назначения, из них создаются комманд продюсеры,
+    // которые отдаются наружу.
+    CommandPoolSet commonPoolSet;
+
+    // Мьютекс, общий для всех очередей одного логического устройства.
+    // Служит для синхронизации межпотока между очередями.
+    std::recursive_mutex& commonMutex;
+
   private:
     VkQueue _handle;
     Device& _device;
@@ -126,14 +139,6 @@ namespace mt
     // жизни очереди. Основное средство синхронизации очередей между собой.
     Ref<TimelineSemaphore> _semaphore;
     uint64_t _lastSemaphoreValue;
-
-    // Пулы команд общего назначения, из них создаются комманд продюсеры,
-    // которые отдаются наружу.
-    CommandPoolSet _commonPoolSet;
-
-    // Мьютекс, общий для всех очередей одного логического устройства.
-    // Служит для синхронизации межпотока между очередями.
-    std::recursive_mutex& _commonMutex;
   };
 
   inline VkQueue CommandQueue::handle() const
