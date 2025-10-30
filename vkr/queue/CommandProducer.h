@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include <optional>
+#include <span>
+#include <utility>
 
 #include <vulkan/vulkan.h>
 
@@ -122,6 +124,25 @@ namespace mt
                                 uint32_t dstRowLength,
                                 uint32_t dstImageHeight);
 
+    //  Обертка вокруг vkCmdBlitImage
+    //  Копировать один кусок Image в другое место (возможно в этот же Image,
+    //    возможно в другой). Возможно преобразование формата и разрешения.
+    //    последним
+    //  Ограничения см. в описании vkCmdBlitImage
+    void blitImage( const Image& srcImage,
+                    VkImageAspectFlags srcAspect,
+                    uint32_t srcArrayIndex,
+                    uint32_t srcMipLevel,
+                    const glm::uvec3& srcOffset,
+                    const glm::uvec3& srcExtent,
+                    const Image& dstImage,
+                    VkImageAspectFlags dstAspect,
+                    uint32_t dstArrayIndex,
+                    uint32_t dstMipLevel,
+                    const glm::uvec3& dstOffset,
+                    const glm::uvec3& dstExtent,
+                    VkFilter filter);
+
   private:
     //  Отправка буфера на выполнение и релиз продюсера должны выполняться
     //  под мьютексом очередей команд, поэтому доступ только из очереди команд
@@ -170,6 +191,11 @@ namespace mt
   private:
     CommandBuffer& _getOrCreateBuffer();
     void _addImageUsage(const Image& image, const ImageAccess& access);
+
+    using ImageUsage = std::pair<const Image*, const ImageAccess*>;
+    using MultipleImageUsage = std::span<ImageUsage>;
+    void _addMultipleImagesUsage(MultipleImageUsage usages);
+
     void _addBufferUsage(const PlainBuffer& buffer);
 
   private:

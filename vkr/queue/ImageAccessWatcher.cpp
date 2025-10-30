@@ -65,7 +65,7 @@ ImageAccessWatcher::MemoryConflict ImageAccessWatcher::addImageAccess(
   imageState.lastMatchingPoint->transformHint =
                         imageState.currentAccess.mergeWithBarriers(newAccess);
 
-  return NEED_TO_MATCHING;
+  return NEED_MATCHING;
 }
 
 const ImageAccessMap& ImageAccessWatcher::finalize() noexcept

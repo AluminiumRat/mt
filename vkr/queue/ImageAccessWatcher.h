@@ -18,7 +18,7 @@ namespace mt
     enum MemoryConflict
     {
       NO_MEMORY_CONFLICT,
-      NEED_TO_MATCHING
+      NEED_MATCHING
     };
 
   public:
@@ -27,8 +27,7 @@ namespace mt
     ImageAccessWatcher& operator = (const ImageAccessWatcher&) = delete;
     ~ImageAccessWatcher() noexcept = default;
 
-    //  Добавить информацию об использовании Image-а и создать барьеры при
-    //    необходимости.
+    //  Добавить информацию об использовании одного Image-а
     //  Если возвращает NEED_TO_MATCHING, то matchingBuffer будет
     //    сохранен для использования в качестве точки
     //    согласования (MatchingPoint), и должен быть добавлен в очередь команд

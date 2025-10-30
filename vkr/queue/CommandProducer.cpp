@@ -101,6 +101,69 @@ CommandProducer::~CommandProducer() noexcept
   }
 }
 
+void CommandProducer::halfOwnershipTransfer(const Image& image,
+                                            uint32_t oldFamilyIndex,
+                                            uint32_t newFamilyIndex)
+{
+  CommandBuffer& buffer = _getOrCreateBuffer();
+  buffer.lockResource(image);
+
+  VkMemoryBarrier memoryBarrier{};
+  memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+  memoryBarrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+  memoryBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+
+  VkImageMemoryBarrier imageBarrier{};
+  imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+  imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  imageBarrier.newLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  imageBarrier.srcQueueFamilyIndex = oldFamilyIndex;
+  imageBarrier.dstQueueFamilyIndex = newFamilyIndex;
+  imageBarrier.image = image.handle();
+  imageBarrier.subresourceRange = ImageSlice(image).makeRange();
+  imageBarrier.srcAccessMask = 0;
+  imageBarrier.dstAccessMask = 0;
+
+  vkCmdPipelineBarrier( buffer.handle(),
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        0,
+                        1,
+                        &memoryBarrier,
+                        0,
+                        nullptr,
+                        1,
+                        &imageBarrier);
+}
+
+void CommandProducer::halfOwnershipTransfer(const PlainBuffer& buffer,
+                                            uint32_t oldFamilyIndex,
+                                            uint32_t newFamilyIndex)
+{
+  CommandBuffer& commandBuffer = _getOrCreateBuffer();
+  commandBuffer.lockResource(buffer);
+
+  VkBufferMemoryBarrier bufferBarrier{};
+  bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+  bufferBarrier.srcQueueFamilyIndex = oldFamilyIndex;
+  bufferBarrier.dstQueueFamilyIndex = newFamilyIndex;
+  bufferBarrier.buffer = buffer.handle();
+  bufferBarrier.size = buffer.size();
+  bufferBarrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
+  bufferBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+
+  vkCmdPipelineBarrier( commandBuffer.handle(),
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                        0,
+                        0,
+                        nullptr,
+                        1,
+                        &bufferBarrier,
+                        0,
+                        nullptr);
+}
+
 CommandBuffer& CommandProducer::_getOrCreateBuffer()
 {
   // Нельзя создавать новый буфер после финализации
@@ -128,7 +191,7 @@ void CommandProducer::_addImageUsage( const Image& image,
     if(_accessWatcher.addImageAccess( image,
                                       access,
                                       *_cachedMatchingBuffer) ==
-                                          ImageAccessWatcher::NEED_TO_MATCHING)
+                                            ImageAccessWatcher::NEED_MATCHING)
     {
       // Обнаружили место, где будет барьер
       CommandBuffer* matchingBuffer = _cachedMatchingBuffer;
@@ -143,6 +206,64 @@ void CommandProducer::_addImageUsage( const Image& image,
   // Захватываем уже новым буфером команд после барьера
   CommandBuffer& buffer = _getOrCreateBuffer();
   buffer.lockResource(image);
+}
+
+void CommandProducer::_addMultipleImagesUsage(MultipleImageUsage usages)
+{
+  if (_cachedMatchingBuffer == nullptr)
+  {
+    _cachedMatchingBuffer = &_commandPool->getNextBuffer();
+  }
+
+  try
+  {
+    bool matchingFound = false;
+
+    //  Первый обход. Добавляем информацию об Image с автоконтролем лэйаутов
+    //  в вотчер лэйаутов
+    for(const ImageUsage& usage : usages)
+    {
+      const Image* image = usage.first;
+      if(!image->isLayoutAutoControlEnabled()) continue;
+
+      const ImageAccess& access = *usage.second;
+      if(_accessWatcher.addImageAccess(
+                                    *image,
+                                    access,
+                                    *_cachedMatchingBuffer) ==
+                                              ImageAccessWatcher::NEED_MATCHING)
+      {
+        matchingFound = true;
+      }
+    }
+
+    if(matchingFound)
+    {
+      // Обнаружили место, где будет барьер
+      CommandBuffer* matchingBuffer = _cachedMatchingBuffer;
+      _cachedMatchingBuffer = nullptr;
+      _currentPrimaryBuffer = nullptr;
+      matchingBuffer->startOnetimeBuffer();
+      _commandSequence.push_back(matchingBuffer);
+    }
+
+    // Второй обход. Захватываем владение, чтобы Image не удалили во время
+    // выполнения буфера команд. Захватываем уже новым буфером команд после
+    // барьеров
+    CommandBuffer& buffer = _getOrCreateBuffer();
+    for (const ImageUsage& usage : usages)
+    {
+      const Image* image = usage.first;
+      buffer.lockResource(*image);
+    }
+  }
+  catch(std::exception& error)
+  {
+    // Откатить _accessWatcher посреди списка image-ей не получится, патовая
+    // ситуация
+    Log::error() << "CommandProducer::_addMultipleImagesUsage: " << error.what();
+    MT_ASSERT(false && "Unable to add images usage");
+  }
 }
 
 void CommandProducer::_addBufferUsage(const PlainBuffer& buffer)
@@ -327,65 +448,123 @@ void CommandProducer::copyFromImageToBuffer(const Image& srcImage,
                           &region);
 }
 
-void CommandProducer::halfOwnershipTransfer(const Image& image,
-                                            uint32_t oldFamilyIndex,
-                                            uint32_t newFamilyIndex)
+void CommandProducer::blitImage(const Image& srcImage,
+                                VkImageAspectFlags srcAspect,
+                                uint32_t srcArrayIndex,
+                                uint32_t srcMipLevel,
+                                const glm::uvec3& srcOffset,
+                                const glm::uvec3& srcExtent,
+                                const Image& dstImage,
+                                VkImageAspectFlags dstAspect,
+                                uint32_t dstArrayIndex,
+                                uint32_t dstMipLevel,
+                                const glm::uvec3& dstOffset,
+                                const glm::uvec3& dstExtent,
+                                VkFilter filter)
 {
+  // Для начала подготовим доступ к Image-ам
+  if(&srcImage == &dstImage)
+  {
+    // Мы копируем внутри одного Image-а
+    ImageAccess imageAccess;
+    imageAccess.slices[0] = ImageSlice( srcImage,
+                                        srcAspect,
+                                        srcMipLevel,
+                                        1,
+                                        srcArrayIndex,
+                                        1);
+    imageAccess.layouts[0] = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    imageAccess.memoryAccess[0] = MemoryAccess{
+                              .readStagesMask = VK_PIPELINE_STAGE_TRANSFER_BIT,
+                              .readAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
+                              .writeStagesMask = 0,
+                              .writeAccessMask = 0};
+
+    imageAccess.slices[1] = ImageSlice( dstImage,
+                                        dstAspect,
+                                        dstMipLevel,
+                                        1,
+                                        dstArrayIndex,
+                                        1);
+    imageAccess.layouts[1] = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    imageAccess.memoryAccess[1] = MemoryAccess{
+                              .readStagesMask = 0,
+                              .readAccessMask = 0,
+                              .writeStagesMask = VK_PIPELINE_STAGE_TRANSFER_BIT,
+                              .writeAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT};
+    imageAccess.slicesCount = 2;
+    _addImageUsage(srcImage, imageAccess);
+  }
+  else
+  {
+    // Два разных Image
+    ImageAccess srcImageAccess;
+    srcImageAccess.slices[0] = ImageSlice(srcImage,
+                                          srcAspect,
+                                          srcMipLevel,
+                                          1,
+                                          srcArrayIndex,
+                                          1);
+    srcImageAccess.layouts[0] = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    srcImageAccess.memoryAccess[0] = MemoryAccess{
+                              .readStagesMask = VK_PIPELINE_STAGE_TRANSFER_BIT,
+                              .readAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
+                              .writeStagesMask = 0,
+                              .writeAccessMask = 0};
+    srcImageAccess.slicesCount = 1;
+
+    ImageAccess dstImageAccess;
+    dstImageAccess.slices[0] = ImageSlice(dstImage,
+                                          dstAspect,
+                                          dstMipLevel,
+                                          1,
+                                          dstArrayIndex,
+                                          1);
+    dstImageAccess.layouts[0] = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    dstImageAccess.memoryAccess[0] = MemoryAccess{
+                              .readStagesMask = 0,
+                              .readAccessMask = 0,
+                              .writeStagesMask = VK_PIPELINE_STAGE_TRANSFER_BIT,
+                              .writeAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT};
+    dstImageAccess.slicesCount = 1;
+
+    std::pair<const Image*, const ImageAccess*> accesses[2] =
+                                              { {&srcImage, &srcImageAccess},
+                                                {&dstImage, &dstImageAccess}};
+    _addMultipleImagesUsage(accesses);
+  }
+
+  // Дальше собственно сама операция блита
+  VkImageBlit region{};
+  region.srcSubresource.aspectMask = srcAspect;
+  region.srcSubresource.mipLevel = srcMipLevel;
+  region.srcSubresource.baseArrayLayer = srcArrayIndex;
+  region.srcSubresource.layerCount = 1;
+  region.srcOffsets[0].x = uint32_t(srcOffset.x);
+  region.srcOffsets[0].y = uint32_t(srcOffset.y);
+  region.srcOffsets[0].z = uint32_t(srcOffset.z);
+  region.srcOffsets[1].x = uint32_t(srcOffset.x + srcExtent.x);
+  region.srcOffsets[1].y = uint32_t(srcOffset.y + srcExtent.y);
+  region.srcOffsets[1].z = uint32_t(srcOffset.z + srcExtent.z);
+
+  region.dstSubresource.aspectMask = dstAspect;
+  region.dstSubresource.mipLevel = dstMipLevel;
+  region.dstSubresource.baseArrayLayer = dstArrayIndex;
+  region.dstSubresource.layerCount = 1;
+  region.dstOffsets[0].x = uint32_t(dstOffset.x);
+  region.dstOffsets[0].y = uint32_t(dstOffset.y);
+  region.dstOffsets[0].z = uint32_t(dstOffset.z);
+  region.dstOffsets[1].x = uint32_t(dstOffset.x + dstExtent.x);
+  region.dstOffsets[1].y = uint32_t(dstOffset.y + dstExtent.y);
+  region.dstOffsets[1].z = uint32_t(dstOffset.z + dstExtent.z);
+
   CommandBuffer& buffer = _getOrCreateBuffer();
-  buffer.lockResource(image);
-
-  VkMemoryBarrier memoryBarrier{};
-  memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-  memoryBarrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
-  memoryBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-
-  VkImageMemoryBarrier imageBarrier{};
-  imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-  imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-  imageBarrier.newLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-  imageBarrier.srcQueueFamilyIndex = oldFamilyIndex;
-  imageBarrier.dstQueueFamilyIndex = newFamilyIndex;
-  imageBarrier.image = image.handle();
-  imageBarrier.subresourceRange = ImageSlice(image).makeRange();
-  imageBarrier.srcAccessMask = 0;
-  imageBarrier.dstAccessMask = 0;
-
-  vkCmdPipelineBarrier( buffer.handle(),
-                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                        0,
-                        1,
-                        &memoryBarrier,
-                        0,
-                        nullptr,
-                        1,
-                        &imageBarrier);
-}
-
-void CommandProducer::halfOwnershipTransfer(const PlainBuffer& buffer,
-                                            uint32_t oldFamilyIndex,
-                                            uint32_t newFamilyIndex)
-{
-  CommandBuffer& commandBuffer = _getOrCreateBuffer();
-  commandBuffer.lockResource(buffer);
-
-  VkBufferMemoryBarrier bufferBarrier{};
-  bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-  bufferBarrier.srcQueueFamilyIndex = oldFamilyIndex;
-  bufferBarrier.dstQueueFamilyIndex = newFamilyIndex;
-  bufferBarrier.buffer = buffer.handle();
-  bufferBarrier.size = buffer.size();
-  bufferBarrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
-  bufferBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-
-  vkCmdPipelineBarrier( commandBuffer.handle(),
-                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                        0,
-                        0,
-                        nullptr,
-                        1,
-                        &bufferBarrier,
-                        0,
-                        nullptr);
+  vkCmdBlitImage( buffer.handle(),
+                  srcImage.handle(),
+                  VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                  dstImage.handle(),
+                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                  1,
+                  &region,
+                  filter);
 }
