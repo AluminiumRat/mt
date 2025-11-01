@@ -9,6 +9,29 @@ CommandProducerTransfer::CommandProducerTransfer(CommandPoolSet& poolSet) :
 {
 }
 
+void CommandProducerTransfer::copyFromBufferToBuffer(
+                                                  const DataBuffer& srcBuffer,
+                                                  const DataBuffer& dstBuffer,
+                                                  size_t srcOffset,
+                                                  size_t dstOffset,
+                                                  size_t size)
+{
+  addBufferUsage(srcBuffer);
+  addBufferUsage(dstBuffer);
+
+  VkBufferCopy copyInfo{};
+  copyInfo.srcOffset = srcOffset;
+  copyInfo.dstOffset = dstOffset;
+  copyInfo.size = size;
+
+  CommandBuffer& commandBuffer = getOrCreateBuffer();
+  vkCmdCopyBuffer(commandBuffer.handle(),
+                  srcBuffer.handle(),
+                  dstBuffer.handle(),
+                  1,
+                  &copyInfo);
+}
+
 void CommandProducerTransfer::copyFromBufferToImage(
                                             const DataBuffer& srcBuffer,
                                             VkDeviceSize srcBufferOffset,

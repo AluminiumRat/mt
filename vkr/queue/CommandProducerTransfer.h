@@ -14,18 +14,30 @@ namespace mt
                                       const CommandProducerTransfer&) = delete;
     virtual ~CommandProducerTransfer() noexcept = default;
 
+    //  Копирование из одного буфера в другой
+    //  srcBuffer должен быть создан с Usage = UPLOADING_BUFFER или
+    //    bufferUsageFlags VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+    //  dstBuffer должен быть создан с Usage отличным от UPLOADING_BUFFER
+    //    и VOLATILE_UNIFORM_BUFFER, или с bufferUsageFlags с выставленным
+    //    VK_BUFFER_USAGE_TRANSFER_SRC_BIT.
+    void copyFromBufferToBuffer(const DataBuffer& srcBuffer,
+                                const DataBuffer& dstBuffer,
+                                size_t srcOffset,
+                                size_t dstOffset,
+                                size_t size);
+
     //  Копирование из буфера в Image
-    //  srcBuffer должен быть создан с Usage = UPLOAD_BUFFER или
+    //  srcBuffer должен быть создан с Usage = UPLOADING_BUFFER или
     //    bufferUsageFlags VK_BUFFER_USAGE_TRANSFER_SRC_BIT
     //  dstImage должен быть создан с usageFlags VK_IMAGE_USAGE_TRANSFER_DST_BIT
     //  srcRowLength - ширина изображения, записанного в буфере, в текселях.
     //    Используется для определения начала следующей строки при копировании
     //    2D и 3D изображений, когда dstExtent не совпадает с размерами
-    //    изображения в буфере.
+    //    изображения в буфере. Для 1D изображений можно передать 0.
     //  srcImageHeight - высота изображения, записанного в буфере, в текселях.
     //    Используется для определения начала следующего слоя при копировании 3D
     //    изображений, когда dstExtent не совпадает с размерами изображения
-    //    в буфере.
+    //    в буфере. Для 1D и 2D изображений можно передать 0
     void copyFromBufferToImage( const DataBuffer& srcBuffer,
                                 VkDeviceSize srcBufferOffset,
                                 uint32_t srcRowLength,
@@ -44,11 +56,11 @@ namespace mt
     //  dstRowLength - ширина изображения, которое уже есть в буфере, в
     //    текселях. Используется для определения начала следующей строки при
     //    копировании 2D и 3D изображений, когда dstExtent не совпадает с
-    //    размерами изображения в буфере.
+    //    размерами изображения в буфере. Для 1D изображений можно передать 0.
     //  dstImageHeight - высота изображения, которое уже есть в буфере, в
     //    текселях. Используется для определения начала следующего слоя при
     //    копировании 3D изображений, когда dstExtent не совпадает с размерами
-    //    изображения в буфере.
+    //    изображения в буфере. Для 1D и 2D изображений можно передать 0
     void copyFromImageToBuffer( const Image& srcImage,
                                 VkImageAspectFlags srcAspectMask,
                                 uint32_t srcArrayIndex,
