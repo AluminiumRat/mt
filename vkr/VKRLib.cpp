@@ -354,6 +354,14 @@ bool VKRLib::_isDeviceSuitable(
     return false;
   }
 
+  // Не используем FBO и RenderPass-ы, поэтому обязательно нужен
+  // DynamicRendering
+  if (!device.isDynamicRenderingSupported())
+  {
+    Log::info() << "Device " << device.properties().deviceName << " doesn't support dynamic rendering feature";
+    return false;
+  }
+
   // Проверяем, что карта поддерживает все требуемые расширения
   for (const std::string& extensionName : requiredExtensions)
   {

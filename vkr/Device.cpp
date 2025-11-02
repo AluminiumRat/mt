@@ -81,10 +81,18 @@ void Device::_createHandle( const std::vector<std::string>& requiredExtensions,
   synchronization2Feature.synchronization2 = VK_TRUE;
   synchronization2Feature.pNext = &semaphoreFeature;
 
+  // DynamicRendering нужен для графической конфигурации, сильно упрощает
+  // работу с пайплайном
+  VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature{};
+  dynamicRenderingFeature.sType =
+          VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
+  dynamicRenderingFeature.dynamicRendering = VK_TRUE;
+  dynamicRenderingFeature.pNext = &synchronization2Feature;
+
   VkPhysicalDeviceFeatures2 features{};
   features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
   features.features = _features;
-  features.pNext = &synchronization2Feature;
+  features.pNext = &dynamicRenderingFeature;
 
   VkDeviceCreateInfo createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

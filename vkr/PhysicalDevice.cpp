@@ -9,7 +9,8 @@ using namespace mt;
 PhysicalDevice::PhysicalDevice(VkPhysicalDevice deviceHandle) :
   _handle(deviceHandle),
   _timelineSemaphoreSupport(false),
-  _synchronization2Support(false)
+  _synchronization2Support(false),
+  _dynamicRenderingSupport(false)
 {
   vkGetPhysicalDeviceProperties(_handle, &_properties);
 
@@ -41,14 +42,21 @@ void PhysicalDevice::_getFeatures()
                   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
   synchronization2Feature.pNext = &semaphoreFeature;
 
+  // И dynamic rendering
+  VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature{};
+  dynamicRenderingFeature.sType =
+              VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
+  dynamicRenderingFeature.pNext = &synchronization2Feature;
+
   VkPhysicalDeviceFeatures2 features{};
   features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-  features.pNext = &synchronization2Feature;
+  features.pNext = &dynamicRenderingFeature;
   vkGetPhysicalDeviceFeatures2(_handle, &features);
 
   _features = features.features;
   _timelineSemaphoreSupport = semaphoreFeature.timelineSemaphore;
   _synchronization2Support = synchronization2Feature.synchronization2;
+  _dynamicRenderingSupport = dynamicRenderingFeature.dynamicRendering;
 }
 
 void PhysicalDevice::_fillMemoryInfo()
