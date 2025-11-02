@@ -61,6 +61,7 @@ add_executable (vkTest
                 "vkr/Device.cpp"
                 "vkr/Image.cpp"
                 "vkr/ImageSlice.cpp"
+                "vkr/ImageView.cpp"
                 "vkr/PhysicalDevice.cpp"
                 "vkr/SwapChain.cpp"
                 "vkr/VKRLib.cpp"
