@@ -13,7 +13,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
-#include <vkr/queue/ImageAccess.h>
+#include <vkr/ImageAccess.h>
 #include <vkr/RefCounter.h>
 
 namespace mt

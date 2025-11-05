@@ -1,7 +1,7 @@
 ﻿#include <algorithm>
 
-#include <vkr/queue/ImagesAccessSet.h>
 #include <vkr/Image.h>
+#include <vkr/ImagesAccessSet.h>
 
 using namespace mt;
 

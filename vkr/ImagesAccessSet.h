@@ -3,7 +3,7 @@
 #include <utility>
 #include <vector>
 
-#include <vkr/queue/ImageAccess.h>
+#include <vkr/ImageAccess.h>
 
 namespace mt
 {

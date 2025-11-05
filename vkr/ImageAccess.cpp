@@ -1,6 +1,6 @@
 ﻿#include <vkr/queue/CommandBuffer.h>
-#include <vkr/queue/ImageAccess.h>
 #include <vkr/Image.h>
+#include <vkr/ImageAccess.h>
 
 using namespace mt;
 

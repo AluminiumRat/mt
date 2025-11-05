@@ -6,7 +6,7 @@
 
 #include <glm/glm.hpp>
 
-#include <vkr/queue/ImagesAccessSet.h>
+#include <vkr/ImagesAccessSet.h>
 #include <vkr/ImageView.h>
 #include <vkr/RefCounter.h>
 #include <vkr/Ref.h>
