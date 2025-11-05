@@ -16,8 +16,8 @@ void CommandProducerTransfer::copyFromBufferToBuffer(
                                                   size_t dstOffset,
                                                   size_t size)
 {
-  addBufferUsage(srcBuffer);
-  addBufferUsage(dstBuffer);
+  lockResource(srcBuffer);
+  lockResource(dstBuffer);
 
   VkBufferCopy copyInfo{};
   copyInfo.srcOffset = srcOffset;
@@ -59,7 +59,9 @@ void CommandProducerTransfer::copyFromBufferToImage(
                               .writeAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT};
   imageAccess.slicesCount = 1;
   addImageUsage(dstImage, imageAccess);
-  addBufferUsage(srcBuffer);
+
+  lockResource(srcBuffer);
+  lockResource(dstImage);
 
   VkBufferImageCopy region{};
   region.bufferOffset = srcBufferOffset;
@@ -116,7 +118,9 @@ void CommandProducerTransfer::copyFromImageToBuffer(
                               .writeAccessMask = 0};
   imageAccess.slicesCount = 1;
   addImageUsage(srcImage, imageAccess);
-  addBufferUsage(dstBuffer);
+
+  lockResource(dstBuffer);
+  lockResource(srcImage);
 
   VkBufferImageCopy region{};
   region.bufferOffset = dstBufferOffset;

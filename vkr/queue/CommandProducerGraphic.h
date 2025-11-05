@@ -4,22 +4,63 @@
 
 namespace mt
 {
+  class FrameBuffer;
+
   //  Продюсер команд, реализующий функционал графической очереди команд
   //  Так же включает в себя функционал CommandProducerTransfer и
   //    CommandProducerCompute
   class CommandProducerGraphic : public CommandProducerCompute
   {
   public:
+    //  RAII оболочка вокруг биндинга фрэйм буфера.
+    //  Указывает продюсеру, куда должны отрисовывать команды рендера.
+    //  В конструкторе фрэйм буфер подключается к комманд продюсеру, происходит
+    //    очистка рендер таргетов.
+    //  В деструкторе сбрасываются все кэши таргетов, происходит резолв
+    //    мультисэмплинга и фрэйм буфер отключается от продюсера.
+    //  Одновременно на одном продюсере может происходить не более 1 паса.
+    //  Если автоконтроль лэйаутов отключен для каких-либо из таргетов, то
+    //    к моменту создания рендер пасса они должны быть переведены
+    //    в лэйауты VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    //    VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL или
+    //    VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL в зависимости от их
+    //    использования.
+    class RenderPass
+    {
+    public:
+      inline RenderPass(CommandProducerGraphic& commandProducer,
+                        const FrameBuffer& frameBuffer);
+      RenderPass(const RenderPass&) = delete;
+      RenderPass& operator = (const RenderPass&) = delete;
+      inline RenderPass(RenderPass&& other) noexcept;
+      inline RenderPass& operator = (RenderPass&& other) noexcept;
+      inline ~RenderPass() noexcept;
+
+      //  Принудительное окончание рендер пасса. Делает то же самое, что и
+      //  деструктор.
+      inline void endPass() noexcept;
+
+      inline const FrameBuffer& frameBuffer() const noexcept;
+
+    private:
+      CommandProducerGraphic* _commandProducer;
+      const FrameBuffer* _frameBuffer;
+    };
+
+  public:
     CommandProducerGraphic(CommandPoolSet& poolSet);
     CommandProducerGraphic(const CommandProducerGraphic&) = delete;
     CommandProducerCompute& operator = (const CommandProducerGraphic&) = delete;
-    virtual ~CommandProducerGraphic() noexcept = default;
+    virtual ~CommandProducerGraphic() noexcept;
+
+    inline const FrameBuffer* curentFrameBuffer() const noexcept;
 
     //  Обертка вокруг vkCmdBlitImage
     //  Копировать один кусок Image в другое место (возможно в этот же Image,
     //    возможно в другой). Возможно преобразование формата и разрешения.
     //    последним
     //  Ограничения см. в описании vkCmdBlitImage
+    //  Может работать вне рендер пасса
     void blitImage( const Image& srcImage,
                     VkImageAspectFlags srcAspect,
                     uint32_t srcArrayIndex,
@@ -33,5 +74,67 @@ namespace mt
                     const glm::uvec3& dstOffset,
                     const glm::uvec3& dstExtent,
                     VkFilter filter);
+
+  protected:
+    virtual void finalizeCommands() noexcept;
+
+  private:
+    void _beginPass(RenderPass& renderPass);
+    void _endPass() noexcept;
+
+  private:
+    RenderPass* _currentPass;
   };
+
+  inline CommandProducerGraphic::RenderPass::RenderPass(
+                                        CommandProducerGraphic& commandProducer,
+                                        const FrameBuffer& frameBuffer) :
+    _commandProducer(&commandProducer),
+    _frameBuffer(&frameBuffer)
+  {
+    _commandProducer->_beginPass(*this);
+  }
+
+  inline CommandProducerGraphic::RenderPass::RenderPass(
+                                                  RenderPass&& other) noexcept :
+    _commandProducer(other._commandProducer),
+    _frameBuffer(other._frameBuffer)
+  {
+    other._commandProducer = nullptr;
+  }
+
+  inline CommandProducerGraphic::RenderPass&
+      CommandProducerGraphic::RenderPass::operator = (RenderPass&& other) noexcept
+  {
+    if(_commandProducer != nullptr) endPass();
+
+    _commandProducer = other._commandProducer;
+    _frameBuffer = other._frameBuffer;
+    other._commandProducer = nullptr;
+  }
+
+  inline CommandProducerGraphic::RenderPass::~RenderPass() noexcept
+  {
+    if (_commandProducer != nullptr) endPass();
+  }
+
+  inline const FrameBuffer&
+                CommandProducerGraphic::RenderPass::frameBuffer() const noexcept
+  {
+    return *_frameBuffer;
+  }
+
+  inline void CommandProducerGraphic::RenderPass::endPass() noexcept
+  {
+    MT_ASSERT(_commandProducer != nullptr);
+    _commandProducer->_endPass();
+    _commandProducer = nullptr;
+  }
+
+  inline const FrameBuffer*
+                      CommandProducerGraphic::curentFrameBuffer() const noexcept
+  {
+    if(_currentPass == nullptr) return nullptr;
+    return &_currentPass->frameBuffer();
+  }
 }

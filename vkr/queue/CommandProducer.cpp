@@ -36,10 +36,16 @@ CommandProducer::CommandProducer(CommandPoolSet& poolSet) :
   }
 }
 
+void CommandProducer::finalizeCommands() noexcept
+{
+}
+
 std::optional<CommandProducer::FinalizeResult>
                                           CommandProducer::finalize() noexcept
 {
   MT_ASSERT(!_isFinalized);
+
+  finalizeCommands();
 
   try
   {
@@ -201,11 +207,6 @@ void CommandProducer::addImageUsage( const Image& image,
       _commandSequence.push_back(matchingBuffer);
     }
   }
-
-  // Захватываем владение, чтобы Image не удалился во время выполнения буфера
-  // Захватываем уже новым буфером команд после барьера
-  CommandBuffer& buffer = getOrCreateBuffer();
-  buffer.lockResource(image);
 }
 
 void CommandProducer::addMultipleImagesUsage(MultipleImageUsage usages)
@@ -219,8 +220,7 @@ void CommandProducer::addMultipleImagesUsage(MultipleImageUsage usages)
   {
     bool matchingFound = false;
 
-    //  Первый обход. Добавляем информацию об Image с автоконтролем лэйаутов
-    //  в вотчер лэйаутов
+    //  Добавляем информацию об Image с автоконтролем лэйаутов в вотчер лэйаутов
     for(const ImageUsage& usage : usages)
     {
       const Image* image = usage.first;
@@ -246,16 +246,6 @@ void CommandProducer::addMultipleImagesUsage(MultipleImageUsage usages)
       matchingBuffer->startOnetimeBuffer();
       _commandSequence.push_back(matchingBuffer);
     }
-
-    // Второй обход. Захватываем владение, чтобы Image не удалили во время
-    // выполнения буфера команд. Захватываем уже новым буфером команд после
-    // барьеров
-    CommandBuffer& buffer = getOrCreateBuffer();
-    for (const ImageUsage& usage : usages)
-    {
-      const Image* image = usage.first;
-      buffer.lockResource(*image);
-    }
   }
   catch(std::exception& error)
   {
@@ -266,10 +256,10 @@ void CommandProducer::addMultipleImagesUsage(MultipleImageUsage usages)
   }
 }
 
-void CommandProducer::addBufferUsage(const DataBuffer& buffer)
+void CommandProducer::lockResource(const RefCounter& resource)
 {
   CommandBuffer& commandbuffer = getOrCreateBuffer();
-  commandbuffer.lockResource(buffer);
+  commandbuffer.lockResource(resource);
 }
 
 void CommandProducer::memoryBarrier(VkPipelineStageFlags srcStages,
@@ -292,17 +282,6 @@ void CommandProducer::imageBarrier( const Image& image,
 {
   MT_ASSERT(!image.isLayoutAutoControlEnabled());
 
-  ImageAccess imageAccess;
-  imageAccess.slices[0] = slice;
-  imageAccess.layouts[0] = dstLayout;
-  imageAccess.memoryAccess[0] = MemoryAccess{
-                                  .readStagesMask = dstStages,
-                                  .readAccessMask = dstAccesMask,
-                                  .writeStagesMask = dstStages,
-                                  .writeAccessMask = dstAccesMask};
-
-  addImageUsage(image, imageAccess);
-
   CommandBuffer& buffer = getOrCreateBuffer();
   buffer.imageBarrier(image,
                       slice,
@@ -312,6 +291,8 @@ void CommandProducer::imageBarrier( const Image& image,
                       dstStages,
                       srcAccesMask,
                       dstAccesMask);
+
+  lockResource(image);
 }
 
 void CommandProducer::forceLayout(const Image& image,
@@ -334,5 +315,6 @@ void CommandProducer::forceLayout(const Image& image,
                                   .writeAccessMask = writeAccessMask};
   imageAccess.slicesCount = 1;
 
-  addImageUsage( image, imageAccess);
+  addImageUsage(image, imageAccess);
+  lockResource(image);
 }

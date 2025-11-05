@@ -1,12 +1,76 @@
-﻿#include <vkr/queue/CommandBuffer.h>
+﻿#include <stdexcept>
+
+#include <util/Assert.h>
+#include <util/Log.h>
+#include <vkr/queue/CommandBuffer.h>
 #include <vkr/queue/CommandProducerGraphic.h>
+#include <vkr/FrameBuffer.h>
 #include <vkr/Image.h>
 
 using namespace mt;
 
 CommandProducerGraphic::CommandProducerGraphic(CommandPoolSet& poolSet) :
-  CommandProducerCompute(poolSet)
+  CommandProducerCompute(poolSet),
+  _currentPass(nullptr)
 {
+}
+
+CommandProducerGraphic::~CommandProducerGraphic() noexcept
+{
+  MT_ASSERT(_currentPass == nullptr);
+}
+
+void CommandProducerGraphic::finalizeCommands() noexcept
+{
+  if(_currentPass != nullptr)
+  {
+    Log::warning() << "CommandProducerGraphic::finalizeCommands: current pass is not finished";
+    _endPass();
+  }
+}
+
+void CommandProducerGraphic::_beginPass(RenderPass& renderPass)
+{
+  MT_ASSERT(_currentPass == nullptr);
+
+  const FrameBuffer& frameBuffer = renderPass.frameBuffer();
+
+  lockResource(frameBuffer);
+
+  CommandBuffer& buffer = getOrCreateBuffer();
+  vkCmdBeginRendering(buffer.handle(), &frameBuffer.bindingInfo());
+
+  VkViewport viewport{.x = 0,
+                      .y = 0,
+                      .width = float(frameBuffer.extent().x),
+                      .height = float(frameBuffer.extent().y),
+                      .minDepth = 0,
+                      .maxDepth = 1};
+  vkCmdSetViewport(buffer.handle(), 0, 1, &viewport);
+
+  VkRect2D scissor{ .offset = {.x = 0, .y = 0},
+                    .extent = { .width = frameBuffer.extent().x,
+                                .height = frameBuffer.extent().y,}};
+  vkCmdSetScissor(buffer.handle(), 0, 1, &scissor);
+
+  _currentPass = &renderPass;
+}
+
+void CommandProducerGraphic::_endPass() noexcept
+{
+  MT_ASSERT(_currentPass != nullptr);
+
+  try
+  {
+    CommandBuffer& buffer = getOrCreateBuffer();
+    vkCmdEndRendering(buffer.handle());
+    _currentPass = nullptr;
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << "CommandProducerGraphic::_endPass: " << error.what();
+    Abort("Unable to end render pass");
+  }
 }
 
 void CommandProducerGraphic::blitImage( const Image& srcImage,
@@ -55,6 +119,7 @@ void CommandProducerGraphic::blitImage( const Image& srcImage,
                               .writeAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT};
     imageAccess.slicesCount = 2;
     addImageUsage(srcImage, imageAccess);
+    lockResource(srcImage);
   }
   else
   {
@@ -93,6 +158,8 @@ void CommandProducerGraphic::blitImage( const Image& srcImage,
                                               { {&srcImage, &srcImageAccess},
                                                 {&dstImage, &dstImageAccess}};
     addMultipleImagesUsage(accesses);
+    lockResource(srcImage);
+    lockResource(dstImage);
   }
 
   // Дальше собственно сама операция блита

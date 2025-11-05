@@ -59,6 +59,7 @@ add_executable (vkTest
                 "vkr/DescriptorCounter.cpp"
                 "vkr/DescriptorPool.cpp"
                 "vkr/Device.cpp"
+                "vkr/FrameBuffer.cpp"
                 "vkr/Image.cpp"
                 "vkr/ImageSlice.cpp"
                 "vkr/ImageView.cpp"

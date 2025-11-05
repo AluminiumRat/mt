@@ -111,7 +111,7 @@ namespace mt
     //  После вызова finalize использовать CommanProducer для записи команд
     //    уже нельзя.
     //  Если не было записано ни одной команды, то вернет nullopt
-    std::optional<FinalizeResult> finalize() noexcept;
+    virtual std::optional<FinalizeResult> finalize() noexcept;
     //  Отправить пулы на передержку до достижения releasePoint
     void release(const SyncPoint& releasePoint);
 
@@ -128,24 +128,29 @@ namespace mt
                                 uint32_t newFamilyIndex);
 
   protected:
+    //  Вызывается при финализации продюсера. Предназначен для классов-потомков,
+    //  чтобы они могли корректно завершать запись команд.
+    virtual void finalizeCommands() noexcept;
+
     //  Получить буфер команд, предназначенный для основных выполняемых операций
     CommandBuffer& getOrCreateBuffer();
 
     //  Зарегистрировать использование Image. Работает для поддержки
-    //  автоконтроля лэйаутов и защиты от удаления
+    //  автоконтроля лэйаутов
     void addImageUsage(const Image& image, const ImageAccess& access);
 
     using ImageUsage = std::pair<const Image*, const ImageAccess*>;
     using MultipleImageUsage = std::span<ImageUsage>;
     //  Зарегистрировать использование нескольких Image. Работает для поддержки
-    //    автоконтроля лэйаутов и защиты от удаления.
+    //    автоконтроля лэйаутов.
     //  В отличии от addImageUsage позволяет немного сэкономить на буферах
     //    согласования
     void addMultipleImagesUsage(MultipleImageUsage usages);
 
-    //  Зарегистрировать использование буфера данных. Защита от
-    //  преждевременного удаления буфера
-    void addBufferUsage(const DataBuffer& buffer);
+    //  Захватить владение ресурсом. Защита от преждевременного удаления
+    //  ресурсов до и во время работы очереди команд. Все ресурсы,
+    //  ссылки на которые отправляются в очередь команд, должны быть захвачены.
+    void lockResource(const RefCounter& resource);
 
   private:
     CommandPoolSet& _commandPoolSet;
