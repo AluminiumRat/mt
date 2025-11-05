@@ -26,15 +26,14 @@ namespace mt
     //  Максимальное количество одновременно подключаемых колор таргетов
     static constexpr uint32_t maxColorAttachments = 8;
 
-    //  Информация об отдельном таргете для рендера, который входит в состав
-    //  фрэйм буфера
-    struct AttachmentInfo
+    //  Информация об отдельном колор таргете для рендера, который входит в
+    //  состав фрэйм буфера
+    struct ColorAttachmentInfo
     {
       //  Непосредственно сюда будут писаться новые данные.
       //  Не должен быть nullptr
       //  Соответствующий Image должен быть создан с usageFlags со включенным
-      //    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT или
-      //    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+      //    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
       ImageView* target;
       //  Что надо сделать со старыми данными в таргете перед началом работы
       //    с буфером
@@ -44,7 +43,7 @@ namespace mt
       VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE;
       //  Если loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR, то таргет будет почищен в
       //    это значение
-      VkClearValue clearValue = {};
+      VkClearColorValue clearValue = {};
       //  Если target мультисэмплинговый, то определяет, как он должен
       //    резолвится в resolveTarget.
       //  Если выставлен в VK_RESOLVE_MODE_NONE, то резолва не будет, а
@@ -57,10 +56,29 @@ namespace mt
       ImageView* resolveTarget = nullptr;
     };
 
+    //  Информация об деф-стенсил таргете для рендера, который входит в
+    //  состав фрэйм буфера
+    struct DepthStencilAttachmentInfo
+    {
+      //  Непосредственно сюда будут писаться новые данные.
+      //  Не должен быть nullptr
+      //  Соответствующий Image должен быть создан с usageFlags со включенным
+      //    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+      ImageView* target;
+      //  Что надо сделать со старыми данными в таргете перед началом работы
+      //    с буфером
+      VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+      //  Что надо сделать с данными после того как работа с фрэйм буфером будет
+      //    закончена.
+      VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+      //  Если loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR, то таргет будет почищен в
+      //    это значение
+      VkClearDepthStencilValue clearValue = {};
+    };
+
   public:
-    FrameBuffer(std::span<const AttachmentInfo> colorAttachments,
-                const AttachmentInfo* depthAttachment,
-                const AttachmentInfo* stencilAttachment);
+    FrameBuffer(std::span<const ColorAttachmentInfo> colorAttachments,
+                const DepthStencilAttachmentInfo* depthStencilAttachment);
     FrameBuffer(const FrameBuffer&) = delete;
     FrameBuffer& operator = (const FrameBuffer&) = delete;
   protected:
@@ -69,9 +87,10 @@ namespace mt
   public:
     inline glm::uvec2 extent() const noexcept;
 
-    inline const std::vector<AttachmentInfo>& colorAttachments() const noexcept;
-    inline const AttachmentInfo* depthAttachment() const noexcept;
-    inline const AttachmentInfo* stencilAttachment() const noexcept;
+    inline const std::vector<ColorAttachmentInfo>&
+                                              colorAttachments() const noexcept;
+    inline const DepthStencilAttachmentInfo*
+                                        depthStencilAttachment() const noexcept;
 
     inline const VkRenderingInfoKHR& bindingInfo() const noexcept;
 
@@ -79,19 +98,20 @@ namespace mt
     inline const ImagesAccessSet& imagesAccess() const noexcept;
 
   private:
-    VkRenderingAttachmentInfo _fillFrom(const AttachmentInfo& info,
+    VkRenderingAttachmentInfo _fillFrom(const ColorAttachmentInfo& info,
+                                        VkImageLayout layout) const noexcept;
+    VkRenderingAttachmentInfo _fillFrom(const DepthStencilAttachmentInfo& info,
                                         VkImageLayout layout) const noexcept;
     void _fillColorAttachments(
-                              std::span<const AttachmentInfo> colorAttachments);
-    void _fillDepthAttachment(const AttachmentInfo* depthAttachment);
-    void _fillStencilAttachment(const AttachmentInfo* stencilAttachment);
+                          std::span<const ColorAttachmentInfo> colorAttachments);
+    void _fillDepthStencilAttachment(
+                              const DepthStencilAttachmentInfo* attachment);
 
   private:
     glm::uvec2 _extent;
 
-    std::vector<AttachmentInfo> _colorAttachments;
-    std::optional<AttachmentInfo> _depthAttachment;
-    std::optional<AttachmentInfo> _stencilAttachment;
+    std::vector<ColorAttachmentInfo> _colorAttachments;
+    std::optional<DepthStencilAttachmentInfo> _depthStencilAttachment;
 
     std::vector<VkRenderingAttachmentInfo> _vkColorAttachments;
     VkRenderingAttachmentInfo _vkDepthAttachment;
@@ -108,23 +128,19 @@ namespace mt
     return _extent;
   }
 
-  inline const std::vector<FrameBuffer::AttachmentInfo>&
+  inline const std::vector<FrameBuffer::ColorAttachmentInfo>&
                                   FrameBuffer::colorAttachments() const noexcept
   {
     return _colorAttachments;
   }
 
-  inline const FrameBuffer::AttachmentInfo*
-                                  FrameBuffer::depthAttachment() const noexcept
+  inline const FrameBuffer::DepthStencilAttachmentInfo*
+                            FrameBuffer::depthStencilAttachment() const noexcept
   {
-    if(_depthAttachment.has_value()) return &_depthAttachment.value();
-    return nullptr;
-  }
-
-  inline const FrameBuffer::AttachmentInfo*
-                                FrameBuffer::stencilAttachment() const noexcept
-  {
-    if(_stencilAttachment.has_value()) return &_stencilAttachment.value();
+    if(_depthStencilAttachment.has_value())
+    {
+      return &_depthStencilAttachment.value();
+    }
     return nullptr;
   }
 

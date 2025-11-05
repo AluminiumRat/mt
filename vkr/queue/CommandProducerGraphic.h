@@ -22,6 +22,7 @@ namespace mt
     //  Если автоконтроль лэйаутов отключен для каких-либо из таргетов, то
     //    к моменту создания рендер пасса они должны быть переведены
     //    в лэйауты VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    //    VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
     //    VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL или
     //    VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL в зависимости от их
     //    использования.

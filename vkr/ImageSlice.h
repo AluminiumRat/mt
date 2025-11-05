@@ -24,10 +24,19 @@ namespace mt
     // Создать слайс, который закрывает только часть Image
     ImageSlice( const Image& image,
                 VkImageAspectFlags aspectMask,
-                uint32_t baseMipLevel,
+                uint32_t baseMipLevel = 0,
                 uint32_t levelCount = VK_REMAINING_MIP_LEVELS,
                 uint32_t baseArrayLayer = 0,
                 uint32_t layerCount = VK_REMAINING_ARRAY_LAYERS) noexcept;
+    //  Конструирование без информации об Image
+    //  Здесь нельзя использовать значения VK_REMAINING_MIP_LEVELS и
+    //    VK_REMAINING_ARRAY_LAYERS
+    ImageSlice( VkImageAspectFlags aspectMask,
+                uint32_t baseMipLevel = 0,
+                uint32_t levelCount = 1,
+                uint32_t baseArrayLayer = 0,
+                uint32_t layerCount = 1) noexcept;
+
     ImageSlice(const ImageSlice&) noexcept = default;
     ImageSlice& operator = (const ImageSlice&) noexcept = default;
     ~ImageSlice() noexcept = default;

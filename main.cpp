@@ -60,16 +60,14 @@ int main(int argc, char* argv[])
                                                 ImageSlice(*frame.image()),
                                                 VK_IMAGE_VIEW_TYPE_2D));
 
-      FrameBuffer::AttachmentInfo colorAttachment = {
+      FrameBuffer::ColorAttachmentInfo colorAttachment = {
                     .target = colorTarget.get(),
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                     .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-                    .clearValue = VkClearValue{.color = {.1f, .05f, .05f, 1.0f}}};
+                    .clearValue = VkClearColorValue{.1f, .05f, .05f, 1.0f}};
       Ref<FrameBuffer> frameBuffer(
                             new FrameBuffer(
-                                  std::span<FrameBuffer::AttachmentInfo>(
-                                                          &colorAttachment, 1),
-                                  nullptr,
+                                  std::span(&colorAttachment, 1),
                                   nullptr));
 
       std::unique_ptr<CommandProducerGraphic> producer = device->graphicQueue()->startCommands();
@@ -95,7 +93,7 @@ int main(int argc, char* argv[])
                               VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                               VK_ACCESS_NONE);
 
-      device->primaryQueue().submitCommands(std::move(producer));
+      device->graphicQueue()->submitCommands(std::move(producer));
 
       frame.present();
     }
