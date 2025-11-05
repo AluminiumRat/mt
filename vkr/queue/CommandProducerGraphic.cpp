@@ -35,6 +35,11 @@ void CommandProducerGraphic::_beginPass(RenderPass& renderPass)
 
   const FrameBuffer& frameBuffer = renderPass.frameBuffer();
 
+  if(!frameBuffer.imagesAccess().empty())
+  {
+    addMultipleImagesUsage(frameBuffer.imagesAccess().accessTable());
+  }
+
   lockResource(frameBuffer);
 
   CommandBuffer& buffer = getOrCreateBuffer();
@@ -154,9 +159,9 @@ void CommandProducerGraphic::blitImage( const Image& srcImage,
                               .writeAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT};
     dstImageAccess.slicesCount = 1;
 
-    std::pair<const Image*, const ImageAccess*> accesses[2] =
-                                              { {&srcImage, &srcImageAccess},
-                                                {&dstImage, &dstImageAccess}};
+    std::pair<const Image*, ImageAccess> accesses[2] =
+                                              { {&srcImage, srcImageAccess},
+                                                {&dstImage, dstImageAccess}};
     addMultipleImagesUsage(accesses);
     lockResource(srcImage);
     lockResource(dstImage);

@@ -50,6 +50,7 @@ add_executable (vkTest
                 "vkr/queue/ImageAccess.cpp"
                 "vkr/queue/ImageAccessWatcher.cpp"
                 "vkr/queue/QueueFamiliesInfo.cpp"
+                "vkr/queue/ImagesAccessSet.cpp"
                 "vkr/queue/QueueSources.cpp"
                 "vkr/queue/Semaphore.cpp"
                 "vkr/queue/TimelineSemaphore.cpp"

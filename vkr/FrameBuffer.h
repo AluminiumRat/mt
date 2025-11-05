@@ -6,6 +6,7 @@
 
 #include <glm/glm.hpp>
 
+#include <vkr/queue/ImagesAccessSet.h>
 #include <vkr/ImageView.h>
 #include <vkr/RefCounter.h>
 #include <vkr/Ref.h>
@@ -57,7 +58,7 @@ namespace mt
     };
 
   public:
-    FrameBuffer(std::span<AttachmentInfo> colorAttachments,
+    FrameBuffer(std::span<const AttachmentInfo> colorAttachments,
                 const AttachmentInfo* depthAttachment,
                 const AttachmentInfo* stencilAttachment);
     FrameBuffer(const FrameBuffer&) = delete;
@@ -74,10 +75,14 @@ namespace mt
 
     inline const VkRenderingInfoKHR& bindingInfo() const noexcept;
 
+    //  Информация о доступе к Image со включенным автоконтролем лэйаутов
+    inline const ImagesAccessSet& imagesAccess() const noexcept;
+
   private:
     VkRenderingAttachmentInfo _fillFrom(const AttachmentInfo& info,
                                         VkImageLayout layout) const noexcept;
-    void _fillColorAttachments(std::span<AttachmentInfo> colorAttachments);
+    void _fillColorAttachments(
+                              std::span<const AttachmentInfo> colorAttachments);
     void _fillDepthAttachment(const AttachmentInfo* depthAttachment);
     void _fillStencilAttachment(const AttachmentInfo* stencilAttachment);
 
@@ -94,6 +99,8 @@ namespace mt
     VkRenderingInfo _vkBindingInfo;
 
     std::vector<RefCounterReference> _lockedResources;
+
+    ImagesAccessSet _imagesAccess;
   };
 
   inline glm::uvec2 FrameBuffer::extent() const noexcept
@@ -124,5 +131,10 @@ namespace mt
   inline const VkRenderingInfoKHR& FrameBuffer::bindingInfo() const noexcept
   {
     return _vkBindingInfo;
+  }
+
+  inline const ImagesAccessSet& FrameBuffer::imagesAccess() const noexcept
+  {
+    return _imagesAccess;
   }
 }

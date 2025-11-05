@@ -139,8 +139,8 @@ namespace mt
     //  автоконтроля лэйаутов
     void addImageUsage(const Image& image, const ImageAccess& access);
 
-    using ImageUsage = std::pair<const Image*, const ImageAccess*>;
-    using MultipleImageUsage = std::span<ImageUsage>;
+    using ImageUsage = std::pair<const Image*, ImageAccess>;
+    using MultipleImageUsage = std::span<const ImageUsage>;
     //  Зарегистрировать использование нескольких Image. Работает для поддержки
     //    автоконтроля лэйаутов.
     //  В отличии от addImageUsage позволяет немного сэкономить на буферах

@@ -226,7 +226,7 @@ void CommandProducer::addMultipleImagesUsage(MultipleImageUsage usages)
       const Image* image = usage.first;
       if(!image->isLayoutAutoControlEnabled()) continue;
 
-      const ImageAccess& access = *usage.second;
+      const ImageAccess& access = usage.second;
       if(_accessWatcher.addImageAccess(
                                     *image,
                                     access,
