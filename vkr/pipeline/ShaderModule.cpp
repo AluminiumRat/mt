@@ -80,7 +80,15 @@ ShaderModule::ShaderModule( Device& device,
   _handle(VK_NULL_HANDLE),
   _debugName(debugName)
 {
-  _createHandle(spvData);
+  try
+  {
+    _createHandle(spvData);
+  }
+  catch(...)
+  {
+    _cleanup();
+    throw;
+  }
 }
 
 ShaderModule::ShaderModule(Device& device, const char* spvFilename) :
@@ -88,8 +96,16 @@ ShaderModule::ShaderModule(Device& device, const char* spvFilename) :
   _handle(VK_NULL_HANDLE),
   _debugName(spvFilename)
 {
-  std::vector<uint32_t> spvData = shaderLoader->loadShader(spvFilename);
-  _createHandle(spvData);
+  try
+  {
+    std::vector<uint32_t> spvData = shaderLoader->loadShader(spvFilename);
+    _createHandle(spvData);
+  }
+  catch (...)
+  {
+    _cleanup();
+    throw;
+  }
 }
 
 void ShaderModule::_createHandle(std::span<const uint32_t> spvData)
