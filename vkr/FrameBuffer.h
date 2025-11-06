@@ -6,6 +6,7 @@
 
 #include <glm/glm.hpp>
 
+#include <vkr/FrameBufferFormat.h>
 #include <vkr/ImagesAccessSet.h>
 #include <vkr/ImageView.h>
 #include <vkr/RefCounter.h>
@@ -23,9 +24,6 @@ namespace mt
   class FrameBuffer : public RefCounter
   {
   public:
-    //  Максимальное количество одновременно подключаемых колор таргетов
-    static constexpr uint32_t maxColorAttachments = 8;
-
     //  Информация об отдельном колор таргете для рендера, который входит в
     //  состав фрэйм буфера
     struct ColorAttachmentInfo
@@ -97,6 +95,8 @@ namespace mt
     //  Информация о доступе к Image со включенным автоконтролем лэйаутов
     inline const ImagesAccessSet& imagesAccess() const noexcept;
 
+    inline const FrameBufferFormat& format() const noexcept;
+
   private:
     VkRenderingAttachmentInfo _fillFrom(const ColorAttachmentInfo& info,
                                         VkImageLayout layout) const noexcept;
@@ -121,6 +121,8 @@ namespace mt
     std::vector<RefCounterReference> _lockedResources;
 
     ImagesAccessSet _imagesAccess;
+
+    FrameBufferFormat _format;
   };
 
   inline glm::uvec2 FrameBuffer::extent() const noexcept
@@ -152,5 +154,10 @@ namespace mt
   inline const ImagesAccessSet& FrameBuffer::imagesAccess() const noexcept
   {
     return _imagesAccess;
+  }
+
+  inline const FrameBufferFormat& FrameBuffer::format() const noexcept
+  {
+    return _format;
   }
 }

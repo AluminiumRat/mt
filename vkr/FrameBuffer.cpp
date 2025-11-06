@@ -3,12 +3,36 @@
 
 using namespace mt;
 
+static FrameBufferFormat crateFrameBufferFormat(
+          std::span<const FrameBuffer::ColorAttachmentInfo> colorAttachments,
+          const FrameBuffer::DepthStencilAttachmentInfo* depthStencilAttachment)
+{
+  std::vector<VkFormat> colotAttachmentFormats;
+  colotAttachmentFormats.reserve(colorAttachments.size());
+
+  for (const FrameBuffer::ColorAttachmentInfo& attachment : colorAttachments)
+  {
+    colotAttachmentFormats.push_back(attachment.target->image().format());
+  }
+
+  VkFormat depthStencilAttachmentFormat = VK_FORMAT_UNDEFINED;
+  if (depthStencilAttachment != nullptr)
+  {
+    depthStencilAttachmentFormat =
+                              depthStencilAttachment->target->image().format();
+  }
+
+  return FrameBufferFormat( colotAttachmentFormats,
+                            depthStencilAttachmentFormat);
+}
+
 FrameBuffer::FrameBuffer(
-                      std::span<const ColorAttachmentInfo> colorAttachments,
-                      const DepthStencilAttachmentInfo* depthStencilAttachment)
+                    std::span<const ColorAttachmentInfo> colorAttachments,
+                    const DepthStencilAttachmentInfo* depthStencilAttachment) :
+  _format(crateFrameBufferFormat(colorAttachments, depthStencilAttachment))
 {
   MT_ASSERT(!colorAttachments.empty() || depthStencilAttachment != nullptr);
-  MT_ASSERT(colorAttachments.size() <= maxColorAttachments);
+  MT_ASSERT(colorAttachments.size() <= FrameBufferFormat::maxColorAttachments);
 
   _extent = !colorAttachments.empty() ?
                     colorAttachments[0].target->extent() :
