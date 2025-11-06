@@ -3,6 +3,7 @@
 #include <util/Assert.h>
 #include <vkr/Device.h>
 #include <vkr/Image.h>
+#include <vkr/ImageFormatFeatures.h>
 
 using namespace mt;
 
@@ -11,7 +12,6 @@ Image::Image( Device& device,
               VkImageUsageFlags usageFlags,
               VkImageCreateFlags createFlags,
               VkFormat format,
-              VkImageAspectFlags aspectMask,
               glm::uvec3 extent,
               VkSampleCountFlagBits samples,
               uint32_t arraySize,
@@ -23,7 +23,7 @@ Image::Image( Device& device,
   _memorySize(0),
   _imageType(imageType),
   _format(format),
-  _aspectMask(aspectMask),
+  _aspectMask(getFormatFeatures(_format).aspectMask),
   _extent(extent),
   _samples(samples),
   _arraySize(arraySize),
@@ -82,7 +82,6 @@ Image::Image( Device& device,
               VkImage handle,
               VkImageType imageType,
               VkFormat format,
-              VkImageAspectFlags aspectMask,
               glm::uvec3 extent,
               VkSampleCountFlagBits samples,
               uint32_t arraySize,
@@ -97,7 +96,7 @@ Image::Image( Device& device,
   _memorySize(0),
   _imageType(imageType),
   _format(format),
-  _aspectMask(aspectMask),
+  _aspectMask(getFormatFeatures(_format).aspectMask),
   _extent(extent),
   _samples(samples),
   _arraySize(arraySize),

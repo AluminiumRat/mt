@@ -62,6 +62,7 @@ add_executable (vkTest
                 "vkr/FrameBufferFormat.cpp"
                 "vkr/Image.cpp"
                 "vkr/ImageAccess.cpp"
+                "vkr/ImageFormatFeatures.cpp"
                 "vkr/ImagesAccessSet.cpp"
                 "vkr/ImageSlice.cpp"
                 "vkr/ImageView.cpp"

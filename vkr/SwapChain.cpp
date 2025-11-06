@@ -216,7 +216,6 @@ void SwapChain::_createHandle(
                                           images[frameIndex],
                                           VK_IMAGE_TYPE_2D,
                                           _imageFormat.format,
-                                          VK_IMAGE_ASPECT_COLOR_BIT,
                                           glm::uvec3(_extent, 1),
                                           VK_SAMPLE_COUNT_1_BIT,
                                           1,
