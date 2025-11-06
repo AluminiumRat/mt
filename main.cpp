@@ -12,6 +12,8 @@
 #include <vkr/Win32WindowSurface.h>
 #include <dumpHardware.h>
 
+#include <vkr/pipeline/ShaderModule.h>
+
 using namespace mt;
 
 int main(int argc, char* argv[])
@@ -48,6 +50,9 @@ int main(int argc, char* argv[])
                                             surface,
                                             std::nullopt,
                                             std::nullopt));
+
+    Ref<ShaderModule> vertShader(new ShaderModule(*device, "shader.vert.spv"));
+    Ref<ShaderModule> fragShader(new ShaderModule(*device, "shader.frag.spv"));
 
     while (!glfwWindowShouldClose(window))
     {
@@ -97,6 +102,9 @@ int main(int argc, char* argv[])
 
       frame.present();
     }
+
+    vertShader.reset();
+    fragShader.reset();
 
     swapChain.reset();
     device.reset();

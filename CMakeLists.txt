@@ -35,6 +35,7 @@ include_directories(.
 
 add_executable (vkTest
                 "util/Log.cpp"
+                "vkr/pipeline/ShaderModule.cpp"
                 "vkr/queue/CommandBuffer.cpp"
                 "vkr/queue/CommandPool.cpp"
                 "vkr/queue/CommandPoolSet.cpp"
