@@ -51,8 +51,10 @@ int main(int argc, char* argv[])
                                             std::nullopt,
                                             std::nullopt));
 
-    Ref<ShaderModule> vertShader(new ShaderModule(*device, "shader.vert.spv"));
-    Ref<ShaderModule> fragShader(new ShaderModule(*device, "shader.frag.spv"));
+    {
+      ShaderModule vertShader(*device, "shader.vert.spv");
+      ShaderModule fragShader(*device, "shader.frag.spv");
+    }
 
     while (!glfwWindowShouldClose(window))
     {
@@ -102,9 +104,6 @@ int main(int argc, char* argv[])
 
       frame.present();
     }
-
-    vertShader.reset();
-    fragShader.reset();
 
     swapChain.reset();
     device.reset();

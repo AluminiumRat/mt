@@ -5,15 +5,13 @@
 
 #include <vulkan/vulkan.h>
 
-#include <vkr/RefCounter.h>
-
 namespace mt
 {
   class Device;
 
   //  Обертка вокруг VkShaderModule
   //  Представляет собой отдельный скомпилированный шейдерный модуль
-  class ShaderModule : public RefCounter
+  class ShaderModule
   {
   public:
     // Создать шейдер из данных SPIR-V в памяти
@@ -24,9 +22,7 @@ namespace mt
     ShaderModule(Device& device, const char* spvFilename);
     ShaderModule(const ShaderModule&) = delete;
     ShaderModule& operator = (const ShaderModule&) = delete;
-  protected:
     virtual ~ShaderModule() noexcept;
-  public:
 
     inline VkShaderModule handle() const noexcept;
     inline const std::string& debugName() const noexcept;
