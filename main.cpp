@@ -6,11 +6,9 @@
 #include <GLFW/glfw3native.h>
 
 #include <util/util.h>
-#include <vkr/FrameBuffer.h>
-#include <vkr/SwapChain.h>
 #include <vkr/VKRLib.h>
-#include <vkr/Win32WindowSurface.h>
 #include <dumpHardware.h>
+#include <GLFWRenderWindow.h>
 
 #include <vkr/pipeline/ShaderModule.h>
 #include <vkr/pipeline/GraphicPipeline.h>
@@ -74,11 +72,6 @@ int main(int argc, char* argv[])
 
     glfwInit();
 
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
-
-    Win32WindowSurface surface(glfwGetWin32Window(window));
-
     /*dumpHardware( false,      // dumpLayers
                   false,      // dumpExtensions
                   true,       // dumpDevices
@@ -86,75 +79,27 @@ int main(int argc, char* argv[])
                   false,      // dumpMemory
                   &surface);*/
 
-    std::unique_ptr<Device> device = vkrLib.createDevice(
+    std::unique_ptr<Device> device = GLFWRenderWindow::createDevice(
                                                         {},
                                                         {},
-                                                        GRAPHICS_CONFIGURATION,
-                                                        &surface);
+                                                        GRAPHICS_CONFIGURATION);
 
-    Ref<SwapChain> swapChain(new SwapChain( *device,
-                                            surface,
-                                            std::nullopt,
-                                            std::nullopt));
+    std::optional<GLFWRenderWindow> mainWindow;
+    mainWindow.emplace(*device, "Vulkan window");
 
-    Ref<GraphicPipeline> pipeline = makePipeline(*device);
-
-    while (!glfwWindowShouldClose(window))
+    while (!mainWindow->shouldClose())
     {
       glfwPollEvents();
 
-      SwapChain::FrameAccess frame(*swapChain);
-      MT_ASSERT(frame.image() != nullptr);
-
-      Ref<ImageView> colorTarget(new ImageView( *frame.image(),
-                                                ImageSlice(*frame.image()),
-                                                VK_IMAGE_VIEW_TYPE_2D));
-
-      FrameBuffer::ColorAttachmentInfo colorAttachment = {
-                    .target = colorTarget.get(),
-                    .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                    .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-                    .clearValue = VkClearColorValue{.1f, .05f, .05f, 1.0f}};
-      Ref<FrameBuffer> frameBuffer(
-                            new FrameBuffer(
-                                  std::span(&colorAttachment, 1),
-                                  nullptr));
-
-      std::unique_ptr<CommandProducerGraphic> producer = device->graphicQueue()->startCommands();
-
-      producer->imageBarrier( *frame.image(),
-                              ImageSlice(*frame.image()),
-                              VK_IMAGE_LAYOUT_UNDEFINED,
-                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                              VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                              VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                              VK_ACCESS_NONE,
-                              VK_ACCESS_COLOR_ATTACHMENT_READ_BIT);
-
-      CommandProducerGraphic::RenderPass renderPass(*producer, *frameBuffer);
-      producer->setGraphicPipeline(*pipeline);
-      producer->draw(3);
-      renderPass.endPass();
-
-      producer->imageBarrier( *frame.image(),
-                              ImageSlice(*frame.image()),
-                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                              VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                              VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                              VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                              VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                              VK_ACCESS_NONE);
-
-      device->graphicQueue()->submitCommands(std::move(producer));
-
-      frame.present();
+      mainWindow->draw();
+      //producer->setGraphicPipeline(*pipeline);
+      //producer->draw(3);
+      //renderPass.endPass();
     }
 
-    pipeline.reset();
-    swapChain.reset();
+    mainWindow.reset();
     device.reset();
 
-    glfwDestroyWindow(window);
     glfwTerminate();
 
     return 0;

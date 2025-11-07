@@ -1,10 +1,11 @@
 ﻿#include <array>
 #include <stdexcept>
 
+#include <util/Abort.h>
+#include <util/Assert.h>
 #include <vkr/Device.h>
 #include <vkr/PhysicalDevice.h>
 #include <vkr/VKRLib.h>
-#include <util/Assert.h>
 
 using namespace mt;
 
@@ -265,4 +266,14 @@ bool Device::isSurfaceSuitable(const WindowSurface& surface) const
 
   return
       _queuesByTypes[PRESENTATION_QUEUE]->family().isPresentSupported(surface);
+}
+
+std::unique_lock<std::recursive_mutex> Device::lockQueues() noexcept
+{
+  std::unique_lock<std::recursive_mutex> locker(_commonQueuesMutex);
+  if(vkDeviceWaitIdle(_handle) != VK_SUCCESS)
+  {
+    Abort("Device::lockQueues: unable to wait for device");
+  }
+  return locker;
 }

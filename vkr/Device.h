@@ -71,6 +71,13 @@ namespace mt
 
     bool isSurfaceSuitable(const WindowSurface& surface) const;
 
+    //  Заблокировать выполнение чего-либо на GPU очередях
+    //  Метод блокирует доступ к очередям со стороны других потоков, дожидается,
+    //    когда все очереди закончат выполнение текущих команд, после чего
+    //    возвращает std::unique_lock на общий мьютекс очередей, который
+    //    не дает другим потокам добавлять новые команды в очередь
+    std::unique_lock<std::recursive_mutex> lockQueues() noexcept;
+
   private:
     void _cleanup() noexcept;
     void _createHandle( const std::vector<std::string>& requiredExtensions,

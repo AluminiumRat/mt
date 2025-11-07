@@ -9,9 +9,7 @@
 
 #include <vk_mem_alloc.h>
 
-#include <glm/common.hpp>
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
+#include <glm/glm.hpp>
 
 #include <vkr/ImageAccess.h>
 #include <vkr/RefCounter.h>

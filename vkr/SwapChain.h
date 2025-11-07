@@ -6,7 +6,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <glm/vec2.hpp>
+#include <glm/glm.hpp>
 
 #include <vkr/queue/Fence.h>
 #include <vkr/queue/Semaphore.h>
@@ -60,6 +60,9 @@ namespace mt
       //    VK_IMAGE_LAYOUT_UNDEFINED
       inline Image* image() const noexcept;
 
+      //  Индекс кадра в свапчейне
+      inline uint32_t frameIndex() const noexcept;
+
       //  Вернуть захваченный кадр обратно в свапчейн и отправить его на
       //  презентацию. Image к этому времени должен быть переведен в
       //  VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
@@ -67,6 +70,7 @@ namespace mt
 
     private:
       SwapChain& _swapChain;
+      uint32_t _frameIndex;
       Image* _image;
     };
 
@@ -92,13 +96,14 @@ namespace mt
 
     inline VkPresentModeKHR presentationMode() const noexcept;
 
-    inline size_t framesCount() const noexcept;
+    inline uint32_t framesCount() const noexcept;
+    inline Image& frame(uint32_t frameIndex) const noexcept;
 
   private:
     // Захватить один кадр из свапчейна для отрисовки в нем.
     // Автоматически кидает семафор в основную очередь устройства, чтобы
     // предотвратить выполнение команд на отрисовку до готовности Image
-    Image& lockFrame();
+    uint32_t lockFrame();
     // Вернуть захваченный кадр в свапчейн. Штатный вариант работы.
     // Синхронизируется с основной очередью девайса.
     // Если для image-а ещё не закончены операции с предыдущих кадров, синхронно
@@ -149,9 +154,9 @@ namespace mt
 
   inline SwapChain::FrameAccess::FrameAccess(SwapChain& swapChain):
     _swapChain(swapChain),
-    _image(nullptr)
+    _frameIndex(_swapChain.lockFrame()),
+    _image(&_swapChain.frame(_frameIndex))
   {
-    _image = &_swapChain.lockFrame();
   }
 
   inline SwapChain::FrameAccess::FrameAccess(FrameAccess&& other) :
@@ -180,6 +185,11 @@ namespace mt
     return _image;
   }
 
+  inline uint32_t SwapChain::FrameAccess::frameIndex() const noexcept
+  {
+    return _frameIndex;
+  }
+
   inline VkSwapchainKHR SwapChain::handle() const noexcept
   {
     return _handle;
@@ -200,8 +210,13 @@ namespace mt
     return _presentationMode;
   }
 
-  inline size_t SwapChain::framesCount() const noexcept
+  inline uint32_t SwapChain::framesCount() const noexcept
   {
-    return _frames.size();
+    return uint32_t(_frames.size());
+  }
+
+  inline Image& SwapChain::frame(uint32_t frameIndex) const noexcept
+  {
+    return *_frames[frameIndex].image;
   }
 }

@@ -246,7 +246,7 @@ void SwapChain::_cleanup() noexcept
   }
 }
 
-Image& SwapChain::lockFrame()
+uint32_t SwapChain::lockFrame()
 {
   MT_ASSERT(!_lockedFrameIndex.has_value() && "swapchain is already in the locked state");
   MT_ASSERT(!_semaphoresPool.empty());
@@ -279,7 +279,7 @@ Image& SwapChain::lockFrame()
                                       VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
   _lockedFrameIndex = frameIndex;
-  return *_frames[frameIndex].image;
+  return frameIndex;
 }
 
 void SwapChain::presentFrame()

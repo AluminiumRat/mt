@@ -76,6 +76,7 @@ add_executable (vkTest
                 "vkr/VKRLib.cpp"
                 "vkr/WindowSurface.cpp"
                 "vkr/Win32WindowSurface.cpp"
+                "GLFWRenderWindow.cpp"
                 "main.cpp")
 
 target_link_libraries(vkTest
