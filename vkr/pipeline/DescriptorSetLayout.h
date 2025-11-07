@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <span>
+
 #include <vulkan/vulkan.h>
 
 #include <vkr/RefCounter.h>
@@ -8,14 +10,15 @@ namespace mt
 {
   class Device;
 
-  //  Обертка вокруг VkDescriptorSetLayout
+  //  RAII обертка вокруг VkDescriptorSetLayout
   //  Описывает, какие типы ресурсов содержатся в отдельном наборе ресурсов (
   //    дескриптор сете).
   //  Используется при создании пайплайнов.
   class DescriptorSetLayout : public RefCounter
   {
   public:
-    DescriptorSetLayout(Device& device);
+    DescriptorSetLayout(Device& device,
+                        std::span<const VkDescriptorSetLayoutBinding> bindings);
     DescriptorSetLayout(const DescriptorSetLayout&) = delete;
     DescriptorSetLayout& operator = (const DescriptorSetLayout&) = delete;
   protected:
@@ -23,9 +26,6 @@ namespace mt
   public:
 
     inline VkDescriptorSetLayout handle() const noexcept;
-
-  private:
-    void _cleanup() noexcept;
 
   private:
     Device& _device;
