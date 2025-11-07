@@ -17,7 +17,8 @@ uint32_t FrameBufferFormat::_getFormatIndex() const
   {
     const FrameBufferFormat& format = formatsTable[index];
     if( _colorAttachments == format._colorAttachments &&
-        _depthStencilAttachment == format._depthStencilAttachment)
+        _depthStencilAttachment == format._depthStencilAttachment &&
+        _samplesCount == format._samplesCount)
     {
       return index;
     }
@@ -39,9 +40,11 @@ void FrameBufferFormat::fillPipelineCreateInfo() noexcept
 }
 
 FrameBufferFormat::FrameBufferFormat( std::span<VkFormat> colotAttachments,
-                                      VkFormat depthStencilAttachment) :
+                                      VkFormat depthStencilAttachment,
+                                      VkSampleCountFlagBits samplesCount) :
   _colorAttachments(colotAttachments.begin(), colotAttachments.end()),
   _depthStencilAttachment(depthStencilAttachment),
+  _samplesCount(samplesCount),
   _pipelineCreateInfo{},
   _formatIndex(0)
 {

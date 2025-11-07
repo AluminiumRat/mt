@@ -27,7 +27,7 @@ namespace mt
     };
 
   public:
-    AbstractPipeline(Device& device, VkPipeline handle);
+    AbstractPipeline(Device& device);
     AbstractPipeline(const AbstractPipeline&) = delete;
     AbstractPipeline& operator = (const AbstractPipeline&) = delete;
     virtual ~AbstractPipeline() noexcept;
@@ -36,9 +36,12 @@ namespace mt
     inline VkPipeline handle() const noexcept;
 
   protected:
+    //  Должен вызываться ровно 1 раз в конструкторе дочернего класса
+    void setHandle(VkPipeline handle);
+
     using VkShadersInfo = std::vector<VkPipelineShaderStageCreateInfo>;
     static VkShadersInfo createVkShadersInfo(
-                                            std::span<const ShaderInfo> shaders);
+                                          std::span<const ShaderInfo> shaders);
     virtual void cleanup() noexcept;
 
   private:

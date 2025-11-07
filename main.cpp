@@ -13,8 +13,51 @@
 #include <dumpHardware.h>
 
 #include <vkr/pipeline/ShaderModule.h>
+#include <vkr/pipeline/GraphicPipeline.h>
 
 using namespace mt;
+
+Ref<GraphicPipeline> makePipeline(Device& device)
+{
+  VkFormat colorAttachments[1] = { VK_FORMAT_B8G8R8A8_SRGB };
+  FrameBufferFormat fbFormat(colorAttachments, VK_FORMAT_UNDEFINED, VK_SAMPLE_COUNT_1_BIT);
+
+  ShaderModule vertShader(device, "shader.vert.spv");
+  ShaderModule fragShader(device, "shader.frag.spv");
+  AbstractPipeline::ShaderInfo shadersInfo[2]
+    { { .module = &vertShader,
+       .stage = VK_SHADER_STAGE_VERTEX_BIT,
+       .entryPoint = "main"},
+      { .module = &fragShader,
+        .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+        .entryPoint = "main"}};
+
+  VkPipelineRasterizationStateCreateInfo rasterizationState{};
+  rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+  rasterizationState.polygonMode = VK_POLYGON_MODE_FILL;
+  rasterizationState.lineWidth = 1;
+
+  VkPipelineDepthStencilStateCreateInfo depthStencilState{};
+  depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+
+  VkPipelineColorBlendStateCreateInfo blendingState{};
+  blendingState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+  blendingState.attachmentCount = 1;
+  VkPipelineColorBlendAttachmentState attachmentState{};
+  attachmentState.colorWriteMask =  VK_COLOR_COMPONENT_R_BIT |
+                                    VK_COLOR_COMPONENT_G_BIT |
+                                    VK_COLOR_COMPONENT_B_BIT |
+                                    VK_COLOR_COMPONENT_A_BIT;
+  blendingState.pAttachments = &attachmentState;
+
+  return Ref(new GraphicPipeline( device,
+                                  fbFormat,
+                                  shadersInfo,
+                                  VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+                                  rasterizationState,
+                                  depthStencilState,
+                                  blendingState));
+}
 
 int main(int argc, char* argv[])
 {
@@ -51,10 +94,7 @@ int main(int argc, char* argv[])
                                             std::nullopt,
                                             std::nullopt));
 
-    {
-      ShaderModule vertShader(*device, "shader.vert.spv");
-      ShaderModule fragShader(*device, "shader.frag.spv");
-    }
+    Ref<GraphicPipeline> pipeline = makePipeline(*device);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -89,6 +129,8 @@ int main(int argc, char* argv[])
                               VK_ACCESS_COLOR_ATTACHMENT_READ_BIT);
 
       CommandProducerGraphic::RenderPass renderPass(*producer, *frameBuffer);
+      producer->setGraphicPipeline(*pipeline);
+      producer->draw(3);
       renderPass.endPass();
 
       producer->imageBarrier( *frame.image(),
@@ -105,6 +147,7 @@ int main(int argc, char* argv[])
       frame.present();
     }
 
+    pipeline.reset();
     swapChain.reset();
     device.reset();
 

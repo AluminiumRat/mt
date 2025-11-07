@@ -5,11 +5,16 @@
 
 using namespace mt;
 
-AbstractPipeline::AbstractPipeline(Device& device, VkPipeline handle) :
+AbstractPipeline::AbstractPipeline(Device& device) :
   _device(device),
-  _handle(handle)
+  _handle(VK_NULL_HANDLE)
 {
-  MT_ASSERT(_handle != VK_NULL_HANDLE);
+}
+
+void AbstractPipeline::setHandle(VkPipeline handle)
+{
+  MT_ASSERT(handle != VK_NULL_HANDLE);
+  _handle = handle;
 }
 
 AbstractPipeline::VkShadersInfo AbstractPipeline::createVkShadersInfo(
@@ -17,22 +22,24 @@ AbstractPipeline::VkShadersInfo AbstractPipeline::createVkShadersInfo(
 {
   MT_ASSERT(!shaders.empty());
 
-  std::vector<VkPipelineShaderStageCreateInfo> vkShadersInfo;
-  vkShadersInfo.reserve(shaders.size());
+  std::vector<VkPipelineShaderStageCreateInfo> result;
+  result.reserve(shaders.size());
 
   for(const ShaderInfo& shader : shaders)
   {
     MT_ASSERT(shader.module != nullptr);
     MT_ASSERT(!shader.entryPoint.empty());
 
-    VkPipelineShaderStageCreateInfo vkShaderInfo{};
-    vkShaderInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vkShaderInfo.stage = shader.stage;
-    vkShaderInfo.module = shader.module->handle();
-    vkShaderInfo.pName = shader.entryPoint.c_str();
+    VkPipelineShaderStageCreateInfo shaderInfo{};
+    shaderInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderInfo.stage = shader.stage;
+    shaderInfo.module = shader.module->handle();
+    shaderInfo.pName = shader.entryPoint.c_str();
+
+    result.push_back(shaderInfo);
   }
 
-  return vkShadersInfo;
+  return result;
 }
 
 AbstractPipeline::~AbstractPipeline() noexcept

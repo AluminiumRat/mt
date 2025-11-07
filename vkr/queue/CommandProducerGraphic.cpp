@@ -2,6 +2,7 @@
 
 #include <util/Assert.h>
 #include <util/Log.h>
+#include <vkr/pipeline/GraphicPipeline.h>
 #include <vkr/queue/CommandBuffer.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/FrameBuffer.h>
@@ -45,6 +46,7 @@ void CommandProducerGraphic::_beginPass(RenderPass& renderPass)
   CommandBuffer& buffer = getOrCreateBuffer();
   vkCmdBeginRendering(buffer.handle(), &frameBuffer.bindingInfo());
 
+  // Выставляем дефолтный вьюпорт
   VkViewport viewport{.x = 0,
                       .y = 0,
                       .width = float(frameBuffer.extent().x),
@@ -53,6 +55,7 @@ void CommandProducerGraphic::_beginPass(RenderPass& renderPass)
                       .maxDepth = 1};
   vkCmdSetViewport(buffer.handle(), 0, 1, &viewport);
 
+  // Дефолтный трафарет
   VkRect2D scissor{ .offset = {.x = 0, .y = 0},
                     .extent = { .width = frameBuffer.extent().x,
                                 .height = frameBuffer.extent().y,}};
@@ -76,6 +79,29 @@ void CommandProducerGraphic::_endPass() noexcept
     Log::error() << "CommandProducerGraphic::_endPass: " << error.what();
     Abort("Unable to end render pass");
   }
+}
+
+void CommandProducerGraphic::setGraphicPipeline(GraphicPipeline& pipeline)
+{
+  CommandBuffer& buffer = getOrCreateBuffer();
+  lockResource(pipeline);
+
+  vkCmdBindPipeline(buffer.handle(),
+                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    pipeline.handle());
+}
+
+void CommandProducerGraphic::draw(uint32_t vertexCount,
+                                  uint32_t instanceCount,
+                                  uint32_t firstVertex,
+                                  uint32_t firstInstance)
+{
+  CommandBuffer& buffer = getOrCreateBuffer();
+  vkCmdDraw(buffer.handle(),
+            vertexCount,
+            instanceCount,
+            firstVertex,
+            firstInstance);
 }
 
 void CommandProducerGraphic::blitImage( const Image& srcImage,

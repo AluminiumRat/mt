@@ -5,6 +5,7 @@
 namespace mt
 {
   class FrameBuffer;
+  class GraphicPipeline;
 
   //  Продюсер команд, реализующий функционал графической очереди команд
   //  Так же включает в себя функционал CommandProducerTransfer и
@@ -55,6 +56,15 @@ namespace mt
     virtual ~CommandProducerGraphic() noexcept;
 
     inline const FrameBuffer* curentFrameBuffer() const noexcept;
+
+    void setGraphicPipeline(GraphicPipeline& pipeline);
+
+    //  Обертка вокруг vkCmdDraw
+    //  Обычная отрисовка фиксированного количества вершин без индексного буфера
+    void draw(uint32_t vertexCount,
+              uint32_t instanceCount = 1,
+              uint32_t firstVertex = 0,
+              uint32_t firstInstance = 0);
 
     //  Обертка вокруг vkCmdBlitImage
     //  Копировать один кусок Image в другое место (возможно в этот же Image,

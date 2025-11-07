@@ -22,8 +22,14 @@ static FrameBufferFormat crateFrameBufferFormat(
                               depthStencilAttachment->target->image().format();
   }
 
+  VkSampleCountFlagBits samplesCount =
+                          depthStencilAttachment != nullptr ?
+                            depthStencilAttachment->target->image().samples() :
+                            colorAttachments[0].target->image().samples();
+
   return FrameBufferFormat( colotAttachmentFormats,
-                            depthStencilAttachmentFormat);
+                            depthStencilAttachmentFormat,
+                            samplesCount);
 }
 
 FrameBuffer::FrameBuffer(
