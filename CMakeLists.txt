@@ -36,6 +36,7 @@ include_directories(.
 add_executable (vkTest
                 "util/Log.cpp"
                 "vkr/pipeline/AbstractPipeline.cpp"
+                "vkr/pipeline/DescriptorSetLayout.cpp"
                 "vkr/pipeline/GraphicPipeline.cpp"
                 "vkr/pipeline/PipelineLayout.cpp"
                 "vkr/pipeline/ShaderModule.cpp"

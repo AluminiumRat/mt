@@ -50,7 +50,7 @@ Ref<GraphicPipeline> makePipeline(Device& device)
                                     VK_COLOR_COMPONENT_A_BIT;
   blendingState.pAttachments = &attachmentState;
 
-  Ref<PipelineLayout> pipelineLayout(new PipelineLayout(device));
+  Ref<PipelineLayout> pipelineLayout(new PipelineLayout(device, {}));
 
   return Ref(new GraphicPipeline( device,
                                   fbFormat,

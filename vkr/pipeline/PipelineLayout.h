@@ -1,8 +1,13 @@
 ﻿#pragma once
 
+#include <span>
+#include <vector>
+
 #include <vulkan/vulkan.h>
 
+#include <vkr/pipeline/DescriptorSetLayout.h>
 #include <vkr/RefCounter.h>
+#include <vkr/Ref.h>
 
 namespace mt
 {
@@ -14,7 +19,9 @@ namespace mt
   class PipelineLayout : public RefCounter
   {
   public:
-    PipelineLayout(Device& device);
+    // descriptorSets не должен содержать nullptr
+    PipelineLayout( Device& device,
+                    std::span<const DescriptorSetLayout*> descriptorSets);
     PipelineLayout(const PipelineLayout&) = delete;
     PipelineLayout& operator = (const PipelineLayout&) = delete;
   protected:
@@ -29,6 +36,8 @@ namespace mt
   private:
     Device& _device;
     VkPipelineLayout _handle;
+
+    std::vector<ConstRef<DescriptorSetLayout>> _setLayouts;
   };
 
   inline VkPipelineLayout PipelineLayout::handle() const noexcept
