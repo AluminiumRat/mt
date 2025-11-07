@@ -50,13 +50,16 @@ Ref<GraphicPipeline> makePipeline(Device& device)
                                     VK_COLOR_COMPONENT_A_BIT;
   blendingState.pAttachments = &attachmentState;
 
+  Ref<PipelineLayout> pipelineLayout(new PipelineLayout(device));
+
   return Ref(new GraphicPipeline( device,
                                   fbFormat,
                                   shadersInfo,
                                   VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
                                   rasterizationState,
                                   depthStencilState,
-                                  blendingState));
+                                  blendingState,
+                                  *pipelineLayout));
 }
 
 int main(int argc, char* argv[])

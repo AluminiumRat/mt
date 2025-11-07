@@ -19,8 +19,10 @@ GraphicPipeline::GraphicPipeline(
               VkPrimitiveTopology topology,
               const VkPipelineRasterizationStateCreateInfo& rasterizationState,
               const VkPipelineDepthStencilStateCreateInfo& depthStencilState,
-              const VkPipelineColorBlendStateCreateInfo& blendingState) :
-  AbstractPipeline(device)
+              const VkPipelineColorBlendStateCreateInfo& blendingState,
+              const PipelineLayout& layout) :
+  AbstractPipeline(device),
+  _layout(&layout)
 {
   // Данные вершин будем грузить в вершинном шейдере через буферы
   VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
@@ -77,14 +79,7 @@ GraphicPipeline::GraphicPipeline(
   pipelineInfo.pColorBlendState = &blendingState;
   pipelineInfo.pDynamicState = &dynamicStateInfo;
 
-  // Заглушка для pipelineLayout-а
-  VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-  pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-  pipelineInfo.layout = VK_NULL_HANDLE;
-  vkCreatePipelineLayout( device.handle(),
-                          &pipelineLayoutInfo,
-                          nullptr,
-                          &pipelineInfo.layout);
+  pipelineInfo.layout = layout.handle();
 
   // Включаем dynamic rendering
   pipelineInfo.renderPass = VK_NULL_HANDLE;

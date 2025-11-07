@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include <vkr/pipeline/AbstractPipeline.h>
+#include <vkr/pipeline/PipelineLayout.h>
+#include <vkr/Ref.h>
 
 namespace mt
 {
@@ -18,9 +20,13 @@ namespace mt
               VkPrimitiveTopology topology,
               const VkPipelineRasterizationStateCreateInfo& rasterizationState,
               const VkPipelineDepthStencilStateCreateInfo& depthStencilState,
-              const VkPipelineColorBlendStateCreateInfo& blendingState);
+              const VkPipelineColorBlendStateCreateInfo& blendingState,
+              const PipelineLayout& layout);
     GraphicPipeline(const GraphicPipeline&) = delete;
     GraphicPipeline& operator = (const GraphicPipeline&) = delete;
     virtual ~GraphicPipeline() noexcept = default;
+
+  private:
+    ConstRef<PipelineLayout> _layout;
   };
 }
