@@ -4,7 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <vkr/Ref.h>
+#include <util/Ref.h>
 #include <vkr/queue/CommandBuffer.h>
 #include <vkr/queue/UniformMemoryPool.h>
 #include <vkr/queue/VolatileDescriptorPool.h>

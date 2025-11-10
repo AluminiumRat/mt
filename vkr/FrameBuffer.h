@@ -6,11 +6,11 @@
 
 #include <glm/glm.hpp>
 
+#include <util/RefCounter.h>
+#include <util/Ref.h>
 #include <vkr/FrameBufferFormat.h>
 #include <vkr/ImagesAccessSet.h>
 #include <vkr/ImageView.h>
-#include <vkr/RefCounter.h>
-#include <vkr/Ref.h>
 
 namespace mt
 {

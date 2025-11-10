@@ -8,11 +8,11 @@
 
 #include <glm/glm.hpp>
 
+#include <util/RefCounter.h>
+#include <util/Ref.h>
 #include <vkr/queue/Fence.h>
 #include <vkr/queue/Semaphore.h>
 #include <vkr/Image.h>
-#include <vkr/Ref.h>
-#include <vkr/RefCounter.h>
 
 namespace mt
 {

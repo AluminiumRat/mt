@@ -6,7 +6,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <vkr/RefCounter.h>
+#include <util/RefCounter.h>
 
 namespace mt
 {

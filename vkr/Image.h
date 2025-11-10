@@ -11,8 +11,8 @@
 
 #include <glm/glm.hpp>
 
+#include <util/RefCounter.h>
 #include <vkr/ImageAccess.h>
-#include <vkr/RefCounter.h>
 
 namespace mt
 {

@@ -2,10 +2,10 @@
 
 #include <vulkan/vulkan.h>
 
+#include <util/RefCounter.h>
+#include <util/Ref.h>
 #include <vkr/Image.h>
 #include <vkr/ImageSlice.h>
-#include <vkr/RefCounter.h>
-#include <vkr/Ref.h>
 
 namespace mt
 {

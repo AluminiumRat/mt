@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 #include <util/Assert.h>
+#include <util/Ref.h>
 #include <vkr/queue/TimelineSemaphore.h>
-#include <vkr/Ref.h>
 
 namespace mt
 {

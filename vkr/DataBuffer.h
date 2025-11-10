@@ -4,7 +4,7 @@
 
 #include <vk_mem_alloc.h>
 
-#include <vkr/RefCounter.h>
+#include <util/RefCounter.h>
 
 namespace mt
 {

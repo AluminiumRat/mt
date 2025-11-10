@@ -4,8 +4,8 @@
 
 #include <vulkan/vulkan.h>
 
-#include <vkr/RefCounter.h>
-#include <vkr/Ref.h>
+#include <util/RefCounter.h>
+#include <util/Ref.h>
 
 namespace mt
 {

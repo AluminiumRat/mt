@@ -5,9 +5,9 @@
 
 #include <vulkan/vulkan.h>
 
+#include <util/RefCounter.h>
+#include <util/Ref.h>
 #include <vkr/pipeline/DescriptorSetLayout.h>
-#include <vkr/RefCounter.h>
-#include <vkr/Ref.h>
 
 namespace mt
 {
