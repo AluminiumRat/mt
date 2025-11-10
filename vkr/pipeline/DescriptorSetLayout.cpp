@@ -8,7 +8,8 @@ DescriptorSetLayout::DescriptorSetLayout(
                       Device& device,
                       std::span<const VkDescriptorSetLayoutBinding> bindings) :
   _device(device),
-  _handle(VK_NULL_HANDLE)
+  _handle(VK_NULL_HANDLE),
+  _descriptorCounter(DescriptorCounter::createFrom(bindings))
 {
   VkDescriptorSetLayoutCreateInfo layoutInfo{};
   layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

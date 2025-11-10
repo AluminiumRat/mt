@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <span>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -31,6 +32,9 @@ namespace mt
     inline void reduce(const DescriptorCounter& other)  noexcept;
 
     std::vector<VkDescriptorPoolSize> makeSizeInfo() const;
+
+    static DescriptorCounter createFrom(
+              std::span<const VkDescriptorSetLayoutBinding> bindings) noexcept;
   };
 
   inline void DescriptorCounter::reset() noexcept

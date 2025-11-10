@@ -2,7 +2,6 @@
 
 #include <util/Ref.h>
 #include <vkr/pipeline/AbstractPipeline.h>
-#include <vkr/pipeline/PipelineLayout.h>
 
 namespace mt
 {
@@ -14,7 +13,6 @@ namespace mt
   {
   public:
     GraphicPipeline(
-              Device& device,
               const FrameBufferFormat& frameBufferFormat,
               std::span<const ShaderInfo> shaders,
               VkPrimitiveTopology topology,
@@ -25,8 +23,5 @@ namespace mt
     GraphicPipeline(const GraphicPipeline&) = delete;
     GraphicPipeline& operator = (const GraphicPipeline&) = delete;
     virtual ~GraphicPipeline() noexcept = default;
-
-  private:
-    ConstRef<PipelineLayout> _layout;
   };
 }

@@ -6,6 +6,8 @@
 
 #include <util/RefCounter.h>
 
+#include <vkr/DescriptorCounter.h>
+
 namespace mt
 {
   class Device;
@@ -25,15 +27,29 @@ namespace mt
     virtual ~DescriptorSetLayout() noexcept;
   public:
 
+    inline Device& device() const noexcept;
     inline VkDescriptorSetLayout handle() const noexcept;
+    inline const DescriptorCounter& descriptorCounter() const noexcept;
 
   private:
     Device& _device;
     VkDescriptorSetLayout _handle;
+    DescriptorCounter _descriptorCounter;
   };
+
+  inline Device& DescriptorSetLayout::device() const noexcept
+  {
+    return _device;
+  }
 
   inline VkDescriptorSetLayout DescriptorSetLayout::handle() const noexcept
   {
     return _handle;
+  }
+
+  inline const DescriptorCounter&
+                        DescriptorSetLayout::descriptorCounter() const noexcept
+  {
+    return _descriptorCounter;
   }
 }

@@ -60,8 +60,7 @@ Ref<GraphicPipeline> TestWindow::_createPipeline()
 
   Ref<PipelineLayout> pipelineLayout = createPipelineLayout(device());
 
-  return Ref(new GraphicPipeline( device(),
-                                  fbFormat,
+  return Ref(new GraphicPipeline( fbFormat,
                                   shadersInfo,
                                   VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
                                   rasterizationState,

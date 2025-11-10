@@ -29,8 +29,10 @@ PipelineLayout::PipelineLayout(
       for(const DescriptorSetLayout* setLayout : descriptorSets)
       {
         MT_ASSERT(setLayout != nullptr);
+        MT_ASSERT(&setLayout->device() == &_device);
         handlesArray.push_back(setLayout->handle());
         _setLayouts.push_back(ConstRef(setLayout));
+        _descriptorCounter.add(setLayout->descriptorCounter());
       }
 
       pipelineLayoutInfo.setLayoutCount = uint32_t(handlesArray.size());
@@ -73,8 +75,10 @@ PipelineLayout::PipelineLayout(
       for(ConstRef<DescriptorSetLayout>& setLayout : descriptorSets)
       {
         MT_ASSERT(setLayout != nullptr);
+        MT_ASSERT(&setLayout->device() == &_device);
         handlesArray.push_back(setLayout->handle());
         _setLayouts.push_back(ConstRef(setLayout));
+        _descriptorCounter.add(setLayout->descriptorCounter());
       }
 
       pipelineLayoutInfo.setLayoutCount = uint32_t(handlesArray.size());

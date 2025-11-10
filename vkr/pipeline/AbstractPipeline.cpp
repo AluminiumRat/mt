@@ -5,9 +5,10 @@
 
 using namespace mt;
 
-AbstractPipeline::AbstractPipeline(Device& device) :
-  _device(device),
-  _handle(VK_NULL_HANDLE)
+AbstractPipeline::AbstractPipeline(const PipelineLayout& layout) :
+  _device(layout.device()),
+  _handle(VK_NULL_HANDLE),
+  _layout(&layout)
 {
 }
 

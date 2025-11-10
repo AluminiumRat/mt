@@ -1,4 +1,5 @@
-﻿#include <vkr/DescriptorCounter.h>
+﻿#include <util/Assert.h>
+#include <vkr/DescriptorCounter.h>
 
 using namespace mt;
 
@@ -155,4 +156,48 @@ std::vector<VkDescriptorPoolSize> DescriptorCounter::makeSizeInfo() const
     sizeInfo.push_back(sizeInfoPart);
   }
   return sizeInfo;
+}
+
+DescriptorCounter DescriptorCounter::createFrom(
+              std::span<const VkDescriptorSetLayoutBinding> bindings) noexcept
+{
+  DescriptorCounter counter{};
+
+  for(const VkDescriptorSetLayoutBinding& binding : bindings)
+  {
+    switch(binding.descriptorType)
+    {
+    case VK_DESCRIPTOR_TYPE_SAMPLER:
+      counter.samplers += binding.descriptorCount;
+      break;
+    case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+      counter.combinedImageSamplers += binding.descriptorCount;
+      break;
+    case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+      counter.sampledImages += binding.descriptorCount;
+      break;
+    case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+      counter.storageImages += binding.descriptorCount;
+      break;
+    case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+      counter.uniformTexelBuffers += binding.descriptorCount;
+      break;
+    case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+      counter.storageTexelBuffers += binding.descriptorCount;
+      break;
+    case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+      counter.uniformBuffers += binding.descriptorCount;
+      break;
+    case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+      counter.storageBuffers += binding.descriptorCount;
+      break;
+    case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+      counter.inputAttachments += binding.descriptorCount;
+      break;
+    default:
+      MT_ASSERT(false && "Unknown descriptor type");
+    }
+  }
+
+  return counter;
 }

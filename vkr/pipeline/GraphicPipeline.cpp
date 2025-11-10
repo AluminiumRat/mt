@@ -13,7 +13,6 @@ static constexpr VkSampleMask allOne = std::numeric_limits<VkSampleMask>::max();
 static VkSampleMask sampleMask[64] = { allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne, allOne };
 
 GraphicPipeline::GraphicPipeline( 
-              Device& device,
               const FrameBufferFormat& frameBufferFormat,
               std::span<const ShaderInfo> shaders,
               VkPrimitiveTopology topology,
@@ -21,8 +20,7 @@ GraphicPipeline::GraphicPipeline(
               const VkPipelineDepthStencilStateCreateInfo& depthStencilState,
               const VkPipelineColorBlendStateCreateInfo& blendingState,
               const PipelineLayout& layout) :
-  AbstractPipeline(device),
-  _layout(&layout)
+  AbstractPipeline(layout)
 {
   // Данные вершин будем грузить в вершинном шейдере через буферы
   VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
@@ -88,7 +86,7 @@ GraphicPipeline::GraphicPipeline(
   pipelineInfo.pNext = &pipelineRenderingInfo;
 
   VkPipeline handle = VK_NULL_HANDLE;
-  if (vkCreateGraphicsPipelines(device.handle(),
+  if (vkCreateGraphicsPipelines(device().handle(),
                                 VK_NULL_HANDLE,
                                 1,
                                 &pipelineInfo,

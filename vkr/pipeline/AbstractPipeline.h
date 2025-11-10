@@ -7,6 +7,7 @@
 #include <vulkan/vulkan.h>
 
 #include <util/RefCounter.h>
+#include <vkr/pipeline/PipelineLayout.h>
 
 namespace mt
 {
@@ -27,13 +28,15 @@ namespace mt
     };
 
   public:
-    AbstractPipeline(Device& device);
+    AbstractPipeline(const PipelineLayout& layout);
     AbstractPipeline(const AbstractPipeline&) = delete;
     AbstractPipeline& operator = (const AbstractPipeline&) = delete;
     virtual ~AbstractPipeline() noexcept;
   public:
 
+    inline Device& device() const noexcept;
     inline VkPipeline handle() const noexcept;
+    inline const PipelineLayout& layout() const noexcept;
 
   protected:
     //  Должен вызываться ровно 1 раз в конструкторе дочернего класса
@@ -47,10 +50,21 @@ namespace mt
   private:
     Device& _device;
     VkPipeline _handle;
+    ConstRef<PipelineLayout> _layout;
   };
+
+  inline Device& AbstractPipeline::device() const noexcept
+  {
+    return _device;
+  }
 
   inline VkPipeline AbstractPipeline::handle() const noexcept
   {
     return _handle;
+  }
+
+  inline const PipelineLayout& AbstractPipeline::layout() const noexcept
+  {
+    return *_layout;
   }
 }
