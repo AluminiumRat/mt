@@ -3,11 +3,11 @@
 #include <util/Assert.h>
 #include <util/Log.h>
 
+#include <vkr/image/Image.h>
 #include <vkr/queue/CommandQueue.h>
 #include <vkr/queue/CommandBuffer.h>
 #include <vkr/Device.h>
 #include <vkr/PhysicalDevice.h>
-#include <vkr/Image.h>
 
 using namespace mt;
 

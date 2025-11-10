@@ -10,7 +10,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <vkr/ImageSlice.h>
+#include <vkr/image/ImageSlice.h>
 
 namespace mt
 {

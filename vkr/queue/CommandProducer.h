@@ -8,7 +8,7 @@
 
 #include <glm/glm.hpp>
 
-#include <vkr/queue/ImageAccessWatcher.h>
+#include <vkr/image/ImageAccessWatcher.h>
 #include <vkr/queue/UniformMemoryPool.h>
 
 namespace mt

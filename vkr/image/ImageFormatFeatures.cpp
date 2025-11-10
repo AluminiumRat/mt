@@ -1,7 +1,7 @@
 ﻿#include <unordered_map>
 
 #include <util/Abort.h>
-#include <vkr/ImageFormatFeatures.h>
+#include <vkr/image/ImageFormatFeatures.h>
 
 using namespace mt;
 

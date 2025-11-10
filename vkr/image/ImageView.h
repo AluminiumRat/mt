@@ -4,8 +4,8 @@
 
 #include <util/RefCounter.h>
 #include <util/Ref.h>
-#include <vkr/Image.h>
-#include <vkr/ImageSlice.h>
+#include <vkr/image/Image.h>
+#include <vkr/image/ImageSlice.h>
 
 namespace mt
 {

@@ -2,8 +2,8 @@
 
 #include <util/Assert.h>
 #include <util/Log.h>
-#include <vkr/queue/ImageAccessWatcher.h>
-#include <vkr/Image.h>
+#include <vkr/image/Image.h>
+#include <vkr/image/ImageAccessWatcher.h>
 
 using namespace mt;
 

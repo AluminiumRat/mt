@@ -12,7 +12,7 @@
 #include <glm/glm.hpp>
 
 #include <util/RefCounter.h>
-#include <vkr/ImageAccess.h>
+#include <vkr/image/ImageAccess.h>
 
 namespace mt
 {

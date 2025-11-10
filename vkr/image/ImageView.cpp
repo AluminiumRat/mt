@@ -1,5 +1,5 @@
 ﻿#include <util/Abort.h>
-#include <vkr/ImageView.h>
+#include <vkr/image/ImageView.h>
 #include <vkr/Device.h>
 
 using namespace mt;

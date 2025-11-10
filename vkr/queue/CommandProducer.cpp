@@ -2,14 +2,14 @@
 
 #include <util/Assert.h>
 #include <util/Log.h>
+#include <vkr/image/Image.h>
+#include <vkr/image/ImageSlice.h>
 #include <vkr/queue/CommandBuffer.h>
 #include <vkr/queue/CommandPool.h>
 #include <vkr/queue/CommandPoolSet.h>
 #include <vkr/queue/CommandProducer.h>
 #include <vkr/queue/CommandQueue.h>
 #include <vkr/queue/VolatileDescriptorPool.h>
-#include <vkr/Image.h>
-#include <vkr/ImageSlice.h>
 
 using namespace mt;
 

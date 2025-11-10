@@ -6,13 +6,13 @@
 
 #include <vulkan/vulkan.h>
 
+#include <vkr/image/ImageAccess.h>
 #include <vkr/queue/CommandPoolSet.h>
 #include <vkr/queue/CommandProducer.h>
 #include <vkr/queue/QueueFamiliesInfo.h>
 #include <vkr/queue/Semaphore.h>
 #include <vkr/queue/SyncPoint.h>
 #include <vkr/queue/TimelineSemaphore.h>
-#include <vkr/ImageAccess.h>
 
 namespace mt
 {

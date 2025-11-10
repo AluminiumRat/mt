@@ -1,5 +1,5 @@
-﻿#include <vkr/Image.h>
-#include <vkr/ImageSlice.h>
+﻿#include <vkr/image/Image.h>
+#include <vkr/image/ImageSlice.h>
 
 using namespace mt;
 

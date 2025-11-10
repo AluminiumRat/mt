@@ -1,7 +1,8 @@
 ﻿#include <algorithm>
 
-#include <vkr/Image.h>
-#include <vkr/ImagesAccessSet.h>
+#include <util/Assert.h>
+#include <vkr/image/Image.h>
+#include <vkr/image/ImagesAccessSet.h>
 
 using namespace mt;
 

@@ -8,9 +8,9 @@
 
 #include <util/RefCounter.h>
 #include <util/Ref.h>
+#include <vkr/image/ImagesAccessSet.h>
+#include <vkr/image/ImageView.h>
 #include <vkr/FrameBufferFormat.h>
-#include <vkr/ImagesAccessSet.h>
-#include <vkr/ImageView.h>
 
 namespace mt
 {

@@ -10,9 +10,9 @@
 
 #include <util/RefCounter.h>
 #include <util/Ref.h>
+#include <vkr/image/Image.h>
 #include <vkr/queue/Fence.h>
 #include <vkr/queue/Semaphore.h>
-#include <vkr/Image.h>
 
 namespace mt
 {

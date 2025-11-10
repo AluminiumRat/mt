@@ -1,9 +1,9 @@
 ﻿#include <glm/glm.hpp>
 
 #include <util/Assert.h>
+#include <vkr/image/Image.h>
+#include <vkr/image/ImageFormatFeatures.h>
 #include <vkr/Device.h>
-#include <vkr/Image.h>
-#include <vkr/ImageFormatFeatures.h>
 
 using namespace mt;
 

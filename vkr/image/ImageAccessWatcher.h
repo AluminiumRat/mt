@@ -2,7 +2,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <vkr/ImageAccess.h>
+#include <vkr/image/ImageAccess.h>
 
 namespace mt
 {

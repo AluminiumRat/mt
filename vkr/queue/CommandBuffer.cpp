@@ -1,10 +1,10 @@
 ﻿#include <stdexcept>
 
 #include <util/Assert.h>
+#include <vkr/image/Image.h>
 #include <vkr/queue/CommandBuffer.h>
 #include <vkr/Device.h>
-#include <vkr/Image.h>
-#include <vkr/ImageSlice.h>
+#include <vkr/image/ImageSlice.h>
 
 using namespace mt;
 
