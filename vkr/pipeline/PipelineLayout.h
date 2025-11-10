@@ -22,6 +22,9 @@ namespace mt
     // descriptorSets не должен содержать nullptr
     PipelineLayout( Device& device,
                     std::span<const DescriptorSetLayout*> descriptorSets);
+    // descriptorSets не должен содержать nullptr
+    PipelineLayout( Device& device,
+                    std::span<ConstRef<DescriptorSetLayout>> descriptorSets);
     PipelineLayout(const PipelineLayout&) = delete;
     PipelineLayout& operator = (const PipelineLayout&) = delete;
   protected:

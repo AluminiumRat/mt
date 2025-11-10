@@ -10,6 +10,21 @@ TestWindow::TestWindow(Device& device) :
 {
 }
 
+static Ref<PipelineLayout> createPipelineLayout(Device& device)
+{
+  ConstRef<DescriptorSetLayout> sets[2];
+  sets[0] = ConstRef(new DescriptorSetLayout(device, {}));
+
+  VkDescriptorSetLayoutBinding binding{};
+  binding.binding = 2;
+  binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  binding.descriptorCount = 1;
+  binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+  sets[1] = ConstRef(new DescriptorSetLayout(device, std::span(&binding, 1)));
+
+  return Ref(new PipelineLayout(device, sets));
+}
+
 Ref<GraphicPipeline> TestWindow::_createPipeline()
 {
   VkFormat colorAttachments[1] = { VK_FORMAT_B8G8R8A8_SRGB };
@@ -43,7 +58,7 @@ Ref<GraphicPipeline> TestWindow::_createPipeline()
                                     VK_COLOR_COMPONENT_A_BIT;
   blendingState.pAttachments = &attachmentState;
 
-  Ref<PipelineLayout> pipelineLayout(new PipelineLayout(device(), {}));
+  Ref<PipelineLayout> pipelineLayout = createPipelineLayout(device());
 
   return Ref(new GraphicPipeline( device(),
                                   fbFormat,

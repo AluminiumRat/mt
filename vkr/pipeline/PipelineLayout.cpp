@@ -52,6 +52,50 @@ PipelineLayout::PipelineLayout(
   }
 }
 
+PipelineLayout::PipelineLayout(
+                      Device& device,
+                      std::span<ConstRef<DescriptorSetLayout>> descriptorSets):
+  _device(device),
+  _handle(VK_NULL_HANDLE)
+{
+  try
+  {
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+
+    // Обходим лэйауты сетов и формируем массив хэндлов, за одним лочим
+    //  от преждевременного удаления
+    std::vector<VkDescriptorSetLayout> handlesArray;
+    if(descriptorSets.size() != 0)
+    {
+      handlesArray.reserve(descriptorSets.size());
+      _setLayouts.reserve(descriptorSets.size());
+      for(ConstRef<DescriptorSetLayout>& setLayout : descriptorSets)
+      {
+        MT_ASSERT(setLayout != nullptr);
+        handlesArray.push_back(setLayout->handle());
+        _setLayouts.push_back(ConstRef(setLayout));
+      }
+
+      pipelineLayoutInfo.setLayoutCount = uint32_t(handlesArray.size());
+      pipelineLayoutInfo.pSetLayouts = handlesArray.data();
+    }
+
+    if(vkCreatePipelineLayout(device.handle(),
+                              &pipelineLayoutInfo,
+                              nullptr,
+                              &_handle) != VK_SUCCESS)
+    {
+      Abort("PipelineLayout::PipelineLayout: unable to create layout handle");
+    }
+  }
+  catch(...)
+  {
+    _cleanup();
+    throw;
+  }
+}
+
 PipelineLayout::~PipelineLayout() noexcept
 {
   _cleanup();
