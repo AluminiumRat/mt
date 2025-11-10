@@ -1,16 +1,19 @@
 ﻿#include <stdexcept>
 
 #include <util/Assert.h>
+#include <vkr/pipeline/DescriptorSetLayout.h>
 #include <vkr/DescriptorPool.h>
 #include <vkr/Device.h>
 
 using namespace mt;
 
-DescriptorPool::DescriptorPool( const DescriptorCounter& totalDescriptors,
+DescriptorPool::DescriptorPool( Device& device,
+                                const DescriptorCounter& totalDescriptors,
                                 uint32_t totalSets,
-                                Device& device) :
+                                Mode mode) :
   _handle(VK_NULL_HANDLE),
   _device(device),
+  _mode(mode),
   _totalDescriptors(totalDescriptors),
   _descriptorsLeft(_totalDescriptors),
   _totalSets(totalSets),
@@ -54,18 +57,19 @@ void DescriptorPool::_cleanup() noexcept
   }
 }
 
-VkDescriptorSet DescriptorPool::allocateSet(
-                                    VkDescriptorSetLayout layout,
-                                    const DescriptorCounter& descriptorsNumber)
+VkDescriptorSet DescriptorPool::allocateVolatileSet(
+                                            const DescriptorSetLayout& layout)
 {
-  MT_ASSERT(_descriptorsLeft.contains(descriptorsNumber))
+  MT_ASSERT(_mode == VOLATILE_POOL);
+  MT_ASSERT(_descriptorsLeft.contains(layout.descriptorCounter()))
   MT_ASSERT(_setsLeft != 0);
 
   VkDescriptorSetAllocateInfo allocInfo{};
   allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
   allocInfo.descriptorPool = _handle;
   allocInfo.descriptorSetCount = 1;
-  allocInfo.pSetLayouts = &layout;
+  VkDescriptorSetLayout layoutHandle = layout.handle();
+  allocInfo.pSetLayouts = &layoutHandle;
   VkDescriptorSet newSet = VK_NULL_HANDLE;
   if(vkAllocateDescriptorSets(_device.handle(),
                               &allocInfo,
@@ -74,7 +78,7 @@ VkDescriptorSet DescriptorPool::allocateSet(
     throw std::runtime_error("DescriptorPool: Failed to allocate uniform descriptor set.");
   }
 
-  _descriptorsLeft.reduce(descriptorsNumber);
+  _descriptorsLeft.reduce(layout.descriptorCounter());
   _setsLeft--;
 
   return newSet;
@@ -82,6 +86,8 @@ VkDescriptorSet DescriptorPool::allocateSet(
 
 void DescriptorPool::reset()
 {
+  MT_ASSERT(_mode == VOLATILE_POOL);
+
   if(vkResetDescriptorPool(_device.handle(), _handle, 0) != VK_SUCCESS)
   {
     throw std::runtime_error("DescriptorPool: Failed to reset volatile descriptor pool.");

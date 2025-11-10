@@ -8,6 +8,7 @@
 
 namespace mt
 {
+  class DescriptorSetLayout;
   class Device;
 
   //  Пул дескрипторов, специально предназначенный для создания сетов "на лету"
@@ -37,12 +38,11 @@ namespace mt
                                     (const VolatileDescriptorPool&) = delete;
     ~VolatileDescriptorPool() noexcept = default;
 
-    VkDescriptorSet allocateSet( VkDescriptorSetLayout layout,
-                                 const DescriptorCounter& descriptorsNumber);
-    
+    VkDescriptorSet allocateSet(const DescriptorSetLayout& layout);
+
     //  Уничтожить все выделенные из пула сеты и вернуть в пул все дескриптеры.
     //  ВНИМАНИЕ! Убедитесь, что выделенные сеты не используются ни в одной
-    //    из очередей.
+    //    из очередей команд.
     void reset();
 
   private:

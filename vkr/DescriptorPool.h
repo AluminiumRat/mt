@@ -7,6 +7,7 @@
 
 namespace mt
 {
+  class DescriptorSetLayout;
   class Device;
 
   //  Пул фиксированной величины, содержащий дескриптеры ресурсов для пайплайна.
@@ -19,9 +20,26 @@ namespace mt
   class DescriptorPool : public RefCounter
   {
   public:
-    DescriptorPool( const DescriptorCounter& totalDescriptors,
+    enum Mode
+    {
+      //  Дескриптер сеты выделяются один раз и переиспользуются из кадра в
+      //    кадр. Вернуть и переиспользовать дескриптеры невозможно.
+      //  В этом режиме нельзя использовать методы allocateVolatileSet и
+      //    reset.
+      STATIC_POOL,
+      //  Режим предназначен для использования внутри VolatileDescriptorPool
+      //  Дескриптер сеты можно вернуть в пул методом reset, однако необходимо
+      //    следить за тем, что дескриптеры не используются в очереди команд
+      //    на момет вызова reset
+      //  В этом режиме нельзя использовать метод allocateStaticSet
+      VOLATILE_POOL
+    };
+
+  public:
+    DescriptorPool( Device& device,
+                    const DescriptorCounter& totalDescriptors,
                     uint32_t totalSets,
-                    Device& device);
+                    Mode mode);
     DescriptorPool(const DescriptorPool&) = delete;
     DescriptorPool& operator = (const DescriptorPool&) = delete;
   protected:
@@ -31,18 +49,22 @@ namespace mt
     inline VkDescriptorPool handle() const;
     inline Device& device() const;
 
+    inline Mode mode() const noexcept;
+
     inline const DescriptorCounter& totalDescriptors() const;
     inline const DescriptorCounter& descriptorsLeft() const;
-
-    /// Result descriptor set will be returned to the pool in the next frame via
-    /// a call of the reset method.
-    VkDescriptorSet allocateSet(VkDescriptorSetLayout layout,
-                                const DescriptorCounter& descriptorsNumber);
 
     inline uint32_t totalSets() const;
     inline uint32_t setsLeft() const;
     inline uint32_t setsAllocated() const;
 
+    //  Выделение дескриптор сетя в режиме VOLATILE_POOL
+    //  Выделенные сеты могут быть возвращены в пул с помощью метода reset
+    VkDescriptorSet allocateVolatileSet(const DescriptorSetLayout& layout);
+    //  Вернуть все выделенные сеты обратно в пул.
+    //  Может быть вызван только в режиме VOLATILE_POOL
+    //  ВНИМАНИЕ! Необходимо гарантировать, что на момент вызова reset ни один
+    //    из сетов не используется ни в одной из очередей команд.
     void reset();
 
   private:
@@ -51,6 +73,8 @@ namespace mt
   private:
     VkDescriptorPool _handle;
     Device& _device;
+
+    Mode _mode;
 
     DescriptorCounter _totalDescriptors;
     DescriptorCounter _descriptorsLeft;
@@ -67,6 +91,11 @@ namespace mt
   inline Device& DescriptorPool::device() const
   {
     return _device;
+  }
+
+  inline DescriptorPool::Mode DescriptorPool::mode() const noexcept
+  {
+    return _mode;
   }
 
   inline const DescriptorCounter& DescriptorPool::totalDescriptors() const

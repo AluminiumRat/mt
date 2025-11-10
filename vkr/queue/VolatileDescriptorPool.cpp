@@ -1,4 +1,6 @@
-﻿#include <vkr/queue/VolatileDescriptorPool.h>
+﻿#include <util/Assert.h>
+#include <vkr/pipeline/DescriptorSetLayout.h>
+#include <vkr/queue/VolatileDescriptorPool.h>
 
 using namespace mt;
 
@@ -15,8 +17,7 @@ VolatileDescriptorPool::VolatileDescriptorPool(
 }
 
 VkDescriptorSet VolatileDescriptorPool::allocateSet(
-                                    VkDescriptorSetLayout layout,
-                                    const DescriptorCounter& descriptorsNumber)
+                                            const DescriptorSetLayout& layout)
 {
   if(_currentPool == nullptr)
   {
@@ -24,21 +25,23 @@ VkDescriptorSet VolatileDescriptorPool::allocateSet(
     _selectPool(0);
   }
 
-  if( !_currentPool->descriptorsLeft().contains(descriptorsNumber)||
+  if( !_currentPool->descriptorsLeft().contains(layout.descriptorCounter()) ||
       _currentPool->setsLeft() == 0)
   {
     if(_currentPoolIndex == _subpools.size() - 1) _addPool();
     _selectPool(_currentPoolIndex + 1);
   }
 
-  return _currentPool->allocateSet(layout, descriptorsNumber);
+  return _currentPool->allocateVolatileSet(layout);
 }
 
 void VolatileDescriptorPool::_addPool()
 {
-  Ref<DescriptorPool> newPool( new DescriptorPool(_initialDescriptorNumber,
-                                                  _initialSetNumber,
-                                                  _device));
+  Ref<DescriptorPool> newPool( new DescriptorPool(
+                                              _device,
+                                              _initialDescriptorNumber,
+                                              _initialSetNumber,
+                                              DescriptorPool::VOLATILE_POOL));
   _subpools.push_back(std::move(newPool));
 }
 
