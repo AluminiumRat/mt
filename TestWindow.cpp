@@ -1,13 +1,37 @@
 ﻿#include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/pipeline/ShaderModule.h>
+#include <vkr/Device.h>
 #include <TestWindow.h>
 
 using namespace mt;
+
+static Ref<DataBuffer> createUniformBuffer(Device& device)
+{
+  Ref<DataBuffer> stagingBuffer(new DataBuffer( device,
+                                                sizeof(glm::vec4),
+                                                DataBuffer::UPLOADING_BUFFER));
+  glm::vec4 color(0.5f,0.5f, 1.0f, 1.0f);
+  stagingBuffer->uploadData(&color, 0, sizeof(color));
+
+  Ref<DataBuffer> uniformBuffer(new DataBuffer( device,
+                                                sizeof(glm::vec4),
+                                                DataBuffer::UNIFORM_BUFFER));
+  std::unique_ptr<CommandProducerGraphic> producer =
+                                          device.graphicQueue()->startCommands();
+  producer->copyFromBufferToBuffer( *stagingBuffer,
+                                    *uniformBuffer,
+                                    0,
+                                    0,
+                                    sizeof(glm::vec4));
+  device.graphicQueue()->submitCommands(std::move(producer));
+  return uniformBuffer;
+}
 
 TestWindow::TestWindow(Device& device) :
   GLFWRenderWindow(device, "Vulkan window"),
   _pipeline(_createPipeline())
 {
+  Ref<DataBuffer> uniformBuffer = createUniformBuffer(device);
 }
 
 static Ref<PipelineLayout> createPipelineLayout(Device& device)
