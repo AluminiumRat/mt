@@ -77,7 +77,8 @@ add_executable (vkTest
                 "vkr/WindowSurface.cpp"
                 "vkr/Win32WindowSurface.cpp"
                 "GLFWRenderWindow.cpp"
-                "main.cpp")
+                "main.cpp"
+                "TestWindow.cpp")
 
 target_link_libraries(vkTest
                       ${Vulkan_LIBRARIES}
