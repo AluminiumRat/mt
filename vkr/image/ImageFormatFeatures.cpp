@@ -125,7 +125,7 @@ FormatsMap formatsMap =
                                   .isDepthStencil = true,
                                   .hasDepth = true,
                                   .hasStencil = true,
-                                  .texelSize = 5}}
+                                  .texelSize = 8}}
   };
 
 const ImageFormatFeatures& mt::getFormatFeatures(VkFormat format)
