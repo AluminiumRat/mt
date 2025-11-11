@@ -43,9 +43,9 @@ void CommandProducerGraphic::_beginPass(RenderPass& renderPass)
     addMultipleImagesUsage(frameBuffer.imagesAccess().accessTable());
   }
 
-  lockResource(frameBuffer);
-
   CommandBuffer& buffer = getOrCreateBuffer();
+  buffer.lockResource(frameBuffer);
+
   vkCmdBeginRendering(buffer.handle(), &frameBuffer.bindingInfo());
 
   // Выставляем дефолтный вьюпорт
@@ -86,7 +86,7 @@ void CommandProducerGraphic::_endPass() noexcept
 void CommandProducerGraphic::setGraphicPipeline(GraphicPipeline& pipeline)
 {
   CommandBuffer& buffer = getOrCreateBuffer();
-  lockResource(pipeline);
+  buffer.lockResource(pipeline);
 
   vkCmdBindPipeline(buffer.handle(),
                     VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -99,8 +99,8 @@ void CommandProducerGraphic::bindDescriptorSetGraphic(
                                             const PipelineLayout& layout)
 {
   CommandBuffer& buffer = getOrCreateBuffer();
-  lockResource(layout);
-  lockResource(descriptorSet);
+  buffer.lockResource(layout);
+  buffer.lockResource(descriptorSet);
 
   VkDescriptorSet setHandle = descriptorSet.handle();
   vkCmdBindDescriptorSets(buffer.handle(),
@@ -172,7 +172,6 @@ void CommandProducerGraphic::blitImage( const Image& srcImage,
                               .writeAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT};
     imageAccess.slicesCount = 2;
     addImageUsage(srcImage, imageAccess);
-    lockResource(srcImage);
   }
   else
   {
@@ -211,9 +210,11 @@ void CommandProducerGraphic::blitImage( const Image& srcImage,
                                               { {&srcImage, srcImageAccess},
                                                 {&dstImage, dstImageAccess}};
     addMultipleImagesUsage(accesses);
-    lockResource(srcImage);
-    lockResource(dstImage);
   }
+
+  CommandBuffer& buffer = getOrCreateBuffer();
+  buffer.lockResource(srcImage);
+  buffer.lockResource(dstImage);
 
   // Дальше собственно сама операция блита
   VkImageBlit region{};
@@ -239,7 +240,6 @@ void CommandProducerGraphic::blitImage( const Image& srcImage,
   region.dstOffsets[1].y = uint32_t(dstOffset.y + dstExtent.y);
   region.dstOffsets[1].z = uint32_t(dstOffset.z + dstExtent.z);
 
-  CommandBuffer& buffer = getOrCreateBuffer();
   vkCmdBlitImage( buffer.handle(),
                   srcImage.handle(),
                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,

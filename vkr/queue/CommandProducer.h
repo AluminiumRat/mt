@@ -147,11 +147,6 @@ namespace mt
     //    согласования
     void addMultipleImagesUsage(MultipleImageUsage usages);
 
-    //  Захватить владение ресурсом. Защита от преждевременного удаления
-    //  ресурсов до и во время работы очереди команд. Все ресурсы,
-    //  ссылки на которые отправляются в очередь команд, должны быть захвачены.
-    void lockResource(const RefCounter& resource);
-
   private:
     CommandPoolSet& _commandPoolSet;
     CommandQueue& _queue;

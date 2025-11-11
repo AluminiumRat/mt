@@ -256,12 +256,6 @@ void CommandProducer::addMultipleImagesUsage(MultipleImageUsage usages)
   }
 }
 
-void CommandProducer::lockResource(const RefCounter& resource)
-{
-  CommandBuffer& commandbuffer = getOrCreateBuffer();
-  commandbuffer.lockResource(resource);
-}
-
 void CommandProducer::memoryBarrier(VkPipelineStageFlags srcStages,
                                     VkPipelineStageFlags dstStages,
                                     VkAccessFlags srcAccesMask,
@@ -283,6 +277,7 @@ void CommandProducer::imageBarrier( const Image& image,
   MT_ASSERT(!image.isLayoutAutoControlEnabled());
 
   CommandBuffer& buffer = getOrCreateBuffer();
+  buffer.lockResource(image);
   buffer.imageBarrier(image,
                       slice,
                       srcLayout,
@@ -291,8 +286,6 @@ void CommandProducer::imageBarrier( const Image& image,
                       dstStages,
                       srcAccesMask,
                       dstAccesMask);
-
-  lockResource(image);
 }
 
 void CommandProducer::forceLayout(const Image& image,
@@ -305,6 +298,9 @@ void CommandProducer::forceLayout(const Image& image,
 {
   MT_ASSERT(image.isLayoutAutoControlEnabled());
 
+  CommandBuffer& buffer = getOrCreateBuffer();
+  buffer.lockResource(image);
+
   ImageAccess imageAccess;
   imageAccess.slices[0] = slice;
   imageAccess.layouts[0] = dstLayout;
@@ -314,7 +310,5 @@ void CommandProducer::forceLayout(const Image& image,
                                   .writeStagesMask = writeStages,
                                   .writeAccessMask = writeAccessMask};
   imageAccess.slicesCount = 1;
-
   addImageUsage(image, imageAccess);
-  lockResource(image);
 }
