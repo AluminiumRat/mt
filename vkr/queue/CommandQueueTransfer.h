@@ -31,7 +31,23 @@ namespace mt
     void uploadToBuffer(const DataBuffer& dstBuffer,
                         size_t shiftInDstBuffer,
                         size_t dataSize,
-                        void* srcData);
+                        const void* srcData);
+
+    //  Загрузить данные в один слой Image
+    //  Операция асинхронная, но вы можете подождать её окончания с помощью
+    //    синк поинта(метод createSyncPoint)
+    //  dstImage должна быть либо со включенным автоконтролем лэйаута, либо
+    //    находиться в лэйауте VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+    //  dstImage должна быть создана со включенным
+    //    VK_IMAGE_USAGE_TRANSFER_DST_BIT
+    //  srcData должен содержать достаточное количество данных для копирования
+    void uploadToImage( const Image& dstImage,
+                        VkImageAspectFlags dstAspectMask,
+                        uint32_t dstArrayIndex,
+                        uint32_t dstMipLevel,
+                        glm::uvec3 dstOffset,
+                        glm::uvec3 dstExtent,
+                        const void* srcData);
 
     //  Начать заполнение буфера команд.
     //  Более детально смотри CommandQueue::startCommands

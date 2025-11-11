@@ -1,4 +1,6 @@
-﻿#include <vkr/queue/CommandQueueTransfer.h>
+﻿#include <vkr/image/Image.h>
+#include <vkr/image/ImageFormatFeatures.h>
+#include <vkr/queue/CommandQueueTransfer.h>
 
 using namespace mt;
 
@@ -20,7 +22,7 @@ std::unique_ptr<CommandProducerTransfer> CommandQueueTransfer::startCommands()
 void CommandQueueTransfer::uploadToBuffer(const DataBuffer& dstBuffer,
                                           size_t shiftInDstBuffer,
                                           size_t dataSize,
-                                          void* srcData)
+                                          const void* srcData)
 {
   Ref<DataBuffer> stagingBuffer(new DataBuffer( device(),
                                                 dataSize,
@@ -32,5 +34,36 @@ void CommandQueueTransfer::uploadToBuffer(const DataBuffer& dstBuffer,
                                     0,
                                     0,
                                     dataSize);
+  submitCommands(std::move(producer));
+}
+
+void CommandQueueTransfer::uploadToImage( const Image& dstImage,
+                                          VkImageAspectFlags dstAspectMask,
+                                          uint32_t dstArrayIndex,
+                                          uint32_t dstMipLevel,
+                                          glm::uvec3 dstOffset,
+                                          glm::uvec3 dstExtent,
+                                          const void* srcData)
+{
+  uint32_t texelSize = getFormatFeatures(dstImage.format()).texelSize;
+  size_t dataSize = size_t(texelSize) * dstExtent.x * dstExtent.y * dstExtent.z;
+  Ref<DataBuffer> stagingBuffer(new DataBuffer( device(),
+                                                dataSize,
+                                                DataBuffer::UPLOADING_BUFFER));
+  stagingBuffer->uploadData(srcData, 0, dataSize);
+
+  std::unique_ptr<CommandProducerTransfer> producer = startCommands();
+
+  producer->copyFromBufferToImage(*stagingBuffer,
+                                  0,
+                                  dstExtent.x,
+                                  dstExtent.y,
+                                  dstImage,
+                                  dstAspectMask,
+                                  dstArrayIndex,
+                                  dstMipLevel,
+                                  dstOffset,
+                                  dstExtent);
+
   submitCommands(std::move(producer));
 }

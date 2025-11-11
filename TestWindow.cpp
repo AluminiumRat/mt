@@ -41,11 +41,6 @@ static ConstRef <DescriptorSetLayout> createSetLayout(Device& device)
 
 static Ref<ImageView> createTexture(Device& device)
 {
-  uint32_t pixels[4] = {0xFF0000FF, 0xFF00FF00, 0xFF00FFFF, 0xFFFF0000};
-  Ref<DataBuffer> stagingBuffer(
-          new DataBuffer(device, sizeof(pixels), DataBuffer::UPLOADING_BUFFER));
-  stagingBuffer->uploadData(pixels, 0, sizeof(pixels));
-
   Ref<Image> image(new Image( device,
                               VK_IMAGE_TYPE_2D,
                               VK_IMAGE_USAGE_SAMPLED_BIT |
@@ -57,18 +52,18 @@ static Ref<ImageView> createTexture(Device& device)
                               1,
                               1,
                               true));
+
+  uint32_t pixels[4] = { 0xFF0000FF, 0xFF00FF00, 0xFF00FFFF, 0xFFFF0000 };
+  device.graphicQueue()->uploadToImage( *image,
+                                        VK_IMAGE_ASPECT_COLOR_BIT,
+                                        0,
+                                        0,
+                                        glm::uvec3(0,0,0),
+                                        glm::uvec3(2,2,1),
+                                        pixels);
+
   std::unique_ptr<CommandProducerGraphic> producer =
                                           device.graphicQueue()->startCommands();
-  producer->copyFromBufferToImage(*stagingBuffer,
-                                  0,
-                                  2,
-                                  2,
-                                  *image,
-                                  VK_IMAGE_ASPECT_COLOR_BIT,
-                                  0,
-                                  0,
-                                  glm::uvec3(0, 0, 0),
-                                  glm::vec3(2, 2, 1));
   producer->forceLayout(*image,
                         ImageSlice(*image),
                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
