@@ -19,6 +19,29 @@ static Ref<DataBuffer> createUniformBuffer(Device& device)
   return uniformBuffer;
 }
 
+static Ref<DataBuffer> createVertexBuffer(Device& device)
+{
+  struct Vertex
+  {
+    alignas(16) glm::vec3 position;
+    alignas(16) glm::vec4 color;
+  };
+  Vertex vertices[3] ={{.position = {0.0f, -0.5f, 0.0f},
+                        .color = {1, 0, 0, 1}},
+                       {.position = {0.5f, 0.5f, 0.0f},
+                        .color = {0, 1, 0, 1}},
+                       {.position = {-0.5f, 0.5f, 0.0f},
+                        .color = {0, 0, 1, 1}}};
+  Ref<DataBuffer> vertexBuffer(new DataBuffer( device,
+                                               sizeof(vertices),
+                                               DataBuffer::STORAGE_BUFFER));
+  device.graphicQueue()->uploadToBuffer(*vertexBuffer,
+                                        0,
+                                        sizeof(vertices),
+                                        vertices);
+  return vertexBuffer;
+}
+
 static Ref<DescriptorSet> createDescriptorSet(GraphicPipeline& pipeline)
 {
   Ref<DescriptorPool> pool(new DescriptorPool(
@@ -26,15 +49,24 @@ static Ref<DescriptorSet> createDescriptorSet(GraphicPipeline& pipeline)
                                           pipeline.layout().descriptorCounter(),
                                           1,
                                           DescriptorPool::STATIC_POOL));
-  VkDescriptorSetLayoutBinding binding{};
-  binding.binding = 2;
-  binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  binding.descriptorCount = 1;
-  binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+  VkDescriptorSetLayoutBinding bindings[2];
+  bindings[0] = VkDescriptorSetLayoutBinding{};
+  bindings[0].binding = 1;
+  bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+  bindings[0].descriptorCount = 1;
+  bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+  bindings[1] = VkDescriptorSetLayoutBinding{};
+  bindings[1].binding = 2;
+  bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  bindings[1].descriptorCount = 1;
+  bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
   ConstRef<DescriptorSetLayout> setLayout =
                     ConstRef(new DescriptorSetLayout( pipeline.device(),
-                                                      std::span(&binding, 1)));
+                                                      bindings));
   Ref<DescriptorSet> set = pool->allocateSet(*setLayout);
+
+  Ref<DataBuffer> vertexBuffer = createVertexBuffer(pipeline.device());
+  set->attachStorageBuffer(*vertexBuffer, 1);
 
   Ref<DataBuffer> uniformBuffer = createUniformBuffer(pipeline.device());
   set->attachUniformBuffer(*uniformBuffer, 2);
@@ -54,12 +86,18 @@ static Ref<PipelineLayout> createPipelineLayout(Device& device)
   ConstRef<DescriptorSetLayout> sets[2];
   sets[0] = ConstRef(new DescriptorSetLayout(device, {}));
 
-  VkDescriptorSetLayoutBinding binding{};
-  binding.binding = 2;
-  binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  binding.descriptorCount = 1;
-  binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-  sets[1] = ConstRef(new DescriptorSetLayout(device, std::span(&binding, 1)));
+  VkDescriptorSetLayoutBinding bindings[2];
+  bindings[0] = VkDescriptorSetLayoutBinding{};
+  bindings[0].binding = 1;
+  bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+  bindings[0].descriptorCount = 1;
+  bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+  bindings[1] = VkDescriptorSetLayoutBinding{};
+  bindings[1].binding = 2;
+  bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  bindings[1].descriptorCount = 1;
+  bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+  sets[1] = ConstRef(new DescriptorSetLayout(device, bindings));
 
   return Ref(new PipelineLayout(device, sets));
 }

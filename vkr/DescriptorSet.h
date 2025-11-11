@@ -29,6 +29,7 @@ namespace mt
     inline VkDescriptorSet handle() const noexcept;
 
     void attachUniformBuffer(const DataBuffer& buffer, uint32_t binding);
+    void attachStorageBuffer(const DataBuffer& buffer, uint32_t binding);
 
   private:
     Device& _device;

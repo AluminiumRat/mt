@@ -21,7 +21,8 @@ namespace mt
       DOWNLOADING_BUFFER,
       INDICES_BUFFER,
       UNIFORM_BUFFER,
-      VOLATILE_UNIFORM_BUFFER
+      VOLATILE_UNIFORM_BUFFER,
+      STORAGE_BUFFER
     };
 
     //  Маппинг буфера на ЦПУ память. используется для записи в/из ГПУ

@@ -82,6 +82,10 @@ static VkBufferUsageFlags getUsageFlags(DataBuffer::Usage usage)
 
     case DataBuffer::VOLATILE_UNIFORM_BUFFER:
       return  VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+
+    case DataBuffer::STORAGE_BUFFER:
+      return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+              VK_BUFFER_USAGE_TRANSFER_DST_BIT;
   }
 
   Abort("DataBuffer::getUsageFlags: unknown usage");
@@ -106,6 +110,7 @@ static VmaAllocationCreateInfo getVmaCreateInfo(DataBuffer::Usage usage)
 
     case DataBuffer::INDICES_BUFFER:
     case DataBuffer::UNIFORM_BUFFER:
+    case DataBuffer::STORAGE_BUFFER:
       info.requiredFlags = 0;
       info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
       break;

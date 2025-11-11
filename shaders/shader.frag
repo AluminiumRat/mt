@@ -7,11 +7,10 @@ layout (set = 1,
 } colorData;
 
 
-layout(location = 0) in vec3 fragColor;
+layout(location = 0) in vec3 vertexColor;
 layout(location = 0) out vec4 outColor;
 
 void main()
 {
-    //outColor = vec4(fragColor, 1.0);
-    outColor = colorData.color;
+    outColor = colorData.color * vec4(vertexColor, 1.0);
 }
