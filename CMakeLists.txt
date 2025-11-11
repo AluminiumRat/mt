@@ -68,6 +68,7 @@ add_executable (vkTest
                 "vkr/DataBuffer.cpp"
                 "vkr/DescriptorCounter.cpp"
                 "vkr/DescriptorPool.cpp"
+                "vkr/DescriptorSet.cpp"
                 "vkr/Device.cpp"
                 "vkr/FrameBuffer.cpp"
                 "vkr/FrameBufferFormat.cpp"

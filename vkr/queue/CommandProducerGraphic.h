@@ -4,8 +4,10 @@
 
 namespace mt
 {
+  class DescriptorSet;
   class FrameBuffer;
   class GraphicPipeline;
+  class PipelineLayout;
 
   //  Продюсер команд, реализующий функционал графической очереди команд
   //  Так же включает в себя функционал CommandProducerTransfer и
@@ -58,6 +60,11 @@ namespace mt
     inline const FrameBuffer* curentFrameBuffer() const noexcept;
 
     void setGraphicPipeline(GraphicPipeline& pipeline);
+
+    // Подключить набор ресурсов к графическому пайплайну
+    void bindDescriptorSetGraphic(const DescriptorSet& descriptorSet,
+                                  uint32_t setIndex,
+                                  const PipelineLayout& layout);
 
     //  Обертка вокруг vkCmdDraw
     //  Обычная отрисовка фиксированного количества вершин без индексного буфера

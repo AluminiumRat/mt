@@ -3,6 +3,7 @@
 #include <util/Ref.h>
 #include <GLFWRenderWindow.h>
 #include <vkr/pipeline/GraphicPipeline.h>
+#include <vkr/DescriptorSet.h>
 
 namespace mt
 {
@@ -23,5 +24,6 @@ namespace mt
 
   private:
     Ref<GraphicPipeline> _pipeline;
+    Ref<DescriptorSet> _descriptorSet;
   };
 }

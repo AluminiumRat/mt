@@ -1,5 +1,6 @@
 ﻿#include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/pipeline/ShaderModule.h>
+#include <vkr/DescriptorPool.h>
 #include <vkr/Device.h>
 #include <TestWindow.h>
 
@@ -27,11 +28,34 @@ static Ref<DataBuffer> createUniformBuffer(Device& device)
   return uniformBuffer;
 }
 
+static Ref<DescriptorSet> createDescriptorSet(GraphicPipeline& pipeline)
+{
+  Ref<DescriptorPool> pool(new DescriptorPool(
+                                          pipeline.device(),
+                                          pipeline.layout().descriptorCounter(),
+                                          1,
+                                          DescriptorPool::STATIC_POOL));
+  VkDescriptorSetLayoutBinding binding{};
+  binding.binding = 2;
+  binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  binding.descriptorCount = 1;
+  binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+  ConstRef<DescriptorSetLayout> setLayout =
+                    ConstRef(new DescriptorSetLayout( pipeline.device(),
+                                                      std::span(&binding, 1)));
+  Ref<DescriptorSet> set = pool->allocateSet(*setLayout);
+
+  Ref<DataBuffer> uniformBuffer = createUniformBuffer(pipeline.device());
+  set->attachUniformBuffer(*uniformBuffer, 2);
+
+  return set;
+}
+
 TestWindow::TestWindow(Device& device) :
   GLFWRenderWindow(device, "Vulkan window"),
-  _pipeline(_createPipeline())
+  _pipeline(_createPipeline()),
+  _descriptorSet(createDescriptorSet(*_pipeline))
 {
-  Ref<DataBuffer> uniformBuffer = createUniformBuffer(device);
 }
 
 static Ref<PipelineLayout> createPipelineLayout(Device& device)
@@ -97,6 +121,10 @@ void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,
                                     FrameBuffer& frameBuffer)
 {
   CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
+
+  commandProducer.bindDescriptorSetGraphic( *_descriptorSet,
+                                            1,
+                                            _pipeline->layout());
 
   commandProducer.setGraphicPipeline(*_pipeline);
   commandProducer.draw(3);

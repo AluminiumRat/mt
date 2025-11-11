@@ -38,7 +38,7 @@ namespace mt
                                     (const VolatileDescriptorPool&) = delete;
     ~VolatileDescriptorPool() noexcept = default;
 
-    VkDescriptorSet allocateSet(const DescriptorSetLayout& layout);
+    Ref<DescriptorSet> allocateSet(const DescriptorSetLayout& layout);
 
     //  Уничтожить все выделенные из пула сеты и вернуть в пул все дескриптеры.
     //  ВНИМАНИЕ! Убедитесь, что выделенные сеты не используются ни в одной

@@ -4,8 +4,10 @@
 #include <util/Log.h>
 #include <vkr/image/Image.h>
 #include <vkr/pipeline/GraphicPipeline.h>
+#include <vkr/pipeline/PipelineLayout.h>
 #include <vkr/queue/CommandBuffer.h>
 #include <vkr/queue/CommandProducerGraphic.h>
+#include <vkr/DescriptorSet.h>
 #include <vkr/FrameBuffer.h>
 
 using namespace mt;
@@ -89,6 +91,26 @@ void CommandProducerGraphic::setGraphicPipeline(GraphicPipeline& pipeline)
   vkCmdBindPipeline(buffer.handle(),
                     VK_PIPELINE_BIND_POINT_GRAPHICS,
                     pipeline.handle());
+}
+
+void CommandProducerGraphic::bindDescriptorSetGraphic(
+                                            const DescriptorSet& descriptorSet,
+                                            uint32_t setIndex,
+                                            const PipelineLayout& layout)
+{
+  CommandBuffer& buffer = getOrCreateBuffer();
+  lockResource(layout);
+  lockResource(descriptorSet);
+
+  VkDescriptorSet setHandle = descriptorSet.handle();
+  vkCmdBindDescriptorSets(buffer.handle(),
+                          VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          layout.handle(),
+                          setIndex,
+                          1,
+                          &setHandle,
+                          0,
+                          nullptr);
 }
 
 void CommandProducerGraphic::draw(uint32_t vertexCount,

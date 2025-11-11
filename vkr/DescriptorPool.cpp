@@ -1,6 +1,8 @@
 ﻿#include <stdexcept>
 
+#include <util/Abort.h>
 #include <util/Assert.h>
+#include <util/Log.h>
 #include <vkr/pipeline/DescriptorSetLayout.h>
 #include <vkr/DescriptorPool.h>
 #include <vkr/Device.h>
@@ -57,10 +59,9 @@ void DescriptorPool::_cleanup() noexcept
   }
 }
 
-VkDescriptorSet DescriptorPool::allocateVolatileSet(
+Ref<DescriptorSet> DescriptorPool::allocateSet(
                                             const DescriptorSetLayout& layout)
 {
-  MT_ASSERT(_mode == VOLATILE_POOL);
   MT_ASSERT(_descriptorsLeft.contains(layout.descriptorCounter()))
   MT_ASSERT(_setsLeft != 0);
 
@@ -81,7 +82,21 @@ VkDescriptorSet DescriptorPool::allocateVolatileSet(
   _descriptorsLeft.reduce(layout.descriptorCounter());
   _setsLeft--;
 
-  return newSet;
+  //  Мы уже выделили сет в пуле и не можем просто вернуть его обратно. Так что
+  //  если что-то пойдет не так - случится пат, надо абортить
+  try
+  {
+    //  Если пул не статический, то захватывать его со стороны очереди не нужно,
+    //  так как время жизни пула гарантируется вызывающей стороной
+    return Ref(new DescriptorSet( _device,
+                                  newSet,
+                                  _mode == VOLATILE_POOL ? nullptr : this));
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << "DescriptorPool::allocateVolatileSet: " << error.what();
+    Abort("Unable to create descriptor set");
+  }
 }
 
 void DescriptorPool::reset()

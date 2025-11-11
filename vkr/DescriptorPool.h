@@ -4,6 +4,7 @@
 
 #include <util/RefCounter.h>
 #include <vkr/DescriptorCounter.h>
+#include <vkr/DescriptorSet.h>
 
 namespace mt
 {
@@ -24,14 +25,12 @@ namespace mt
     {
       //  Дескриптер сеты выделяются один раз и переиспользуются из кадра в
       //    кадр. Вернуть и переиспользовать дескриптеры невозможно.
-      //  В этом режиме нельзя использовать методы allocateVolatileSet и
-      //    reset.
+      //  В этом режиме нельзя использовать метод reset.
       STATIC_POOL,
       //  Режим предназначен для использования внутри VolatileDescriptorPool
       //  Дескриптер сеты можно вернуть в пул методом reset, однако необходимо
-      //    следить за тем, что дескриптеры не используются в очереди команд
-      //    на момет вызова reset
-      //  В этом режиме нельзя использовать метод allocateStaticSet
+      //    следить за тем, что уже выделенные дескриптеры не используются в
+      //    очереди команд на момет вызова reset и после него
       VOLATILE_POOL
     };
 
@@ -58,9 +57,13 @@ namespace mt
     inline uint32_t setsLeft() const;
     inline uint32_t setsAllocated() const;
 
-    //  Выделение дескриптор сетя в режиме VOLATILE_POOL
-    //  Выделенные сеты могут быть возвращены в пул с помощью метода reset
-    VkDescriptorSet allocateVolatileSet(const DescriptorSetLayout& layout);
+    //  Выделение дескриптор сета
+    //  В режиме VOLATILE_POOL выделенные сеты могут быть возвращены в пул с
+    //    помощью метода reset. Для режима STATIC_POOL возврат дескриптеров
+    //    в пул запрещен.
+    //  ВНИМАНИЕ! После вызова reset все дескрипторы, выделенные с помощью
+    //    этого метода станут невалидными.
+    Ref<DescriptorSet> allocateSet(const DescriptorSetLayout& layout);
     //  Вернуть все выделенные сеты обратно в пул.
     //  Может быть вызван только в режиме VOLATILE_POOL
     //  ВНИМАНИЕ! Необходимо гарантировать, что на момент вызова reset ни один

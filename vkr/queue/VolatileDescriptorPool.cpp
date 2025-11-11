@@ -16,7 +16,7 @@ VolatileDescriptorPool::VolatileDescriptorPool(
 {
 }
 
-VkDescriptorSet VolatileDescriptorPool::allocateSet(
+Ref<DescriptorSet> VolatileDescriptorPool::allocateSet(
                                             const DescriptorSetLayout& layout)
 {
   if(_currentPool == nullptr)
@@ -32,7 +32,7 @@ VkDescriptorSet VolatileDescriptorPool::allocateSet(
     _selectPool(_currentPoolIndex + 1);
   }
 
-  return _currentPool->allocateVolatileSet(layout);
+  return _currentPool->allocateSet(layout);
 }
 
 void VolatileDescriptorPool::_addPool()
