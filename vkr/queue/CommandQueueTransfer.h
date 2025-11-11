@@ -23,7 +23,7 @@ namespace mt
     CommandQueueTransfer& operator = (const CommandQueue&) = delete;
     virtual  ~CommandQueueTransfer() noexcept = default;
 
-    //  Загрузить дынные в буфер.
+    //  Загрузить данные в буфер.
     //  Операция асинхронная, но вы можете подождать её окончания с помощью
     //    синк поинта(метод createSyncPoint)
     //  Если dstBuffer создается с явным указанием VkBufferUsageFlags, то для
