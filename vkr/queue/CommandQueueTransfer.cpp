@@ -16,3 +16,21 @@ std::unique_ptr<CommandProducerTransfer> CommandQueueTransfer::startCommands()
   std::lock_guard lock(commonMutex);
   return std::make_unique<CommandProducerTransfer>(commonPoolSet);
 }
+
+void CommandQueueTransfer::uploadToBuffer(const DataBuffer& dstBuffer,
+                                          size_t shiftInDstBuffer,
+                                          size_t dataSize,
+                                          void* srcData)
+{
+  Ref<DataBuffer> stagingBuffer(new DataBuffer( device(),
+                                                dataSize,
+                                                DataBuffer::UPLOADING_BUFFER));
+  stagingBuffer->uploadData(srcData, 0, dataSize);
+  std::unique_ptr<CommandProducerTransfer> producer = startCommands();
+  producer->copyFromBufferToBuffer( *stagingBuffer,
+                                    dstBuffer,
+                                    0,
+                                    0,
+                                    dataSize);
+  submitCommands(std::move(producer));
+}

@@ -1,15 +1,15 @@
 ﻿#pragma once
 
-#include <vkr/queue/CommandQueue.h>
+#include <vkr/queue/CommandQueueCompute.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 
 namespace mt
 {
   //  Графическая очередь, то есть очередь, отвечающая за отрисовку. Как правило
   //  основная очередь, через которую происходит общение с GPU.
-  class CommandQueueGraphic : public CommandQueue
+  class CommandQueueGraphic : public CommandQueueCompute
   {
-  private:
+  protected:
     // Логический девайс создает очереди в конструкторе. Это единственный
     // способ создания очередей.
     friend class Device;

@@ -8,23 +8,14 @@ using namespace mt;
 
 static Ref<DataBuffer> createUniformBuffer(Device& device)
 {
-  Ref<DataBuffer> stagingBuffer(new DataBuffer( device,
-                                                sizeof(glm::vec4),
-                                                DataBuffer::UPLOADING_BUFFER));
-  glm::vec4 color(0.5f,0.5f, 1.0f, 1.0f);
-  stagingBuffer->uploadData(&color, 0, sizeof(color));
-
+  glm::vec4 color(0.5f, 0.5f, 1.0f, 1.0f);
   Ref<DataBuffer> uniformBuffer(new DataBuffer( device,
-                                                sizeof(glm::vec4),
+                                                sizeof(color),
                                                 DataBuffer::UNIFORM_BUFFER));
-  std::unique_ptr<CommandProducerGraphic> producer =
-                                          device.graphicQueue()->startCommands();
-  producer->copyFromBufferToBuffer( *stagingBuffer,
-                                    *uniformBuffer,
-                                    0,
-                                    0,
-                                    sizeof(glm::vec4));
-  device.graphicQueue()->submitCommands(std::move(producer));
+  device.graphicQueue()->uploadToBuffer(*uniformBuffer,
+                                        0,
+                                        sizeof(color),
+                                        &color);
   return uniformBuffer;
 }
 

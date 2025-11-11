@@ -1,15 +1,15 @@
 ﻿#pragma once
 
-#include <vkr/queue/CommandQueue.h>
+#include <vkr/queue/CommandQueueTransfer.h>
 #include <vkr/queue/CommandProducerCompute.h>
 
 namespace mt
 {
   //  Компьют очередь, то есть очередь, специально отведенная под асинхронное
   //  выполнение компьют шейдеров
-  class CommandQueueCompute : public CommandQueue
+  class CommandQueueCompute : public CommandQueueTransfer
   {
-  private:
+  protected:
     // Логический девайс создает очереди в конструкторе. Это единственный
     // способ создания очередей.
     friend class Device;

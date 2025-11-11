@@ -7,7 +7,7 @@ CommandQueueCompute::CommandQueueCompute( Device& device,
                                           uint32_t queueIndex,
                                           const QueueFamily& family,
                                           std::recursive_mutex& commonMutex) :
-  CommandQueue(device, familyIndex, queueIndex, family, commonMutex)
+  CommandQueueTransfer(device, familyIndex, queueIndex, family, commonMutex)
 {
 }
 

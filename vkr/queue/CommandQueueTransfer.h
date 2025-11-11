@@ -9,9 +9,9 @@ namespace mt
   //  асинхронных перемещений данных по памяти
   class CommandQueueTransfer : public CommandQueue
   {
-  private:
-    // Логический девайс создает очереди в конструкторе. Это единственный
-    // способ создания очередей.
+  protected:
+    //  Логический девайс создает очереди в своем конструкторе. Это единственный
+    //  способ создания очередей.
     friend class Device;
     CommandQueueTransfer( Device& device,
                           uint32_t familyIndex,
@@ -22,6 +22,16 @@ namespace mt
     CommandQueueTransfer(const CommandQueue&) = delete;
     CommandQueueTransfer& operator = (const CommandQueue&) = delete;
     virtual  ~CommandQueueTransfer() noexcept = default;
+
+    //  Загрузить дынные в буфер.
+    //  Операция асинхронная, но вы можете подождать её окончания с помощью
+    //    синк поинта(метод createSyncPoint)
+    //  Если dstBuffer создается с явным указанием VkBufferUsageFlags, то для
+    //    него должен быть включен VK_BUFFER_USAGE_TRANSFER_DST_BIT
+    void uploadToBuffer(const DataBuffer& dstBuffer,
+                        size_t shiftInDstBuffer,
+                        size_t dataSize,
+                        void* srcData);
 
     //  Начать заполнение буфера команд.
     //  Более детально смотри CommandQueue::startCommands

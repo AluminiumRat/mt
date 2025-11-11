@@ -68,7 +68,7 @@ namespace mt
     // Упрощенный конструктор для типового использования
     DataBuffer(Device& device, size_t size, Usage usage);
     // Полнофункциональный конструктор для кастома
-    DataBuffer(Device& device,
+    DataBuffer( Device& device,
                 size_t size,
                 VkBufferUsageFlags bufferUsageFlags,
                 VkMemoryPropertyFlags requiredFlags,
