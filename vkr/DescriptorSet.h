@@ -11,6 +11,8 @@ namespace mt
   class DataBuffer;
   class DescriptorPool;
   class Device;
+  class ImageView;
+  class Sampler;
 
   class DescriptorSet : public RefCounter
   {
@@ -30,6 +32,8 @@ namespace mt
 
     void attachUniformBuffer(const DataBuffer& buffer, uint32_t binding);
     void attachStorageBuffer(const DataBuffer& buffer, uint32_t binding);
+    void attachSampledImage(const ImageView& image, uint32_t binding);
+    void attachSampler(const Sampler& sampler, uint32_t binding);
 
   private:
     Device& _device;

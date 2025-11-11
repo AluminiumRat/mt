@@ -1,10 +1,85 @@
-﻿#include <vkr/queue/CommandProducerGraphic.h>
+﻿#include <vkr/image/Image.h>
+#include <vkr/image/ImageView.h>
+#include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/pipeline/ShaderModule.h>
 #include <vkr/DescriptorPool.h>
 #include <vkr/Device.h>
+#include <vkr/Sampler.h>
 #include <TestWindow.h>
 
 using namespace mt;
+
+static ConstRef <DescriptorSetLayout> createSetLayout(Device& device)
+{
+  VkDescriptorSetLayoutBinding bindings[4];
+  bindings[0] = VkDescriptorSetLayoutBinding{};
+  bindings[0].binding = 1;
+  bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+  bindings[0].descriptorCount = 1;
+  bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+  bindings[1] = VkDescriptorSetLayoutBinding{};
+  bindings[1].binding = 2;
+  bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  bindings[1].descriptorCount = 1;
+  bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+  bindings[2] = VkDescriptorSetLayoutBinding{};
+  bindings[2].binding = 3;
+  bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+  bindings[2].descriptorCount = 1;
+  bindings[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+  bindings[3] = VkDescriptorSetLayoutBinding{};
+  bindings[3].binding = 4;
+  bindings[3].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+  bindings[3].descriptorCount = 1;
+  bindings[3].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+  return ConstRef(new DescriptorSetLayout(device, bindings));
+}
+
+static Ref<ImageView> createTexture(Device& device)
+{
+  uint32_t pixels[4] = {0xFF0000FF, 0xFF00FF00, 0xFF00FFFF, 0xFFFF0000};
+  Ref<DataBuffer> stagingBuffer(
+          new DataBuffer(device, sizeof(pixels), DataBuffer::UPLOADING_BUFFER));
+  stagingBuffer->uploadData(pixels, 0, sizeof(pixels));
+
+  Ref<Image> image(new Image( device,
+                              VK_IMAGE_TYPE_2D,
+                              VK_IMAGE_USAGE_SAMPLED_BIT |
+                                VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                              0,
+                              VK_FORMAT_R8G8B8A8_UNORM,
+                              glm::uvec3(2, 2, 1),
+                              VK_SAMPLE_COUNT_1_BIT,
+                              1,
+                              1,
+                              true));
+  std::unique_ptr<CommandProducerGraphic> producer =
+                                          device.graphicQueue()->startCommands();
+  producer->copyFromBufferToImage(*stagingBuffer,
+                                  0,
+                                  2,
+                                  2,
+                                  *image,
+                                  VK_IMAGE_ASPECT_COLOR_BIT,
+                                  0,
+                                  0,
+                                  glm::uvec3(0, 0, 0),
+                                  glm::vec3(2, 2, 1));
+  producer->forceLayout(*image,
+                        ImageSlice(*image),
+                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                        VK_ACCESS_SHADER_READ_BIT,
+                        0,
+                        0);
+  device.graphicQueue()->submitCommands(std::move(producer));
+
+  return Ref(new ImageView(*image, ImageSlice(*image), VK_IMAGE_VIEW_TYPE_2D));
+}
 
 static Ref<DataBuffer> createUniformBuffer(Device& device)
 {
@@ -49,20 +124,7 @@ static Ref<DescriptorSet> createDescriptorSet(GraphicPipeline& pipeline)
                                           pipeline.layout().descriptorCounter(),
                                           1,
                                           DescriptorPool::STATIC_POOL));
-  VkDescriptorSetLayoutBinding bindings[2];
-  bindings[0] = VkDescriptorSetLayoutBinding{};
-  bindings[0].binding = 1;
-  bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-  bindings[0].descriptorCount = 1;
-  bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-  bindings[1] = VkDescriptorSetLayoutBinding{};
-  bindings[1].binding = 2;
-  bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  bindings[1].descriptorCount = 1;
-  bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-  ConstRef<DescriptorSetLayout> setLayout =
-                    ConstRef(new DescriptorSetLayout( pipeline.device(),
-                                                      bindings));
+  ConstRef<DescriptorSetLayout> setLayout = createSetLayout(pipeline.device());
   Ref<DescriptorSet> set = pool->allocateSet(*setLayout);
 
   Ref<DataBuffer> vertexBuffer = createVertexBuffer(pipeline.device());
@@ -70,6 +132,12 @@ static Ref<DescriptorSet> createDescriptorSet(GraphicPipeline& pipeline)
 
   Ref<DataBuffer> uniformBuffer = createUniformBuffer(pipeline.device());
   set->attachUniformBuffer(*uniformBuffer, 2);
+
+  Ref<ImageView> texture = createTexture(pipeline.device());
+  set->attachSampledImage(*texture, 3);
+
+  Ref<Sampler> sampler(new Sampler(pipeline.device()));
+  set->attachSampler(*sampler, 4);
 
   return set;
 }
@@ -85,20 +153,7 @@ static Ref<PipelineLayout> createPipelineLayout(Device& device)
 {
   ConstRef<DescriptorSetLayout> sets[2];
   sets[0] = ConstRef(new DescriptorSetLayout(device, {}));
-
-  VkDescriptorSetLayoutBinding bindings[2];
-  bindings[0] = VkDescriptorSetLayoutBinding{};
-  bindings[0].binding = 1;
-  bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-  bindings[0].descriptorCount = 1;
-  bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-  bindings[1] = VkDescriptorSetLayoutBinding{};
-  bindings[1].binding = 2;
-  bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  bindings[1].descriptorCount = 1;
-  bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-  sets[1] = ConstRef(new DescriptorSetLayout(device, bindings));
-
+  sets[1] = createSetLayout(device);
   return Ref(new PipelineLayout(device, sets));
 }
 

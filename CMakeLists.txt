@@ -61,6 +61,7 @@ add_executable (vkTest
                 "vkr/queue/Fence.cpp"
                 "vkr/queue/QueueFamiliesInfo.cpp"
                 "vkr/queue/QueueSources.cpp"
+                "vkr/Sampler.cpp"
                 "vkr/queue/Semaphore.cpp"
                 "vkr/queue/TimelineSemaphore.cpp"
                 "vkr/queue/UniformMemoryPool.cpp"
