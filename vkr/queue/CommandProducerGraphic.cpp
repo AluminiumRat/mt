@@ -39,9 +39,9 @@ void CommandProducerGraphic::_beginPass(RenderPass& renderPass)
   const FrameBuffer& frameBuffer = renderPass.frameBuffer();
 
   _pipelineAccesses.setChild(&frameBuffer.imagesAccess(), 0);
+  lockResource(frameBuffer);
 
   CommandBuffer& buffer = getOrCreateBuffer();
-  buffer.lockResource(frameBuffer);
 
   vkCmdBeginRendering(buffer.handle(), &frameBuffer.bindingInfo());
 
@@ -83,42 +83,43 @@ void CommandProducerGraphic::_endPass() noexcept
 
 void CommandProducerGraphic::setGraphicPipeline(GraphicPipeline& pipeline)
 {
-  CommandBuffer& buffer = getOrCreateBuffer();
-  buffer.lockResource(pipeline);
+  lockResource(pipeline);
 
+  CommandBuffer& buffer = getOrCreateBuffer();
   vkCmdBindPipeline(buffer.handle(),
                     VK_PIPELINE_BIND_POINT_GRAPHICS,
                     pipeline.handle());
 }
 
 void CommandProducerGraphic::bindDescriptorSetGraphic(
-                                            const DescriptorSet* descriptorSet,
+                                            const DescriptorSet& descriptorSet,
                                             uint32_t setIndex,
                                             const PipelineLayout& layout)
 {
   MT_ASSERT(setIndex < maxDescriptorSetsNumber);
-  MT_ASSERT(descriptorSet == nullptr || descriptorSet->isFinalized());
+  MT_ASSERT(descriptorSet.isFinalized());
 
-  if(descriptorSet != nullptr)
-  {
-    CommandBuffer& buffer = getOrCreateBuffer();
-    buffer.lockResource(layout);
-    buffer.lockResource(*descriptorSet);
-    _pipelineAccesses.setChild(&descriptorSet->imagesAccess(), setIndex + 1);
-    VkDescriptorSet setHandle = descriptorSet->handle();
-    vkCmdBindDescriptorSets(buffer.handle(),
-                            VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            layout.handle(),
-                            setIndex,
-                            1,
-                            &setHandle,
-                            0,
-                            nullptr);
-  }
-  else
-  {
-    _pipelineAccesses.setChild(nullptr, setIndex + 1);
-  }
+  lockResource(layout);
+  lockResource(descriptorSet);
+
+  _pipelineAccesses.setChild(&descriptorSet.imagesAccess(), setIndex + 1);
+
+  VkDescriptorSet setHandle = descriptorSet.handle();
+  CommandBuffer& buffer = getOrCreateBuffer();
+  vkCmdBindDescriptorSets(buffer.handle(),
+                          VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          layout.handle(),
+                          setIndex,
+                          1,
+                          &setHandle,
+                          0,
+                          nullptr);
+}
+
+void CommandProducerGraphic::unbindDescriptorSetGraphic(uint32_t setIndex)
+{
+  MT_ASSERT(setIndex < maxDescriptorSetsNumber);
+  _pipelineAccesses.setChild(nullptr, setIndex + 1);
 }
 
 void CommandProducerGraphic::draw(uint32_t vertexCount,
@@ -222,9 +223,8 @@ void CommandProducerGraphic::blitImage( const Image& srcImage,
     addMultipleImagesUsage(accesses);
   }
 
-  CommandBuffer& buffer = getOrCreateBuffer();
-  buffer.lockResource(srcImage);
-  buffer.lockResource(dstImage);
+  lockResource(srcImage);
+  lockResource(dstImage);
 
   // Дальше собственно сама операция блита
   VkImageBlit region{};
@@ -250,6 +250,7 @@ void CommandProducerGraphic::blitImage( const Image& srcImage,
   region.dstOffsets[1].y = uint32_t(dstOffset.y + dstExtent.y);
   region.dstOffsets[1].z = uint32_t(dstOffset.z + dstExtent.z);
 
+  CommandBuffer& buffer = getOrCreateBuffer();
   vkCmdBlitImage( buffer.handle(),
                   srcImage.handle(),
                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,

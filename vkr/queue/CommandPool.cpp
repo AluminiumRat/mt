@@ -65,17 +65,13 @@ void CommandPool::_cleanup() noexcept
 
 void CommandPool::reset()
 {
-  for(Ref<CommandBuffer>& buffer : _buffers)
-  {
-    buffer->releaseResources();
-  }
-
   if(vkResetCommandPool(_device.handle(), _handle, 0) != VK_SUCCESS)
   {
     throw std::runtime_error("CommandPool: Unable to reset command pool");
   }
 
   _descriptorPool.reset();
+  _lockedResources.clear();
 
   _nextBuffer = 0;
 }

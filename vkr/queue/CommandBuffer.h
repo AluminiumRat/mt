@@ -1,11 +1,8 @@
 ﻿#pragma once
 
-#include <vector>
-
 #include <vulkan/vulkan.h>
 
 #include <util/RefCounter.h>
-#include <util/Ref.h>
 
 namespace mt
 {
@@ -29,16 +26,6 @@ namespace mt
   public:
     inline VkCommandBuffer handle() const;
     inline VkCommandBufferLevel level() const;
-
-    //  Захватить владение ресурсом. Это продляет жизнь ресурса и позволяет
-    //  предотвратить его удаление, пока буфер находится на исполнении в
-    //  очереди команд
-    inline void lockResource(const RefCounter& resource);
-
-    //  Освободить все захваченные ресурсы. Необходимо вызывать, когда
-    //  исполнение буфера в очереди команд уже закончено и используемые в
-    //  нем ресурсы могут быть удалены.
-    inline void releaseResources();
 
     //  Стартовать запись команд для однократного использования
     void startOnetimeBuffer() noexcept;
@@ -86,8 +73,6 @@ namespace mt
     VkCommandBufferLevel _level;
 
     bool _bufferInProcess;
-
-    std::vector<RefCounterReference> _lockedResources;
   };
 
   inline VkCommandBuffer CommandBuffer::handle() const
@@ -98,16 +83,6 @@ namespace mt
   inline VkCommandBufferLevel CommandBuffer::level() const
   {
     return _level;
-  }
-
-  inline void CommandBuffer::lockResource(const RefCounter& resource)
-  {
-    _lockedResources.push_back(RefCounterReference(&resource));
-  }
-
-  inline void CommandBuffer::releaseResources()
-  {
-    _lockedResources.clear();
   }
 
   inline bool CommandBuffer::isBufferInProcess() const noexcept

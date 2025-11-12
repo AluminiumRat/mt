@@ -71,10 +71,11 @@ namespace mt
     void setGraphicPipeline(GraphicPipeline& pipeline);
 
     // Подключить набор ресурсов к графическому пайплайну
-    // Для отключения ресурсов можно передать nullptr
-    void bindDescriptorSetGraphic(const DescriptorSet* descriptorSet,
+    void bindDescriptorSetGraphic(const DescriptorSet& descriptorSet,
                                   uint32_t setIndex,
                                   const PipelineLayout& layout);
+    // Отключить набор ресурсов от пайплайна
+    void unbindDescriptorSetGraphic(uint32_t setIndex);
 
     //  Обертка вокруг vkCmdDraw
     //  Обычная отрисовка фиксированного количества вершин без индексного буфера

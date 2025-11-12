@@ -41,8 +41,13 @@ namespace mt
     // нет.
     CommandBuffer& getNextBuffer();
 
-    //  Сбросить пул комманд и все работающие с ним буферы команд и
-    //    волатильные дескриптер-сеты
+    //  Захватить владение ресурсом. Это продляет жизнь ресурса и позволяет
+    //  предотвратить его удаление, пока буферы команд находятся на исполнении в
+    //  очереди команд
+    inline void lockResource(const RefCounter& resource);
+
+    //  Сбросить пул комманд, все работающие с ним буферы команд и
+    //    волатильные дескриптер-сеты. Освободить все захваченные ресурсы.
     //  ВНИМАНИЕ!!! Убедитесь, что ни один из буферов команд не находится
     //    в очереди команд
     void reset();
@@ -60,6 +65,8 @@ namespace mt
     using Buffers = std::vector<Ref<CommandBuffer>>;
     Buffers _buffers;
     size_t _nextBuffer;
+
+    std::vector<RefCounterReference> _lockedResources;
   };
 
   inline UniformMemoryPool& CommandPool::memoryPool() noexcept
@@ -81,5 +88,10 @@ namespace mt
                                   CommandPool::descriptorPool() const noexcept
   {
     return _descriptorPool;
+  }
+
+  inline void CommandPool::lockResource(const RefCounter& resource)
+  {
+    _lockedResources.push_back(RefCounterReference(&resource));
   }
 };

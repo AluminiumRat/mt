@@ -8,13 +8,14 @@
 
 #include <glm/glm.hpp>
 
+#include <util/Assert.h>
 #include <vkr/image/ImageAccessWatcher.h>
+#include <vkr/queue/CommandPool.h>
 #include <vkr/queue/UniformMemoryPool.h>
 
 namespace mt
 {
   class CommandBuffer;
-  class CommandPool;
   class CommandPoolSet;
   class CommandQueue;
   class ImageSlice;
@@ -147,6 +148,11 @@ namespace mt
     //    согласования
     void addMultipleImagesUsage(MultipleImageUsage usages);
 
+    //  Захватить владение ресурсом. Это продляет жизнь ресурса и позволяет
+    //  предотвратить его удаление, пока буферы команд находятся на исполнении в
+    //  очереди команд
+    inline void lockResource(const RefCounter& resource);
+
   private:
     CommandPoolSet& _commandPoolSet;
     CommandQueue& _queue;
@@ -169,5 +175,11 @@ namespace mt
   inline CommandQueue& CommandProducer::queue() const noexcept
   {
     return _queue;
+  }
+
+  inline void CommandProducer::lockResource(const RefCounter& resource)
+  {
+    MT_ASSERT(_commandPool != nullptr);
+    _commandPool->lockResource(resource);
   }
 }

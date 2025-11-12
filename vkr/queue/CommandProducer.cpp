@@ -5,7 +5,6 @@
 #include <vkr/image/Image.h>
 #include <vkr/image/ImageSlice.h>
 #include <vkr/queue/CommandBuffer.h>
-#include <vkr/queue/CommandPool.h>
 #include <vkr/queue/CommandPoolSet.h>
 #include <vkr/queue/CommandProducer.h>
 #include <vkr/queue/CommandQueue.h>
@@ -111,8 +110,7 @@ void CommandProducer::halfOwnershipTransfer(const Image& image,
                                             uint32_t oldFamilyIndex,
                                             uint32_t newFamilyIndex)
 {
-  CommandBuffer& buffer = getOrCreateBuffer();
-  buffer.lockResource(image);
+  lockResource(image);
 
   VkMemoryBarrier memoryBarrier{};
   memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
@@ -130,6 +128,7 @@ void CommandProducer::halfOwnershipTransfer(const Image& image,
   imageBarrier.srcAccessMask = 0;
   imageBarrier.dstAccessMask = 0;
 
+  CommandBuffer& buffer = getOrCreateBuffer();
   vkCmdPipelineBarrier( buffer.handle(),
                         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
@@ -146,8 +145,7 @@ void CommandProducer::halfOwnershipTransfer(const DataBuffer& buffer,
                                             uint32_t oldFamilyIndex,
                                             uint32_t newFamilyIndex)
 {
-  CommandBuffer& commandBuffer = getOrCreateBuffer();
-  commandBuffer.lockResource(buffer);
+  lockResource(buffer);
 
   VkBufferMemoryBarrier bufferBarrier{};
   bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -158,6 +156,7 @@ void CommandProducer::halfOwnershipTransfer(const DataBuffer& buffer,
   bufferBarrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT;
   bufferBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 
+  CommandBuffer& commandBuffer = getOrCreateBuffer();
   vkCmdPipelineBarrier( commandBuffer.handle(),
                         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
@@ -276,8 +275,9 @@ void CommandProducer::imageBarrier( const Image& image,
 {
   MT_ASSERT(!image.isLayoutAutoControlEnabled());
 
+  lockResource(image);
+
   CommandBuffer& buffer = getOrCreateBuffer();
-  buffer.lockResource(image);
   buffer.imageBarrier(image,
                       slice,
                       srcLayout,
@@ -298,8 +298,7 @@ void CommandProducer::forceLayout(const Image& image,
 {
   MT_ASSERT(image.isLayoutAutoControlEnabled());
 
-  CommandBuffer& buffer = getOrCreateBuffer();
-  buffer.lockResource(image);
+  lockResource(image);
 
   ImageAccess imageAccess;
   imageAccess.slices[0] = slice;

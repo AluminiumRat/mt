@@ -16,15 +16,15 @@ void CommandProducerTransfer::copyFromBufferToBuffer(
                                                   size_t dstOffset,
                                                   size_t size)
 {
-  CommandBuffer& commandBuffer = getOrCreateBuffer();
-  commandBuffer.lockResource(srcBuffer);
-  commandBuffer.lockResource(dstBuffer);
+  lockResource(srcBuffer);
+  lockResource(dstBuffer);
 
   VkBufferCopy copyInfo{};
   copyInfo.srcOffset = srcOffset;
   copyInfo.dstOffset = dstOffset;
   copyInfo.size = size;
 
+  CommandBuffer& commandBuffer = getOrCreateBuffer();
   vkCmdCopyBuffer(commandBuffer.handle(),
                   srcBuffer.handle(),
                   dstBuffer.handle(),
@@ -60,10 +60,8 @@ void CommandProducerTransfer::copyFromBufferToImage(
   imageAccess.slicesCount = 1;
   addImageUsage(dstImage, imageAccess);
 
-  CommandBuffer& buffer = getOrCreateBuffer();
-
-  buffer.lockResource(srcBuffer);
-  buffer.lockResource(dstImage);
+  lockResource(srcBuffer);
+  lockResource(dstImage);
 
   VkBufferImageCopy region{};
   region.bufferOffset = srcBufferOffset;
@@ -83,6 +81,7 @@ void CommandProducerTransfer::copyFromBufferToImage(
   region.imageExtent.height = uint32_t(dstExtent.y);
   region.imageExtent.depth = uint32_t(dstExtent.z);
 
+  CommandBuffer& buffer = getOrCreateBuffer();
   vkCmdCopyBufferToImage( buffer.handle(),
                           srcBuffer.handle(),
                           dstImage.handle(),
@@ -119,10 +118,8 @@ void CommandProducerTransfer::copyFromImageToBuffer(
   imageAccess.slicesCount = 1;
   addImageUsage(srcImage, imageAccess);
 
-  CommandBuffer& buffer = getOrCreateBuffer();
-
-  buffer.lockResource(dstBuffer);
-  buffer.lockResource(srcImage);
+  lockResource(dstBuffer);
+  lockResource(srcImage);
 
   VkBufferImageCopy region{};
   region.bufferOffset = dstBufferOffset;
@@ -142,6 +139,7 @@ void CommandProducerTransfer::copyFromImageToBuffer(
   region.imageExtent.height = uint32_t(srcExtent.y);
   region.imageExtent.depth = uint32_t(srcExtent.z);
 
+  CommandBuffer& buffer = getOrCreateBuffer();
   vkCmdCopyImageToBuffer( buffer.handle(),
                           srcImage.handle(),
                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,

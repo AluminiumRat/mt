@@ -201,14 +201,14 @@ void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,
 {
   CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
 
-  commandProducer.bindDescriptorSetGraphic( _descriptorSet.get(),
+  commandProducer.bindDescriptorSetGraphic( *_descriptorSet,
                                             1,
                                             _pipeline->layout());
 
   commandProducer.setGraphicPipeline(*_pipeline);
   commandProducer.draw(3);
 
-  commandProducer.bindDescriptorSetGraphic( nullptr, 1, _pipeline->layout());
+  commandProducer.unbindDescriptorSetGraphic(1);
 
   renderPass.endPass();
 }
