@@ -62,17 +62,6 @@ static Ref<ImageView> createTexture(Device& device)
                                         glm::uvec3(2,2,1),
                                         pixels);
 
-  std::unique_ptr<CommandProducerGraphic> producer =
-                                          device.graphicQueue()->startCommands();
-  producer->forceLayout(*image,
-                        ImageSlice(*image),
-                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                        VK_ACCESS_SHADER_READ_BIT,
-                        0,
-                        0);
-  device.graphicQueue()->submitCommands(std::move(producer));
-
   return Ref(new ImageView(*image, ImageSlice(*image), VK_IMAGE_VIEW_TYPE_2D));
 }
 
@@ -203,12 +192,14 @@ void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,
 {
   CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
 
-  commandProducer.bindDescriptorSetGraphic( *_descriptorSet,
+  commandProducer.bindDescriptorSetGraphic( _descriptorSet.get(),
                                             1,
                                             _pipeline->layout());
 
   commandProducer.setGraphicPipeline(*_pipeline);
   commandProducer.draw(3);
+
+  commandProducer.bindDescriptorSetGraphic( nullptr, 1, _pipeline->layout());
 
   renderPass.endPass();
 }

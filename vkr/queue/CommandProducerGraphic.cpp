@@ -38,10 +38,7 @@ void CommandProducerGraphic::_beginPass(RenderPass& renderPass)
 
   const FrameBuffer& frameBuffer = renderPass.frameBuffer();
 
-  if(!frameBuffer.imagesAccess().empty())
-  {
-    addMultipleImagesUsage(frameBuffer.imagesAccess().accessTable());
-  }
+  _pipelineAccesses.setChild(&frameBuffer.imagesAccess(), 0);
 
   CommandBuffer& buffer = getOrCreateBuffer();
   buffer.lockResource(frameBuffer);
@@ -74,6 +71,7 @@ void CommandProducerGraphic::_endPass() noexcept
   {
     CommandBuffer& buffer = getOrCreateBuffer();
     vkCmdEndRendering(buffer.handle());
+    _pipelineAccesses.setChild(nullptr, 0);
     _currentPass = nullptr;
   }
   catch(std::exception& error)
@@ -94,25 +92,33 @@ void CommandProducerGraphic::setGraphicPipeline(GraphicPipeline& pipeline)
 }
 
 void CommandProducerGraphic::bindDescriptorSetGraphic(
-                                            const DescriptorSet& descriptorSet,
+                                            const DescriptorSet* descriptorSet,
                                             uint32_t setIndex,
                                             const PipelineLayout& layout)
 {
-  MT_ASSERT(descriptorSet.isFinalized());
+  MT_ASSERT(setIndex < maxDescriptorSetsNumber);
+  MT_ASSERT(descriptorSet == nullptr || descriptorSet->isFinalized());
 
-  CommandBuffer& buffer = getOrCreateBuffer();
-  buffer.lockResource(layout);
-  buffer.lockResource(descriptorSet);
-
-  VkDescriptorSet setHandle = descriptorSet.handle();
-  vkCmdBindDescriptorSets(buffer.handle(),
-                          VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          layout.handle(),
-                          setIndex,
-                          1,
-                          &setHandle,
-                          0,
-                          nullptr);
+  if(descriptorSet != nullptr)
+  {
+    CommandBuffer& buffer = getOrCreateBuffer();
+    buffer.lockResource(layout);
+    buffer.lockResource(*descriptorSet);
+    _pipelineAccesses.setChild(&descriptorSet->imagesAccess(), setIndex + 1);
+    VkDescriptorSet setHandle = descriptorSet->handle();
+    vkCmdBindDescriptorSets(buffer.handle(),
+                            VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            layout.handle(),
+                            setIndex,
+                            1,
+                            &setHandle,
+                            0,
+                            nullptr);
+  }
+  else
+  {
+    _pipelineAccesses.setChild(nullptr, setIndex + 1);
+  }
 }
 
 void CommandProducerGraphic::draw(uint32_t vertexCount,
@@ -120,6 +126,8 @@ void CommandProducerGraphic::draw(uint32_t vertexCount,
                                   uint32_t firstVertex,
                                   uint32_t firstInstance)
 {
+  addMultipleImagesUsage(_pipelineAccesses.getMergedSet().accessTable());
+
   CommandBuffer& buffer = getOrCreateBuffer();
   vkCmdDraw(buffer.handle(),
             vertexCount,

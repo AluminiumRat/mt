@@ -37,6 +37,7 @@ add_executable (vkTest
                 "util/Log.cpp"
                 "vkr/image/Image.cpp"
                 "vkr/image/ImageAccess.cpp"
+                "vkr/image/ImageAccessMultiset.cpp"
                 "vkr/image/ImageAccessWatcher.cpp"
                 "vkr/image/ImageFormatFeatures.cpp"
                 "vkr/image/ImagesAccessSet.cpp"

@@ -1,11 +1,14 @@
 ﻿#pragma once
 
+#include <array>
+
+#include <vkr/image/ImageAccessMultiset.h>
 #include <vkr/queue/CommandProducerCompute.h>
 
 namespace mt
 {
-  class DescriptorSet;
   class FrameBuffer;
+  class DescriptorSet;
   class GraphicPipeline;
   class PipelineLayout;
 
@@ -14,6 +17,12 @@ namespace mt
   //    CommandProducerCompute
   class CommandProducerGraphic : public CommandProducerCompute
   {
+  public:
+    //  Максимальное количество дескриптер сетов, которые можно прибиндить к
+    //  графическому пайплайну
+    static constexpr uint32_t maxDescriptorSetsNumber =
+                                          ImageAccessMultiset::maxSetsCount - 1;
+
   public:
     //  RAII оболочка вокруг биндинга фрэйм буфера.
     //  Указывает продюсеру, куда должны отрисовывать команды рендера.
@@ -62,7 +71,8 @@ namespace mt
     void setGraphicPipeline(GraphicPipeline& pipeline);
 
     // Подключить набор ресурсов к графическому пайплайну
-    void bindDescriptorSetGraphic(const DescriptorSet& descriptorSet,
+    // Для отключения ресурсов можно передать nullptr
+    void bindDescriptorSetGraphic(const DescriptorSet* descriptorSet,
                                   uint32_t setIndex,
                                   const PipelineLayout& layout);
 
@@ -102,6 +112,7 @@ namespace mt
 
   private:
     RenderPass* _currentPass;
+    ImageAccessMultiset _pipelineAccesses;
   };
 
   inline CommandProducerGraphic::RenderPass::RenderPass(
