@@ -11,7 +11,7 @@ using namespace mt;
 
 static ConstRef <DescriptorSetLayout> createSetLayout(Device& device)
 {
-  VkDescriptorSetLayoutBinding bindings[4];
+  VkDescriptorSetLayoutBinding bindings[5];
   bindings[0] = VkDescriptorSetLayoutBinding{};
   bindings[0].binding = 1;
   bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -32,9 +32,15 @@ static ConstRef <DescriptorSetLayout> createSetLayout(Device& device)
 
   bindings[3] = VkDescriptorSetLayoutBinding{};
   bindings[3].binding = 4;
-  bindings[3].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+  bindings[3].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
   bindings[3].descriptorCount = 1;
   bindings[3].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+  bindings[4] = VkDescriptorSetLayoutBinding{};
+  bindings[4].binding = 5;
+  bindings[4].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+  bindings[4].descriptorCount = 1;
+  bindings[4].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
   return ConstRef(new DescriptorSetLayout(device, bindings));
 }
@@ -118,10 +124,13 @@ static Ref<DescriptorSet> createDescriptorSet(GraphicPipeline& pipeline)
   set->attachUniformBuffer(*uniformBuffer, 2);
 
   Ref<ImageView> texture = createTexture(pipeline.device());
+  set->attachSampledImage(*texture, 4, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+
+  texture = createTexture(pipeline.device());
   set->attachSampledImage(*texture, 3, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
   Ref<Sampler> sampler(new Sampler(pipeline.device()));
-  set->attachSampler(*sampler, 4);
+  set->attachSampler(*sampler, 5);
 
   set->finalize();
 
