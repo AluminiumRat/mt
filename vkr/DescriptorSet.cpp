@@ -1,4 +1,5 @@
-﻿#include <vkr/image/ImageView.h>
+﻿#include <util/Assert.h>
+#include <vkr/image/ImageView.h>
 #include <vkr/DataBuffer.h>
 #include <vkr/DescriptorPool.h>
 #include <vkr/DescriptorSet.h>
@@ -11,7 +12,8 @@ DescriptorSet::DescriptorSet( Device& device,
                               VkDescriptorSet handle,
                               const DescriptorPool* pool) :
   _device(device),
-  _handle(handle)
+  _handle(handle),
+  _finalized(false)
 {
   if(pool != nullptr)
   {
@@ -22,6 +24,8 @@ DescriptorSet::DescriptorSet( Device& device,
 void DescriptorSet::attachUniformBuffer(const DataBuffer& buffer,
                                         uint32_t binding)
 {
+  MT_ASSERT(!isFinalized());
+
   _resources.push_back(ConstRef(&buffer));
 
   VkDescriptorBufferInfo bufferInfo{};
@@ -48,6 +52,8 @@ void DescriptorSet::attachUniformBuffer(const DataBuffer& buffer,
 void DescriptorSet::attachStorageBuffer(const DataBuffer& buffer,
                                         uint32_t binding)
 {
+  MT_ASSERT(!isFinalized());
+
   _resources.push_back(ConstRef(&buffer));
 
   VkDescriptorBufferInfo bufferInfo{};
@@ -71,12 +77,29 @@ void DescriptorSet::attachStorageBuffer(const DataBuffer& buffer,
                           nullptr);
 }
 
-void DescriptorSet::attachSampledImage(const ImageView& image, uint32_t binding)
+void DescriptorSet::attachSampledImage( const ImageView& imageView,
+                                        uint32_t binding,
+                                        VkPipelineStageFlags stages)
 {
-  _resources.push_back(ConstRef(&image));
+  MT_ASSERT(!isFinalized());
+
+  _resources.push_back(ConstRef(&imageView));
+
+  const Image& image = imageView.image();
+  if(image.isLayoutAutoControlEnabled())
+  {
+    ImageAccess imageAccess;
+    imageAccess.slices[0] = imageView.slice();
+    imageAccess.layouts[0] = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageAccess.memoryAccess[0] = {
+                                  .readStagesMask = stages,
+                                  .readAccessMask = VK_ACCESS_SHADER_READ_BIT};
+    imageAccess.slicesCount = 1;
+    _imagesAccess.addImageAccess(image, imageAccess);
+  }
 
   VkDescriptorImageInfo imageInfo{};
-  imageInfo.imageView = image.handle();
+  imageInfo.imageView = imageView.handle();
   imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
   VkWriteDescriptorSet descriptorWrite{};
@@ -97,6 +120,8 @@ void DescriptorSet::attachSampledImage(const ImageView& image, uint32_t binding)
 
 void DescriptorSet::attachSampler(const Sampler& sampler,uint32_t binding)
 {
+  MT_ASSERT(!isFinalized());
+
   _resources.push_back(ConstRef(&sampler));
 
   VkDescriptorImageInfo imageInfo{};

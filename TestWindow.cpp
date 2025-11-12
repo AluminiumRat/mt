@@ -129,10 +129,12 @@ static Ref<DescriptorSet> createDescriptorSet(GraphicPipeline& pipeline)
   set->attachUniformBuffer(*uniformBuffer, 2);
 
   Ref<ImageView> texture = createTexture(pipeline.device());
-  set->attachSampledImage(*texture, 3);
+  set->attachSampledImage(*texture, 3, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
   Ref<Sampler> sampler(new Sampler(pipeline.device()));
   set->attachSampler(*sampler, 4);
+
+  set->finalize();
 
   return set;
 }

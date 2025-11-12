@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -38,6 +39,12 @@ namespace mt
 
     inline bool empty() const noexcept;
     inline void clear() noexcept;
+
+    //  Объединить два набора в один
+    //  Возвращает nullopt, если объединить невозможно, например из-за
+    //    пересекающихся слайсов или достижения лимита слайсов.
+    static std::optional<ImagesAccessSet> merge(const ImagesAccessSet& first,
+                                                const ImagesAccessSet& second);
 
   private:
     AccessTable _accessTable;

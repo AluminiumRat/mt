@@ -98,6 +98,8 @@ void CommandProducerGraphic::bindDescriptorSetGraphic(
                                             uint32_t setIndex,
                                             const PipelineLayout& layout)
 {
+  MT_ASSERT(descriptorSet.isFinalized());
+
   CommandBuffer& buffer = getOrCreateBuffer();
   buffer.lockResource(layout);
   buffer.lockResource(descriptorSet);
