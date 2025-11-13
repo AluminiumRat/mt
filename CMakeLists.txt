@@ -34,6 +34,8 @@ include_directories(.
                     ${GLFW_PATH}/include)
 
 add_executable (vkTest
+                "technique/Technique.cpp"
+                "technique/TechniqueConfiguration.cpp"
                 "third_party/spirv_reflect/spirv_reflect.c"
                 "util/Log.cpp"
                 "vkr/image/Image.cpp"
