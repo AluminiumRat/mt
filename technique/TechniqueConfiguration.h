@@ -15,6 +15,7 @@
 #include <util/Ref.h>
 #include <vkr/pipeline/AbstractPipeline.h>
 #include <vkr/pipeline/DescriptorSetLayout.h>
+#include <vkr/pipeline/GraphicPipeline.h>
 #include <vkr/pipeline/PipelineLayout.h>
 #include <vkr/pipeline/ShaderModule.h>
 #include <vkr/FrameBufferFormat.h>
@@ -26,21 +27,8 @@ namespace mt
   //  к определенному состоянию, не должны его терять
   struct TechniqueConfiguration : public RefCounter
   {
-    //  Удалось ли полностью настроить конфигурацию
-    //  Может быть false, если, например, не удалось загрузить шейдерные модули,
-    //  или произошли другие рантайм ошибки
-    bool isValid;
-
-    ConstRef<PipelineLayout> pipelineLayout;
     AbstractPipeline::Type pipelineType;
-    ConstRef<AbstractPipeline> pipeline;
-
-    struct Shader
-    {
-      std::unique_ptr<ShaderModule> shaderModule;
-      VkShaderStageFlagBits stage;
-    };
-    std::vector<Shader> shaders;
+    ConstRef<GraphicPipeline> graphicPipeline;
 
     struct DescriptorSet
     {
@@ -115,14 +103,5 @@ namespace mt
                                   //  то здесь будет его размер. Иначе 1;
     };
     std::vector<Resource> resources;
-
-    // Настройки графического пайплайна. Игнорируются компьют пайплайном.
-    std::optional<FrameBufferFormat> frameBufferFormat;
-    VkPrimitiveTopology topology;
-    VkPipelineRasterizationStateCreateInfo rasterizationState;
-    VkPipelineDepthStencilStateCreateInfo depthStencilState;
-    VkPipelineColorBlendStateCreateInfo blendingState;
-    std::array< VkPipelineColorBlendAttachmentState,
-                FrameBufferFormat::maxColorAttachments> attachmentsBlending;
   };
 }

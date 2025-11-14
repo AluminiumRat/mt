@@ -14,6 +14,7 @@ using namespace mt;
 Technique::Technique(Device& device) noexcept :
   _device(device),
   _revision(0),
+  _needRebuildConfiguration(true),
   _pipelineType(AbstractPipeline::GRAPHIC_PIPELINE),
   _topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST),
   _rasterizationState{},
@@ -42,6 +43,7 @@ Technique::Technique(Device& device) noexcept :
 void Technique::_invalidateConfiguration() noexcept
 {
   _configuration.reset();
+  _needRebuildConfiguration = true;
   _revision++;
 }
 
@@ -49,58 +51,46 @@ void Technique::_buildConfiguration()
 {
   try
   {
+    _needRebuildConfiguration = false;
+
     _configuration = Ref(new TechniqueConfiguration);
-    _configuration->descriptorSets.reserve(maxDescriptorSetIndex);
+
+    _configuration->pipelineType = _pipelineType;
+    if( _pipelineType == AbstractPipeline::GRAPHIC_PIPELINE &&
+        !_frameBufferFormat.has_value())
+    {
+      throw std::runtime_error("Technique: pipeline type is GRAPHIC_PIPELINE but the frame buffer format is empty");
+    }
+
+    // Загружаем шейдеры
+    if(_shaders.empty())
+    {
+      Log::warning() << "Technique: attempt to create a configuration without shaders";
+      return;
+    }
+    ConfigurationBuildContext buildContext;
+    for(const ShaderInfo& shader : _shaders)
+    {
+      _processShader(shader, buildContext);
+    }
+
+    _createLayouts(buildContext);
+    _createPipeline(buildContext);
   }
-  catch (std::exception& error)
+  catch(...)
   {
-    //  Пат. Старого состояния не существует, а новое создать не получилось.
-    Log::error() << "Technique::_buildConfiguration: " << error.what();
-    Abort("Unable to build technique configuration");
+    _configuration.reset();
+    throw;
   }
-
-  _configuration->isValid = false;
-
-  _configuration->pipelineType = _pipelineType;
-  if( _pipelineType == AbstractPipeline::GRAPHIC_PIPELINE &&
-      !_frameBufferFormat.has_value())
-  {
-    throw std::runtime_error("Technique: pipeline type is GRAPHIC_PIPELINE but the frame buffer format is empty");
-  }
-
-  // Копируем настройки фиксированного конвеера
-  _configuration->frameBufferFormat = _frameBufferFormat;
-  _configuration->topology = _topology;
-  _configuration->rasterizationState = _rasterizationState;
-  _configuration->depthStencilState = _depthStencilState;
-  _configuration->blendingState = _blendingState;
-  _configuration->blendingState.pAttachments =
-                                    _configuration->attachmentsBlending.data();
-  _configuration->attachmentsBlending = _attachmentsBlending;
-
-  // Загружаем шейдеры
-  if(_shaders.empty())
-  {
-    Log::warning() << "Technique: attempt to create a configuration without shaders";
-    return;
-  }
-  for(const ShaderInfo& shader : _shaders)
-  {
-    _processShader(shader);
-  }
-
-  _createLayouts();
-  _createPipeline();
-
-  _configuration->isValid = true;
 }
 
-void Technique::_processShader(const ShaderInfo& shaderRecord)
+void Technique::_processShader( const ShaderInfo& shaderRecord,
+                                ConfigurationBuildContext& buildContext)
 {
   MT_ASSERT(_configuration != nullptr);
 
   // Проверяем, что нет дублирования шейдерных стадий
-  for(const TechniqueConfiguration::Shader& shader : _configuration->shaders)
+  for(const ShaderModuleInfo& shader : buildContext.shaders)
   {
     if(shader.stage == shaderRecord.stage)
     {
@@ -130,8 +120,8 @@ void Technique::_processShader(const ShaderInfo& shaderRecord)
                                                 _device,
                                                 spirData,
                                                 shaderRecord.filename.c_str()));
-  _configuration->shaders.push_back({ std::move(newShaderModule),
-                                      shaderRecord.stage});
+  buildContext.shaders.push_back(ShaderModuleInfo{std::move(newShaderModule),
+                                                  shaderRecord.stage});
 }
 
 void Technique::_processDescriptorSets(
@@ -363,7 +353,7 @@ void Technique::_parseUniformBlockMember(
   target.variables.push_back(newUniform);
 }
 
-void Technique::_createLayouts()
+void Technique::_createLayouts(ConfigurationBuildContext& buildContext)
 {
   MT_ASSERT(_configuration != nullptr);
 
@@ -402,13 +392,14 @@ void Technique::_createLayouts()
       setLayout = ConstRef(new DescriptorSetLayout(_device, {}));
     }
   }
-  _configuration->pipelineLayout = ConstRef(new PipelineLayout( _device,
-                                                                setLayouts));
+  buildContext.pipelineLayout = ConstRef(new PipelineLayout(_device,
+                                                            setLayouts));
 }
 
-void Technique::_createPipeline()
+void Technique::_createPipeline(ConfigurationBuildContext& buildContext)
 {
   MT_ASSERT(_configuration != nullptr);
+  MT_ASSERT(buildContext.pipelineLayout != nullptr)
 
   if(_pipelineType == AbstractPipeline::COMPUTE_PIPELINE)
   {
@@ -419,20 +410,21 @@ void Technique::_createPipeline()
     MT_ASSERT(_frameBufferFormat.has_value());
 
     std::vector<AbstractPipeline::ShaderInfo> shaders;
-    for(TechniqueConfiguration::Shader& shader : _configuration->shaders)
+    for(ShaderModuleInfo& shader : buildContext.shaders)
     {
       shaders.push_back(AbstractPipeline::ShaderInfo{
                                           .module = shader.shaderModule.get(),
                                           .stage = shader.stage,
                                           .entryPoint = "main"});
     }
-    _configuration->pipeline = ConstRef(new GraphicPipeline(
-                                              *_frameBufferFormat,
-                                              shaders,
-                                              _topology,
-                                              _rasterizationState,
-                                              _depthStencilState,
-                                              _blendingState,
-                                              *_configuration->pipelineLayout));
+    _configuration->graphicPipeline =
+                              ConstRef(new GraphicPipeline(
+                                                *_frameBufferFormat,
+                                                shaders,
+                                                _topology,
+                                                _rasterizationState,
+                                                _depthStencilState,
+                                                _blendingState,
+                                                *buildContext.pipelineLayout));
   }
 }

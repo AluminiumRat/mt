@@ -51,7 +51,9 @@ namespace mt
     //  и зависимым объектам необходимо синхронизироваться с техникой
     inline size_t revision() const noexcept;
 
-    inline const TechniqueConfiguration& configuration();
+    //  Может возвращать nullptr, если сборка конфигурации не завершилась
+    //  успешно (например, ошибка в шейдере или неполный набор шейдеров)
+    inline const TechniqueConfiguration* configuration();
 
     //  Если конфигурация ещё не инициализированa, то сделать это прямо сейчас
     //  Позволяет избежать задержек при первом использовании техники из-за
@@ -181,9 +183,24 @@ namespace mt
     inline void setBlendConstants(const glm::vec4& newValue) noexcept;
 
   private:
+    // Промежуточные данные, необходимые для построения конфигурации
+    struct ShaderModuleInfo
+    {
+      std::unique_ptr<ShaderModule> shaderModule;
+      VkShaderStageFlagBits stage;
+    };
+    // Промежуточные данные, необходимые для построения конфигурации
+    struct ConfigurationBuildContext
+    {
+      std::vector<ShaderModuleInfo> shaders;
+      ConstRef<PipelineLayout> pipelineLayout;
+    };
+
+  private:
     void _invalidateConfiguration() noexcept;
     void _buildConfiguration();
-    void _processShader(const ShaderInfo& shaderRecord);
+    void _processShader(const ShaderInfo& shaderRecord,
+                        ConfigurationBuildContext& buildContext);
     void _processDescriptorSets(const ShaderInfo& shaderRecord,
                                 const SpvReflectShaderModule& reflection);
     TechniqueConfiguration::DescriptorSet& _getOrCreateSet(
@@ -200,14 +217,15 @@ namespace mt
                             const SpvReflectBlockVariable& sourceMember,
                             std::string namePrefix,
                             uint32_t parentBlockOffset);
-    void _createLayouts();
-    void _createPipeline();
+    void _createLayouts(ConfigurationBuildContext& buildContext);
+    void _createPipeline(ConfigurationBuildContext& buildContext);
 
   private:
     Device& _device;
     size_t _revision;
 
     Ref<TechniqueConfiguration> _configuration;
+    bool _needRebuildConfiguration;
 
     AbstractPipeline::Type _pipelineType;
 
@@ -233,17 +251,16 @@ namespace mt
     return _revision;
   }
 
-  inline const TechniqueConfiguration& Technique::configuration()
+  inline const TechniqueConfiguration* Technique::configuration()
   {
-    if(_configuration == nullptr) _buildConfiguration();
-    MT_ASSERT(_configuration != nullptr);
-    return *_configuration;
+    if(_needRebuildConfiguration) _buildConfiguration();
+    MT_ASSERT(_needRebuildConfiguration == false);
+    return _configuration.get();
   }
 
   inline void Technique::forceUpdate()
   {
-    if (_configuration == nullptr) _buildConfiguration();
-    MT_ASSERT(_configuration != nullptr);
+    if (_needRebuildConfiguration) _buildConfiguration();
   }
 
   inline AbstractPipeline::Type Technique::pipelineType() const noexcept
