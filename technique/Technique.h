@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <array>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -16,12 +17,24 @@
 #include <vkr/pipeline/AbstractPipeline.h>
 #include <vkr/FrameBufferFormat.h>
 
+struct SpvReflectBlockVariable;
+struct SpvReflectDescriptorBinding;
+struct SpvReflectDescriptorSet;
+struct SpvReflectShaderModule;
+
 namespace mt
 {
   class Device;
 
   class Technique : public RefCounter
   {
+  public:
+    struct ShaderInfo
+    {
+      VkShaderStageFlagBits stage;
+      std::string filename;
+    };
+
   public:
     Technique(Device& device) noexcept;
     Technique(const Technique&) = delete;
@@ -39,10 +52,13 @@ namespace mt
 
     inline const TechniqueConfiguration& configuration();
 
-    //  Если состояние ещё не инициализированно, то сделать это прямо сейчас
+    //  Если конфигурация ещё не инициализированa, то сделать это прямо сейчас
     //  Позволяет избежать задержек при первом использовании техники из-за
-    //    ленивой инициализации состояния.
-    inline void forceUpdateState();
+    //    ленивой инициализации.
+    inline void forceUpdate();
+
+    inline const std::vector<ShaderInfo>& shaders() const noexcept;
+    inline void setShaders(std::span<const ShaderInfo> newShaders);
 
     inline VkPrimitiveTopology topology() const noexcept;
     inline void setTopology(VkPrimitiveTopology newValue) noexcept;
@@ -155,21 +171,33 @@ namespace mt
     inline void setBlendConstants(const glm::vec4& newValue) noexcept;
 
   private:
-    struct ShaderRecord
-    {
-      VkShaderStageFlagBits stage;
-      std::string filename;
-    };
-
-  private:
     void _invalidateConfiguration() noexcept;
     void _buildConfiguration();
+    void _processShader(const ShaderInfo& shaderRecord);
+    void _processDescriptorSets(const ShaderInfo& shaderRecord,
+                                const SpvReflectShaderModule& reflection);
+    TechniqueConfiguration::DescriptorSet& _getOrCreateSet(
+                                                        DescriptorSetType type);
+    void _processBindings(const ShaderInfo& shaderRecord,
+                          TechniqueConfiguration::DescriptorSet& set,
+                          const SpvReflectDescriptorSet& reflectedSet);
+    void _processUniformBlock(
+                          const ShaderInfo& shaderRecord,
+                          const SpvReflectDescriptorBinding& reflectedBinding);
+    void _parseUniformBlockMember(
+                            const ShaderInfo& shaderRecord,
+                            TechniqueConfiguration::UniformBuffer& target,
+                            const SpvReflectBlockVariable& sourceMember,
+                            std::string namePrefix,
+                            uint32_t parentBlockOffset);
 
   private:
     Device& _device;
     size_t _revision;
 
     Ref<TechniqueConfiguration> _configuration;
+
+    std::vector<ShaderInfo> _shaders;
 
     // Настройки графического пайплайна. Игнорируются компьют пайплайном.
     VkPrimitiveTopology _topology;
@@ -197,10 +225,24 @@ namespace mt
     return *_configuration;
   }
 
-  inline void Technique::forceUpdateState()
+  inline void Technique::forceUpdate()
   {
     if (_configuration == nullptr) _buildConfiguration();
     MT_ASSERT(_configuration != nullptr);
+  }
+
+  inline const std::vector<Technique::ShaderInfo>&
+                                            Technique::shaders() const noexcept
+  {
+    return _shaders;
+  }
+
+  inline void Technique::setShaders(std::span<const ShaderInfo> newShaders)
+  {
+    std::vector<ShaderInfo> newShadersTable(newShaders.begin(),
+                                            newShaders.end());
+    _shaders = std::move(newShadersTable);
+    _invalidateConfiguration();
   }
 
   inline VkPrimitiveTopology Technique::topology() const noexcept

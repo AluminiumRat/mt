@@ -1,9 +1,19 @@
 #version 450
 
+struct SomeStruct
+{
+  vec3 foo;
+  vec2 bar;
+};
+
 layout (set = 1,
         binding = 2) uniform ColorData
 {
     vec4 color;
+    uvec3 uvecMember;
+    float something;
+    ivec2 someVector[5];
+    SomeStruct someStruct;
 } colorData;
 
 layout (set = 1,

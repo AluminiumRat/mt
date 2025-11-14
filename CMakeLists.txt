@@ -31,7 +31,8 @@ include_directories(.
                     ${Vulkan_INCLUDE_DIRS}
                     ${Shaderc_INCLUDE_DIRS}
                     ${VKMEMALLOC_PATH}
-                    ${GLFW_PATH}/include)
+                    ${GLFW_PATH}/include
+                    "./third_party/spirv_reflect")
 
 add_executable (vkTest
                 "technique/Technique.cpp"
@@ -84,6 +85,7 @@ add_executable (vkTest
                 "vkr/Win32WindowSurface.cpp"
                 "GLFWRenderWindow.cpp"
                 "main.cpp"
+                "TechniqueTestWindow.cpp"
                 "TestWindow.cpp")
 
 target_link_libraries(vkTest

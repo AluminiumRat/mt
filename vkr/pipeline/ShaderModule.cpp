@@ -18,7 +18,7 @@ using namespace mt;
 // Ищет файл в файловой системе в текущей папке, в текущей папке в каталоге
 // shaders и в путях, указанных в переменной окружения MT_SHADERS(пути разделены
 // точкой с запятой)
-class DefaultShaderLoader
+class DefaultShaderLoader : public ShaderModule::ShaderLoader
 {
 public:
   virtual std::vector<uint32_t> loadShader(const char* filename)
@@ -70,8 +70,19 @@ public:
   }
 };
 
-static DefaultShaderLoader defaultLoader;
-static DefaultShaderLoader* shaderLoader = &defaultLoader;
+static std::unique_ptr<ShaderModule::ShaderLoader> shaderLoader(
+                                                      new DefaultShaderLoader);
+
+void ShaderModule::setShaderLoader(std::unique_ptr<ShaderLoader> newLoader)
+{
+  if(newLoader == nullptr) newLoader.reset(new DefaultShaderLoader);
+  shaderLoader = std::move(newLoader);
+}
+
+ShaderModule::ShaderLoader& ShaderModule::getShaderLoader() noexcept
+{
+  return *shaderLoader;
+}
 
 ShaderModule::ShaderModule( Device& device,
                             std::span<const uint32_t> spvData,

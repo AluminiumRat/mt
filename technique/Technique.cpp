@@ -1,8 +1,11 @@
 ﻿#include <stdexcept>
 
+#include <spirv_reflect.h>
+
 #include <technique/Technique.h>
 #include <util/Abort.h>
 #include <util/Log.h>
+#include <vkr/pipeline/ShaderModule.h>
 
 using namespace mt;
 
@@ -44,23 +47,304 @@ void Technique::_buildConfiguration()
   try
   {
     _configuration = Ref(new TechniqueConfiguration);
-    _configuration->isValid = false;
-
-    _configuration->topology = _topology;
-    _configuration->rasterizationState = _rasterizationState;
-    _configuration->depthStencilState = _depthStencilState;
-    _configuration->blendingState = _blendingState;
-    _configuration->blendingState.pAttachments =
-                                      _configuration->attachmentsBlending.data();
-    _configuration->attachmentsBlending = _attachmentsBlending;
-
-    _configuration->isValid = true;
+    _configuration->descriptorSets.reserve(maxDescriptorSetIndex);
   }
-  catch(std::exception& error)
+  catch (std::exception& error)
   {
-    //  Старого состояния не существует, а новое создать не получилось.
-    //  Патовая ситуация.
+    //  Пат. Старого состояния не существует, а новое создать не получилось.
     Log::error() << "Technique::_buildConfiguration: " << error.what();
     Abort("Unable to build technique configuration");
   }
+
+  _configuration->isValid = false;
+
+  // Копируем настройки фиксированного конвеера
+  _configuration->topology = _topology;
+  _configuration->rasterizationState = _rasterizationState;
+  _configuration->depthStencilState = _depthStencilState;
+  _configuration->blendingState = _blendingState;
+  _configuration->blendingState.pAttachments =
+                                    _configuration->attachmentsBlending.data();
+  _configuration->attachmentsBlending = _attachmentsBlending;
+
+  // Загружаем шейдеры
+  if(_shaders.empty())
+  {
+    Log::warning() << "Technique: attempt to create a configuration without shaders";
+    return;
+  }
+  for(const ShaderInfo& shader : _shaders)
+  {
+    _processShader(shader);
+  }
+
+  _configuration->isValid = true;
+}
+
+void Technique::_processShader(const ShaderInfo& shaderRecord)
+{
+  MT_ASSERT(_configuration != nullptr);
+
+  // Проверяем, что нет дублирования шейдерных стадий
+  for(const TechniqueConfiguration::Shader& shader : _configuration->shaders)
+  {
+    if(shader.stage == shaderRecord.stage)
+    {
+      throw std::runtime_error(std::string("Duplicate shader stages: ") + shaderRecord.filename.c_str());
+    }
+  }
+
+  // Получаем spirv код
+  std::vector<uint32_t> spirData =
+      ShaderModule::getShaderLoader().loadShader(shaderRecord.filename.c_str());
+
+  // Парсим spirv код
+  spv_reflect::ShaderModule reflection( spirData.size() * sizeof(spirData[0]),
+                                        spirData.data());
+  if (reflection.GetResult() != SPV_REFLECT_RESULT_SUCCESS)
+  {
+    throw std::runtime_error(std::string("Unable to process SPIRV data: ") + shaderRecord.filename.c_str());
+  }
+  const SpvReflectShaderModule& reflectModule = reflection.GetShaderModule();
+
+  // Ищем нужные нам данные в рефлексии
+  _processDescriptorSets(shaderRecord, reflectModule);
+
+  // Создаем шейдерный модуль
+  std::unique_ptr<ShaderModule> newShaderModule(
+                                    new ShaderModule(
+                                                _device,
+                                                spirData,
+                                                shaderRecord.filename.c_str()));
+  _configuration->shaders.push_back({ std::move(newShaderModule),
+                                      shaderRecord.stage});
+}
+
+void Technique::_processDescriptorSets(
+                                      const ShaderInfo& shaderRecord,
+                                      const SpvReflectShaderModule& reflection)
+{
+  for(uint32_t iSet = 0; iSet < reflection.descriptor_set_count; iSet++)
+  {
+    const SpvReflectDescriptorSet& reflectedSet =
+                                              reflection.descriptor_sets[iSet];
+
+    uint32_t setIndex = reflectedSet.set;
+    if(setIndex > maxDescriptorSetIndex)
+    {
+      throw std::runtime_error(std::string("Technique: Descriptor set with the wrong set index: ") + shaderRecord.filename);
+    }
+
+    DescriptorSetType setType = DescriptorSetType(setIndex);
+    TechniqueConfiguration::DescriptorSet& set = _getOrCreateSet(setType);
+    _processBindings(shaderRecord, set, reflectedSet);
+  }
+}
+
+TechniqueConfiguration::DescriptorSet& Technique::_getOrCreateSet(
+                                                        DescriptorSetType type)
+{
+  for(TechniqueConfiguration::DescriptorSet& set :
+                                                _configuration->descriptorSets)
+  {
+    if(set.type == type) return set;
+  }
+
+  _configuration->descriptorSets.push_back({.type = type});
+  return _configuration->descriptorSets.back();
+}
+
+void Technique::_processBindings( const ShaderInfo& shaderRecord,
+                                  TechniqueConfiguration::DescriptorSet& set,
+                                  const SpvReflectDescriptorSet& reflectedSet)
+{
+  for(uint32_t iBinding = 0; iBinding < reflectedSet.binding_count; iBinding++)
+  {
+    const SpvReflectDescriptorBinding* reflectedBinding =
+                                                reflectedSet.bindings[iBinding];
+    MT_ASSERT(reflectedBinding != nullptr);
+
+    // Для начала просто собираем данные из рефлексии
+    TechniqueConfiguration::Resource newResource;
+    newResource.type = VkDescriptorType(reflectedBinding->descriptor_type);
+    newResource.set = set.type;
+    newResource.bindingIndex = reflectedBinding->binding;
+    newResource.stages = shaderRecord.stage;
+    newResource.name = reflectedBinding->name;
+    newResource.writeAccess =
+              reflectedBinding->resource_type & SPV_REFLECT_RESOURCE_FLAG_UAV;
+    newResource.count = reflectedBinding->count;
+
+    // Смотрим, возможно этот биндинг уже появлялся на других стадиях
+    bool itIsNewResource = true;
+    for(TechniqueConfiguration::Resource& resource : _configuration->resources)
+    {
+      if( resource.set == newResource.set &&
+          resource.bindingIndex == newResource.bindingIndex)
+      {
+        // Проверяем, что биндинги совместимы
+        if( resource.type != newResource.type ||
+            resource.name != newResource.name ||
+            resource.writeAccess != newResource.writeAccess ||
+            resource.count != newResource.count)
+        {
+          Log::warning() << "Technique: binding conflict: " << shaderRecord.filename << " set: " << uint32_t(resource.set) << " binding: " << resource.bindingIndex;
+          throw std::runtime_error(std::string("Technique: binding conflict: ") + shaderRecord.filename);
+        }
+        // Биндинги совместимы, просто дополняем информацию
+        resource.stages |= newResource.stages;
+        itIsNewResource = false;
+        break;
+      }
+    }
+    // Если не нашли такой же биндинг, то добавляем новый
+    if(itIsNewResource)
+    {
+      _configuration->resources.push_back(newResource);
+    }
+
+    // Если это юниформ буффер - парсим его
+    if(reflectedBinding->descriptor_type ==
+                                    SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+    {
+      _processUniformBlock(shaderRecord,*reflectedBinding);
+    }
+  }
+}
+
+void Technique::_processUniformBlock(
+                          const ShaderInfo& shaderRecord,
+                          const SpvReflectDescriptorBinding& reflectedBinding)
+{
+  const SpvReflectBlockVariable& block = reflectedBinding.block;
+
+  // Для начала ищем, возможно буфер с таким биндингом уже встречался
+  for(TechniqueConfiguration::UniformBuffer& buffer :
+                                                _configuration->uniformBuffers)
+  {
+    if( uint32_t(buffer.set) == reflectedBinding.set &&
+        buffer.binding == reflectedBinding.binding)
+    {
+      // Нашли буфер с таким же биндингом, проверяем имя и размер
+      if( buffer.name != reflectedBinding.name ||
+          buffer.size != block.size)
+      {
+        Log::warning() << "Technique: uniform buffer mismatch set:" << reflectedBinding.set << " binding: " << reflectedBinding.binding << " file:" << shaderRecord.filename;
+        throw std::runtime_error(std::string("Technique: Uniform buffer mismatch: ") + shaderRecord.filename);
+      }
+      // Похоже, что это один и тот же буфер, обновим для него информацию
+      buffer.stages |= shaderRecord.stage;
+      return;
+    }
+  }
+
+  // Этот буфер раньше не встречался, посмотрим что внутри
+  TechniqueConfiguration::UniformBuffer newBuffer{};
+  newBuffer.set = DescriptorSetType(reflectedBinding.set);
+  newBuffer.binding = reflectedBinding.binding;
+  newBuffer.name = reflectedBinding.name;
+  newBuffer.size = block.size;
+  newBuffer.stages = shaderRecord.stage;
+  //  Обходим всё содержимое и ищем куски, которые мы можем интерпретировать
+  //  как параметры
+  std::string prefix = newBuffer.name + ".";
+  for(uint32_t iMember = 0; iMember < block.member_count; iMember++)
+  {
+    _parseUniformBlockMember( shaderRecord,
+                              newBuffer,
+                              block.members[iMember],
+                              prefix,
+                              0);
+  }
+
+  _configuration->uniformBuffers.push_back(newBuffer);
+}
+
+void Technique::_parseUniformBlockMember(
+                                const ShaderInfo& shaderRecord,
+                                TechniqueConfiguration::UniformBuffer& target,
+                                const SpvReflectBlockVariable& sourceMember,
+                                std::string namePrefix,
+                                uint32_t parentBlockOffset)
+{
+  std::string fullName = namePrefix + sourceMember.name;
+  uint32_t blockOffset = parentBlockOffset + sourceMember.offset;
+  SpvReflectTypeDescription* type = sourceMember.type_description;
+  MT_ASSERT(type != nullptr);
+
+  if(type->type_flags & SPV_REFLECT_TYPE_FLAG_STRUCT)
+  {
+    //  Если мы обнаружили структуру, то просто обходим её поля. Сама структура
+    //  не может быть параметром эффекта
+    std::string prefix = fullName + ".";
+    for(uint32_t iMember = 0; iMember < sourceMember.member_count; iMember++)
+    {
+      _parseUniformBlockMember( shaderRecord,
+                                target,
+                                sourceMember.members[iMember],
+                                prefix,
+                                blockOffset);
+    }
+    return;
+  }
+
+  // Этот блок - не структура. Парсим его как отдельную униформ переменную
+  TechniqueConfiguration::UniformVariable newUniform{};
+  newUniform.shortName = sourceMember.name;
+  newUniform.fullName = fullName;
+  newUniform.offsetInBuffer = blockOffset;
+  newUniform.size = sourceMember.size;
+
+  // Определяем базовый тип
+  if(type->type_flags & SPV_REFLECT_TYPE_FLAG_BOOL)
+  {
+    newUniform.baseType = TechniqueConfiguration::BOOL_TYPE;
+  }
+  else if (type->type_flags & SPV_REFLECT_TYPE_FLAG_INT)
+  {
+    newUniform.baseType = TechniqueConfiguration::INT_TYPE;
+  }
+  else if (type->type_flags & SPV_REFLECT_TYPE_FLAG_FLOAT)
+  {
+    newUniform.baseType = TechniqueConfiguration::FLOAT_TYPE;
+  }
+  else newUniform.baseType = TechniqueConfiguration::UNKNOWN_TYPE;
+
+  // Это вектор или массив векторов
+  if(type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)
+  {
+    newUniform.isVector = true;
+    newUniform.vectorSize = type->traits.numeric.vector.component_count;
+  }
+
+  // Это матрица или массив матриц
+  if(type->type_flags & SPV_REFLECT_TYPE_FLAG_MATRIX)
+  {
+    MT_ASSERT(!newUniform.isVector);
+    newUniform.isMatrix = true;
+    newUniform.matrixSize = glm::uvec2(
+                                    type->traits.numeric.matrix.column_count,
+                                    type->traits.numeric.matrix.row_count);
+  }
+
+  // Проверяем, не массив ли это
+  if(type->type_flags & SPV_REFLECT_TYPE_FLAG_ARRAY)
+  {
+    // Поддерживаем только одномерные массивы. Многомерные интерпретируем
+    // просто как набор байтов
+    if(type->traits.array.dims_count == 1)
+    {
+      newUniform.isArray = true;
+      newUniform.arraySize = type->traits.array.dims[0];
+      newUniform.arrayStride = type->traits.array.stride;
+    }
+    else
+    {
+      newUniform.baseType = TechniqueConfiguration::UNKNOWN_TYPE;
+      newUniform.isVector = false;
+      newUniform.isMatrix = false;
+    }
+  }
+
+  target.variables.push_back(newUniform);
 }

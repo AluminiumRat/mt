@@ -20,4 +20,7 @@ namespace mt
                   //  команд независимо от техники, всё управление сетом
                   //  происходит вне техник отрисовки/вычислений
   };
+
+  //  Максимально допустимый номер дескриптор сета
+  static uint32_t maxDescriptorSetIndex = uint32_t(DescriptorSetType::COMMON);
 }

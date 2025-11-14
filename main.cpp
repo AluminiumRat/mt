@@ -7,7 +7,8 @@
 #include <util/util.h>
 #include <vkr/VKRLib.h>
 #include <dumpHardware.h>
-#include <TestWindow.h>
+#include <TechniqueTestWindow.h>
+//#include <TestWindow.h>
 
 using namespace mt;
 
@@ -35,7 +36,8 @@ int main(int argc, char* argv[])
                                                         {},
                                                         GRAPHICS_CONFIGURATION);
 
-    std::optional<TestWindow> mainWindow;
+    //std::optional<TestWindow> mainWindow;
+    std::optional<TechniqueTestWindow> mainWindow;
     mainWindow.emplace(*device);
 
     while (!mainWindow->shouldClose())
