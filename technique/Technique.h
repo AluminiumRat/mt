@@ -190,6 +190,7 @@ namespace mt
                             const SpvReflectBlockVariable& sourceMember,
                             std::string namePrefix,
                             uint32_t parentBlockOffset);
+    void _createLayouts();
 
   private:
     Device& _device;

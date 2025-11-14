@@ -22,5 +22,5 @@ namespace mt
   };
 
   //  Максимально допустимый номер дескриптор сета
-  static uint32_t maxDescriptorSetIndex = uint32_t(DescriptorSetType::COMMON);
+  static constexpr uint32_t maxDescriptorSetIndex = uint32_t(DescriptorSetType::COMMON);
 }

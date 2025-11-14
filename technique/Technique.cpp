@@ -2,6 +2,7 @@
 
 #include <spirv_reflect.h>
 
+#include <technique/DescriptorSetType.h>
 #include <technique/Technique.h>
 #include <util/Abort.h>
 #include <util/Log.h>
@@ -77,6 +78,8 @@ void Technique::_buildConfiguration()
   {
     _processShader(shader);
   }
+
+  _createLayouts();
 
   _configuration->isValid = true;
 }
@@ -347,4 +350,47 @@ void Technique::_parseUniformBlockMember(
   }
 
   target.variables.push_back(newUniform);
+}
+
+void Technique::_createLayouts()
+{
+  MT_ASSERT(_configuration != nullptr);
+
+  // Пройдемся по всем ресурсам и рассортирруем их по сетам
+  using SetBindings = std::vector<VkDescriptorSetLayoutBinding>;
+  std::array<SetBindings, maxDescriptorSetIndex + 1> bindings;
+  for(TechniqueConfiguration::Resource& resource : _configuration->resources)
+  {
+    VkDescriptorSetLayoutBinding binding{};
+    binding.binding = resource.bindingIndex;
+    binding.descriptorType = resource.type;
+    binding.descriptorCount = 1;
+    binding.stageFlags = resource.stages;
+
+    uint32_t setIndex = uint32_t(resource.set);
+    bindings[setIndex].push_back(binding);
+  }
+
+  // Теперь можно создать лэйауты для сетов
+  std::array< ConstRef<DescriptorSetLayout>,
+              maxDescriptorSetIndex + 1> setLayouts;
+  for(TechniqueConfiguration::DescriptorSet& set :
+                                                _configuration->descriptorSets)
+  {
+    uint32_t setIndex = uint32_t(set.type);
+    set.layout = ConstRef(new DescriptorSetLayout(_device,
+                                                  bindings[setIndex]));
+    setLayouts[setIndex] = set.layout;
+  }
+
+  // Создаем лэйаут пайплайна. Но сначала досоздаем лэйауты пустых сетов
+  for(ConstRef<DescriptorSetLayout>& setLayout : setLayouts)
+  {
+    if(setLayout == nullptr)
+    {
+      setLayout = ConstRef(new DescriptorSetLayout(_device, {}));
+    }
+  }
+  _configuration->pipelineLayout = ConstRef(new PipelineLayout( _device,
+                                                                setLayouts));
 }
