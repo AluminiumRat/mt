@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <array>
+#include <optional>
 #include <span>
 #include <string>
 #include <vector>
@@ -57,8 +58,17 @@ namespace mt
     //    ленивой инициализации.
     inline void forceUpdate();
 
+    inline AbstractPipeline::Type pipelineType() const noexcept;
+    inline void setPipelineType(AbstractPipeline::Type newValue) noexcept;
+
     inline const std::vector<ShaderInfo>& shaders() const noexcept;
     inline void setShaders(std::span<const ShaderInfo> newShaders);
+
+    //  Может возвращать nullptr, если формат не установлен
+    inline const FrameBufferFormat* frameBufferFormat() const noexcept;
+    //  Можно передавать nullptr или не устанавливать формат для compue техник
+    inline const void setFrameBufferFormat(
+                                  const FrameBufferFormat* newFormat) noexcept;
 
     inline VkPrimitiveTopology topology() const noexcept;
     inline void setTopology(VkPrimitiveTopology newValue) noexcept;
@@ -191,6 +201,7 @@ namespace mt
                             std::string namePrefix,
                             uint32_t parentBlockOffset);
     void _createLayouts();
+    void _createPipeline();
 
   private:
     Device& _device;
@@ -198,9 +209,12 @@ namespace mt
 
     Ref<TechniqueConfiguration> _configuration;
 
+    AbstractPipeline::Type _pipelineType;
+
     std::vector<ShaderInfo> _shaders;
 
     // Настройки графического пайплайна. Игнорируются компьют пайплайном.
+    std::optional<FrameBufferFormat> _frameBufferFormat;
     VkPrimitiveTopology _topology;
     VkPipelineRasterizationStateCreateInfo _rasterizationState;
     VkPipelineDepthStencilStateCreateInfo _depthStencilState;
@@ -232,6 +246,18 @@ namespace mt
     MT_ASSERT(_configuration != nullptr);
   }
 
+  inline AbstractPipeline::Type Technique::pipelineType() const noexcept
+  {
+    return _pipelineType;
+  }
+
+  inline void Technique::setPipelineType(
+                                      AbstractPipeline::Type newValue) noexcept
+  {
+    _pipelineType = newValue;
+    _invalidateConfiguration();
+  }
+
   inline const std::vector<Technique::ShaderInfo>&
                                             Technique::shaders() const noexcept
   {
@@ -243,6 +269,20 @@ namespace mt
     std::vector<ShaderInfo> newShadersTable(newShaders.begin(),
                                             newShaders.end());
     _shaders = std::move(newShadersTable);
+    _invalidateConfiguration();
+  }
+
+  inline const FrameBufferFormat* Technique::frameBufferFormat() const noexcept
+  {
+    if(!_frameBufferFormat.has_value()) return nullptr;
+    return &_frameBufferFormat.value();
+  }
+
+  inline const void Technique::setFrameBufferFormat(
+                                  const FrameBufferFormat* newFormat) noexcept
+  {
+    if(newFormat == nullptr) _frameBufferFormat.reset();
+    else _frameBufferFormat = *newFormat;
     _invalidateConfiguration();
   }
 

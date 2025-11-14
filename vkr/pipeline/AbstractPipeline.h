@@ -19,6 +19,12 @@ namespace mt
   class AbstractPipeline : public RefCounter
   {
   public:
+    enum Type
+    {
+      COMPUTE_PIPELINE,
+      GRAPHIC_PIPELINE
+    };
+
     // Информация о шейдерных стадиях пайплайна
     struct ShaderInfo
     {
@@ -28,13 +34,14 @@ namespace mt
     };
 
   public:
-    AbstractPipeline(const PipelineLayout& layout);
+    AbstractPipeline(Type type, const PipelineLayout& layout);
     AbstractPipeline(const AbstractPipeline&) = delete;
     AbstractPipeline& operator = (const AbstractPipeline&) = delete;
     virtual ~AbstractPipeline() noexcept;
   public:
 
     inline Device& device() const noexcept;
+    inline Type type() const noexcept;
     inline VkPipeline handle() const noexcept;
     inline const PipelineLayout& layout() const noexcept;
 
@@ -49,6 +56,7 @@ namespace mt
 
   private:
     Device& _device;
+    Type _type;
     VkPipeline _handle;
     ConstRef<PipelineLayout> _layout;
   };
@@ -56,6 +64,11 @@ namespace mt
   inline Device& AbstractPipeline::device() const noexcept
   {
     return _device;
+  }
+
+  inline AbstractPipeline::Type AbstractPipeline::type() const noexcept
+  {
+    return _type;
   }
 
   inline VkPipeline AbstractPipeline::handle() const noexcept

@@ -20,7 +20,7 @@ GraphicPipeline::GraphicPipeline(
               const VkPipelineDepthStencilStateCreateInfo& depthStencilState,
               const VkPipelineColorBlendStateCreateInfo& blendingState,
               const PipelineLayout& layout) :
-  AbstractPipeline(layout)
+  AbstractPipeline(GRAPHIC_PIPELINE, layout)
 {
   // Данные вершин будем грузить в вершинном шейдере через буферы
   VkPipelineVertexInputStateCreateInfo vertexInputInfo{};

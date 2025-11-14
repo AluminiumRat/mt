@@ -6,6 +6,7 @@
 #include <technique/Technique.h>
 #include <util/Abort.h>
 #include <util/Log.h>
+#include <vkr/pipeline/GraphicPipeline.h>
 #include <vkr/pipeline/ShaderModule.h>
 
 using namespace mt;
@@ -13,6 +14,7 @@ using namespace mt;
 Technique::Technique(Device& device) noexcept :
   _device(device),
   _revision(0),
+  _pipelineType(AbstractPipeline::GRAPHIC_PIPELINE),
   _topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST),
   _rasterizationState{},
   _depthStencilState{},
@@ -59,7 +61,15 @@ void Technique::_buildConfiguration()
 
   _configuration->isValid = false;
 
+  _configuration->pipelineType = _pipelineType;
+  if( _pipelineType == AbstractPipeline::GRAPHIC_PIPELINE &&
+      !_frameBufferFormat.has_value())
+  {
+    throw std::runtime_error("Technique: pipeline type is GRAPHIC_PIPELINE but the frame buffer format is empty");
+  }
+
   // Копируем настройки фиксированного конвеера
+  _configuration->frameBufferFormat = _frameBufferFormat;
   _configuration->topology = _topology;
   _configuration->rasterizationState = _rasterizationState;
   _configuration->depthStencilState = _depthStencilState;
@@ -80,6 +90,7 @@ void Technique::_buildConfiguration()
   }
 
   _createLayouts();
+  _createPipeline();
 
   _configuration->isValid = true;
 }
@@ -393,4 +404,35 @@ void Technique::_createLayouts()
   }
   _configuration->pipelineLayout = ConstRef(new PipelineLayout( _device,
                                                                 setLayouts));
+}
+
+void Technique::_createPipeline()
+{
+  MT_ASSERT(_configuration != nullptr);
+
+  if(_pipelineType == AbstractPipeline::COMPUTE_PIPELINE)
+  {
+    Abort("Not implemented");
+  }
+  else
+  {
+    MT_ASSERT(_frameBufferFormat.has_value());
+
+    std::vector<AbstractPipeline::ShaderInfo> shaders;
+    for(TechniqueConfiguration::Shader& shader : _configuration->shaders)
+    {
+      shaders.push_back(AbstractPipeline::ShaderInfo{
+                                          .module = shader.shaderModule.get(),
+                                          .stage = shader.stage,
+                                          .entryPoint = "main"});
+    }
+    _configuration->pipeline = ConstRef(new GraphicPipeline(
+                                              *_frameBufferFormat,
+                                              shaders,
+                                              _topology,
+                                              _rasterizationState,
+                                              _depthStencilState,
+                                              _blendingState,
+                                              *_configuration->pipelineLayout));
+  }
 }

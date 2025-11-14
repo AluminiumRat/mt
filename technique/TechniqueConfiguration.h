@@ -2,6 +2,7 @@
 
 #include <array>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -12,6 +13,7 @@
 #include <technique/DescriptorSetType.h>
 #include <util/RefCounter.h>
 #include <util/Ref.h>
+#include <vkr/pipeline/AbstractPipeline.h>
 #include <vkr/pipeline/DescriptorSetLayout.h>
 #include <vkr/pipeline/PipelineLayout.h>
 #include <vkr/pipeline/ShaderModule.h>
@@ -24,11 +26,14 @@ namespace mt
   //  к определенному состоянию, не должны его терять
   struct TechniqueConfiguration : public RefCounter
   {
-    //  Может ли техника быть использована для построения пайплайна
-    //  Может быть false, если, например, не удалось загрузить шейдерные модули
+    //  Удалось ли полностью настроить конфигурацию
+    //  Может быть false, если, например, не удалось загрузить шейдерные модули,
+    //  или произошли другие рантайм ошибки
     bool isValid;
 
     ConstRef<PipelineLayout> pipelineLayout;
+    AbstractPipeline::Type pipelineType;
+    ConstRef<AbstractPipeline> pipeline;
 
     struct Shader
     {
@@ -112,6 +117,7 @@ namespace mt
     std::vector<Resource> resources;
 
     // Настройки графического пайплайна. Игнорируются компьют пайплайном.
+    std::optional<FrameBufferFormat> frameBufferFormat;
     VkPrimitiveTopology topology;
     VkPipelineRasterizationStateCreateInfo rasterizationState;
     VkPipelineDepthStencilStateCreateInfo depthStencilState;
