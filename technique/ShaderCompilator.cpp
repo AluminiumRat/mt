@@ -143,6 +143,9 @@ std::vector<uint32_t> ShaderCompilator::compile(
   // Настраиваем макросы
   shaderc::CompileOptions options;
   options.AddMacroDefinition("M_PI", "3.1415926535897932384626433832795f");
+  options.AddMacroDefinition("VOLATILE", "0");
+  options.AddMacroDefinition("STATIC", "1");
+  options.AddMacroDefinition("COMMON", "2");
   for (const Define& define : defines)
   {
     options.AddMacroDefinition(define.name, define.value);
