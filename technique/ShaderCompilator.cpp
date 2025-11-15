@@ -12,6 +12,94 @@ using namespace mt;
 shaderc::Compiler compiler;
 std::mutex compilerMutex;
 
+//  Штука, которая подгружает и хранит include файлы для компилятора
+class ShaderIncluder : public shaderc::CompileOptions::IncluderInterface
+{
+public:
+  virtual shaderc_include_result* GetInclude( const char* requested_source,
+                                              shaderc_include_type type,
+                                              const char* requesting_source,
+                                              size_t include_depth) override;
+  virtual void ReleaseInclude(shaderc_include_result* data) override;
+
+private:
+  //  Расширение, которое не только ссылается на данные, но ещё и хранит их
+  struct IncludeInfo : public shaderc_include_result
+  {
+    std::string sourceNameStr;
+    std::string contentStr;
+  };
+private:
+  using Includes = std::vector<std::unique_ptr<IncludeInfo>>;
+  Includes _includes;
+};
+
+shaderc_include_result* ShaderIncluder::GetInclude(
+                                                  const char* requested_source,
+                                                  shaderc_include_type type,
+                                                  const char* requesting_source,
+                                                  size_t include_depth)
+{
+  try
+  {
+    // Загружаем текст шейдера
+    std::string shaderText;
+    std::string errorString;
+    try
+    {
+      shaderText = ShaderLoader::getShaderLoader().loadText(requested_source);
+    }
+    catch (std::exception& error)
+    {
+      errorString = error.what();
+    }
+
+    // Формируем результат для shaderC
+    std::unique_ptr<IncludeInfo> include(new IncludeInfo{});
+    if(!shaderText.empty())
+    {
+      include->sourceNameStr = requested_source;
+      include->source_name = include->sourceNameStr.c_str();
+      include->source_name_length = include->sourceNameStr.length();
+      include->contentStr = std::move(shaderText);
+      include->content = include->contentStr.c_str();
+      include->content_length = include->contentStr.length();
+    }
+    else
+    {
+      include->source_name = nullptr;
+      include->source_name_length = 0;
+      include->contentStr = std::move(errorString);
+      include->content = include->contentStr.c_str();
+      include->content_length = include->contentStr.length();
+    }
+
+    IncludeInfo* includePtr = include.get();
+    _includes.push_back(std::move(include));
+    return includePtr;
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << "ShaderIncluder::GetInclude: " << error.what();
+    Abort("ShaderIncluder::GetInclude: unable to load include file");
+  }
+}
+
+void ShaderIncluder::ReleaseInclude(shaderc_include_result* data)
+{
+  IncludeInfo* includePtr = static_cast<IncludeInfo*>(data);
+  for(Includes::iterator iInclude = _includes.begin();
+      iInclude != _includes.end();
+      iInclude++)
+  {
+    if(iInclude->get() == includePtr)
+    {
+      _includes.erase(iInclude);
+      return;
+    }
+  }
+}
+
 static shaderc_shader_kind getShaderKind(VkShaderStageFlagBits shaderStage)
 {
   switch(shaderStage)
@@ -59,6 +147,7 @@ std::vector<uint32_t> ShaderCompilator::compile(
   {
     options.AddMacroDefinition(define.name, define.value);
   }
+  options.SetIncluder(std::make_unique<ShaderIncluder>());
 
   //  Собираем SPIR-V код
   shaderc::SpvCompilationResult compilationResult;

@@ -50,7 +50,7 @@ static std::ifstream openFile(const char* filename)
 
   if (!file.is_open())
   {
-    throw std::runtime_error(std::string("Unable to open file :") + filename);
+    throw std::runtime_error(std::string("Unable to open file: ") + filename);
   }
 
   return file;

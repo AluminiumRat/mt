@@ -1,15 +1,6 @@
 #version 450
 
-struct Vertex
-{
-    vec3 position;
-    vec4 color;
-};
-layout (set = 1,
-        binding = 1) readonly buffer VertexBuffer
-{
-    Vertex data[];
-} vertices;
+#include "shader.inl"
 
 layout(location = 0) out vec3 outVertexColor;
 layout(location = 1) out vec2 outTexCoord;
