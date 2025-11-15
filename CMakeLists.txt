@@ -50,6 +50,7 @@ add_executable (vkTest
                 "vkr/pipeline/DescriptorSetLayout.cpp"
                 "vkr/pipeline/GraphicPipeline.cpp"
                 "vkr/pipeline/PipelineLayout.cpp"
+                "vkr/pipeline/ShaderLoader.cpp"
                 "vkr/pipeline/ShaderModule.cpp"
                 "vkr/queue/CommandBuffer.cpp"
                 "vkr/queue/CommandPool.cpp"

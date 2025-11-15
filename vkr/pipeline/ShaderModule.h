@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include <memory>
 #include <span>
 #include <string>
 
@@ -15,17 +14,6 @@ namespace mt
   class ShaderModule
   {
   public:
-    //  Интерфейс загрузчика данных для шейдера. Используйте
-    //  ShaderModule::setShaderLoader и getShaderLoader для установки/получения
-    //  текущего используемого лоадера
-    class ShaderLoader
-    {
-    public:
-      virtual ~ShaderLoader() noexcept = default;
-      virtual std::vector<uint32_t> loadShader(const char* filename) = 0;
-    };
-
-  public:
     // Создать шейдер из данных SPIR-V в памяти
     ShaderModule( Device& device,
                   std::span<const uint32_t> spvData,
@@ -38,11 +26,6 @@ namespace mt
 
     inline VkShaderModule handle() const noexcept;
     inline const std::string& debugName() const noexcept;
-
-    //  Установить загрузчик данных для шейдеров
-    //  Если передать nullptr, то будет создан дефолтный загрузчик
-    static void setShaderLoader(std::unique_ptr<ShaderLoader> newLoader);
-    static ShaderLoader& getShaderLoader() noexcept;
 
   private:
     void _createHandle(std::span<const uint32_t> spvData);
