@@ -27,8 +27,25 @@ namespace mt
   //  к определенному состоянию, не должны его терять
   struct TechniqueConfiguration : public RefCounter
   {
+    //  Дефайн в шейдере, который может принимать только ограниченное количество
+    //  значений. Позволяет заранее скомпилировать все возможные вариации
+    //  пайплайна и во время рендера просто выбирать нужный из списка.
+    struct SelectionDefine
+    {
+      std::string name;
+      std::vector<std::string> valueVariants;
+      //  weight используется для выбора пайплайна из набора скомпилированных
+      //    PipelineIndex = index1 * weight1 + index2 * weight2 + ...
+      //    Здесь indexX - это номер выбранного значения из valueVariants для
+      //                    дефайна X
+      //          weightX - значение weight для этого дефайна
+      uint32_t weight;
+    };
+    std::vector<SelectionDefine> selections;
+
     AbstractPipeline::Type pipelineType;
-    ConstRef<GraphicPipeline> graphicPipeline;
+
+    std::vector<ConstRef<GraphicPipeline>> graphicPipelineVariants;
 
     struct DescriptorSet
     {

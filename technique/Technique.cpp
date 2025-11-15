@@ -3,7 +3,6 @@
 #include <spirv_reflect.h>
 
 #include <technique/DescriptorSetType.h>
-#include <technique/ShaderCompilator.h>
 #include <technique/Technique.h>
 #include <util/Abort.h>
 #include <util/Log.h>
@@ -12,9 +11,10 @@
 
 using namespace mt;
 
-Technique::Technique(Device& device) noexcept :
+Technique::Technique(Device& device, const char* debugName) noexcept :
   _device(device),
   _revision(0),
+  _debugName(debugName),
   _needRebuildConfiguration(true),
   _pipelineType(AbstractPipeline::GRAPHIC_PIPELINE),
   _topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST),
@@ -60,23 +60,28 @@ void Technique::_buildConfiguration()
     if( _pipelineType == AbstractPipeline::GRAPHIC_PIPELINE &&
         !_frameBufferFormat.has_value())
     {
-      throw std::runtime_error("Technique: pipeline type is GRAPHIC_PIPELINE but the frame buffer format is empty");
+      throw std::runtime_error(_debugName + ": pipeline type is GRAPHIC_PIPELINE but the frame buffer format is empty");
     }
 
-    // Загружаем и парсим шейдеры
-    if(_shaders.empty())
+    if (_shaders.empty())
     {
-      Log::warning() << "Technique: attempt to create a configuration without shaders";
+      Log::warning() << _debugName << ": attempt to create a configuration without shaders";
       return;
     }
-    ConfigurationBuildContext buildContext;
-    for(const ShaderInfo& shader : _shaders)
+
+    ConfigurationBuildContext buildContext{};
+
+    _processSelections(buildContext);
+
+    if(_selections.empty()) _processShadersOneVariant(buildContext);
+    else
     {
-      _processShader(shader, buildContext);
+      _processShadersSeveralVariants( buildContext,
+                                      uint32_t(_selections.size() - 1));
     }
 
     _createLayouts(buildContext);
-    _createPipeline(buildContext);
+    _createPipelines(buildContext);
   }
   catch(...)
   {
@@ -85,17 +90,100 @@ void Technique::_buildConfiguration()
   }
 }
 
+void Technique::_processSelections(ConfigurationBuildContext& buildContext)
+{
+  MT_ASSERT(_configuration != nullptr);
+
+  // Для начала проверим, нет ли дубликатов
+  for(size_t i = 0; i < _selections.size(); i++)
+  {
+    for(size_t j = i + 1; j < _selections.size(); j++)
+    {
+      if(_selections[i].name == _selections[j].name)
+      {
+        throw std::runtime_error(_debugName + ": duplicate selection " + _selections[i].name);
+      }
+    }
+  }
+
+  //  Посчитаем все варианты селекшенов, скопируем их в конфигурацию и
+  //  посчитаем их веса
+  buildContext.variantsNumber = 1;
+  if(!_selections.empty())
+  {
+    buildContext.currentDefines.resize(_selections.size());
+
+    _configuration->selections.reserve(_selections.size());
+    for(const SelectionDefine& selection : _selections)
+    {
+      _configuration->selections.push_back(
+                    TechniqueConfiguration::SelectionDefine{
+                                                  selection.name,
+                                                  selection.valueVariants,
+                                                  buildContext.variantsNumber});
+      buildContext.variantsNumber *= uint32_t(selection.valueVariants.size());
+    }
+  }
+
+  //  Выделим место под разные варианты шейдерных модулей и пайплайнов
+  buildContext.shaders.resize(buildContext.variantsNumber);
+  if (_pipelineType == AbstractPipeline::COMPUTE_PIPELINE)
+  {
+    Abort("Not implemented");
+  }
+  else
+  {
+    _configuration->graphicPipelineVariants.resize(buildContext.variantsNumber);
+  }
+}
+
+// Это рекурсивная функция, пребирающая все варианты селекшенов
+void Technique::_processShadersSeveralVariants(
+                                  ConfigurationBuildContext& buildContext,
+                                  uint32_t selectionIndex)
+{
+  const SelectionDefine& selection = _selections[selectionIndex];
+  for(const std::string& selectionValue : selection.valueVariants)
+  {
+    buildContext.currentDefines[selectionIndex].name = selection.name.c_str();
+    buildContext.currentDefines[selectionIndex].value = selectionValue.c_str();
+
+    if(selectionIndex == 0)
+    {
+      // Мы обрабатываем последний селекшен из списка, пора переходить к шейдерам
+      _processShadersOneVariant(buildContext);
+      buildContext.currentVariantIndex++;
+    }
+    else
+    {
+      // Это ещё не последний селекшен, переходим к следующему из списка
+      _processShadersSeveralVariants(buildContext, selectionIndex - 1);
+    }
+  }
+}
+
+void Technique::_processShadersOneVariant(
+                                      ConfigurationBuildContext& buildContext)
+{
+  for (const ShaderInfo& shader : _shaders)
+  {
+    _processShader(shader, buildContext);
+  }
+}
+
 void Technique::_processShader( const ShaderInfo& shaderRecord,
                                 ConfigurationBuildContext& buildContext)
 {
   MT_ASSERT(_configuration != nullptr);
 
+  ShaderSet& shaderSet = buildContext.shaders[buildContext.currentVariantIndex];
+
   // Проверяем, что нет дублирования шейдерных стадий
-  for(const ShaderModuleInfo& shader : buildContext.shaders)
+  for(const ShaderModuleInfo& shader : shaderSet)
   {
     if(shader.stage == shaderRecord.stage)
     {
-      throw std::runtime_error(std::string("Duplicate shader stages: ") + shaderRecord.filename.c_str());
+      throw std::runtime_error(_debugName + ": duplicate shader stages: " + shaderRecord.filename.c_str());
     }
   }
 
@@ -103,19 +191,19 @@ void Technique::_processShader( const ShaderInfo& shaderRecord,
   std::vector<uint32_t> spirData =
                       ShaderCompilator::compile(shaderRecord.filename.c_str(),
                                                 shaderRecord.stage,
-                                                {});
+                                                buildContext.currentDefines);
 
   // Парсим spirv код
   spv_reflect::ShaderModule reflection( spirData.size() * sizeof(spirData[0]),
                                         spirData.data());
   if (reflection.GetResult() != SPV_REFLECT_RESULT_SUCCESS)
   {
-    throw std::runtime_error(std::string("Unable to process SPIRV data: ") + shaderRecord.filename.c_str());
+    throw std::runtime_error(_debugName + ": unable to process SPIRV data: " + shaderRecord.filename.c_str());
   }
   const SpvReflectShaderModule& reflectModule = reflection.GetShaderModule();
 
   // Ищем нужные нам данные в рефлексии
-  _processDescriptorSets(shaderRecord, reflectModule);
+  _processShaderReflection(shaderRecord, reflectModule);
 
   // Создаем шейдерный модуль
   std::unique_ptr<ShaderModule> newShaderModule(
@@ -123,11 +211,11 @@ void Technique::_processShader( const ShaderInfo& shaderRecord,
                                                 _device,
                                                 spirData,
                                                 shaderRecord.filename.c_str()));
-  buildContext.shaders.push_back(ShaderModuleInfo{std::move(newShaderModule),
-                                                  shaderRecord.stage});
+  shaderSet.push_back(ShaderModuleInfo{ std::move(newShaderModule),
+                                        shaderRecord.stage});
 }
 
-void Technique::_processDescriptorSets(
+void Technique::_processShaderReflection(
                                       const ShaderInfo& shaderRecord,
                                       const SpvReflectShaderModule& reflection)
 {
@@ -135,11 +223,10 @@ void Technique::_processDescriptorSets(
   {
     const SpvReflectDescriptorSet& reflectedSet =
                                               reflection.descriptor_sets[iSet];
-
     uint32_t setIndex = reflectedSet.set;
     if(setIndex > maxDescriptorSetIndex)
     {
-      throw std::runtime_error(std::string("Technique: Descriptor set with the wrong set index: ") + shaderRecord.filename);
+      throw std::runtime_error(_debugName + ": descriptor set with the wrong set index: " + shaderRecord.filename);
     }
 
     DescriptorSetType setType = DescriptorSetType(setIndex);
@@ -171,7 +258,7 @@ void Technique::_processBindings( const ShaderInfo& shaderRecord,
                                                 reflectedSet.bindings[iBinding];
     MT_ASSERT(reflectedBinding != nullptr);
 
-    // Для начала просто собираем данные из рефлексии
+    // Для начала собираем общие данные о биндинге из рефлексии
     TechniqueConfiguration::Resource newResource;
     newResource.type = VkDescriptorType(reflectedBinding->descriptor_type);
     newResource.set = set.type;
@@ -195,8 +282,8 @@ void Technique::_processBindings( const ShaderInfo& shaderRecord,
             resource.writeAccess != newResource.writeAccess ||
             resource.count != newResource.count)
         {
-          Log::warning() << "Technique: binding conflict: " << shaderRecord.filename << " set: " << uint32_t(resource.set) << " binding: " << resource.bindingIndex;
-          throw std::runtime_error(std::string("Technique: binding conflict: ") + shaderRecord.filename);
+          Log::warning() << _debugName << ": binding conflict: " << shaderRecord.filename << " set: " << uint32_t(resource.set) << " binding: " << resource.bindingIndex;
+          throw std::runtime_error(_debugName + ": binding conflict: " + shaderRecord.filename);
         }
         // Биндинги совместимы, просто дополняем информацию
         resource.stages |= newResource.stages;
@@ -236,8 +323,8 @@ void Technique::_processUniformBlock(
       if( buffer.name != reflectedBinding.name ||
           buffer.size != block.size)
       {
-        Log::warning() << "Technique: uniform buffer mismatch set:" << reflectedBinding.set << " binding: " << reflectedBinding.binding << " file:" << shaderRecord.filename;
-        throw std::runtime_error(std::string("Technique: Uniform buffer mismatch: ") + shaderRecord.filename);
+        Log::warning() << _debugName << ": uniform buffer mismatch set:" << reflectedBinding.set << " binding: " << reflectedBinding.binding << " file:" << shaderRecord.filename;
+        throw std::runtime_error(_debugName + "Technique: Uniform buffer mismatch: " + shaderRecord.filename);
       }
       // Похоже, что это один и тот же буфер, обновим для него информацию
       buffer.stages |= shaderRecord.stage;
@@ -399,28 +486,32 @@ void Technique::_createLayouts(ConfigurationBuildContext& buildContext)
                                                             setLayouts));
 }
 
-void Technique::_createPipeline(ConfigurationBuildContext& buildContext)
+void Technique::_createPipelines(ConfigurationBuildContext& buildContext)
 {
   MT_ASSERT(_configuration != nullptr);
   MT_ASSERT(buildContext.pipelineLayout != nullptr)
 
-  if(_pipelineType == AbstractPipeline::COMPUTE_PIPELINE)
+  for(uint32_t variant = 0; variant < buildContext.variantsNumber; variant++)
   {
-    Abort("Not implemented");
-  }
-  else
-  {
-    MT_ASSERT(_frameBufferFormat.has_value());
-
+    //  Формируем список шейдерных модулей, из которых состоит пайплайн
+    ShaderSet& shaderSet = buildContext.shaders[variant];
     std::vector<AbstractPipeline::ShaderInfo> shaders;
-    for(ShaderModuleInfo& shader : buildContext.shaders)
+    for(ShaderModuleInfo& shader : shaderSet)
     {
       shaders.push_back(AbstractPipeline::ShaderInfo{
                                           .module = shader.shaderModule.get(),
                                           .stage = shader.stage,
                                           .entryPoint = "main"});
     }
-    _configuration->graphicPipeline =
+
+    //  Создаем сам пайплайн
+    if (_pipelineType == AbstractPipeline::COMPUTE_PIPELINE)
+    {
+      Abort("Not implemented");
+    }
+    else
+    {
+      _configuration->graphicPipelineVariants[variant] =
                               ConstRef(new GraphicPipeline(
                                                 *_frameBufferFormat,
                                                 shaders,
@@ -429,5 +520,6 @@ void Technique::_createPipeline(ConfigurationBuildContext& buildContext)
                                                 _depthStencilState,
                                                 _blendingState,
                                                 *buildContext.pipelineLayout));
+    }
   }
 }

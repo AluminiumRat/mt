@@ -13,8 +13,9 @@
 #include <util/Assert.h>
 #include <util/RefCounter.h>
 #include <util/Ref.h>
-#include <technique/TechniqueConfiguration.h>
 #include <technique/DescriptorSetType.h>
+#include <technique/ShaderCompilator.h>
+#include <technique/TechniqueConfiguration.h>
 #include <vkr/pipeline/AbstractPipeline.h>
 #include <vkr/FrameBufferFormat.h>
 
@@ -36,8 +37,17 @@ namespace mt
       std::string filename;
     };
 
+    //  Дефайн в шейдере, который может принимать только ограниченное количество
+    //  значений. Позволяет заранее скомпилировать все возможные вариации
+    //  пайплайна и во время рендера просто выбирать нужный.
+    struct SelectionDefine
+    {
+      std::string name;
+      std::vector<std::string> valueVariants;
+    };
+
   public:
-    Technique(Device& device) noexcept;
+    Technique(Device& device, const char* debugName = "Technique") noexcept;
     Technique(const Technique&) = delete;
     Technique& operator = (const Technique&) = delete;
   protected:
@@ -60,15 +70,21 @@ namespace mt
     //    ленивой инициализации.
     inline void forceUpdate();
 
+    inline const std::string& debugName() const noexcept;
+
     inline AbstractPipeline::Type pipelineType() const noexcept;
     inline void setPipelineType(AbstractPipeline::Type newValue) noexcept;
 
     inline const std::vector<ShaderInfo>& shaders() const noexcept;
     inline void setShaders(std::span<const ShaderInfo> newShaders);
 
-    //  Может возвращать nullptr, если формат не установлен
+    inline const std::vector<SelectionDefine>& selections() const noexcept;
+    inline void setSelections(std::span<const SelectionDefine> newSelections);
+
+    //  Может возвращать nullptr, если формат не установлен (например, для
+    //  компьют пайплайна)
     inline const FrameBufferFormat* frameBufferFormat() const noexcept;
-    //  Можно передавать nullptr или не устанавливать формат для compue техник
+    //  Можно передавать nullptr или не устанавливать формат для компьют техник
     inline const void setFrameBufferFormat(
                                   const FrameBufferFormat* newFormat) noexcept;
 
@@ -183,46 +199,74 @@ namespace mt
     inline void setBlendConstants(const glm::vec4& newValue) noexcept;
 
   private:
-    // Промежуточные данные, необходимые для построения конфигурации
+    //  Промежуточные данные, необходимые для построения конфигурации
+    //  Один собранный шейдерный модуль
     struct ShaderModuleInfo
     {
       std::unique_ptr<ShaderModule> shaderModule;
       VkShaderStageFlagBits stage;
     };
+    //  Набор шейдерных модулей для одного варианта пайплайна
+    using ShaderSet = std::vector<ShaderModuleInfo>;
+
     // Промежуточные данные, необходимые для построения конфигурации
     struct ConfigurationBuildContext
     {
-      std::vector<ShaderModuleInfo> shaders;
+      std::vector<ShaderSet> shaders;
       ConstRef<PipelineLayout> pipelineLayout;
+      uint32_t variantsNumber;
+      uint32_t currentVariantIndex;
+      std::vector<ShaderCompilator::Define> currentDefines;
     };
 
   private:
     void _invalidateConfiguration() noexcept;
     void _buildConfiguration();
+    //  Посчитать количество вариантов пайплайна и веса селекшенов
+    void _processSelections(ConfigurationBuildContext& buildContext);
+    //  Обойти все варианты селекшенов и создать/обработать для них
+    //  шейдерные модули
+    //  selectionIndex - параметр для рекурсивного вызова
+    void _processShadersSeveralVariants(
+                                      ConfigurationBuildContext& buildContext,
+                                      uint32_t selectionIndex);
+    //  Создать и обработать набор шейдерных модулей для 1 варианта селекшенов
+    void _processShadersOneVariant(ConfigurationBuildContext& buildContext);
+    //  Создать и обработать отдельный шейдерный модуль
     void _processShader(const ShaderInfo& shaderRecord,
                         ConfigurationBuildContext& buildContext);
-    void _processDescriptorSets(const ShaderInfo& shaderRecord,
-                                const SpvReflectShaderModule& reflection);
+    //  Парсим рефлексию для отдельного шейдерного модуля
+    void _processShaderReflection(const ShaderInfo& shaderRecord,
+                                  const SpvReflectShaderModule& reflection);
     TechniqueConfiguration::DescriptorSet& _getOrCreateSet(
                                                         DescriptorSetType type);
+    //  Обработка рефлексии
     void _processBindings(const ShaderInfo& shaderRecord,
                           TechniqueConfiguration::DescriptorSet& set,
                           const SpvReflectDescriptorSet& reflectedSet);
+    //  Обработка рефлексии
     void _processUniformBlock(
                           const ShaderInfo& shaderRecord,
                           const SpvReflectDescriptorBinding& reflectedBinding);
+    //  Обработка рефлексии. Разбираем отдельный фрагмент уноформ буфера
     void _parseUniformBlockMember(
                             const ShaderInfo& shaderRecord,
                             TechniqueConfiguration::UniformBuffer& target,
                             const SpvReflectBlockVariable& sourceMember,
                             std::string namePrefix,
                             uint32_t parentBlockOffset);
+    //  По пропарсенным данным из рефлексии создаем лэйауты для
+    //  дескриптер сетов и пайплайнов
     void _createLayouts(ConfigurationBuildContext& buildContext);
-    void _createPipeline(ConfigurationBuildContext& buildContext);
+    //  Финальная стадия построения конфигурации - создаем все варианты
+    //  пайплайнов
+    void _createPipelines(ConfigurationBuildContext& buildContext);
 
   private:
     Device& _device;
     size_t _revision;
+
+    std::string _debugName;
 
     Ref<TechniqueConfiguration> _configuration;
     bool _needRebuildConfiguration;
@@ -230,6 +274,7 @@ namespace mt
     AbstractPipeline::Type _pipelineType;
 
     std::vector<ShaderInfo> _shaders;
+    std::vector<SelectionDefine> _selections;
 
     // Настройки графического пайплайна. Игнорируются компьют пайплайном.
     std::optional<FrameBufferFormat> _frameBufferFormat;
@@ -263,6 +308,11 @@ namespace mt
     if (_needRebuildConfiguration) _buildConfiguration();
   }
 
+  inline const std::string& Technique::debugName() const noexcept
+  {
+    return _debugName;
+  }
+
   inline AbstractPipeline::Type Technique::pipelineType() const noexcept
   {
     return _pipelineType;
@@ -286,6 +336,21 @@ namespace mt
     std::vector<ShaderInfo> newShadersTable(newShaders.begin(),
                                             newShaders.end());
     _shaders = std::move(newShadersTable);
+    _invalidateConfiguration();
+  }
+
+  inline const std::vector<Technique::SelectionDefine>&
+                                          Technique::selections() const noexcept
+  {
+    return _selections;
+  }
+
+  inline void Technique::setSelections(
+                                std::span<const SelectionDefine> newSelections)
+  {
+    std::vector<SelectionDefine> newSelectionsVector( newSelections.begin(),
+                                                      newSelections.end());
+    _selections = std::move(newSelectionsVector);
     _invalidateConfiguration();
   }
 
