@@ -299,7 +299,12 @@ namespace mt
                                   const FrameBufferFormat* newFormat) noexcept
   {
     if(newFormat == nullptr) _frameBufferFormat.reset();
-    else _frameBufferFormat = *newFormat;
+    else
+    {
+      _frameBufferFormat = *newFormat;
+      _blendingState.attachmentCount =
+                        uint32_t(_frameBufferFormat->colorAttachments().size());
+    }
     _invalidateConfiguration();
   }
 
