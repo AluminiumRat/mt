@@ -11,8 +11,8 @@ TechniqueTestWindow::TechniqueTestWindow(Device& device) :
   _technique->setFrameBufferFormat(&fbFormat);
 
   Technique::ShaderInfo shaders[2] =
-  { {.stage = VK_SHADER_STAGE_VERTEX_BIT, .filename = "shader.vert.spv"},
-    {.stage = VK_SHADER_STAGE_FRAGMENT_BIT, .filename = "shader.frag.spv"}};
+  { {.stage = VK_SHADER_STAGE_VERTEX_BIT, .filename = "shader.vert"},
+    {.stage = VK_SHADER_STAGE_FRAGMENT_BIT, .filename = "shader.frag"}};
   _technique->setShaders(shaders);
   _technique->forceUpdate();
 }

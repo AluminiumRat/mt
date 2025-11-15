@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace mt
@@ -15,7 +16,9 @@ namespace mt
   public:
     virtual ~ShaderLoader() noexcept = default;
     //  Этот метод должен быть потокобезопасным
-    virtual std::vector<uint32_t> loadShader(const char* filename) = 0;
+    virtual std::vector<uint32_t> loadSPIRV(const char* filename) = 0;
+    //  Этот метод должен быть потокобезопасным
+    virtual std::string loadText(const char* filename) = 0;
 
     //  Установить загрузчик данных для шейдеров
     //  По умолчанию установлен DefaultShaderLoader
@@ -32,6 +35,7 @@ namespace mt
   class DefaultShaderLoader : public ShaderLoader
   {
   public:
-    virtual std::vector<uint32_t> loadShader(const char* filename) override;
+    virtual std::vector<uint32_t> loadSPIRV(const char* filename) override;
+    virtual std::string loadText(const char* filename) override;
   };
 }

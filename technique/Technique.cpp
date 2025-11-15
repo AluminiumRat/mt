@@ -3,11 +3,11 @@
 #include <spirv_reflect.h>
 
 #include <technique/DescriptorSetType.h>
+#include <technique/ShaderCompilator.h>
 #include <technique/Technique.h>
 #include <util/Abort.h>
 #include <util/Log.h>
 #include <vkr/pipeline/GraphicPipeline.h>
-#include <vkr/pipeline/ShaderLoader.h>
 #include <vkr/pipeline/ShaderModule.h>
 
 using namespace mt;
@@ -101,7 +101,9 @@ void Technique::_processShader( const ShaderInfo& shaderRecord,
 
   // Получаем spirv код
   std::vector<uint32_t> spirData =
-      ShaderLoader::getShaderLoader().loadShader(shaderRecord.filename.c_str());
+                      ShaderCompilator::compile(shaderRecord.filename.c_str(),
+                                                shaderRecord.stage,
+                                                {});
 
   // Парсим spirv код
   spv_reflect::ShaderModule reflection( spirData.size() * sizeof(spirData[0]),

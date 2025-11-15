@@ -35,6 +35,7 @@ include_directories(.
                     "./third_party/spirv_reflect")
 
 add_executable (vkTest
+                "technique/ShaderCompilator.cpp"
                 "technique/Technique.cpp"
                 "third_party/spirv_reflect/spirv_reflect.c"
                 "util/Log.cpp"

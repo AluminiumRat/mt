@@ -23,7 +23,7 @@ ShaderLoader& ShaderLoader::getShaderLoader() noexcept
   return *shaderLoader;
 }
 
-std::vector<uint32_t> DefaultShaderLoader::loadShader(const char* filename)
+static std::ifstream openFile(const char* filename)
 {
   // Для начала ищем в текущей папке
   std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -53,6 +53,13 @@ std::vector<uint32_t> DefaultShaderLoader::loadShader(const char* filename)
     throw std::runtime_error(std::string("Unable to open file :") + filename);
   }
 
+  return file;
+}
+
+std::vector<uint32_t> DefaultShaderLoader::loadSPIRV(const char* filename)
+{
+  std::ifstream file = openFile(filename);
+
   // Определяем размер данных
   size_t dataSize = (size_t)file.tellg();
   if(dataSize == 0)
@@ -69,4 +76,24 @@ std::vector<uint32_t> DefaultShaderLoader::loadShader(const char* filename)
   file.read((char*)(dataVector.data()), dataSize);
 
   return dataVector;
+}
+
+std::string DefaultShaderLoader::loadText(const char* filename)
+{
+  std::ifstream file = openFile(filename);
+
+  // Определяем размер данных
+  size_t dataSize = (size_t)file.tellg();
+  if(dataSize == 0)
+  {
+    throw std::runtime_error(std::string("File ") + filename + " is empty");
+  }
+
+  // Считываем данные
+  std::string result;
+  result.resize(dataSize);
+  file.seekg(0);
+  file.read((char*)(result.data()), dataSize);
+
+  return result;
 }

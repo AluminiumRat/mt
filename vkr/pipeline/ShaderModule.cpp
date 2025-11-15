@@ -34,7 +34,7 @@ ShaderModule::ShaderModule(Device& device, const char* spvFilename) :
   try
   {
     std::vector<uint32_t> spvData =
-                        ShaderLoader::getShaderLoader().loadShader(spvFilename);
+                        ShaderLoader::getShaderLoader().loadSPIRV(spvFilename);
     _createHandle(spvData);
   }
   catch (...)
