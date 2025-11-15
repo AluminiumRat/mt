@@ -142,6 +142,11 @@ std::vector<uint32_t> ShaderCompilator::compile(
 
   // Настраиваем макросы
   shaderc::CompileOptions options;
+  options.SetOptimizationLevel(shaderc_optimization_level_performance);
+  options.SetGenerateDebugInfo();
+  options.SetWarningsAsErrors();
+  options.SetAutoBindUniforms(true);
+  options.SetAutoMapLocations(true);
   options.AddMacroDefinition("M_PI", "3.1415926535897932384626433832795f");
   options.AddMacroDefinition("VOLATILE", "0");
   options.AddMacroDefinition("STATIC", "1");

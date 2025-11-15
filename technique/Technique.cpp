@@ -63,7 +63,7 @@ void Technique::_buildConfiguration()
       throw std::runtime_error("Technique: pipeline type is GRAPHIC_PIPELINE but the frame buffer format is empty");
     }
 
-    // Загружаем шейдеры
+    // Загружаем и парсим шейдеры
     if(_shaders.empty())
     {
       Log::warning() << "Technique: attempt to create a configuration without shaders";
