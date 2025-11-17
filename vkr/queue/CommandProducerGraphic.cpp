@@ -81,7 +81,7 @@ void CommandProducerGraphic::_endPass() noexcept
   }
 }
 
-void CommandProducerGraphic::setGraphicPipeline(GraphicPipeline& pipeline)
+void CommandProducerGraphic::setGraphicPipeline(const GraphicPipeline& pipeline)
 {
   lockResource(pipeline);
 

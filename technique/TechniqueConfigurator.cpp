@@ -115,6 +115,11 @@ void TechniqueConfigurator::_processSelections(
     _configuration->selections.reserve(_selections.size());
     for(const SelectionDefine& selection : _selections)
     {
+      if(selection.valueVariants.empty())
+      {
+        throw std::runtime_error(_debugName + ": selection " + selection.name + " doesn't have value variants");
+      }
+
       _configuration->selections.push_back(
                     TechniqueConfiguration::SelectionDefine{
                                                   selection.name,

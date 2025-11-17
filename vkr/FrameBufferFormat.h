@@ -22,8 +22,8 @@ namespace mt
     FrameBufferFormat(std::span<VkFormat> colotAttachments,
                       VkFormat depthStencilAttachment,
                       VkSampleCountFlagBits samplesCount);
-    FrameBufferFormat(const FrameBufferFormat&) = default;
-    FrameBufferFormat& operator = (const FrameBufferFormat&) = default;
+    inline FrameBufferFormat(const FrameBufferFormat& other);
+    inline FrameBufferFormat& operator = (const FrameBufferFormat& other);
     ~FrameBufferFormat() noexcept = default;
 
     inline bool operator == (const FrameBufferFormat& other) const noexcept;
@@ -52,6 +52,28 @@ namespace mt
                                   const FrameBufferFormat& other) const noexcept
   {
     return _formatIndex == other._formatIndex;
+  }
+
+  inline FrameBufferFormat::FrameBufferFormat(const FrameBufferFormat& other) :
+    _colorAttachments(other._colorAttachments),
+    _depthStencilAttachment(other._depthStencilAttachment),
+    _samplesCount(other._samplesCount),
+    _pipelineCreateInfo{},
+    _formatIndex(other._formatIndex)
+  {
+    fillPipelineCreateInfo();
+  }
+
+  inline FrameBufferFormat& FrameBufferFormat::operator = (
+                                                const FrameBufferFormat& other)
+  {
+    _colorAttachments = other._colorAttachments;
+    _depthStencilAttachment = other._depthStencilAttachment;
+    _samplesCount = other._samplesCount;
+    _pipelineCreateInfo = VkPipelineRenderingCreateInfo{};
+    _formatIndex = other._formatIndex;
+    fillPipelineCreateInfo();
+    return *this;
   }
 
   inline const VkPipelineRenderingCreateInfo&

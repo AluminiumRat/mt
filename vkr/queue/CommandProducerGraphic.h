@@ -68,7 +68,7 @@ namespace mt
 
     inline const FrameBuffer* curentFrameBuffer() const noexcept;
 
-    void setGraphicPipeline(GraphicPipeline& pipeline);
+    void setGraphicPipeline(const GraphicPipeline& pipeline);
 
     // Подключить набор ресурсов к графическому пайплайну
     void bindDescriptorSetGraphic(const DescriptorSet& descriptorSet,

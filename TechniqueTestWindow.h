@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include <technique/TechniqueConfigurator.h>
+#include <technique/Technique.h>
 #include <util/Ref.h>
 #include <GLFWRenderWindow.h>
 
@@ -14,7 +14,13 @@ namespace mt
     TechniqueTestWindow& operator = (const TechniqueTestWindow&) = delete;
     virtual ~TechniqueTestWindow() noexcept = default;
 
+  protected:
+    virtual void drawImplementation(CommandProducerGraphic& commandProducer,
+                                    FrameBuffer& frameBuffer) override;
+
   private:
-    Ref<TechniqueConfigurator> _configurator;
+    Ref<Technique> _technique;
+    Selection& _selector1;
+    Selection& _selector2;
   };
 }

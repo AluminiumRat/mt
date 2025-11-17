@@ -1,7 +1,11 @@
 ﻿#pragma once
 
+#include <memory>
+#include <string_view>
 #include <string>
+#include <vector>
 
+#include <technique/Selection.h>
 #include <technique/TechniqueConfiguration.h>
 #include <technique/TechniqueConfigurator.h>
 #include <util/Ref.h>
@@ -35,17 +39,25 @@ namespace mt
     bool bindGraphic(CommandProducerGraphic& producer);
     void unbindGraphic(CommandProducerGraphic& producer);
 
+    Selection& getOrCreateSelection(std::string_view selectionName);
+
   private:
     void _checkConfiguration();
-    void _applyToConfiguration();
+    void _checkSelections() noexcept;
 
   private:
     Device& _device;
     std::string _debugName;
     bool _isBinded;
     Ref<TechniqueConfigurator> _configurator;
-    Ref<TechniqueConfiguration> _configuration;
+    ConstRef<TechniqueConfiguration> _configuration;
     size_t _lastConfiguratorRevision;
+
+    uint32_t _pipelineVariant;
+
+    std::vector<std::unique_ptr<SelectionImpl>> _selections;
+    size_t _selectionsRevision;
+    size_t _lastProcessedSelectionsRevision;
   };
 
   inline Device& Technique::device() const noexcept
