@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include <optional>
-#include <string_view>
 #include <string>
 
 #include <technique/TechniqueConfiguration.h>
@@ -19,7 +18,7 @@ namespace mt
     //  resvisionCounter - внешний счетчик ревизий. Он общий для всех
     //    селекшенов в технике, чтобы не проверять каждый раз все селекшены на
     //    апдэйт значений.
-    Selection(std::string_view name,
+    Selection(const char* name,
               size_t& resvisionCounter,
               const TechniqueConfiguration* configuration);
     Selection(const Selection&) = delete;
@@ -29,7 +28,7 @@ namespace mt
     inline const std::string& name() const noexcept;
 
     inline const std::string& value() const noexcept;
-    void setValue(std::string_view newValue);
+    void setValue(const std::string& newValue);
 
   protected:
     void _bindToConfiguration(const TechniqueConfiguration* configuration);
@@ -51,7 +50,7 @@ namespace mt
   class SelectionImpl : public Selection
   {
   public:
-    inline SelectionImpl( std::string_view name,
+    inline SelectionImpl( const char* name,
                           size_t& resvisionCounter,
                           const TechniqueConfiguration* configuration);
     SelectionImpl(const SelectionImpl&) = delete;
@@ -75,7 +74,7 @@ namespace mt
   }
 
   inline SelectionImpl::SelectionImpl(
-                                  std::string_view name,
+                                  const char* name,
                                   size_t& resvisionCounter,
                                   const TechniqueConfiguration* configuration) :
     Selection(name, resvisionCounter, configuration)

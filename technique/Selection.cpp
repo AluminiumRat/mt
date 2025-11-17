@@ -5,7 +5,7 @@ using namespace mt;
 
 #define DEFAULT_VALUE "__default"
 
-Selection::Selection( std::string_view name,
+Selection::Selection( const char* name,
                       size_t& resvisionCounter,
                       const TechniqueConfiguration* configuration) :
   _resvisionCounter(resvisionCounter),
@@ -18,7 +18,7 @@ Selection::Selection( std::string_view name,
   _bindToConfiguration(configuration);
 }
 
-inline void Selection::setValue(std::string_view newValue)
+inline void Selection::setValue(const std::string& newValue)
 {
   if(_description != nullptr)
   {

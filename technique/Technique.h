@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include <memory>
-#include <string_view>
 #include <string>
 #include <vector>
 
@@ -39,7 +38,7 @@ namespace mt
     bool bindGraphic(CommandProducerGraphic& producer);
     void unbindGraphic(CommandProducerGraphic& producer);
 
-    Selection& getOrCreateSelection(std::string_view selectionName);
+    Selection& getOrCreateSelection(const char* selectionName);
 
   private:
     void _checkConfiguration();

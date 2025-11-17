@@ -86,7 +86,7 @@ void Technique::unbindGraphic(CommandProducerGraphic& producer)
   _isBinded = false;
 }
 
-Selection& Technique::getOrCreateSelection(std::string_view selectionName)
+Selection& Technique::getOrCreateSelection(const char* selectionName)
 {
   for(std::unique_ptr<SelectionImpl>& selection : _selections)
   {
