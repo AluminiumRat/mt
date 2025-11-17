@@ -3,7 +3,7 @@
 #include <spirv_reflect.h>
 
 #include <technique/DescriptorSetType.h>
-#include <technique/Technique.h>
+#include <technique/TechniqueConfigurator.h>
 #include <util/Abort.h>
 #include <util/Log.h>
 #include <vkr/pipeline/GraphicPipeline.h>
@@ -11,7 +11,8 @@
 
 using namespace mt;
 
-Technique::Technique(Device& device, const char* debugName) noexcept :
+TechniqueConfigurator::TechniqueConfigurator( Device& device,
+                                              const char* debugName) noexcept :
   _device(device),
   _revision(0),
   _debugName(debugName),
@@ -41,14 +42,14 @@ Technique::Technique(Device& device, const char* debugName) noexcept :
   _blendingState.pAttachments = _attachmentsBlending.data();
 }
 
-void Technique::_invalidateConfiguration() noexcept
+void TechniqueConfigurator::_invalidateConfiguration() noexcept
 {
   _configuration.reset();
   _needRebuildConfiguration = true;
   _revision++;
 }
 
-void Technique::_buildConfiguration()
+void TechniqueConfigurator::_buildConfiguration()
 {
   try
   {
@@ -90,7 +91,8 @@ void Technique::_buildConfiguration()
   }
 }
 
-void Technique::_processSelections(ConfigurationBuildContext& buildContext)
+void TechniqueConfigurator::_processSelections(
+                                        ConfigurationBuildContext& buildContext)
 {
   MT_ASSERT(_configuration != nullptr);
 
@@ -138,7 +140,7 @@ void Technique::_processSelections(ConfigurationBuildContext& buildContext)
 }
 
 // Это рекурсивная функция, пребирающая все варианты селекшенов
-void Technique::_processShadersSeveralVariants(
+void TechniqueConfigurator::_processShadersSeveralVariants(
                                   ConfigurationBuildContext& buildContext,
                                   uint32_t selectionIndex)
 {
@@ -162,7 +164,7 @@ void Technique::_processShadersSeveralVariants(
   }
 }
 
-void Technique::_processShadersOneVariant(
+void TechniqueConfigurator::_processShadersOneVariant(
                                       ConfigurationBuildContext& buildContext)
 {
   for (const ShaderInfo& shader : _shaders)
@@ -171,8 +173,9 @@ void Technique::_processShadersOneVariant(
   }
 }
 
-void Technique::_processShader( const ShaderInfo& shaderRecord,
-                                ConfigurationBuildContext& buildContext)
+void TechniqueConfigurator::_processShader(
+                                        const ShaderInfo& shaderRecord,
+                                        ConfigurationBuildContext& buildContext)
 {
   MT_ASSERT(_configuration != nullptr);
 
@@ -215,7 +218,7 @@ void Technique::_processShader( const ShaderInfo& shaderRecord,
                                         shaderRecord.stage});
 }
 
-void Technique::_processShaderReflection(
+void TechniqueConfigurator::_processShaderReflection(
                                       const ShaderInfo& shaderRecord,
                                       const SpvReflectShaderModule& reflection)
 {
@@ -235,8 +238,8 @@ void Technique::_processShaderReflection(
   }
 }
 
-TechniqueConfiguration::DescriptorSet& Technique::_getOrCreateSet(
-                                                        DescriptorSetType type)
+TechniqueConfiguration::DescriptorSet&
+                  TechniqueConfigurator::_getOrCreateSet(DescriptorSetType type)
 {
   for(TechniqueConfiguration::DescriptorSet& set :
                                                 _configuration->descriptorSets)
@@ -248,9 +251,10 @@ TechniqueConfiguration::DescriptorSet& Technique::_getOrCreateSet(
   return _configuration->descriptorSets.back();
 }
 
-void Technique::_processBindings( const ShaderInfo& shaderRecord,
-                                  TechniqueConfiguration::DescriptorSet& set,
-                                  const SpvReflectDescriptorSet& reflectedSet)
+void TechniqueConfigurator::_processBindings(
+                                    const ShaderInfo& shaderRecord,
+                                    TechniqueConfiguration::DescriptorSet& set,
+                                    const SpvReflectDescriptorSet& reflectedSet)
 {
   for(uint32_t iBinding = 0; iBinding < reflectedSet.binding_count; iBinding++)
   {
@@ -306,7 +310,7 @@ void Technique::_processBindings( const ShaderInfo& shaderRecord,
   }
 }
 
-void Technique::_processUniformBlock(
+void TechniqueConfigurator::_processUniformBlock(
                           const ShaderInfo& shaderRecord,
                           const SpvReflectDescriptorBinding& reflectedBinding)
 {
@@ -324,7 +328,7 @@ void Technique::_processUniformBlock(
           buffer.size != block.size)
       {
         Log::warning() << _debugName << ": uniform buffer mismatch set:" << reflectedBinding.set << " binding: " << reflectedBinding.binding << " file:" << shaderRecord.filename;
-        throw std::runtime_error(_debugName + "Technique: Uniform buffer mismatch: " + shaderRecord.filename);
+        throw std::runtime_error(_debugName + ": uniform buffer mismatch: " + shaderRecord.filename);
       }
       // Похоже, что это один и тот же буфер, обновим для него информацию
       buffer.stages |= shaderRecord.stage;
@@ -354,7 +358,7 @@ void Technique::_processUniformBlock(
   _configuration->uniformBuffers.push_back(newBuffer);
 }
 
-void Technique::_parseUniformBlockMember(
+void TechniqueConfigurator::_parseUniformBlockMember(
                                 const ShaderInfo& shaderRecord,
                                 TechniqueConfiguration::UniformBuffer& target,
                                 const SpvReflectBlockVariable& sourceMember,
@@ -443,7 +447,8 @@ void Technique::_parseUniformBlockMember(
   target.variables.push_back(newUniform);
 }
 
-void Technique::_createLayouts(ConfigurationBuildContext& buildContext)
+void TechniqueConfigurator::_createLayouts(
+                                        ConfigurationBuildContext& buildContext)
 {
   MT_ASSERT(_configuration != nullptr);
 
@@ -486,7 +491,8 @@ void Technique::_createLayouts(ConfigurationBuildContext& buildContext)
                                                             setLayouts));
 }
 
-void Technique::_createPipelines(ConfigurationBuildContext& buildContext)
+void TechniqueConfigurator::_createPipelines(
+                                      ConfigurationBuildContext& buildContext)
 {
   MT_ASSERT(_configuration != nullptr);
   MT_ASSERT(buildContext.pipelineLayout != nullptr)

@@ -28,7 +28,8 @@ namespace mt
 {
   class Device;
 
-  class Technique : public RefCounter
+  // Класс для настройки конфигурации техник.
+  class TechniqueConfigurator : public RefCounter
   {
   public:
     struct ShaderInfo
@@ -47,18 +48,18 @@ namespace mt
     };
 
   public:
-    Technique(Device& device, const char* debugName = "Technique") noexcept;
-    Technique(const Technique&) = delete;
-    Technique& operator = (const Technique&) = delete;
+    TechniqueConfigurator(Device& device, const char* debugName = "Technique") noexcept;
+    TechniqueConfigurator(const TechniqueConfigurator&) = delete;
+    TechniqueConfigurator& operator = (const TechniqueConfigurator&) = delete;
   protected:
-    ~Technique() noexcept = default;
+    ~TechniqueConfigurator() noexcept = default;
   public:
 
     inline Device& device() const noexcept;
 
-    //  Ревизия используется для отслеживания изменений в технике
+    //  Ревизия используется для отслеживания изменений в конфигурации
     //  Каждый раз, когда происходтит изменение состояния, ревизия увеличивается
-    //  и зависимым объектам необходимо синхронизироваться с техникой
+    //  и зависимым объектам необходимо синхронизироваться с конфигурацией
     inline size_t revision() const noexcept;
 
     //  Может возвращать nullptr, если сборка конфигурации не завершилась
@@ -286,52 +287,54 @@ namespace mt
                 FrameBufferFormat::maxColorAttachments> _attachmentsBlending;
   };
 
-  inline Device& Technique::device() const noexcept
+  inline Device& TechniqueConfigurator::device() const noexcept
   {
     return _device;
   }
 
-  inline size_t Technique::revision() const noexcept
+  inline size_t TechniqueConfigurator::revision() const noexcept
   {
     return _revision;
   }
 
-  inline const TechniqueConfiguration* Technique::configuration()
+  inline const TechniqueConfiguration* TechniqueConfigurator::configuration()
   {
     if(_needRebuildConfiguration) _buildConfiguration();
     MT_ASSERT(_needRebuildConfiguration == false);
     return _configuration.get();
   }
 
-  inline void Technique::forceUpdate()
+  inline void TechniqueConfigurator::forceUpdate()
   {
     if (_needRebuildConfiguration) _buildConfiguration();
   }
 
-  inline const std::string& Technique::debugName() const noexcept
+  inline const std::string& TechniqueConfigurator::debugName() const noexcept
   {
     return _debugName;
   }
 
-  inline AbstractPipeline::Type Technique::pipelineType() const noexcept
+  inline AbstractPipeline::Type TechniqueConfigurator::pipelineType()
+                                                                  const noexcept
   {
     return _pipelineType;
   }
 
-  inline void Technique::setPipelineType(
+  inline void TechniqueConfigurator::setPipelineType(
                                       AbstractPipeline::Type newValue) noexcept
   {
     _pipelineType = newValue;
     _invalidateConfiguration();
   }
 
-  inline const std::vector<Technique::ShaderInfo>&
-                                            Technique::shaders() const noexcept
+  inline const std::vector<TechniqueConfigurator::ShaderInfo>&
+                                TechniqueConfigurator::shaders() const noexcept
   {
     return _shaders;
   }
 
-  inline void Technique::setShaders(std::span<const ShaderInfo> newShaders)
+  inline void TechniqueConfigurator::setShaders(
+                                        std::span<const ShaderInfo> newShaders)
   {
     std::vector<ShaderInfo> newShadersTable(newShaders.begin(),
                                             newShaders.end());
@@ -339,13 +342,13 @@ namespace mt
     _invalidateConfiguration();
   }
 
-  inline const std::vector<Technique::SelectionDefine>&
-                                          Technique::selections() const noexcept
+  inline const std::vector<TechniqueConfigurator::SelectionDefine>&
+                            TechniqueConfigurator::selections() const noexcept
   {
     return _selections;
   }
 
-  inline void Technique::setSelections(
+  inline void TechniqueConfigurator::setSelections(
                                 std::span<const SelectionDefine> newSelections)
   {
     std::vector<SelectionDefine> newSelectionsVector( newSelections.begin(),
@@ -354,13 +357,14 @@ namespace mt
     _invalidateConfiguration();
   }
 
-  inline const FrameBufferFormat* Technique::frameBufferFormat() const noexcept
+  inline const FrameBufferFormat*
+                      TechniqueConfigurator::frameBufferFormat() const noexcept
   {
     if(!_frameBufferFormat.has_value()) return nullptr;
     return &_frameBufferFormat.value();
   }
 
-  inline const void Technique::setFrameBufferFormat(
+  inline const void TechniqueConfigurator::setFrameBufferFormat(
                                   const FrameBufferFormat* newFormat) noexcept
   {
     if(newFormat == nullptr) _frameBufferFormat.reset();
@@ -373,238 +377,250 @@ namespace mt
     _invalidateConfiguration();
   }
 
-  inline VkPrimitiveTopology Technique::topology() const noexcept
+  inline VkPrimitiveTopology TechniqueConfigurator::topology() const noexcept
   {
     return _topology;
   }
 
-  inline void Technique::setTopology(VkPrimitiveTopology newValue) noexcept
+  inline void TechniqueConfigurator::setTopology(
+                                          VkPrimitiveTopology newValue) noexcept
   {
     _topology = newValue;
     _invalidateConfiguration();
   }
 
-  inline bool Technique::depthClampEnable() const noexcept
+  inline bool TechniqueConfigurator::depthClampEnable() const noexcept
   {
     return _rasterizationState.depthClampEnable;
   }
 
-  inline void Technique::setDepthClampEnable(bool newValue) noexcept
+  inline void TechniqueConfigurator::setDepthClampEnable(bool newValue) noexcept
   {
     _rasterizationState.depthClampEnable = newValue;
     _invalidateConfiguration();
   }
 
-  inline bool Technique::rasterizationDiscardEnable() const noexcept
+  inline bool TechniqueConfigurator::rasterizationDiscardEnable() const noexcept
   {
     return _rasterizationState.rasterizerDiscardEnable;
   }
 
-  inline void Technique::setRasterizationDiscardEnable(bool newValue) noexcept
+  inline void TechniqueConfigurator::setRasterizationDiscardEnable(
+                                                        bool newValue) noexcept
   {
     _rasterizationState.rasterizerDiscardEnable = newValue;
     _invalidateConfiguration();
   }
 
-  inline VkPolygonMode Technique::polygonMode() const noexcept
+  inline VkPolygonMode TechniqueConfigurator::polygonMode() const noexcept
   {
     return _rasterizationState.polygonMode;
   }
 
-  inline void Technique::setPolygonMode(VkPolygonMode newValue) noexcept
+  inline void TechniqueConfigurator::setPolygonMode(
+                                                VkPolygonMode newValue) noexcept
   {
     _rasterizationState.polygonMode = newValue;
     _invalidateConfiguration();
   }
 
-  inline VkCullModeFlags Technique::cullMode() const noexcept
+  inline VkCullModeFlags TechniqueConfigurator::cullMode() const noexcept
   {
     return _rasterizationState.cullMode;
   }
 
-  inline void Technique::setCullMode(VkCullModeFlags newValue) noexcept
+  inline void TechniqueConfigurator::setCullMode(
+                                              VkCullModeFlags newValue) noexcept
   {
     _rasterizationState.cullMode = newValue;
     _invalidateConfiguration();
   }
 
-  inline VkFrontFace Technique::frontFace() const noexcept
+  inline VkFrontFace TechniqueConfigurator::frontFace() const noexcept
   {
     return _rasterizationState.frontFace;
   }
 
-  inline void Technique::setFrontFace(VkFrontFace newValue) noexcept
+  inline void TechniqueConfigurator::setFrontFace(VkFrontFace newValue) noexcept
   {
     _rasterizationState.frontFace = newValue;
     _invalidateConfiguration();
   }
 
-  inline bool Technique::depthBiasEnable() const noexcept
+  inline bool TechniqueConfigurator::depthBiasEnable() const noexcept
   {
     return _rasterizationState.depthBiasEnable;
   }
 
-  inline void Technique::setDepthBiasEnable(bool newValue) noexcept
+  inline void TechniqueConfigurator::setDepthBiasEnable(bool newValue) noexcept
   {
     _rasterizationState.depthBiasEnable = newValue;
     _invalidateConfiguration();
   }
 
-  inline float Technique::depthBiasConstantFactor() const noexcept
+  inline float TechniqueConfigurator::depthBiasConstantFactor() const noexcept
   {
     return _rasterizationState.depthBiasConstantFactor;
   }
 
-  inline void Technique::setDepthBiasConstantFactor(float newValue) noexcept
+  inline void TechniqueConfigurator::setDepthBiasConstantFactor(
+                                                        float newValue) noexcept
   {
     _rasterizationState.depthBiasConstantFactor = newValue;
     _invalidateConfiguration();
   }
 
-  inline float Technique::depthBiasClamp() const noexcept
+  inline float TechniqueConfigurator::depthBiasClamp() const noexcept
   {
     return _rasterizationState.depthBiasClamp;
   }
 
-  inline void Technique::setDepthBiasClamp(float newValue) noexcept
+  inline void TechniqueConfigurator::setDepthBiasClamp(float newValue) noexcept
   {
     _rasterizationState.depthBiasClamp = newValue;
     _invalidateConfiguration();
   }
 
-  inline float Technique::depthBiasSlopeFactor() const noexcept
+  inline float TechniqueConfigurator::depthBiasSlopeFactor() const noexcept
   {
     return _rasterizationState.depthBiasSlopeFactor;
   }
 
-  inline void Technique::setDepthBiasSlopeFactor(float newValue) noexcept
+  inline void TechniqueConfigurator::setDepthBiasSlopeFactor(
+                                                        float newValue) noexcept
   {
     _rasterizationState.depthBiasSlopeFactor = newValue;
     _invalidateConfiguration();
   }
 
-  inline float Technique::lineWidth() const noexcept
+  inline float TechniqueConfigurator::lineWidth() const noexcept
   {
     return _rasterizationState.lineWidth;
   }
 
-  inline void Technique::setLineWidth(float newValue) noexcept
+  inline void TechniqueConfigurator::setLineWidth(float newValue) noexcept
   {
     _rasterizationState.lineWidth = newValue;
     _invalidateConfiguration();
   }
 
-  inline bool Technique::depthTestEnable() const noexcept
+  inline bool TechniqueConfigurator::depthTestEnable() const noexcept
   {
     return _depthStencilState.depthTestEnable;
   }
 
-  inline void Technique::setDepthTestEnable(bool newValue) noexcept
+  inline void TechniqueConfigurator::setDepthTestEnable(bool newValue) noexcept
   {
     _depthStencilState.depthTestEnable = newValue;
     _invalidateConfiguration();
   }
 
-  inline bool Technique::depthWriteEnable() const noexcept
+  inline bool TechniqueConfigurator::depthWriteEnable() const noexcept
   {
     return _depthStencilState.depthWriteEnable;
   }
 
-  inline void Technique::setDepthWriteEnable(bool newValue) noexcept
+  inline void TechniqueConfigurator::setDepthWriteEnable(bool newValue) noexcept
   {
     _depthStencilState.depthWriteEnable = newValue;
     _invalidateConfiguration();
   }
 
-  inline VkCompareOp Technique::depthCompareOp() const noexcept
+  inline VkCompareOp TechniqueConfigurator::depthCompareOp() const noexcept
   {
     return _depthStencilState.depthCompareOp;
   }
 
-  inline void Technique::setDepthCompareOp(VkCompareOp newValue) noexcept
+  inline void TechniqueConfigurator::setDepthCompareOp(
+                                                  VkCompareOp newValue) noexcept
   {
     _depthStencilState.depthCompareOp = newValue;
     _invalidateConfiguration();
   }
 
-  inline bool Technique::depthBoundsTestEnable() const noexcept
+  inline bool TechniqueConfigurator::depthBoundsTestEnable() const noexcept
   {
     return _depthStencilState.depthBoundsTestEnable;
   }
 
-  inline void Technique::setDepthBoundsTestEnable(bool newValue) noexcept
+  inline void TechniqueConfigurator::setDepthBoundsTestEnable(
+                                                        bool newValue) noexcept
   {
     _depthStencilState.depthBoundsTestEnable = newValue;
     _invalidateConfiguration();
   }
 
-  inline VkStencilOpState Technique::frontStencilOp() const noexcept
+  inline VkStencilOpState TechniqueConfigurator::frontStencilOp() const noexcept
   {
     return _depthStencilState.front;
   }
 
-  inline void Technique::setFrontStencilOp(VkStencilOpState newValue) noexcept
+  inline void TechniqueConfigurator::setFrontStencilOp(
+                                            VkStencilOpState newValue) noexcept
   {
     _depthStencilState.front = newValue;
     _invalidateConfiguration();
   }
 
-  inline VkStencilOpState Technique::backStencilOp() const noexcept
+  inline VkStencilOpState TechniqueConfigurator::backStencilOp() const noexcept
   {
     return _depthStencilState.back;
   }
 
-  inline void Technique::setBackStencilOp(VkStencilOpState newValue) noexcept
+  inline void TechniqueConfigurator::setBackStencilOp(
+                                            VkStencilOpState newValue) noexcept
   {
     _depthStencilState.back = newValue;
     _invalidateConfiguration();
   }
 
-  inline float Technique::minDepthBounds() const noexcept
+  inline float TechniqueConfigurator::minDepthBounds() const noexcept
   {
     return _depthStencilState.minDepthBounds;
   }
 
-  inline void Technique::setMinDepthBounds(float newValue) noexcept
+  inline void TechniqueConfigurator::setMinDepthBounds(float newValue) noexcept
   {
     _depthStencilState.minDepthBounds = newValue;
     _invalidateConfiguration();
   }
 
-  inline float Technique::maxDepthBounds() const noexcept
+  inline float TechniqueConfigurator::maxDepthBounds() const noexcept
   {
     return _depthStencilState.maxDepthBounds;
   }
 
-  inline void Technique::setMaxDepthBounds(float newValue) noexcept
+  inline void TechniqueConfigurator::setMaxDepthBounds(float newValue) noexcept
   {
     _depthStencilState.maxDepthBounds = newValue;
     _invalidateConfiguration();
   }
 
-  inline bool Technique::blendLogicOpEnable() const noexcept
+  inline bool TechniqueConfigurator::blendLogicOpEnable() const noexcept
   {
     return _blendingState.logicOpEnable;
   }
 
-  inline void Technique::setBlendLogicOpEnable(bool newValue) noexcept
+  inline void TechniqueConfigurator::setBlendLogicOpEnable(
+                                                        bool newValue) noexcept
   {
     _blendingState.logicOpEnable = newValue;
     _invalidateConfiguration();
   }
 
-  inline VkLogicOp Technique::blendLogicOp() const noexcept
+  inline VkLogicOp TechniqueConfigurator::blendLogicOp() const noexcept
   {
     return _blendingState.logicOp;
   }
 
-  inline void Technique::setBlendLogicOp(VkLogicOp newValue) noexcept
+  inline void TechniqueConfigurator::setBlendLogicOp(
+                                                    VkLogicOp newValue) noexcept
   {
     _blendingState.logicOp = newValue;
     _invalidateConfiguration();
   }
 
-  inline glm::vec4 Technique::blendConstants() const noexcept
+  inline glm::vec4 TechniqueConfigurator::blendConstants() const noexcept
   {
     return glm::vec4( _blendingState.blendConstants[0],
                       _blendingState.blendConstants[1],
@@ -612,7 +628,8 @@ namespace mt
                       _blendingState.blendConstants[3]);
   }
 
-  inline void Technique::setBlendConstants(const glm::vec4& newValue) noexcept
+  inline void TechniqueConfigurator::setBlendConstants(
+                                            const glm::vec4& newValue) noexcept
   {
     _blendingState.blendConstants[0] = newValue.r;
     _blendingState.blendConstants[0] = newValue.g;
@@ -621,28 +638,30 @@ namespace mt
     _invalidateConfiguration();
   }
 
-  inline bool Technique::blendEnable(uint32_t attachmentIndex) const noexcept
+  inline bool TechniqueConfigurator::blendEnable(
+                                        uint32_t attachmentIndex) const noexcept
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     return _attachmentsBlending[attachmentIndex].blendEnable;
   }
 
-  inline void Technique::setBlendEnable(uint32_t attachmentIndex,
-                                        bool newValue) noexcept
+  inline void TechniqueConfigurator::setBlendEnable(uint32_t attachmentIndex,
+                                                    bool newValue) noexcept
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     _attachmentsBlending[attachmentIndex].blendEnable = newValue;
     _invalidateConfiguration();
   }
 
-  inline VkBlendFactor Technique::srcColorBlendFactor(
+  inline VkBlendFactor TechniqueConfigurator::srcColorBlendFactor(
                                         uint32_t attachmentIndex) const noexcept
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     return _attachmentsBlending[attachmentIndex].srcColorBlendFactor;
   }
 
-  inline void Technique::setSrcColorBlendFactor(uint32_t attachmentIndex,
+  inline void TechniqueConfigurator::setSrcColorBlendFactor(
+                                                uint32_t attachmentIndex,
                                                 VkBlendFactor newValue) noexcept
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
@@ -650,14 +669,15 @@ namespace mt
     _invalidateConfiguration();
   }
 
-  inline VkBlendFactor Technique::dstColorBlendFactor(
+  inline VkBlendFactor TechniqueConfigurator::dstColorBlendFactor(
                                         uint32_t attachmentIndex) const noexcept
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     return _attachmentsBlending[attachmentIndex].dstColorBlendFactor;
   }
 
-  inline void Technique::setDstColorBlendFactor(uint32_t attachmentIndex,
+  inline void TechniqueConfigurator::setDstColorBlendFactor(
+                                                uint32_t attachmentIndex,
                                                 VkBlendFactor newValue) noexcept
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
@@ -665,29 +685,31 @@ namespace mt
     _invalidateConfiguration();
   }
 
-  inline VkBlendOp Technique::colorBlendOp(
+  inline VkBlendOp TechniqueConfigurator::colorBlendOp(
                                         uint32_t attachmentIndex) const noexcept
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     return _attachmentsBlending[attachmentIndex].colorBlendOp;
   }
 
-  inline void Technique::setColorBlendOp( uint32_t attachmentIndex,
-                                          VkBlendOp newValue) noexcept
+  inline void TechniqueConfigurator::setColorBlendOp(
+                                                  uint32_t attachmentIndex,
+                                                  VkBlendOp newValue) noexcept
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     _attachmentsBlending[attachmentIndex].colorBlendOp = newValue;
     _invalidateConfiguration();
   }
 
-  inline VkBlendFactor Technique::srcAlphaBlendFactor(
+  inline VkBlendFactor TechniqueConfigurator::srcAlphaBlendFactor(
                                         uint32_t attachmentIndex) const noexcept
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     return _attachmentsBlending[attachmentIndex].srcAlphaBlendFactor;
   }
 
-  inline void Technique::setSrcAlphaBlendFactor(uint32_t attachmentIndex,
+  inline void TechniqueConfigurator::setSrcAlphaBlendFactor(
+                                                uint32_t attachmentIndex,
                                                 VkBlendFactor newValue) noexcept
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
@@ -695,14 +717,15 @@ namespace mt
     _invalidateConfiguration();
   }
 
-  inline VkBlendFactor Technique::dstAlphaBlendFactor(
+  inline VkBlendFactor TechniqueConfigurator::dstAlphaBlendFactor(
                                         uint32_t attachmentIndex) const noexcept
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     return _attachmentsBlending[attachmentIndex].dstAlphaBlendFactor;
   }
 
-  inline void Technique::setDstAlphaBlendFactor(uint32_t attachmentIndex,
+  inline void TechniqueConfigurator::setDstAlphaBlendFactor(
+                                                uint32_t attachmentIndex,
                                                 VkBlendFactor newValue) noexcept
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
@@ -710,31 +733,32 @@ namespace mt
     _invalidateConfiguration();
   }
 
-  inline VkBlendOp Technique::alphaBlendOp(
+  inline VkBlendOp TechniqueConfigurator::alphaBlendOp(
                                         uint32_t attachmentIndex) const noexcept
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     return _attachmentsBlending[attachmentIndex].alphaBlendOp;
   }
 
-  inline void Technique::setAlphaBlendOp( uint32_t attachmentIndex,
-                                          VkBlendOp newValue) noexcept
+  inline void TechniqueConfigurator::setAlphaBlendOp(
+                                                    uint32_t attachmentIndex,
+                                                    VkBlendOp newValue) noexcept
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     _attachmentsBlending[attachmentIndex].alphaBlendOp = newValue;
     _invalidateConfiguration();
   }
 
-  inline VkColorComponentFlags Technique::colorWriteMask(
-                                      uint32_t attachmentIndex) const noexcept
+  inline VkColorComponentFlags TechniqueConfigurator::colorWriteMask(
+                                        uint32_t attachmentIndex) const noexcept
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     return _attachmentsBlending[attachmentIndex].colorWriteMask;
   }
 
-  inline void Technique::setColorWriteMask(
-                                      uint32_t attachmentIndex,
-                                      VkColorComponentFlags newValue) noexcept
+  inline void TechniqueConfigurator::setColorWriteMask(
+                                        uint32_t attachmentIndex,
+                                        VkColorComponentFlags newValue) noexcept
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     _attachmentsBlending[attachmentIndex].colorWriteMask = newValue;

@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include <technique/Technique.h>
+#include <technique/TechniqueConfigurator.h>
 #include <util/Ref.h>
 #include <GLFWRenderWindow.h>
 
@@ -15,6 +15,6 @@ namespace mt
     virtual ~TechniqueTestWindow() noexcept = default;
 
   private:
-    Ref<Technique> _technique;
+    Ref<TechniqueConfigurator> _configurator;
   };
 }
