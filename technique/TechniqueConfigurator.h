@@ -58,7 +58,7 @@ namespace mt
     };
 
   public:
-    TechniqueConfigurator(Device& device, const char* debugName = "Technique") noexcept;
+    TechniqueConfigurator(Device& device, const char* debugName = "TechniqueConfigurator") noexcept;
     TechniqueConfigurator(const TechniqueConfigurator&) = delete;
     TechniqueConfigurator& operator = (const TechniqueConfigurator&) = delete;
   protected:
