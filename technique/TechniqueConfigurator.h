@@ -28,7 +28,17 @@ namespace mt
 {
   class Device;
 
-  // Класс для настройки конфигурации техник.
+  //  Класс для настройки конфигурации техник (TechniqueConfiguration).
+  //  Основной паттерн применения:
+  //    Пользователь создает конфигуратор и настраивает его. После этого
+  //      создает новую конфигурацию, вызвав rebuildConfiguation
+  //    Техника подключается к конфигуратору и получает от него конфигурацию.
+  //    Далее техника использует пайплайны из конфигурации для отрисовки или
+  //      вычислений
+  //    Техика при работе отслеживает ревизию конфигуратора, и если произошли
+  //      изменения, то получает от конфигуратора новую конфигурацию
+  //    Пользователь может изменить конфигурацию, перенастроив конфигуратор и
+  //      вызвав rebuildConfiguration
   class TechniqueConfigurator : public RefCounter
   {
   public:
@@ -58,18 +68,18 @@ namespace mt
     inline Device& device() const noexcept;
 
     //  Ревизия используется для отслеживания изменений в конфигурации
-    //  Каждый раз, когда происходтит изменение состояния, ревизия увеличивается
-    //  и зависимым объектам необходимо синхронизироваться с конфигурацией
+    //  Каждый раз, когда происходтит изменение, ревизия увеличивается
+    //  и зависимым техникам необходимо синхронизироваться с конфигурацией
     inline size_t revision() const noexcept;
 
     //  Может возвращать nullptr, если сборка конфигурации не завершилась
-    //  успешно (например, ошибка в шейдере или неполный набор шейдеров)
-    inline const TechniqueConfiguration* configuration();
+    //  успешно (например, ошибка в шейдере или неполный набор шейдеров) или
+    //  конфигурация ещё не была собрана
+    inline const TechniqueConfiguration* configuration() const noexcept;
 
-    //  Если конфигурация ещё не инициализированa, то сделать это прямо сейчас
-    //  Позволяет избежать задержек при первом использовании техники из-за
-    //    ленивой инициализации.
-    inline void forceUpdate();
+    //  Пересобрать конфигурацию для техник.
+    //  Необходимо вызывать каждый раз после окончания настроек
+    void rebuildConfiguration();
 
     inline const std::string& debugName() const noexcept;
 
@@ -222,7 +232,6 @@ namespace mt
 
   private:
     void _invalidateConfiguration() noexcept;
-    void _buildConfiguration();
     //  Посчитать количество вариантов пайплайна и веса селекшенов
     void _processSelections(ConfigurationBuildContext& buildContext);
     //  Обойти все варианты селекшенов и создать/обработать для них
@@ -270,7 +279,6 @@ namespace mt
     std::string _debugName;
 
     Ref<TechniqueConfiguration> _configuration;
-    bool _needRebuildConfiguration;
 
     AbstractPipeline::Type _pipelineType;
 
@@ -297,16 +305,10 @@ namespace mt
     return _revision;
   }
 
-  inline const TechniqueConfiguration* TechniqueConfigurator::configuration()
+  inline const TechniqueConfiguration*
+                          TechniqueConfigurator::configuration() const noexcept
   {
-    if(_needRebuildConfiguration) _buildConfiguration();
-    MT_ASSERT(_needRebuildConfiguration == false);
     return _configuration.get();
-  }
-
-  inline void TechniqueConfigurator::forceUpdate()
-  {
-    if (_needRebuildConfiguration) _buildConfiguration();
   }
 
   inline const std::string& TechniqueConfigurator::debugName() const noexcept

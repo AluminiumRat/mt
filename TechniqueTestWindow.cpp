@@ -20,5 +20,5 @@ TechniqueTestWindow::TechniqueTestWindow(Device& device) :
       {.name = "selector2", .valueVariants = {"0", "1"}}};
   _configurator->setSelections(selections);
 
-  _configurator->forceUpdate();
+  _configurator->rebuildConfiguration();
 }

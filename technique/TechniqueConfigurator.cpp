@@ -16,7 +16,6 @@ TechniqueConfigurator::TechniqueConfigurator( Device& device,
   _device(device),
   _revision(0),
   _debugName(debugName),
-  _needRebuildConfiguration(true),
   _pipelineType(AbstractPipeline::GRAPHIC_PIPELINE),
   _topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST),
   _rasterizationState{},
@@ -45,16 +44,12 @@ TechniqueConfigurator::TechniqueConfigurator( Device& device,
 void TechniqueConfigurator::_invalidateConfiguration() noexcept
 {
   _configuration.reset();
-  _needRebuildConfiguration = true;
-  _revision++;
 }
 
-void TechniqueConfigurator::_buildConfiguration()
+void TechniqueConfigurator::rebuildConfiguration()
 {
   try
   {
-    _needRebuildConfiguration = false;
-
     _configuration = Ref(new TechniqueConfiguration);
 
     _configuration->pipelineType = _pipelineType;
@@ -83,6 +78,8 @@ void TechniqueConfigurator::_buildConfiguration()
 
     _createLayouts(buildContext);
     _createPipelines(buildContext);
+
+    _revision++;
   }
   catch(...)
   {
