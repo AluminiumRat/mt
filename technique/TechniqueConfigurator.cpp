@@ -274,6 +274,12 @@ void TechniqueConfigurator::_processBindings(
     newResource.writeAccess =
               reflectedBinding->resource_type & SPV_REFLECT_RESOURCE_FLAG_UAV;
     newResource.count = reflectedBinding->count;
+    if( newResource.count > 1 &&
+        newResource.type != VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE &&
+        newResource.type != VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+    {
+      throw std::runtime_error(_debugName + ": " + shaderRecord.filename + ": only images arrays are supported.");
+    }
 
     // Смотрим, возможно этот биндинг уже появлялся на других стадиях
     bool itIsNewResource = true;
@@ -462,7 +468,7 @@ void TechniqueConfigurator::_createLayouts(
     VkDescriptorSetLayoutBinding binding{};
     binding.binding = resource.bindingIndex;
     binding.descriptorType = resource.type;
-    binding.descriptorCount = 1;
+    binding.descriptorCount = resource.count;
     binding.stageFlags = resource.stages;
 
     uint32_t setIndex = uint32_t(resource.set);

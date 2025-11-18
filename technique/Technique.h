@@ -40,6 +40,8 @@ namespace mt
 
     Selection& getOrCreateSelection(const char* selectionName);
 
+    inline const std::string& debugName() const noexcept;
+
   private:
     void _checkConfiguration();
     void _checkSelections() noexcept;
@@ -67,5 +69,10 @@ namespace mt
   inline TechniqueConfigurator& Technique::configurator() const noexcept
   {
     return *_configurator;
+  }
+
+  inline const std::string& Technique::debugName() const noexcept
+  {
+    return _debugName;
   }
 }

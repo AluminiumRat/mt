@@ -7,13 +7,13 @@
 #include <util/Ref.h>
 #include <util/RefCounter.h>
 #include <vkr/image/ImagesAccessSet.h>
+#include <vkr/image/ImageView.h>
 
 namespace mt
 {
   class DataBuffer;
   class DescriptorPool;
   class Device;
-  class ImageView;
   class Sampler;
 
   class DescriptorSet : public RefCounter
@@ -34,11 +34,36 @@ namespace mt
 
     inline const ImagesAccessSet& imagesAccess() const noexcept;
 
+    // Подключить буфер, общий способ
+    void attachBuffer(const DataBuffer& buffer,
+                      uint32_t binding,
+                      VkDescriptorType descriptorType,
+                      VkDeviceSize offset,
+                      VkDeviceSize range);
+    // Подключить буфер, упрощенный вариант
     void attachUniformBuffer(const DataBuffer& buffer, uint32_t binding);
+    // Подключить буфер, упрощенный вариант
     void attachStorageBuffer(const DataBuffer& buffer, uint32_t binding);
+
+    // Подключить один ImageView. Общий метод.
+    void attachImage( const ImageView& imageView,
+                      uint32_t binding,
+                      VkDescriptorType descriptorType,
+                      VkPipelineStageFlags stages,
+                      bool writeAccess,
+                      VkImageLayout layout);
+    // Подключить массив ImageView. Общий метод.
+    void attachImages(const std::vector<ConstRef<ImageView>>& images,
+                      uint32_t binding,
+                      VkDescriptorType descriptorType,
+                      VkPipelineStageFlags stages,
+                      bool writeAccess,
+                      VkImageLayout layout);
+    // Подключить ImageView на чтение через сэмплер. Упрощенный вариант.
     void attachSampledImage(const ImageView& imageView,
                             uint32_t binding,
                             VkPipelineStageFlags stages);
+
     void attachSampler(const Sampler& sampler, uint32_t binding);
 
     //  В финализированные сеты нельзя добавлять новые ресурсы, но можно
@@ -46,6 +71,12 @@ namespace mt
     //    использования.
     inline void finalize() noexcept;
     inline bool isFinalized() const noexcept;
+
+  private:
+    void _addImageAccess( const ImageView& imageView,
+                          VkPipelineStageFlags stages,
+                          VkImageLayout layout,
+                          bool writeAccess);
 
   private:
     Device& _device;
