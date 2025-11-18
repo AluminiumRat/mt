@@ -253,6 +253,39 @@ TechniqueConfiguration::DescriptorSet&
   return _configuration->descriptorSets.back();
 }
 
+static VkPipelineStageFlagBits getPipelineStage(
+                                              VkShaderStageFlagBits shaderStage)
+{
+  switch(shaderStage)
+  {
+  case VK_SHADER_STAGE_VERTEX_BIT:
+    return VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+  case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
+    return VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
+  case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
+    return VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
+  case VK_SHADER_STAGE_GEOMETRY_BIT:
+    return VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
+  case VK_SHADER_STAGE_FRAGMENT_BIT:
+    return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+  case VK_SHADER_STAGE_COMPUTE_BIT:
+    return VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+  case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
+  case VK_SHADER_STAGE_ANY_HIT_BIT_KHR:
+  case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
+  case VK_SHADER_STAGE_MISS_BIT_KHR:
+  case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
+  case VK_SHADER_STAGE_CALLABLE_BIT_KHR:
+    return VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+  case VK_SHADER_STAGE_TASK_BIT_EXT:
+    return VK_PIPELINE_STAGE_TASK_SHADER_BIT_EXT;
+  case VK_SHADER_STAGE_MESH_BIT_EXT:
+    return VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT;
+  default:
+    Abort("Unsupportet shader stage");
+  }
+}
+
 void TechniqueConfigurator::_processBindings(
                                     const ShaderInfo& shaderRecord,
                                     TechniqueConfiguration::DescriptorSet& set,
@@ -269,7 +302,8 @@ void TechniqueConfigurator::_processBindings(
     newResource.type = VkDescriptorType(reflectedBinding->descriptor_type);
     newResource.set = set.type;
     newResource.bindingIndex = reflectedBinding->binding;
-    newResource.stages = shaderRecord.stage;
+    newResource.shaderStages = shaderRecord.stage;
+    newResource.pipelineStages = getPipelineStage(shaderRecord.stage);
     newResource.name = reflectedBinding->name;
     newResource.writeAccess =
               reflectedBinding->resource_type & SPV_REFLECT_RESOURCE_FLAG_UAV;
@@ -298,7 +332,8 @@ void TechniqueConfigurator::_processBindings(
           throw std::runtime_error(_debugName + ": binding conflict: " + shaderRecord.filename);
         }
         // Биндинги совместимы, просто дополняем информацию
-        resource.stages |= newResource.stages;
+        resource.shaderStages |= newResource.shaderStages;
+        resource.pipelineStages |= newResource.pipelineStages;
         itIsNewResource = false;
         break;
       }
@@ -338,8 +373,6 @@ void TechniqueConfigurator::_processUniformBlock(
         Log::warning() << _debugName << ": uniform buffer mismatch set:" << reflectedBinding.set << " binding: " << reflectedBinding.binding << " file:" << shaderRecord.filename;
         throw std::runtime_error(_debugName + ": uniform buffer mismatch: " + shaderRecord.filename);
       }
-      // Похоже, что это один и тот же буфер, обновим для него информацию
-      buffer.stages |= shaderRecord.stage;
       return;
     }
   }
@@ -350,7 +383,6 @@ void TechniqueConfigurator::_processUniformBlock(
   newBuffer.binding = reflectedBinding.binding;
   newBuffer.name = reflectedBinding.name;
   newBuffer.size = block.size;
-  newBuffer.stages = shaderRecord.stage;
   //  Обходим всё содержимое и ищем куски, которые мы можем интерпретировать
   //  как параметры
   std::string prefix = newBuffer.name + ".";
@@ -469,7 +501,7 @@ void TechniqueConfigurator::_createLayouts(
     binding.binding = resource.bindingIndex;
     binding.descriptorType = resource.type;
     binding.descriptorCount = resource.count;
-    binding.stageFlags = resource.stages;
+    binding.stageFlags = resource.shaderStages;
 
     uint32_t setIndex = uint32_t(resource.set);
     bindings[setIndex].push_back(binding);

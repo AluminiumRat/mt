@@ -114,16 +114,19 @@ void TechniqueResourceImpl::_bindImage(DescriptorSet& set)
     set.attachImage(*_images[0],
                     _description->bindingIndex,
                     _description->type,
-                    _description->stages,
+                    _description->pipelineStages,
                     _description->writeAccess,
                     layout);
   }
   else
   {
-    set.attachImages(_images,
+    uint32_t imagesCount = std::min(uint32_t(_images.size()),
+                                    _description->count);
+    std::span imagesSpan(_images.data(), imagesCount);
+    set.attachImages(imagesSpan,
                     _description->bindingIndex,
                     _description->type,
-                    _description->stages,
+                    _description->pipelineStages,
                     _description->writeAccess,
                     layout);
   }

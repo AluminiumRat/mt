@@ -2,6 +2,9 @@
 
 #include <technique/Technique.h>
 #include <util/Ref.h>
+#include <vkr/image/ImageView.h>
+#include <vkr/DataBuffer.h>
+#include <vkr/Sampler.h>
 #include <GLFWRenderWindow.h>
 
 namespace mt
@@ -19,8 +22,23 @@ namespace mt
                                     FrameBuffer& frameBuffer) override;
 
   private:
+    void _createVertexBuffers(Device& device);
+    void _createTextures(Device& device);
+
+  private:
     Ref<Technique> _technique;
+
     Selection& _selector1;
     Selection& _selector2;
+
+    Ref<DataBuffer> _vertexBuffers[2];
+    TechniqueResource& _vertexBuffer;
+
+    Ref<ImageView> _textures[2];
+    TechniqueResource& _texture1;
+    TechniqueResource& _texture2;
+
+    Ref<Sampler> _sampler;
+    TechniqueResource& _samplerResource;
   };
 }

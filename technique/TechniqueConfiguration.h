@@ -102,7 +102,6 @@ namespace mt
                                   //  привязан буфер
       uint32_t binding;           //  Индекс привязки к дескриптер сету
       std::string name;
-      VkShaderStageFlags stages;  //  В каких шейдерах используется
       size_t size;                //  Размер в байтах
 
       std::vector<UniformVariable> variables;
@@ -117,7 +116,10 @@ namespace mt
       DescriptorSetType set;      //  К какому дескриптер сету должен быть
                                   //  привязан ресурс
       uint32_t bindingIndex;      //  Индекс привязки к дескриптер сету
-      VkShaderStageFlags stages;  //  В каких шейдерах используется
+      //  В каких шейдерах используется
+      VkShaderStageFlags shaderStages;
+      //  На каких стадиях используется (нужно для автоконтроля лэйаутов)
+      VkPipelineStageFlags pipelineStages;
       std::string name;
       bool writeAccess;
       uint32_t count;             //  Если в один бинд прибинжен массив

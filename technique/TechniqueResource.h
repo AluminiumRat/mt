@@ -1,5 +1,9 @@
 ﻿#pragma once
 
+#include <algorithm>
+#include <span>
+#include <vector>
+
 #include <technique/TechniqueConfiguration.h>
 #include <util/Ref.h>
 #include <vkr/image/ImageView.h>
@@ -36,12 +40,25 @@ namespace mt
 
     inline const DataBuffer* buffer() const noexcept;
     inline void setBuffer(const DataBuffer* buffer);
+    inline void setBuffer(const Ref<DataBuffer>& buffer);
+    inline void setBuffer(const ConstRef<DataBuffer>& buffer);
 
+    //  Текстуры могут объединяться в массивы дескриптеров (не путать с
+    //  textureArray). arrayIndex указывает на индекс в массиве дескриптеров
     inline const ImageView* image(size_t arrayIndex = 0) const noexcept;
     inline void setImage(const ImageView* image, size_t arrayIndex = 0);
+    inline void setImage(const Ref<ImageView>& image, size_t arrayIndex = 0);
+    inline void setImage( const ConstRef<ImageView>& image,
+                          size_t arrayIndex = 0);
+    //  Установить сразу весь набор текстур для массива дескриптеров
+    inline void setImages(std::span<const ImageView*> images);
+    inline void setImages(std::span<const Ref<ImageView>> images);
+    inline void setImages(std::span<const ConstRef<ImageView>> images);
 
     inline const Sampler* sampler() const noexcept;
     inline void setSampler(const Sampler* sampler);
+    inline void setSampler(const Ref<Sampler>& sampler);
+    inline void setSampler(const ConstRef<Sampler>& sampler);
 
   protected:
     inline void _clear() noexcept;
@@ -110,6 +127,16 @@ namespace mt
     _buffer = ConstRef(buffer);
   }
 
+  inline void TechniqueResource::setBuffer(const Ref<DataBuffer>& buffer)
+  {
+    setBuffer(buffer.get());
+  }
+
+  inline void TechniqueResource::setBuffer(const ConstRef<DataBuffer>& buffer)
+  {
+    setBuffer(buffer.get());
+  }
+
   inline const ImageView* TechniqueResource::image(
                                               size_t arrayIndex) const noexcept
   {
@@ -135,6 +162,53 @@ namespace mt
     _images[arrayIndex] = ConstRef(image);
   }
 
+  inline void TechniqueResource::setImage(const Ref<ImageView>& image,
+                                          size_t arrayIndex)
+  {
+    setImage(image.get(), arrayIndex);
+  }
+
+  inline void TechniqueResource::setImage(const ConstRef<ImageView>& image,
+                                          size_t arrayIndex)
+  {
+    setImage(image.get(), arrayIndex);
+  }
+
+  inline void TechniqueResource::setImages(std::span<const ImageView*> images)
+  {
+    if( _images.size() == images.size() &&
+        std::equal(_images.begin(), _images.end(), images.begin()))
+    {
+      return;
+    }
+    _clear();
+    _images = std::vector<ConstRef<ImageView>>(images.begin(), images.end());
+  }
+
+  inline void TechniqueResource::setImages(
+                                        std::span<const Ref<ImageView>> images)
+  {
+    if( _images.size() == images.size() &&
+        std::equal(_images.begin(), _images.end(), images.begin()))
+    {
+      return;
+    }
+    _clear();
+    _images = std::vector<ConstRef<ImageView>>(images.begin(), images.end());
+  }
+
+  inline void TechniqueResource::setImages(
+                                    std::span<const ConstRef<ImageView>> images)
+  {
+    if( _images.size() == images.size() &&
+        std::equal(_images.begin(), _images.end(), images.begin()))
+    {
+      return;
+    }
+    _clear();
+    _images = std::vector(images.begin(), images.end());
+  }
+
   inline const Sampler* TechniqueResource::sampler() const noexcept
   {
     return _sampler.get();
@@ -145,6 +219,16 @@ namespace mt
     if(sampler == _sampler) return;
     _clear();
     _sampler = ConstRef(sampler);
+  }
+
+  inline void TechniqueResource::setSampler(const Ref<Sampler>& sampler)
+  {
+    setSampler(sampler.get());
+  }
+
+  inline void TechniqueResource::setSampler(const ConstRef<Sampler>& sampler)
+  {
+    setSampler(sampler.get());
   }
 
   inline TechniqueResourceImpl::TechniqueResourceImpl(

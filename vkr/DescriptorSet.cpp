@@ -28,7 +28,7 @@ void DescriptorSet::attachBuffer( const DataBuffer& buffer,
                                   VkDeviceSize range)
 {
   MT_ASSERT(!isFinalized());
-  MT_ASSERT(offset + range < buffer.size())
+  MT_ASSERT(offset + range <= buffer.size())
 
   _resources.push_back(ConstRef(&buffer));
 
@@ -126,7 +126,7 @@ void DescriptorSet::attachImage(const ImageView& imageView,
 }
 
 void DescriptorSet::attachImages(
-                                const std::vector<ConstRef<ImageView>>& images,
+                                std::span<const ConstRef<ImageView>> images,
                                 uint32_t binding,
                                 VkDescriptorType descriptorType,
                                 VkPipelineStageFlags stages,

@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <span>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -53,7 +54,7 @@ namespace mt
                       bool writeAccess,
                       VkImageLayout layout);
     // Подключить массив ImageView. Общий метод.
-    void attachImages(const std::vector<ConstRef<ImageView>>& images,
+    void attachImages(std::span<const ConstRef<ImageView>> images,
                       uint32_t binding,
                       VkDescriptorType descriptorType,
                       VkPipelineStageFlags stages,

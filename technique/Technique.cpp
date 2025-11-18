@@ -111,11 +111,11 @@ void Technique::_checkResources() noexcept
 {
   // Если ревизия изменилась, значит в статик сете поменялся кто-то из ресурсов
   // Надо пересоздавать статик сет
-  if (_lastProcessedSelectionsRevision != _selectionsRevision)
+  if (_lastProcessedResourcesRevision != _resourcesRevision)
   {
     _staticSet.reset();
     _staticPool.reset();
-    _lastProcessedSelectionsRevision = _selectionsRevision;
+    _lastProcessedResourcesRevision = _resourcesRevision;
   }
 }
 
@@ -154,6 +154,7 @@ void Technique::_bindResources( DescriptorSet& descriptorSet,
       resource->bindToDescriptorSet(descriptorSet);
     }
   }
+  descriptorSet.finalize();
 }
 
 void Technique::_buildStaticSet()
