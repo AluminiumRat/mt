@@ -1,4 +1,5 @@
 ﻿#include <technique/Selection.h>
+#include <technique/Technique.h>
 #include <util/Log.h>
 
 using namespace mt;
@@ -6,8 +7,10 @@ using namespace mt;
 #define DEFAULT_VALUE "__default"
 
 Selection::Selection( const char* name,
+                      const Technique& technique,
                       size_t& resvisionCounter,
                       const TechniqueConfiguration* configuration) :
+  _technique(technique),
   _resvisionCounter(resvisionCounter),
   _description(nullptr),
   _valueIndex(0),
@@ -37,7 +40,7 @@ inline void Selection::setValue(const std::string& newValue)
     if(newVariantIndex == _description->valueVariants.size())
     {
       //  Такого варианта нет, используем нулевой
-      Log::warning() << "Selection: " << name() << " doesn't have variant: " << newValue;
+      Log::warning() << _technique.debugName() << " : selection " << name() << " doesn't have variant: " << newValue;
       newVariantIndex = 0;
     }
 

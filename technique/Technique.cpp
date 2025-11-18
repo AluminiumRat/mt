@@ -93,6 +93,7 @@ Selection& Technique::getOrCreateSelection(const char* selectionName)
     if(selection->name() == selectionName) return *selection;
   }
   _selections.push_back(std::make_unique<SelectionImpl>(selectionName,
+                                                        *this,
                                                         _selectionsRevision,
                                                         _configuration.get()));
   _selectionsRevision++;

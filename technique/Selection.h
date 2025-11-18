@@ -8,6 +8,8 @@
 
 namespace mt
 {
+  class Technique;
+
   //  Компонент класса Technique
   //  Дефайн в шейдере, который может принимать только ограниченное количество
   //    значений. Позволяет заранее скомпилировать все возможные вариации
@@ -20,6 +22,7 @@ namespace mt
     //    селекшенов в технике, чтобы не проверять каждый раз все селекшены на
     //    апдэйт значений.
     Selection(const char* name,
+              const Technique& technique,
               size_t& resvisionCounter,
               const TechniqueConfiguration* configuration);
     Selection(const Selection&) = delete;
@@ -35,6 +38,7 @@ namespace mt
     void _bindToConfiguration(const TechniqueConfiguration* configuration);
 
   protected:
+    const Technique& _technique;
     size_t& _resvisionCounter;
 
     const TechniqueConfiguration::SelectionDefine* _description;
@@ -52,6 +56,7 @@ namespace mt
   {
   public:
     inline SelectionImpl( const char* name,
+                          const Technique& technique,
                           size_t& resvisionCounter,
                           const TechniqueConfiguration* configuration);
     SelectionImpl(const SelectionImpl&) = delete;
@@ -76,9 +81,10 @@ namespace mt
 
   inline SelectionImpl::SelectionImpl(
                                   const char* name,
+                                  const Technique& technique,
                                   size_t& resvisionCounter,
                                   const TechniqueConfiguration* configuration) :
-    Selection(name, resvisionCounter, configuration)
+    Selection(name, technique, resvisionCounter, configuration)
   {
   }
 
