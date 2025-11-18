@@ -50,6 +50,9 @@ namespace mt
 
     inline CommandQueue& queue() const noexcept;
 
+    inline VolatileDescriptorPool& descriptorPool() noexcept;
+    inline UniformMemoryPool::Session& uniformMemorySession() noexcept;
+
     //  Барьер памяти. То есть разделяем поток исполнения команд плюс
     //    флашим кэши srcAccesMask и инвалидируем кэши dstAccesMask
     void memoryBarrier( VkPipelineStageFlags srcStages,
@@ -175,6 +178,19 @@ namespace mt
   inline CommandQueue& CommandProducer::queue() const noexcept
   {
     return _queue;
+  }
+
+  inline VolatileDescriptorPool& CommandProducer::descriptorPool() noexcept
+  {
+    MT_ASSERT(_descriptorPool != nullptr);
+    return *_descriptorPool;
+  }
+
+  inline UniformMemoryPool::Session&
+                                CommandProducer::uniformMemorySession() noexcept
+  {
+    MT_ASSERT(_uniformMemorySession.has_value());
+    return _uniformMemorySession.value();
   }
 
   inline void CommandProducer::lockResource(const RefCounter& resource)

@@ -47,6 +47,7 @@ namespace mt
     std::vector<SelectionDefine> selections;
 
     AbstractPipeline::Type pipelineType;
+    ConstRef<PipelineLayout> pipelineLayout;
 
     std::vector<ConstRef<GraphicPipeline>> graphicPipelineVariants;
 

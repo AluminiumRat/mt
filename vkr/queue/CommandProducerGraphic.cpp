@@ -116,7 +116,8 @@ void CommandProducerGraphic::bindDescriptorSetGraphic(
                           nullptr);
 }
 
-void CommandProducerGraphic::unbindDescriptorSetGraphic(uint32_t setIndex)
+void CommandProducerGraphic::unbindDescriptorSetGraphic(
+                                                    uint32_t setIndex) noexcept
 {
   MT_ASSERT(setIndex < maxDescriptorSetsNumber);
   _pipelineAccesses.setChild(nullptr, setIndex + 1);

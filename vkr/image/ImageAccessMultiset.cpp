@@ -14,11 +14,11 @@ ImageAccessMultiset::ImageAccessMultiset() :
 }
 
 void ImageAccessMultiset::setChild( const ImagesAccessSet* childSet,
-                                    uint32_t index)
+                                    uint32_t index) noexcept
 {
   MT_ASSERT(index < maxSetsCount);
 
-  if(_childAccesses[index] != nullptr &&
+  if( _childAccesses[index] != nullptr &&
       !_childAccesses[index]->empty())
   {
     _needRecalculate = true;

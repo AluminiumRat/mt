@@ -26,7 +26,7 @@ namespace mt
     //    что он будет существовать всё время, пока мультисет его использует.
     //    кроме того, childSet не должен изменяться за время его использования
     //    в мультисете.
-    void setChild(const ImagesAccessSet* childSet, uint32_t index);
+    void setChild(const ImagesAccessSet* childSet, uint32_t index) noexcept;
     inline const ImagesAccessSet& getMergedSet();
 
   private:

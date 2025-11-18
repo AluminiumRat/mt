@@ -75,7 +75,7 @@ namespace mt
                                   uint32_t setIndex,
                                   const PipelineLayout& layout);
     // Отключить набор ресурсов от пайплайна
-    void unbindDescriptorSetGraphic(uint32_t setIndex);
+    void unbindDescriptorSetGraphic(uint32_t setIndex) noexcept;
 
     //  Обертка вокруг vkCmdDraw
     //  Обычная отрисовка фиксированного количества вершин без индексного буфера

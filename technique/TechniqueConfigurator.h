@@ -224,7 +224,6 @@ namespace mt
     struct ConfigurationBuildContext
     {
       std::vector<ShaderSet> shaders;
-      ConstRef<PipelineLayout> pipelineLayout;
       uint32_t variantsNumber;
       uint32_t currentVariantIndex;
       std::vector<ShaderCompilator::Define> currentDefines;

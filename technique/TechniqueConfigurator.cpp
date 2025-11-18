@@ -495,15 +495,15 @@ void TechniqueConfigurator::_createLayouts(
       setLayout = ConstRef(new DescriptorSetLayout(_device, {}));
     }
   }
-  buildContext.pipelineLayout = ConstRef(new PipelineLayout(_device,
-                                                            setLayouts));
+  _configuration->pipelineLayout = ConstRef(new PipelineLayout( _device,
+                                                                setLayouts));
 }
 
 void TechniqueConfigurator::_createPipelines(
                                       ConfigurationBuildContext& buildContext)
 {
   MT_ASSERT(_configuration != nullptr);
-  MT_ASSERT(buildContext.pipelineLayout != nullptr)
+  MT_ASSERT(_configuration->pipelineLayout != nullptr)
 
   for(uint32_t variant = 0; variant < buildContext.variantsNumber; variant++)
   {
@@ -527,13 +527,13 @@ void TechniqueConfigurator::_createPipelines(
     {
       _configuration->graphicPipelineVariants[variant] =
                               ConstRef(new GraphicPipeline(
-                                                *_frameBufferFormat,
-                                                shaders,
-                                                _topology,
-                                                _rasterizationState,
-                                                _depthStencilState,
-                                                _blendingState,
-                                                *buildContext.pipelineLayout));
+                                              *_frameBufferFormat,
+                                              shaders,
+                                              _topology,
+                                              _rasterizationState,
+                                              _depthStencilState,
+                                              _blendingState,
+                                              *_configuration->pipelineLayout));
     }
   }
 }

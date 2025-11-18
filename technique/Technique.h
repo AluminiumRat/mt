@@ -7,8 +7,11 @@
 #include <technique/Selection.h>
 #include <technique/TechniqueConfiguration.h>
 #include <technique/TechniqueConfigurator.h>
+#include <technique/TechniqueResource.h>
 #include <util/Ref.h>
 #include <util/RefCounter.h>
+#include <vkr/DescriptorPool.h>
+#include <vkr/DescriptorSet.h>
 
 namespace mt
 {
@@ -36,14 +39,20 @@ namespace mt
     //  ВНИМАНИЕ!!! Нельзя одновременно подключать несколько техник к одному
     //    продюсеру.
     bool bindGraphic(CommandProducerGraphic& producer);
-    void unbindGraphic(CommandProducerGraphic& producer);
+    void unbindGraphic(CommandProducerGraphic& producer) noexcept;
 
     Selection& getOrCreateSelection(const char* selectionName);
+    TechniqueResource& getOrCreateResource(const char* resourceName);
 
     inline const std::string& debugName() const noexcept;
 
   private:
     void _checkConfiguration();
+    void _checkResources() noexcept;
+    void _bindDescriptorsGraphic(CommandProducerGraphic& producer);
+    void _bindResources(DescriptorSet& descriptorSet,
+                        DescriptorSetType setType);
+    void _buildStaticSet();
     void _checkSelections() noexcept;
 
   private:
@@ -52,6 +61,8 @@ namespace mt
     bool _isBinded;
     Ref<TechniqueConfigurator> _configurator;
     ConstRef<TechniqueConfiguration> _configuration;
+    const TechniqueConfiguration::DescriptorSet* _volatileSetDescription;
+    const TechniqueConfiguration::DescriptorSet* _staticSetDescription;
     size_t _lastConfiguratorRevision;
 
     uint32_t _pipelineVariant;
@@ -59,6 +70,12 @@ namespace mt
     std::vector<std::unique_ptr<SelectionImpl>> _selections;
     size_t _selectionsRevision;
     size_t _lastProcessedSelectionsRevision;
+
+    std::vector<std::unique_ptr<TechniqueResourceImpl>> _resources;
+    size_t _resourcesRevision;
+    size_t _lastProcessedResourcesRevision;
+    Ref<DescriptorPool> _staticPool;
+    Ref<DescriptorSet> _staticSet;
   };
 
   inline Device& Technique::device() const noexcept

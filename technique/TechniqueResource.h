@@ -59,7 +59,7 @@ namespace mt
   };
 
   //  Дополнение для внутреннего использования внутри техники
-  class TechniqueResourceImpl : TechniqueResource
+  class TechniqueResourceImpl : public TechniqueResource
   {
   public:
     inline TechniqueResourceImpl( const char* name,
