@@ -8,6 +8,7 @@
 #include <technique/TechniqueConfiguration.h>
 #include <technique/TechniqueConfigurator.h>
 #include <technique/TechniqueResource.h>
+#include <technique/TechniqueUniformBlock.h>
 #include <util/Ref.h>
 #include <util/RefCounter.h>
 #include <vkr/DescriptorPool.h>
@@ -74,6 +75,10 @@ namespace mt
     std::vector<std::unique_ptr<TechniqueResourceImpl>> _resources;
     size_t _resourcesRevision;
     size_t _lastProcessedResourcesRevision;
+
+    using UniformBlocks = std::vector<std::unique_ptr<TechniqueUniformBlock>>;
+    UniformBlocks _uniformBlocks;
+
     Ref<DescriptorPool> _staticPool;
     Ref<DescriptorSet> _staticSet;
   };

@@ -42,6 +42,11 @@ bool Technique::bindGraphic(CommandProducerGraphic& producer)
     return false;
   }
 
+  for(std::unique_ptr<TechniqueUniformBlock>& uniformBlock : _uniformBlocks)
+  {
+    uniformBlock->update(producer);
+  }
+
   _checkResources();
   _bindDescriptorsGraphic(producer);
 
@@ -57,54 +62,62 @@ bool Technique::bindGraphic(CommandProducerGraphic& producer)
 
 void Technique::_checkConfiguration()
 {
-  if(_lastConfiguratorRevision != _configurator->revision())
+  if(_lastConfiguratorRevision == _configurator->revision()) return;
+
+  // Ревизия конфигурации поменялась, надо установить свежую конфигурацию
+  _lastConfiguratorRevision = _configurator->revision();
+  const TechniqueConfiguration* newConfiguration =
+                                              _configurator->configuration();
+  _volatileSetDescription = nullptr;
+  _staticSetDescription = nullptr;
+
+  // Заранее найдем нужные сеты
+  for(const TechniqueConfiguration::DescriptorSet& setDescription :
+                                            newConfiguration->descriptorSets)
   {
-    // Ревизия конфигурации поменялась, надо установить свежую конфигурацию
-    _lastConfiguratorRevision = _configurator->revision();
-    const TechniqueConfiguration* newConfiguration =
-                                                _configurator->configuration();
-    _volatileSetDescription = nullptr;
-    _staticSetDescription = nullptr;
-
-    // Заранее найдем нужные сеты
-    for(const TechniqueConfiguration::DescriptorSet& setDescription :
-                                              newConfiguration->descriptorSets)
+    switch(setDescription.type)
     {
-      switch(setDescription.type)
-      {
-      case DescriptorSetType::VOLATILE:
-        _volatileSetDescription = &setDescription;
-        break;
-      case DescriptorSetType::STATIC:
-        _staticSetDescription = &setDescription;
-        break;
-      }
-    }
-
-    try
-    {
-      // Биндим дочерние компоненты
-      for (std::unique_ptr<SelectionImpl>& selection : _selections)
-      {
-        selection->setConfiguration(newConfiguration);
-      }
-      _selectionsRevision++;
-
-      for (std::unique_ptr<TechniqueResourceImpl>& resource : _resources)
-      {
-        resource->setConfiguration(newConfiguration);
-      }
-      _resourcesRevision++;
-
-      _configuration = ConstRef(newConfiguration);
-    }
-    catch(std::exception& error)
-    {
-      // Откатить технику назад не получится, поэтому лучше упадем
-      Log::error() << _debugName << ": unable to update configuration: " << error.what();
-      Abort("Unable to update technique configuration");
+    case DescriptorSetType::VOLATILE:
+      _volatileSetDescription = &setDescription;
+      break;
+    case DescriptorSetType::STATIC:
+      _staticSetDescription = &setDescription;
+      break;
     }
   }
+
+  UniformBlocks _newUniformBlocks;
+  for(const TechniqueConfiguration::UniformBuffer& description :
+                                            newConfiguration->uniformBuffers)
+  {
+    _newUniformBlocks.emplace_back(
+                              new TechniqueUniformBlock(description, *this));
+  }
+
+  try
+  {
+    // Биндим дочерние компоненты
+    for (std::unique_ptr<SelectionImpl>& selection : _selections)
+    {
+      selection->setConfiguration(newConfiguration);
+    }
+    _selectionsRevision++;
+
+    for (std::unique_ptr<TechniqueResourceImpl>& resource : _resources)
+    {
+      resource->setConfiguration(newConfiguration);
+    }
+    _resourcesRevision++;
+  }
+  catch(std::exception& error)
+  {
+    // Откатить технику назад не получится, поэтому лучше упадем
+    Log::error() << _debugName << ": unable to update configuration: " << error.what();
+    Abort("Unable to update technique configuration");
+  }
+
+  _uniformBlocks = std::move(_newUniformBlocks);
+  _configuration = ConstRef(newConfiguration);
 }
 
 void Technique::_checkResources() noexcept
@@ -154,6 +167,12 @@ void Technique::_bindResources( DescriptorSet& descriptorSet,
       resource->bindToDescriptorSet(descriptorSet);
     }
   }
+
+  for (std::unique_ptr<TechniqueUniformBlock>& uniformBlock : _uniformBlocks)
+  {
+    uniformBlock->bindToDescriptorSet(descriptorSet);
+  }
+
   descriptorSet.finalize();
 }
 

@@ -40,6 +40,7 @@ add_executable (vkTest
                 "technique/Technique.cpp"
                 "technique/TechniqueConfigurator.cpp"
                 "technique/TechniqueResource.cpp"
+                "technique/TechniqueUniformBlock.cpp"
                 "third_party/spirv_reflect/spirv_reflect.c"
                 "util/Log.cpp"
                 "vkr/image/Image.cpp"

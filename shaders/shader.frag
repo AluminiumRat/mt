@@ -19,6 +19,5 @@ void main()
                       texCoord);
   outColor *= texture(sampler2D(colorTexture2, samplerState),
                       texCoord);
-  //outColor *= colorData.color;
-  //outColor = colorData.color * vec4(vertexColor, 1.0);
+  outColor *= colorData.color;
 }
