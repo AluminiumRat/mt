@@ -40,5 +40,7 @@ namespace mt
 
     Ref<Sampler> _sampler;
     TechniqueResource& _samplerResource;
+
+    UniformVariable& _color;
   };
 }

@@ -86,11 +86,11 @@ void Technique::_checkConfiguration()
     }
   }
 
-  UniformBlocks _newUniformBlocks;
+  UniformBlocks newUniformBlocks;
   for(const TechniqueConfiguration::UniformBuffer& description :
                                             newConfiguration->uniformBuffers)
   {
-    _newUniformBlocks.emplace_back(
+    newUniformBlocks.emplace_back(
                               new TechniqueUniformBlock(description, *this));
   }
 
@@ -108,6 +108,11 @@ void Technique::_checkConfiguration()
       resource->setConfiguration(newConfiguration);
     }
     _resourcesRevision++;
+
+    for (std::unique_ptr<UniformVariableImpl>& uniform : _uniforms)
+    {
+      uniform->setConfiguration(newConfiguration, newUniformBlocks);
+    }
   }
   catch(std::exception& error)
   {
@@ -116,7 +121,7 @@ void Technique::_checkConfiguration()
     Abort("Unable to update technique configuration");
   }
 
-  _uniformBlocks = std::move(_newUniformBlocks);
+  _uniformBlocks = std::move(newUniformBlocks);
   _configuration = ConstRef(newConfiguration);
 }
 
@@ -241,4 +246,18 @@ TechniqueResource& Technique::getOrCreateResource(const char* resourceName)
                                                         _configuration.get()));
   _resourcesRevision++;
   return *_resources.back();
+}
+
+UniformVariable& Technique::getOrCreateUniform(const char* uniformFullName)
+{
+  for(std::unique_ptr<UniformVariableImpl>& unifrom : _uniforms)
+  {
+    if(unifrom->name() == uniformFullName) return *unifrom;
+  }
+  _uniforms.push_back(std::make_unique<UniformVariableImpl>(
+                                                        uniformFullName,
+                                                        *this,
+                                                        _configuration.get(),
+                                                        _uniformBlocks));
+  return *_uniforms.back();
 }

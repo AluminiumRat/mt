@@ -9,6 +9,7 @@
 #include <technique/TechniqueConfigurator.h>
 #include <technique/TechniqueResource.h>
 #include <technique/TechniqueUniformBlock.h>
+#include <technique/UniformVariable.h>
 #include <util/Ref.h>
 #include <util/RefCounter.h>
 #include <vkr/DescriptorPool.h>
@@ -44,6 +45,7 @@ namespace mt
 
     Selection& getOrCreateSelection(const char* selectionName);
     TechniqueResource& getOrCreateResource(const char* resourceName);
+    UniformVariable& getOrCreateUniform(const char* uniformFullName);
 
     inline const std::string& debugName() const noexcept;
 
@@ -78,6 +80,8 @@ namespace mt
 
     using UniformBlocks = std::vector<std::unique_ptr<TechniqueUniformBlock>>;
     UniformBlocks _uniformBlocks;
+
+    std::vector<std::unique_ptr<UniformVariableImpl>> _uniforms;
 
     Ref<DescriptorPool> _staticPool;
     Ref<DescriptorSet> _staticSet;

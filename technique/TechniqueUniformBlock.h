@@ -39,7 +39,7 @@ namespace mt
     inline void setData(uint32_t offset,
                         uint32_t dataSize,
                         const void* srcData);
-    inline const void* getData(uint32_t offset, uint32_t dataSize);
+    inline const void* getData(uint32_t offset);
 
     void update(CommandProducerTransfer& commandProducer);
     void bindToDescriptorSet(DescriptorSet& set);
@@ -68,10 +68,9 @@ namespace mt
     _needUpdateGPUBuffer = true;
   }
 
-  inline const void* TechniqueUniformBlock::getData(uint32_t offset,
-                                                    uint32_t dataSize)
+  inline const void* TechniqueUniformBlock::getData(uint32_t offset)
   {
-    MT_ASSERT(offset + dataSize <= _description.size);
+    MT_ASSERT(offset < _description.size);
     return _cpuBuffer.data() + offset;
   }
 }

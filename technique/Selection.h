@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include <optional>
 #include <string>
 
 #include <technique/TechniqueConfiguration.h>

@@ -13,7 +13,8 @@ TechniqueTestWindow::TechniqueTestWindow(Device& device) :
   _texture1(_technique->getOrCreateResource("colorTexture1")),
   _texture2(_technique->getOrCreateResource("colorTexture2")),
   _sampler(new Sampler(device)),
-  _samplerResource(_technique->getOrCreateResource("samplerState"))
+  _samplerResource(_technique->getOrCreateResource("samplerState")),
+  _color(_technique->getOrCreateUniform("colorData.color"))
 {
   _selector1.setValue("1");
   _selector2.setValue("1");
@@ -26,6 +27,8 @@ TechniqueTestWindow::TechniqueTestWindow(Device& device) :
   _texture2.setImage(_textures[0]);
 
   _samplerResource.setSampler(_sampler);
+
+  _color.setValue(glm::vec4(1, 1, 1, 1));
 
   TechniqueConfigurator& configurator = _technique->configurator();
 
@@ -123,6 +126,10 @@ void TechniqueTestWindow::drawImplementation(
   {
     _technique->configurator().rebuildConfiguration();
   }
+
+  float colorFactor = (frameIndex % 100) / 100.0f;
+  std::vector<float> colorValue = {colorFactor, colorFactor, colorFactor, 1.0f};
+  _color.setValue(colorValue);
 
   _technique->bindGraphic(commandProducer);
   commandProducer.draw(3);
