@@ -42,7 +42,8 @@ namespace mt
     inline const void* getData(uint32_t offset);
 
     void update(CommandProducerTransfer& commandProducer);
-    void bindToDescriptorSet(DescriptorSet& set);
+    void bindToDescriptorSet( DescriptorSet& set,
+                              CommandProducerTransfer& commandProducer);
 
   private:
     const TechniqueConfiguration::UniformBuffer& _description;

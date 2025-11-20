@@ -18,6 +18,7 @@
 namespace mt
 {
   class CommandProducerGraphic;
+  class CommandProducerTransfer;
   class Device;
 
   class Technique : public RefCounter
@@ -54,8 +55,9 @@ namespace mt
     void _checkResources() noexcept;
     void _bindDescriptorsGraphic(CommandProducerGraphic& producer);
     void _bindResources(DescriptorSet& descriptorSet,
-                        DescriptorSetType setType);
-    void _buildStaticSet();
+                        DescriptorSetType setType,
+                        CommandProducerTransfer& commandProducer);
+    void _buildStaticSet(CommandProducerTransfer& commandProducer);
     void _checkSelections() noexcept;
 
   private:

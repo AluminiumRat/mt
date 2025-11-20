@@ -9,7 +9,7 @@ layout (set = STATIC,
     Vertex data[];
 } vertices;
 
-layout (set = STATIC,
+layout (set = VOLATILE,
         binding = 2) uniform ColorData
 {
     vec4 color;

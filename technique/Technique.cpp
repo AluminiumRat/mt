@@ -144,7 +144,7 @@ void Technique::_bindDescriptorsGraphic(CommandProducerGraphic& producer)
   {
     Ref<DescriptorSet> volatileSet =
         producer.descriptorPool().allocateSet(*_volatileSetDescription->layout);
-    _bindResources(*volatileSet, DescriptorSetType::VOLATILE);
+    _bindResources(*volatileSet, DescriptorSetType::VOLATILE, producer);
 
     producer.bindDescriptorSetGraphic(*volatileSet,
                                       uint32_t(DescriptorSetType::VOLATILE),
@@ -154,7 +154,7 @@ void Technique::_bindDescriptorsGraphic(CommandProducerGraphic& producer)
   if(_staticSetDescription != nullptr)
   {
     // Статик сет обновляется только по необходимости
-    if(_staticSet == nullptr) _buildStaticSet();
+    if(_staticSet == nullptr) _buildStaticSet(producer);
     producer.bindDescriptorSetGraphic(*_staticSet,
                                       uint32_t(DescriptorSetType::STATIC),
                                       *_configuration->pipelineLayout);
@@ -162,7 +162,8 @@ void Technique::_bindDescriptorsGraphic(CommandProducerGraphic& producer)
 }
 
 void Technique::_bindResources( DescriptorSet& descriptorSet,
-                                DescriptorSetType setType)
+                                DescriptorSetType setType,
+                                CommandProducerTransfer& commandProducer)
 {
   for(std::unique_ptr<TechniqueResourceImpl>& resource : _resources)
   {
@@ -175,13 +176,16 @@ void Technique::_bindResources( DescriptorSet& descriptorSet,
 
   for (std::unique_ptr<TechniqueUniformBlock>& uniformBlock : _uniformBlocks)
   {
-    uniformBlock->bindToDescriptorSet(descriptorSet);
+    if(uniformBlock->description().set == setType)
+    {
+      uniformBlock->bindToDescriptorSet(descriptorSet, commandProducer);
+    }
   }
 
   descriptorSet.finalize();
 }
 
-void Technique::_buildStaticSet()
+void Technique::_buildStaticSet(CommandProducerTransfer& commandProducer)
 {
   _staticPool = Ref(new DescriptorPool(
                             _device,
@@ -189,7 +193,7 @@ void Technique::_buildStaticSet()
                             1,
                             DescriptorPool::STATIC_POOL));
   _staticSet = _staticPool->allocateSet(*_staticSetDescription->layout);
-  _bindResources(*_staticSet, DescriptorSetType::STATIC);
+  _bindResources(*_staticSet, DescriptorSetType::STATIC, commandProducer);
 }
 
 void Technique::_checkSelections() noexcept
