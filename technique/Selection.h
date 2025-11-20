@@ -38,7 +38,7 @@ namespace mt
 
   protected:
     const Technique& _technique;
-    size_t& _resvisionCounter;
+    size_t& _revisionCounter;
 
     const TechniqueConfiguration::SelectionDefine* _description;
     uint32_t _valueIndex;

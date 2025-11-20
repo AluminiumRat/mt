@@ -13,7 +13,7 @@ TechniqueResource::TechniqueResource(
                                   const TechniqueConfiguration* configuration) :
   _name(name),
   _technique(technique),
-  _resvisionCounter(revisionCounter)
+  _revisionCounter(revisionCounter)
 {
   _bindToConfiguration(configuration);
 }
@@ -37,7 +37,7 @@ void TechniqueResource::_bindToConfiguration(
           _description = &description;
           if(_description->set == DescriptorSetType::STATIC)
           {
-            _resvisionCounter++;
+            _revisionCounter++;
           }
         }
         return;

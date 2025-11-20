@@ -67,7 +67,7 @@ namespace mt
   protected:
     std::string _name;
     const Technique& _technique;
-    size_t& _resvisionCounter;
+    size_t& _revisionCounter;
     const TechniqueConfiguration::Resource* _description;
 
     ConstRef<DataBuffer> _buffer;
@@ -111,7 +111,7 @@ namespace mt
     if( _description != nullptr &&
         _description->set == DescriptorSetType::STATIC)
     {
-      _resvisionCounter++;
+      _revisionCounter++;
     }
   }
 
@@ -156,7 +156,7 @@ namespace mt
     if( _description != nullptr &&
         _description->set == DescriptorSetType::STATIC)
     {
-      _resvisionCounter++;
+      _revisionCounter++;
     }
 
     _images[arrayIndex] = ConstRef(image);
