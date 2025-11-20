@@ -42,11 +42,6 @@ bool Technique::bindGraphic(CommandProducerGraphic& producer)
     return false;
   }
 
-  for(std::unique_ptr<TechniqueUniformBlock>& uniformBlock : _uniformBlocks)
-  {
-    uniformBlock->update(producer);
-  }
-
   _checkResources();
   _bindDescriptorsGraphic(producer);
 
@@ -91,7 +86,9 @@ void Technique::_checkConfiguration()
                                             newConfiguration->uniformBuffers)
   {
     newUniformBlocks.emplace_back(
-                              new TechniqueUniformBlock(description, *this));
+                                new TechniqueUniformBlock(description,
+                                                          *this,
+                                                          _resourcesRevision));
   }
 
   try

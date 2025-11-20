@@ -17,6 +17,7 @@ CommandProducer::CommandProducer(CommandPoolSet& poolSet) :
   _queue(_commandPoolSet.queue()),
   _commandPool(nullptr),
   _currentPrimaryBuffer(nullptr),
+  _preparationBuffer(nullptr),
   _cachedMatchingBuffer(nullptr),
   _descriptorPool(nullptr),
   _isFinalized(false)
@@ -176,11 +177,41 @@ CommandBuffer& CommandProducer::getOrCreateBuffer()
 
   if(_currentPrimaryBuffer != nullptr) return *_currentPrimaryBuffer;
 
-  _currentPrimaryBuffer = &_commandPool->getNextBuffer();
-  _currentPrimaryBuffer->startOnetimeBuffer();
-  _commandSequence.push_back(_currentPrimaryBuffer);
+  try
+  {
+    _currentPrimaryBuffer = &_commandPool->getNextBuffer();
+    _currentPrimaryBuffer->startOnetimeBuffer();
+    _commandSequence.push_back(_currentPrimaryBuffer);
+  }
+  catch(...)
+  {
+    _currentPrimaryBuffer = nullptr;
+    throw;
+  }
 
   return *_currentPrimaryBuffer;
+}
+
+CommandBuffer& CommandProducer::getOrCreatePreparationBuffer()
+{
+  // Нельзя создавать новый буфер после финализации
+  MT_ASSERT(!_isFinalized);
+
+  if (_preparationBuffer != nullptr) return *_preparationBuffer;
+
+  try
+  {
+    _preparationBuffer = &_commandPool->getNextBuffer();
+    _preparationBuffer->startOnetimeBuffer();
+    _commandSequence.insert(_commandSequence.begin(), _preparationBuffer);
+  }
+  catch(...)
+  {
+    _preparationBuffer = nullptr;
+    throw;
+  }
+
+  return *_preparationBuffer;
 }
 
 void CommandProducer::addImageUsage( const Image& image,

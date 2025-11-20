@@ -81,7 +81,8 @@ static VkBufferUsageFlags getUsageFlags(DataBuffer::Usage usage)
               VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
     case DataBuffer::VOLATILE_UNIFORM_BUFFER:
-      return  VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+      return  VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
+              VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
     case DataBuffer::STORAGE_BUFFER:
       return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |

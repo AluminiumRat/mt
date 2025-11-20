@@ -16,11 +16,28 @@ namespace mt
 
     //  Копирование из одного буфера в другой
     //  srcBuffer должен быть создан с Usage = UPLOADING_BUFFER или
+    //    Usage = VOLATILE_UNIFORM_BUFFER или
     //    bufferUsageFlags VK_BUFFER_USAGE_TRANSFER_SRC_BIT
     //  dstBuffer должен быть создан с Usage отличным от UPLOADING_BUFFER
     //    и VOLATILE_UNIFORM_BUFFER, или с bufferUsageFlags с выставленным
     //    VK_BUFFER_USAGE_TRANSFER_SRC_BIT.
     void copyFromBufferToBuffer(const DataBuffer& srcBuffer,
+                                const DataBuffer& dstBuffer,
+                                size_t srcOffset,
+                                size_t dstOffset,
+                                size_t size);
+
+    //  Специальный метод для копирования данных в статический юниформ буфер
+    //  Операция копирования записывается в буфер подготовительных команд. То
+    //    есть она будет выполнена до основной последовательности команд и будет
+    //    происходить вне рендер пассов (где команды копирования запрещены)
+    //  srcBuffer должен быть создан с Usage = UPLOADING_BUFFER или
+    //    Usage = VOLATILE_UNIFORM_BUFFER или
+    //    bufferUsageFlags VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+    //  dstBuffer должен быть создан с Usage отличным от UPLOADING_BUFFER
+    //    и VOLATILE_UNIFORM_BUFFER, или с bufferUsageFlags с выставленным
+    //    VK_BUFFER_USAGE_TRANSFER_SRC_BIT.
+    void uniformBufferTransfer( const DataBuffer& srcBuffer,
                                 const DataBuffer& dstBuffer,
                                 size_t srcOffset,
                                 size_t dstOffset,

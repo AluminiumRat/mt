@@ -6,52 +6,43 @@ using namespace mt;
 
 TechniqueUniformBlock::TechniqueUniformBlock(
                       const TechniqueConfiguration::UniformBuffer& description,
-                      const Technique& technique) :
+                      const Technique& technique,
+                      size_t& revisionCounter) :
   _description(description),
   _technique(technique),
-  _needUpdateGPUBuffer(false)
+  _revisionCounter(revisionCounter)
 {
   MT_ASSERT(_description.size != 0);
   _cpuBuffer.resize(_description.size);
-
-  if(_description.set == DescriptorSetType::STATIC)
-  {
-    _gpuBuffer = Ref(new DataBuffer(_technique.device(),
-                                    _description.size,
-                                    DataBuffer::UNIFORM_BUFFER));
-  }
-}
-
-void TechniqueUniformBlock::update(CommandProducerTransfer& commandProducer)
-{
-  if( _description.set == DescriptorSetType::STATIC &&
-      _needUpdateGPUBuffer)
-  {
-    UniformMemoryPool::MemoryInfo writeInfo =
-              commandProducer.uniformMemorySession().write( _cpuBuffer.data(),
-                                                            _cpuBuffer.size());
-    commandProducer.copyFromBufferToBuffer( *writeInfo.buffer,
-                                            *_gpuBuffer,
-                                            0,
-                                            0,
-                                            _cpuBuffer.size());
-    _needUpdateGPUBuffer = false;
-  }
 }
 
 void TechniqueUniformBlock::bindToDescriptorSet(
                                       DescriptorSet& set,
                                       CommandProducerTransfer& commandProducer)
 {
+  UniformMemoryPool::MemoryInfo writeInfo =
+              commandProducer.uniformMemorySession().write( _cpuBuffer.data(),
+                                                            _cpuBuffer.size());
+
   if(_description.set == DescriptorSetType::STATIC)
   {
-    set.attachUniformBuffer(*_gpuBuffer, _description.binding);
+    // Для статик сета создаем новый полноценный буфер
+    Ref<DataBuffer> gpuBuffer = Ref(
+                                  new DataBuffer( _technique.device(),
+                                                  _cpuBuffer.size(),
+                                                  DataBuffer::UNIFORM_BUFFER));
+
+    commandProducer.uniformBufferTransfer(*writeInfo.buffer,
+                                          *gpuBuffer,
+                                          0,
+                                          0,
+                                          _cpuBuffer.size());
+
+    set.attachUniformBuffer(*gpuBuffer, _description.binding);
   }
   else
   {
-    UniformMemoryPool::MemoryInfo writeInfo =
-              commandProducer.uniformMemorySession().write( _cpuBuffer.data(),
-                                                            _cpuBuffer.size());
+    // Для волатильного сета не нужен долговременный буфер, используем временный
     set.attachBuffer( *writeInfo.buffer,
                       _description.binding,
                       VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,

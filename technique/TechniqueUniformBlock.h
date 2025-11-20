@@ -26,9 +26,14 @@ namespace mt
     //    когда дескриптер сет необходимо пересоздавать. Счетчик внешний и общий
     //    для всех блоков техники. Работает только для статик дескриптер сета,
     //    так как волатильный сет пересоздается на каждом кадре.
+    //  resvisionCounter - внешний счетчик ревизий. Позволяет отследить момент,
+    //    когда дескриптер сет необходимо пересоздавать. Счетчик внешний и общий
+    //    для всех ресурсов техники. Работает только для статик дескриптер сета,
+    //    так как волатильный сет пересоздается на каждом кадре.
     TechniqueUniformBlock(
                     const TechniqueConfiguration::UniformBuffer& description,
-                    const Technique& technique);
+                    const Technique& technique,
+                    size_t& revisionCounter);
     TechniqueUniformBlock(const TechniqueUniformBlock&) = delete;
     TechniqueUniformBlock& operator = (const TechniqueUniformBlock&) = delete;
     ~TechniqueUniformBlock() noexcept = default;
@@ -41,17 +46,15 @@ namespace mt
                         const void* srcData);
     inline const void* getData(uint32_t offset);
 
-    void update(CommandProducerTransfer& commandProducer);
     void bindToDescriptorSet( DescriptorSet& set,
                               CommandProducerTransfer& commandProducer);
 
   private:
     const TechniqueConfiguration::UniformBuffer& _description;
     const Technique& _technique;
+    size_t& _revisionCounter;
 
     std::vector<char> _cpuBuffer;
-    Ref<DataBuffer> _gpuBuffer;
-    bool _needUpdateGPUBuffer;
   };
 
   inline const TechniqueConfiguration::UniformBuffer&
@@ -66,7 +69,10 @@ namespace mt
   {
     MT_ASSERT(offset + dataSize <= _description.size);
     memcpy(_cpuBuffer.data() + offset, srcData, dataSize);
-    _needUpdateGPUBuffer = true;
+    if(_description.set == DescriptorSetType::STATIC)
+    {
+      _revisionCounter++;
+    }
   }
 
   inline const void* TechniqueUniformBlock::getData(uint32_t offset)

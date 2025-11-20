@@ -32,6 +32,28 @@ void CommandProducerTransfer::copyFromBufferToBuffer(
                   &copyInfo);
 }
 
+void CommandProducerTransfer::uniformBufferTransfer(const DataBuffer& srcBuffer,
+                                                    const DataBuffer& dstBuffer,
+                                                    size_t srcOffset,
+                                                    size_t dstOffset,
+                                                    size_t size)
+{
+  lockResource(srcBuffer);
+  lockResource(dstBuffer);
+
+  VkBufferCopy copyInfo{};
+  copyInfo.srcOffset = srcOffset;
+  copyInfo.dstOffset = dstOffset;
+  copyInfo.size = size;
+
+  CommandBuffer& commandBuffer = getOrCreatePreparationBuffer();
+  vkCmdCopyBuffer(commandBuffer.handle(),
+                  srcBuffer.handle(),
+                  dstBuffer.handle(),
+                  1,
+                  &copyInfo);
+}
+
 void CommandProducerTransfer::copyFromBufferToImage(
                                             const DataBuffer& srcBuffer,
                                             VkDeviceSize srcBufferOffset,
