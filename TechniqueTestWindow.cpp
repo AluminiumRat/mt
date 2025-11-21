@@ -111,14 +111,17 @@ void TechniqueTestWindow::drawImplementation(
 {
   CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
 
+  TechniqueVolatileContext volatileContext =
+                            _technique->createVolatileContext(commandProducer);
+
   static int frameIndex = 0;
   frameIndex++;
-  if(frameIndex % 360 < 180) _selector2.setValue("0");
-  else _selector2.setValue("1");
+  if(frameIndex % 360 < 180) _selector2.setValue("0", volatileContext);
+  else _selector2.setValue("1", volatileContext);
 
-  if (frameIndex % 180 < 60) _selector1.setValue("0");
-  else if(frameIndex % 180 < 120) _selector1.setValue("1");
-  else _selector1.setValue("2");
+  if (frameIndex % 180 < 60) _selector1.setValue("0", volatileContext);
+  else if(frameIndex % 180 < 120) _selector1.setValue("1", volatileContext);
+  else _selector1.setValue("2", volatileContext);
 
   _vertexBuffer.setBuffer(_vertexBuffers[frameIndex % 399 / 200]);
 
@@ -131,7 +134,7 @@ void TechniqueTestWindow::drawImplementation(
   std::vector<float> colorValue = {colorFactor, colorFactor, colorFactor, 1.0f};
   _color.setValue(colorValue);
 
-  _technique->bindGraphic(commandProducer);
+  _technique->bindGraphic(commandProducer, &volatileContext);
   commandProducer.draw(3);
   _technique->unbindGraphic(commandProducer);
 

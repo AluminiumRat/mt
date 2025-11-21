@@ -9,7 +9,8 @@ UniformMemoryPool::Session::Session(UniformMemoryPool& pool) :
   _pool(&pool),
   _currentBufferIndex(0),
   _currentBuffer(nullptr),
-  _bufferCursor(0)
+  _bufferCursor(0),
+  _isTmpBufferLocked(false)
 {
   MT_ASSERT(!_pool->_isSessionOpened);
 
@@ -69,6 +70,12 @@ void UniformMemoryPool::Session::finish() noexcept
   _mapper.reset();
   _pool->_isSessionOpened = false;
   _pool = nullptr;
+
+  if(_isTmpBufferLocked)
+  {
+    Log::warning() << "UniformMemoryPool::Session::finish: the temporary buffer is locked at the end of the session";
+    _isTmpBufferLocked = false;
+  }
 }
 
 UniformMemoryPool::UniformMemoryPool( size_t initialSize, Device& device) :

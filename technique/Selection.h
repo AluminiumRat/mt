@@ -8,6 +8,7 @@
 namespace mt
 {
   class Technique;
+  struct TechniqueVolatileContext;
 
   //  Компонент класса Technique
   //  Дефайн в шейдере, который может принимать только ограниченное количество
@@ -17,10 +18,12 @@ namespace mt
   class Selection
   {
   public:
-
+    //  selectionIndex - индекс селекшена в списке техники, нужен для
+    //    волатильного контекста.
     Selection(const char* name,
               const Technique& technique,
-              const TechniqueConfiguration* configuration);
+              const TechniqueConfiguration* configuration,
+              uint32_t selectionIndex);
     Selection(const Selection&) = delete;
     Selection& operator = (const Selection&) = delete;
     ~Selection() noexcept = default;
@@ -30,6 +33,12 @@ namespace mt
     inline const std::string& value() const noexcept;
     void setValue(const std::string& newValue);
 
+    //  Выставить значение в волатильный контекст, а не в сам селекшен.
+    //  Позволяет корректировать выбор пайплайна непосредственно во время
+    //    рендера, не внося изменений в технику.
+    void setValue(const std::string& newValue,
+                  TechniqueVolatileContext& context) const;
+
   protected:
     void _bindToConfiguration(const TechniqueConfiguration* configuration);
 
@@ -37,8 +46,15 @@ namespace mt
     const Technique& _technique;
 
     const TechniqueConfiguration::SelectionDefine* _description;
-    uint32_t _valueIndex;
-    uint32_t _valueWeight;
+
+    uint32_t _valueIndex;   //  Номер выбранного значения в списке возможных
+                            //  значений
+    uint32_t _valueWeight;  //  Вес выбранного значения при выборе варианта
+                            //  пайплайна
+
+    //  Индекс селекшена в списке техники. По нему выставляется значение внутри
+    //    волатильного контекста.
+    uint32_t _selectionIndex;
 
     //  Здесь хранятся имя и значение, если конфигурация не подключена,
     //  либо если в конфигурации нет селекшена с таким именем
@@ -50,9 +66,11 @@ namespace mt
   class SelectionImpl : public Selection
   {
   public:
+    //  selectionIndex - индекс селекшена в списке техники
     inline SelectionImpl( const char* name,
                           const Technique& technique,
-                          const TechniqueConfiguration* configuration);
+                          const TechniqueConfiguration* configuration,
+                          uint32_t selectionIndex);
     SelectionImpl(const SelectionImpl&) = delete;
     SelectionImpl& operator = (const SelectionImpl&) = delete;
     ~SelectionImpl() noexcept = default;
@@ -76,8 +94,9 @@ namespace mt
   inline SelectionImpl::SelectionImpl(
                                   const char* name,
                                   const Technique& technique,
-                                  const TechniqueConfiguration* configuration) :
-    Selection(name, technique, configuration)
+                                  const TechniqueConfiguration* configuration,
+                                  uint32_t selectionIndex) :
+    Selection(name, technique, configuration, selectionIndex)
   {
   }
 

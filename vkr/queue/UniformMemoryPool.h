@@ -3,6 +3,7 @@
 #include <optional>
 #include <vector>
 
+#include <util/Assert.h>
 #include <util/Ref.h>
 #include <vkr/DataBuffer.h>
 
@@ -60,6 +61,14 @@ namespace mt
       //  доступны для чтения со стороны GPU.
       void finish() noexcept;
 
+      //  Получить доступ к временному буферу. Используется для временного
+      //    хранения данных на стороне СPU перед записью их в GPU буферы.
+      //  ВНИМАНИЕ!!! После использования необходимо вызвать releaseTmpBuffer
+      //    Запрещено повторно вызывть lockTmpBuffer без releaseTmpBuffer.
+      inline void* lockTmpBuffer(size_t dataSize);
+      //  Снять блокировку со временного буфера
+      inline void releaseTmpBuffer() noexcept;
+
     private:
       void _openBuffer(size_t bufferIndex);
 
@@ -71,6 +80,8 @@ namespace mt
       size_t _bufferCursor;
 
       std::optional<DataBuffer::Mapper> _mapper;
+
+      bool _isTmpBufferLocked;
     };
 
   public:
@@ -89,6 +100,9 @@ namespace mt
 
     using Buffers = std::vector<Ref<DataBuffer>>;
     Buffers _buffers;
+
+    //  Буфер для временного хранения данных юниформ переменных на стороне CPU
+    std::vector<char> _tmpBuffer;
 
     bool _isSessionOpened;
   };
@@ -140,5 +154,20 @@ namespace mt
                         UniformMemoryPool::Session::write(const DataType& data)
   {
     return write((const char*)(&data), sizeof(DataType));
+  }
+
+  inline void* UniformMemoryPool::Session::lockTmpBuffer(size_t dataSize)
+  {
+    MT_ASSERT(!_isTmpBufferLocked);
+    MT_ASSERT(dataSize != 0);
+
+    _pool->_tmpBuffer.resize(dataSize);
+    _isTmpBufferLocked = true;
+    return _pool->_tmpBuffer.data();
+  }
+
+  inline void UniformMemoryPool::Session::releaseTmpBuffer() noexcept
+  {
+    _isTmpBufferLocked = false;
   }
 }

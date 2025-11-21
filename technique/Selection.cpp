@@ -1,5 +1,6 @@
 ﻿#include <technique/Selection.h>
 #include <technique/Technique.h>
+#include <technique/TechniqueVolatileContext.h>
 #include <util/Log.h>
 
 using namespace mt;
@@ -8,11 +9,13 @@ using namespace mt;
 
 Selection::Selection( const char* name,
                       const Technique& technique,
-                      const TechniqueConfiguration* configuration) :
+                      const TechniqueConfiguration* configuration,
+                      uint32_t selectionIndex) :
   _technique(technique),
   _description(nullptr),
   _valueIndex(0),
   _valueWeight(0),
+  _selectionIndex(selectionIndex),
   _savedName(name),
   _savedValue(DEFAULT_VALUE)
 {
@@ -55,6 +58,26 @@ inline void Selection::setValue(const std::string& newValue)
     //  конфигурация появится
     _savedValue = newValue;
   }
+}
+
+void Selection::setValue( const std::string& newValue,
+                          TechniqueVolatileContext& context) const
+{
+  uint32_t weight = 0;
+  if (_description != nullptr)
+  {
+    for ( uint32_t variantIndex = 0;
+          variantIndex < _description->valueVariants.size();
+          variantIndex++)
+    {
+      if (_description->valueVariants[variantIndex] == newValue)
+      {
+        weight = variantIndex * _description->weight;
+        break;
+      }
+    }
+  }
+  context.selectionsWeights[_selectionIndex] = weight;
 }
 
 void Selection::_bindToConfiguration(

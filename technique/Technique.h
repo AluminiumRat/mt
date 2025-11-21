@@ -9,6 +9,7 @@
 #include <technique/TechniqueConfigurator.h>
 #include <technique/TechniqueResource.h>
 #include <technique/TechniqueUniformBlock.h>
+#include <technique/TechniqueVolatileContext.h>
 #include <technique/UniformVariable.h>
 #include <util/Ref.h>
 #include <util/RefCounter.h>
@@ -18,6 +19,7 @@
 
 namespace mt
 {
+  class CommandProducer;
   class CommandProducerGraphic;
   class CommandProducerTransfer;
   class CommandQueueTransfer;
@@ -38,13 +40,21 @@ namespace mt
 
     inline TechniqueConfigurator& configurator() const noexcept;
 
+    //  Волатильный контекст позволяет донастроить технику перед отрисовкой
+    //    через константные методы классов Slection, TechniqueResource и
+    //    UniformVariable
+    TechniqueVolatileContext createVolatileContext(
+                                              CommandProducer& producer) const;
+
     //  Подключить пайплайн и все необходимые ресурсы к продюсеро
     //  Возвращает false, если по какой-то причине подключить технику не
     //    получается. В этом случае причина отказа пишется в лог в виде
     //    Warning сообщения
     //  ВНИМАНИЕ!!! Нельзя одновременно подключать несколько техник к одному
     //    продюсеру.
-    bool bindGraphic(CommandProducerGraphic& producer);
+    bool bindGraphic(
+              CommandProducerGraphic& producer,
+              const TechniqueVolatileContext* volatileContext = nullptr) const;
     void unbindGraphic(CommandProducerGraphic& producer) const noexcept;
 
     Selection& getOrCreateSelection(const char* selectionName);
@@ -63,7 +73,10 @@ namespace mt
                         DescriptorSetType setType,
                         CommandProducerTransfer& commandProducer) const;
     void _bindDescriptorsGraphic(CommandProducerGraphic& producer) const;
-    uint32_t _getPipelineVariant() const noexcept;
+    //  Определить по селекшенам, какой именно вариант пайплайны мы должны
+    //  использовать
+    uint32_t _getPipelineVariant(
+                const TechniqueVolatileContext* volatileContext) const noexcept;
 
   private:
     Device& _device;

@@ -96,7 +96,9 @@ void Technique::updateConfiguration()
   _configuration = ConstRef(newConfiguration);
 }
 
-bool Technique::bindGraphic(CommandProducerGraphic& producer)
+bool Technique::bindGraphic(
+                          CommandProducerGraphic& producer,
+                          const TechniqueVolatileContext* volatileContext) const
 {
   if(_configuration == nullptr)
   {
@@ -112,7 +114,7 @@ bool Technique::bindGraphic(CommandProducerGraphic& producer)
   _updateStaticSet(producer);
   _bindDescriptorsGraphic(producer);
 
-  uint32_t pipelineVariant = _getPipelineVariant();
+  uint32_t pipelineVariant = _getPipelineVariant(volatileContext);
   MT_ASSERT(pipelineVariant < _configuration->graphicPipelineVariants.size());
 
   producer.setGraphicPipeline(
@@ -196,14 +198,41 @@ void Technique::_bindDescriptorsGraphic(CommandProducerGraphic& producer) const
   }
 }
 
-uint32_t Technique::_getPipelineVariant() const noexcept
+uint32_t Technique::_getPipelineVariant(
+                const TechniqueVolatileContext* volatileContext) const noexcept
 {
   uint32_t pipelineVariant = 0;
-  for (const std::unique_ptr<SelectionImpl>& selection : _selections)
+  if(volatileContext != nullptr)
   {
-    pipelineVariant += selection->valueWeight();
+    // Смотрим, что записали селекшены в контекст
+    for (size_t i = 0; i < _selections.size(); i++)
+    {
+      pipelineVariant += volatileContext->selectionsWeights[i];
+    }
+  }
+  else
+  {
+    // Волатильного контекста нет - опрашиваем селекшены напрямую
+    for (const std::unique_ptr<SelectionImpl>& selection : _selections)
+    {
+      pipelineVariant += selection->valueWeight();
+    }
   }
   return pipelineVariant;
+}
+
+TechniqueVolatileContext Technique::createVolatileContext(
+                                                CommandProducer& producer) const
+{
+  TechniqueVolatileContext context(producer, _selections.size(), 0);
+
+  // Копируем установленные значения в контекст
+  for(size_t i = 0; i < _selections.size(); i++)
+  {
+    context.selectionsWeights[i] = _selections[i]->valueWeight();
+  }
+
+  return context;
 }
 
 void Technique::unbindGraphic(CommandProducerGraphic& producer) const noexcept
@@ -224,9 +253,11 @@ Selection& Technique::getOrCreateSelection(const char* selectionName)
   {
     if(selection->name() == selectionName) return *selection;
   }
-  _selections.push_back(std::make_unique<SelectionImpl>(selectionName,
-                                                        *this,
-                                                        _configuration.get()));
+  _selections.push_back(std::make_unique<SelectionImpl>(
+                                                selectionName,
+                                                *this,
+                                                _configuration.get(),
+                                                uint32_t(_selections.size())));
   return *_selections.back();
 }
 
