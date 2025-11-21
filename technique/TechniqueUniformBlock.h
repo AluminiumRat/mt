@@ -44,10 +44,10 @@ namespace mt
     inline void setData(uint32_t offset,
                         uint32_t dataSize,
                         const void* srcData);
-    inline const void* getData(uint32_t offset);
+    inline const void* getData(uint32_t offset) const;
 
     void bindToDescriptorSet( DescriptorSet& set,
-                              CommandProducerTransfer& commandProducer);
+                              CommandProducerTransfer& commandProducer) const;
 
   private:
     const TechniqueConfiguration::UniformBuffer& _description;
@@ -75,7 +75,7 @@ namespace mt
     }
   }
 
-  inline const void* TechniqueUniformBlock::getData(uint32_t offset)
+  inline const void* TechniqueUniformBlock::getData(uint32_t offset) const
   {
     MT_ASSERT(offset < _description.size);
     return _cpuBuffer.data() + offset;

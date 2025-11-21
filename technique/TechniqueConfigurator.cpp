@@ -4,6 +4,7 @@
 
 #include <technique/DescriptorSetType.h>
 #include <technique/TechniqueConfigurator.h>
+#include <technique/Technique.h>
 #include <util/Abort.h>
 #include <util/Log.h>
 #include <vkr/pipeline/GraphicPipeline.h>
@@ -14,7 +15,6 @@ using namespace mt;
 TechniqueConfigurator::TechniqueConfigurator( Device& device,
                                               const char* debugName) noexcept :
   _device(device),
-  _revision(0),
   _debugName(debugName),
   _pipelineType(AbstractPipeline::GRAPHIC_PIPELINE),
   _topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST),
@@ -41,9 +41,20 @@ TechniqueConfigurator::TechniqueConfigurator( Device& device,
   _blendingState.pAttachments = _attachmentsBlending.data();
 }
 
-void TechniqueConfigurator::_invalidateConfiguration() noexcept
+void TechniqueConfigurator::_propogateConfiguration() noexcept
 {
-  _configuration.reset();
+  try
+  {
+    for(Technique* observer : _observers)
+    {
+      observer->updateConfiguration();
+    }
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << _debugName << ": unable to propagate configuration: " << error.what();
+    Abort("TechniqueConfigurator :: Unable to propagate configuration");
+  }
 }
 
 void TechniqueConfigurator::rebuildConfiguration()
@@ -78,14 +89,14 @@ void TechniqueConfigurator::rebuildConfiguration()
 
     _createLayouts(buildContext);
     _createPipelines(buildContext);
-
-    _revision++;
   }
   catch(...)
   {
     _configuration.reset();
     throw;
   }
+
+  _propogateConfiguration();
 }
 
 void TechniqueConfigurator::_processSelections(

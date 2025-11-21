@@ -88,13 +88,13 @@ namespace mt
     ~TechniqueResourceImpl() noexcept = default;
 
     inline void setConfiguration(const TechniqueConfiguration* configuration);
-    void bindToDescriptorSet(DescriptorSet& set);
+    void bindToDescriptorSet(DescriptorSet& set) const;
     inline const TechniqueConfiguration::Resource* description() const noexcept;
 
   private:
-    void _bindSampler(DescriptorSet& set);
-    void _bindBuffer(DescriptorSet& set);
-    void _bindImage(DescriptorSet& set);
+    void _bindSampler(DescriptorSet& set) const;
+    void _bindBuffer(DescriptorSet& set) const;
+    void _bindImage(DescriptorSet& set) const;
   };
 
   inline const std::string& TechniqueResource::name() const noexcept

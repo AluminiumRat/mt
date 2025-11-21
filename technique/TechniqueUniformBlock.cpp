@@ -17,8 +17,8 @@ TechniqueUniformBlock::TechniqueUniformBlock(
 }
 
 void TechniqueUniformBlock::bindToDescriptorSet(
-                                      DescriptorSet& set,
-                                      CommandProducerTransfer& commandProducer)
+                                DescriptorSet& set,
+                                CommandProducerTransfer& commandProducer) const
 {
   UniformMemoryPool::MemoryInfo writeInfo =
               commandProducer.uniformMemorySession().write( _cpuBuffer.data(),

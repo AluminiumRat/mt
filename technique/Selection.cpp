@@ -8,10 +8,8 @@ using namespace mt;
 
 Selection::Selection( const char* name,
                       const Technique& technique,
-                      size_t& resvisionCounter,
                       const TechniqueConfiguration* configuration) :
   _technique(technique),
-  _revisionCounter(resvisionCounter),
   _description(nullptr),
   _valueIndex(0),
   _valueWeight(0),
@@ -49,7 +47,6 @@ inline void Selection::setValue(const std::string& newValue)
     {
       _valueIndex = newVariantIndex;
       _valueWeight = _valueIndex * _description->weight;
-      _revisionCounter++;
     }
   }
   else
@@ -78,7 +75,6 @@ void Selection::_bindToConfiguration(
       {
         _description = &description;
         setValue(myValue);
-        _revisionCounter++;
         _savedName = std::string();
         _savedValue = std::string();
         return;

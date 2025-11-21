@@ -27,6 +27,7 @@ struct SpvReflectShaderModule;
 namespace mt
 {
   class Device;
+  class Technique;
 
   //  Класс для настройки конфигурации техник (TechniqueConfiguration).
   //  Основной паттерн применения:
@@ -67,18 +68,12 @@ namespace mt
 
     inline Device& device() const noexcept;
 
-    //  Ревизия используется для отслеживания изменений в конфигурации
-    //  Каждый раз, когда происходтит изменение, ревизия увеличивается
-    //  и зависимым техникам необходимо синхронизироваться с конфигурацией
-    inline size_t revision() const noexcept;
-
     //  Может возвращать nullptr, если сборка конфигурации не завершилась
     //  успешно (например, ошибка в шейдере или неполный набор шейдеров) или
     //  конфигурация ещё не была собрана
     inline const TechniqueConfiguration* configuration() const noexcept;
 
-    //  Пересобрать конфигурацию для техник.
-    //  Необходимо вызывать каждый раз после окончания настроек
+    //  Пересобрать и раздать конфигурацию всем зависимым техникам.
     void rebuildConfiguration();
 
     inline const std::string& debugName() const noexcept;
@@ -210,6 +205,10 @@ namespace mt
     inline void setBlendConstants(const glm::vec4& newValue) noexcept;
 
   private:
+    friend class Technique;
+    inline void addObserver(Technique& technique);
+
+  private:
     //  Промежуточные данные, необходимые для построения конфигурации
     //  Один собранный шейдерный модуль
     struct ShaderModuleInfo
@@ -230,7 +229,6 @@ namespace mt
     };
 
   private:
-    void _invalidateConfiguration() noexcept;
     //  Посчитать количество вариантов пайплайна и веса селекшенов
     void _processSelections(ConfigurationBuildContext& buildContext);
     //  Обойти все варианты селекшенов и создать/обработать для них
@@ -270,10 +268,10 @@ namespace mt
     //  Финальная стадия построения конфигурации - создаем все варианты
     //  пайплайнов
     void _createPipelines(ConfigurationBuildContext& buildContext);
+    void _propogateConfiguration() noexcept;
 
   private:
     Device& _device;
-    size_t _revision;
 
     std::string _debugName;
 
@@ -292,16 +290,13 @@ namespace mt
     VkPipelineColorBlendStateCreateInfo _blendingState;
     std::array< VkPipelineColorBlendAttachmentState,
                 FrameBufferFormat::maxColorAttachments> _attachmentsBlending;
+
+    std::vector<Technique*> _observers;
   };
 
   inline Device& TechniqueConfigurator::device() const noexcept
   {
     return _device;
-  }
-
-  inline size_t TechniqueConfigurator::revision() const noexcept
-  {
-    return _revision;
   }
 
   inline const TechniqueConfiguration*
@@ -325,7 +320,6 @@ namespace mt
                                       AbstractPipeline::Type newValue) noexcept
   {
     _pipelineType = newValue;
-    _invalidateConfiguration();
   }
 
   inline const std::vector<TechniqueConfigurator::ShaderInfo>&
@@ -340,7 +334,6 @@ namespace mt
     std::vector<ShaderInfo> newShadersTable(newShaders.begin(),
                                             newShaders.end());
     _shaders = std::move(newShadersTable);
-    _invalidateConfiguration();
   }
 
   inline const std::vector<TechniqueConfigurator::SelectionDefine>&
@@ -355,7 +348,6 @@ namespace mt
     std::vector<SelectionDefine> newSelectionsVector( newSelections.begin(),
                                                       newSelections.end());
     _selections = std::move(newSelectionsVector);
-    _invalidateConfiguration();
   }
 
   inline const FrameBufferFormat*
@@ -375,7 +367,6 @@ namespace mt
       _blendingState.attachmentCount =
                         uint32_t(_frameBufferFormat->colorAttachments().size());
     }
-    _invalidateConfiguration();
   }
 
   inline VkPrimitiveTopology TechniqueConfigurator::topology() const noexcept
@@ -387,7 +378,6 @@ namespace mt
                                           VkPrimitiveTopology newValue) noexcept
   {
     _topology = newValue;
-    _invalidateConfiguration();
   }
 
   inline bool TechniqueConfigurator::depthClampEnable() const noexcept
@@ -398,7 +388,6 @@ namespace mt
   inline void TechniqueConfigurator::setDepthClampEnable(bool newValue) noexcept
   {
     _rasterizationState.depthClampEnable = newValue;
-    _invalidateConfiguration();
   }
 
   inline bool TechniqueConfigurator::rasterizationDiscardEnable() const noexcept
@@ -410,7 +399,6 @@ namespace mt
                                                         bool newValue) noexcept
   {
     _rasterizationState.rasterizerDiscardEnable = newValue;
-    _invalidateConfiguration();
   }
 
   inline VkPolygonMode TechniqueConfigurator::polygonMode() const noexcept
@@ -422,7 +410,6 @@ namespace mt
                                                 VkPolygonMode newValue) noexcept
   {
     _rasterizationState.polygonMode = newValue;
-    _invalidateConfiguration();
   }
 
   inline VkCullModeFlags TechniqueConfigurator::cullMode() const noexcept
@@ -434,7 +421,6 @@ namespace mt
                                               VkCullModeFlags newValue) noexcept
   {
     _rasterizationState.cullMode = newValue;
-    _invalidateConfiguration();
   }
 
   inline VkFrontFace TechniqueConfigurator::frontFace() const noexcept
@@ -445,7 +431,6 @@ namespace mt
   inline void TechniqueConfigurator::setFrontFace(VkFrontFace newValue) noexcept
   {
     _rasterizationState.frontFace = newValue;
-    _invalidateConfiguration();
   }
 
   inline bool TechniqueConfigurator::depthBiasEnable() const noexcept
@@ -456,7 +441,6 @@ namespace mt
   inline void TechniqueConfigurator::setDepthBiasEnable(bool newValue) noexcept
   {
     _rasterizationState.depthBiasEnable = newValue;
-    _invalidateConfiguration();
   }
 
   inline float TechniqueConfigurator::depthBiasConstantFactor() const noexcept
@@ -468,7 +452,6 @@ namespace mt
                                                         float newValue) noexcept
   {
     _rasterizationState.depthBiasConstantFactor = newValue;
-    _invalidateConfiguration();
   }
 
   inline float TechniqueConfigurator::depthBiasClamp() const noexcept
@@ -479,7 +462,6 @@ namespace mt
   inline void TechniqueConfigurator::setDepthBiasClamp(float newValue) noexcept
   {
     _rasterizationState.depthBiasClamp = newValue;
-    _invalidateConfiguration();
   }
 
   inline float TechniqueConfigurator::depthBiasSlopeFactor() const noexcept
@@ -491,7 +473,6 @@ namespace mt
                                                         float newValue) noexcept
   {
     _rasterizationState.depthBiasSlopeFactor = newValue;
-    _invalidateConfiguration();
   }
 
   inline float TechniqueConfigurator::lineWidth() const noexcept
@@ -502,7 +483,6 @@ namespace mt
   inline void TechniqueConfigurator::setLineWidth(float newValue) noexcept
   {
     _rasterizationState.lineWidth = newValue;
-    _invalidateConfiguration();
   }
 
   inline bool TechniqueConfigurator::depthTestEnable() const noexcept
@@ -513,7 +493,6 @@ namespace mt
   inline void TechniqueConfigurator::setDepthTestEnable(bool newValue) noexcept
   {
     _depthStencilState.depthTestEnable = newValue;
-    _invalidateConfiguration();
   }
 
   inline bool TechniqueConfigurator::depthWriteEnable() const noexcept
@@ -524,7 +503,6 @@ namespace mt
   inline void TechniqueConfigurator::setDepthWriteEnable(bool newValue) noexcept
   {
     _depthStencilState.depthWriteEnable = newValue;
-    _invalidateConfiguration();
   }
 
   inline VkCompareOp TechniqueConfigurator::depthCompareOp() const noexcept
@@ -536,7 +514,6 @@ namespace mt
                                                   VkCompareOp newValue) noexcept
   {
     _depthStencilState.depthCompareOp = newValue;
-    _invalidateConfiguration();
   }
 
   inline bool TechniqueConfigurator::depthBoundsTestEnable() const noexcept
@@ -548,7 +525,6 @@ namespace mt
                                                         bool newValue) noexcept
   {
     _depthStencilState.depthBoundsTestEnable = newValue;
-    _invalidateConfiguration();
   }
 
   inline VkStencilOpState TechniqueConfigurator::frontStencilOp() const noexcept
@@ -560,7 +536,6 @@ namespace mt
                                             VkStencilOpState newValue) noexcept
   {
     _depthStencilState.front = newValue;
-    _invalidateConfiguration();
   }
 
   inline VkStencilOpState TechniqueConfigurator::backStencilOp() const noexcept
@@ -572,7 +547,6 @@ namespace mt
                                             VkStencilOpState newValue) noexcept
   {
     _depthStencilState.back = newValue;
-    _invalidateConfiguration();
   }
 
   inline float TechniqueConfigurator::minDepthBounds() const noexcept
@@ -583,7 +557,6 @@ namespace mt
   inline void TechniqueConfigurator::setMinDepthBounds(float newValue) noexcept
   {
     _depthStencilState.minDepthBounds = newValue;
-    _invalidateConfiguration();
   }
 
   inline float TechniqueConfigurator::maxDepthBounds() const noexcept
@@ -594,7 +567,6 @@ namespace mt
   inline void TechniqueConfigurator::setMaxDepthBounds(float newValue) noexcept
   {
     _depthStencilState.maxDepthBounds = newValue;
-    _invalidateConfiguration();
   }
 
   inline bool TechniqueConfigurator::blendLogicOpEnable() const noexcept
@@ -606,7 +578,6 @@ namespace mt
                                                         bool newValue) noexcept
   {
     _blendingState.logicOpEnable = newValue;
-    _invalidateConfiguration();
   }
 
   inline VkLogicOp TechniqueConfigurator::blendLogicOp() const noexcept
@@ -618,7 +589,6 @@ namespace mt
                                                     VkLogicOp newValue) noexcept
   {
     _blendingState.logicOp = newValue;
-    _invalidateConfiguration();
   }
 
   inline glm::vec4 TechniqueConfigurator::blendConstants() const noexcept
@@ -636,7 +606,6 @@ namespace mt
     _blendingState.blendConstants[0] = newValue.g;
     _blendingState.blendConstants[0] = newValue.b;
     _blendingState.blendConstants[0] = newValue.a;
-    _invalidateConfiguration();
   }
 
   inline bool TechniqueConfigurator::blendEnable(
@@ -651,7 +620,6 @@ namespace mt
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     _attachmentsBlending[attachmentIndex].blendEnable = newValue;
-    _invalidateConfiguration();
   }
 
   inline VkBlendFactor TechniqueConfigurator::srcColorBlendFactor(
@@ -667,7 +635,6 @@ namespace mt
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     _attachmentsBlending[attachmentIndex].srcColorBlendFactor = newValue;
-    _invalidateConfiguration();
   }
 
   inline VkBlendFactor TechniqueConfigurator::dstColorBlendFactor(
@@ -683,7 +650,6 @@ namespace mt
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     _attachmentsBlending[attachmentIndex].dstColorBlendFactor = newValue;
-    _invalidateConfiguration();
   }
 
   inline VkBlendOp TechniqueConfigurator::colorBlendOp(
@@ -699,7 +665,6 @@ namespace mt
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     _attachmentsBlending[attachmentIndex].colorBlendOp = newValue;
-    _invalidateConfiguration();
   }
 
   inline VkBlendFactor TechniqueConfigurator::srcAlphaBlendFactor(
@@ -715,7 +680,6 @@ namespace mt
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     _attachmentsBlending[attachmentIndex].srcAlphaBlendFactor = newValue;
-    _invalidateConfiguration();
   }
 
   inline VkBlendFactor TechniqueConfigurator::dstAlphaBlendFactor(
@@ -731,7 +695,6 @@ namespace mt
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     _attachmentsBlending[attachmentIndex].dstAlphaBlendFactor = newValue;
-    _invalidateConfiguration();
   }
 
   inline VkBlendOp TechniqueConfigurator::alphaBlendOp(
@@ -747,7 +710,6 @@ namespace mt
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     _attachmentsBlending[attachmentIndex].alphaBlendOp = newValue;
-    _invalidateConfiguration();
   }
 
   inline VkColorComponentFlags TechniqueConfigurator::colorWriteMask(
@@ -763,6 +725,10 @@ namespace mt
   {
     MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
     _attachmentsBlending[attachmentIndex].colorWriteMask = newValue;
-    _invalidateConfiguration();
+  }
+
+  inline void TechniqueConfigurator::addObserver(Technique& technique)
+  {
+    _observers.push_back(&technique);
   }
 }

@@ -17,12 +17,9 @@ namespace mt
   class Selection
   {
   public:
-    //  resvisionCounter - внешний счетчик ревизий. Он общий для всех
-    //    селекшенов в технике, чтобы не проверять каждый раз все селекшены на
-    //    апдэйт значений.
+
     Selection(const char* name,
               const Technique& technique,
-              size_t& resvisionCounter,
               const TechniqueConfiguration* configuration);
     Selection(const Selection&) = delete;
     Selection& operator = (const Selection&) = delete;
@@ -38,7 +35,6 @@ namespace mt
 
   protected:
     const Technique& _technique;
-    size_t& _revisionCounter;
 
     const TechniqueConfiguration::SelectionDefine* _description;
     uint32_t _valueIndex;
@@ -56,7 +52,6 @@ namespace mt
   public:
     inline SelectionImpl( const char* name,
                           const Technique& technique,
-                          size_t& resvisionCounter,
                           const TechniqueConfiguration* configuration);
     SelectionImpl(const SelectionImpl&) = delete;
     SelectionImpl& operator = (const SelectionImpl&) = delete;
@@ -81,9 +76,8 @@ namespace mt
   inline SelectionImpl::SelectionImpl(
                                   const char* name,
                                   const Technique& technique,
-                                  size_t& resvisionCounter,
                                   const TechniqueConfiguration* configuration) :
-    Selection(name, technique, resvisionCounter, configuration)
+    Selection(name, technique, configuration)
   {
   }
 

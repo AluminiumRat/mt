@@ -46,7 +46,7 @@ void TechniqueResource::_bindToConfiguration(
   }
 }
 
-void TechniqueResourceImpl::bindToDescriptorSet(DescriptorSet& set)
+void TechniqueResourceImpl::bindToDescriptorSet(DescriptorSet& set) const
 {
   MT_ASSERT(_description != nullptr);
 
@@ -73,7 +73,7 @@ void TechniqueResourceImpl::bindToDescriptorSet(DescriptorSet& set)
   }
 }
 
-void TechniqueResourceImpl::_bindSampler(DescriptorSet& set)
+void TechniqueResourceImpl::_bindSampler(DescriptorSet& set) const
 {
   if (_sampler == nullptr)
   {
@@ -82,7 +82,7 @@ void TechniqueResourceImpl::_bindSampler(DescriptorSet& set)
   else set.attachSampler(*_sampler, _description->bindingIndex);
 }
 
-void TechniqueResourceImpl::_bindBuffer(DescriptorSet& set)
+void TechniqueResourceImpl::_bindBuffer(DescriptorSet& set) const
 {
     if(_buffer == nullptr)
     {
@@ -98,7 +98,7 @@ void TechniqueResourceImpl::_bindBuffer(DescriptorSet& set)
     }
 }
 
-void TechniqueResourceImpl::_bindImage(DescriptorSet& set)
+void TechniqueResourceImpl::_bindImage(DescriptorSet& set) const
 {
   if (_images.empty())
   {

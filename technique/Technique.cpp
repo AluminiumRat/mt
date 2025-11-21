@@ -1,94 +1,49 @@
-﻿#include <stdexcept>
+﻿#include <mutex>
+#include <stdexcept>
 
 #include <technique/Technique.h>
 #include <util/Abort.h>
 #include <util/Assert.h>
 #include <util/Log.h>
 #include <vkr/queue/CommandProducerGraphic.h>
+#include <vkr/queue/CommandQueueTransfer.h>
+#include <vkr/Device.h>
 
 using namespace mt;
 
-Technique::Technique(Device& device, const char* debugName) :
+Technique::Technique( Device& device,
+                      const char* debugName) :
   _device(device),
   _debugName(debugName),
-  _isBinded(false),
   _configurator(new TechniqueConfigurator(
                                       device,
                                       (_debugName + "Configurator").c_str())),
   _volatileSetDescription(nullptr),
   _staticSetDescription(nullptr),
-  _lastConfiguratorRevision(0),
-  _pipelineVariant(0),
-  _selectionsRevision(0),
   _lastProcessedSelectionsRevision(0),
   _resourcesRevision(0),
   _lastProcessedResourcesRevision(0)
 {
+  _configurator->addObserver(*this);
 }
 
-bool Technique::bindGraphic(CommandProducerGraphic& producer)
+void Technique::updateConfiguration()
 {
-  MT_ASSERT(!_isBinded);
-
-  _checkConfiguration();
-  if(_configuration == nullptr)
-  {
-    Log::warning() << _debugName << ": configuration is invalid";
-    return false;
-  }
-  if(_configurator->pipelineType() != AbstractPipeline::GRAPHIC_PIPELINE)
-  {
-    Log::warning() << _debugName << ": technique is not graphic";
-    return false;
-  }
-
-  _checkResources();
-  _bindDescriptorsGraphic(producer);
-
-  _checkSelections();
-  MT_ASSERT(_pipelineVariant < _configuration->graphicPipelineVariants.size());
-
-  producer.setGraphicPipeline(
-                    *_configuration->graphicPipelineVariants[_pipelineVariant]);
-
-  _isBinded = true;
-  return true;
-}
-
-void Technique::_checkConfiguration()
-{
-  if(_lastConfiguratorRevision == _configurator->revision()) return;
-
-  // Ревизия конфигурации поменялась, надо установить свежую конфигурацию
-  _lastConfiguratorRevision = _configurator->revision();
   const TechniqueConfiguration* newConfiguration =
-                                              _configurator->configuration();
-  _volatileSetDescription = nullptr;
-  _staticSetDescription = nullptr;
+                                                _configurator->configuration();
 
-  // Заранее найдем нужные сеты
-  for(const TechniqueConfiguration::DescriptorSet& setDescription :
-                                            newConfiguration->descriptorSets)
-  {
-    switch(setDescription.type)
-    {
-    case DescriptorSetType::VOLATILE:
-      _volatileSetDescription = &setDescription;
-      break;
-    case DescriptorSetType::STATIC:
-      _staticSetDescription = &setDescription;
-      break;
-    }
-  }
-
+  // Пересоздаем юниформ блоки
   UniformBlocks newUniformBlocks;
-  for(const TechniqueConfiguration::UniformBuffer& description :
-                                            newConfiguration->uniformBuffers)
+  if(newConfiguration != nullptr)
   {
-    newUniformBlocks.emplace_back(
+    for(const TechniqueConfiguration::UniformBuffer& description :
+                                            newConfiguration->uniformBuffers)
+    {
+      newUniformBlocks.emplace_back(
                                 new TechniqueUniformBlock(description,
                                                           *this,
                                                           _resourcesRevision));
+    }
   }
 
   try
@@ -98,7 +53,6 @@ void Technique::_checkConfiguration()
     {
       selection->setConfiguration(newConfiguration);
     }
-    _selectionsRevision++;
 
     for (std::unique_ptr<TechniqueResourceImpl>& resource : _resources)
     {
@@ -118,23 +72,107 @@ void Technique::_checkConfiguration()
     Abort("Unable to update technique configuration");
   }
 
+  // Ищем описания дескриптер сетов
+  _volatileSetDescription = nullptr;
+  _staticSetDescription = nullptr;
+  if(newConfiguration != nullptr)
+  {
+    for(const TechniqueConfiguration::DescriptorSet& setDescription :
+                                            newConfiguration->descriptorSets)
+    {
+      switch(setDescription.type)
+      {
+      case DescriptorSetType::VOLATILE:
+        _volatileSetDescription = &setDescription;
+        break;
+      case DescriptorSetType::STATIC:
+        _staticSetDescription = &setDescription;
+        break;
+      }
+    }
+  }
+
   _uniformBlocks = std::move(newUniformBlocks);
   _configuration = ConstRef(newConfiguration);
 }
 
-void Technique::_checkResources() noexcept
+bool Technique::bindGraphic(CommandProducerGraphic& producer)
 {
-  // Если ревизия изменилась, значит в статик сете поменялся кто-то из ресурсов
-  // Надо пересоздавать статик сет
+  if(_configuration == nullptr)
+  {
+    Log::warning() << _debugName << ": configuration is invalid";
+    return false;
+  }
+  if(_configurator->pipelineType() != AbstractPipeline::GRAPHIC_PIPELINE)
+  {
+    Log::warning() << _debugName << ": technique is not graphic";
+    return false;
+  }
+
+  _updateStaticSet(producer);
+  _bindDescriptorsGraphic(producer);
+
+  uint32_t pipelineVariant = _getPipelineVariant();
+  MT_ASSERT(pipelineVariant < _configuration->graphicPipelineVariants.size());
+
+  producer.setGraphicPipeline(
+                    *_configuration->graphicPipelineVariants[pipelineVariant]);
+  return true;
+}
+
+void Technique::_updateStaticSet(CommandProducerTransfer& commandProducer) const
+{
+  if (_staticSetDescription == nullptr) return;
+
+  std::lock_guard lock(_staticSetMutex);
+
+  // Если ревизия ресурсов изменилась, значит в статик сете поменялся
+  // кто-то из ресурсов. Надо пересоздавать статик сет
   if (_lastProcessedResourcesRevision != _resourcesRevision)
   {
     _staticSet.reset();
     _staticPool.reset();
     _lastProcessedResourcesRevision = _resourcesRevision;
   }
+  // Создаем новый сет, если он ещё не был создан
+  if(_staticSet == nullptr)
+  {
+    _staticPool = Ref(new DescriptorPool(
+                            _device,
+                            _staticSetDescription->layout->descriptorCounter(),
+                            1,
+                            DescriptorPool::STATIC_POOL));
+    _staticSet = _staticPool->allocateSet(*_staticSetDescription->layout);
+    _bindResources(*_staticSet, DescriptorSetType::STATIC, commandProducer);
+  }
 }
 
-void Technique::_bindDescriptorsGraphic(CommandProducerGraphic& producer)
+void Technique::_bindResources( DescriptorSet& descriptorSet,
+                                DescriptorSetType setType,
+                                CommandProducerTransfer& commandProducer) const
+{
+  for(const std::unique_ptr<TechniqueResourceImpl>& resource : _resources)
+  {
+    if( resource->description() != nullptr &&
+        resource->description()->set == setType)
+    {
+      resource->bindToDescriptorSet(descriptorSet);
+    }
+  }
+
+  for (const std::unique_ptr<TechniqueUniformBlock>& uniformBlock :
+                                                                _uniformBlocks)
+  {
+    if(uniformBlock->description().set == setType)
+    {
+      uniformBlock->bindToDescriptorSet(descriptorSet, commandProducer);
+    }
+  }
+
+  descriptorSet.finalize();
+}
+
+void Technique::_bindDescriptorsGraphic(CommandProducerGraphic& producer) const
 {
   // Волатильный сет всегда выделяем по новой
   if(_volatileSetDescription != nullptr)
@@ -148,67 +186,28 @@ void Technique::_bindDescriptorsGraphic(CommandProducerGraphic& producer)
                                       *_configuration->pipelineLayout);
   }
 
-  if(_staticSetDescription != nullptr)
+  if (_staticSetDescription != nullptr)
   {
-    // Статик сет обновляется только по необходимости
-    if(_staticSet == nullptr) _buildStaticSet(producer);
+    std::lock_guard lock(_staticSetMutex);
+    MT_ASSERT(_staticSet != nullptr);
     producer.bindDescriptorSetGraphic(*_staticSet,
                                       uint32_t(DescriptorSetType::STATIC),
                                       *_configuration->pipelineLayout);
   }
 }
 
-void Technique::_bindResources( DescriptorSet& descriptorSet,
-                                DescriptorSetType setType,
-                                CommandProducerTransfer& commandProducer)
+uint32_t Technique::_getPipelineVariant() const noexcept
 {
-  for(std::unique_ptr<TechniqueResourceImpl>& resource : _resources)
+  uint32_t pipelineVariant = 0;
+  for (const std::unique_ptr<SelectionImpl>& selection : _selections)
   {
-    if( resource->description() != nullptr &&
-        resource->description()->set == setType)
-    {
-      resource->bindToDescriptorSet(descriptorSet);
-    }
+    pipelineVariant += selection->valueWeight();
   }
-
-  for (std::unique_ptr<TechniqueUniformBlock>& uniformBlock : _uniformBlocks)
-  {
-    if(uniformBlock->description().set == setType)
-    {
-      uniformBlock->bindToDescriptorSet(descriptorSet, commandProducer);
-    }
-  }
-
-  descriptorSet.finalize();
+  return pipelineVariant;
 }
 
-void Technique::_buildStaticSet(CommandProducerTransfer& commandProducer)
+void Technique::unbindGraphic(CommandProducerGraphic& producer) const noexcept
 {
-  _staticPool = Ref(new DescriptorPool(
-                            _device,
-                            _staticSetDescription->layout->descriptorCounter(),
-                            1,
-                            DescriptorPool::STATIC_POOL));
-  _staticSet = _staticPool->allocateSet(*_staticSetDescription->layout);
-  _bindResources(*_staticSet, DescriptorSetType::STATIC, commandProducer);
-}
-
-void Technique::_checkSelections() noexcept
-{
-  if(_lastProcessedSelectionsRevision != _selectionsRevision)
-  {
-    _pipelineVariant = 0;
-    for (std::unique_ptr<SelectionImpl>& selection : _selections)
-    {
-      _pipelineVariant += selection->valueWeight();
-    }
-    _lastProcessedSelectionsRevision = _selectionsRevision;
-  }
-}
-
-void Technique::unbindGraphic(CommandProducerGraphic& producer) noexcept
-{
-  MT_ASSERT(_isBinded);
   if(_volatileSetDescription != nullptr)
   {
     producer.unbindDescriptorSetGraphic(uint32_t(DescriptorSetType::VOLATILE));
@@ -217,7 +216,6 @@ void Technique::unbindGraphic(CommandProducerGraphic& producer) noexcept
   {
     producer.unbindDescriptorSetGraphic(uint32_t(DescriptorSetType::STATIC));
   }
-  _isBinded = false;
 }
 
 Selection& Technique::getOrCreateSelection(const char* selectionName)
@@ -228,9 +226,7 @@ Selection& Technique::getOrCreateSelection(const char* selectionName)
   }
   _selections.push_back(std::make_unique<SelectionImpl>(selectionName,
                                                         *this,
-                                                        _selectionsRevision,
                                                         _configuration.get()));
-  _selectionsRevision++;
   return *_selections.back();
 }
 
