@@ -98,15 +98,19 @@ namespace mt
 
     struct UniformBuffer
     {
-      DescriptorSetType set;      //  К какому дескриптер сету должен быть
-                                  //  привязан буфер
-      uint32_t binding;           //  Индекс привязки к дескриптер сету
+      DescriptorSetType set;        //  К какому дескриптер сету должен быть
+                                    //  привязан буфер
+      uint32_t binding;             //  Индекс привязки к дескриптер сету
       std::string name;
-      size_t size;                //  Размер в байтах
+      size_t size;                  //  Размер в байтах
+      size_t volatileContextOffset; //  Смещение внутри буфера
+                                    //  TechniqueVolatileContext
 
       std::vector<UniformVariable> variables;
     };
     std::vector<UniformBuffer> uniformBuffers;
+    size_t volatileUniformBuffersSize;  //  Суммарный размер всех юниформ
+                                        //  буферов в статик сете
 
     //  Описание отдельного источника данных, который используется пайплайном
     //  Здесь описываются текстуры, буферы, сэмплеры и т.д

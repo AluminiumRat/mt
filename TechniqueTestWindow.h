@@ -44,5 +44,6 @@ namespace mt
     TechniqueResource& _unusedResource;
 
     UniformVariable& _color;
+    UniformVariable& _shift;
   };
 }

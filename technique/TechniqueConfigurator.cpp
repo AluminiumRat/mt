@@ -62,6 +62,7 @@ void TechniqueConfigurator::rebuildConfiguration()
   try
   {
     _configuration = Ref(new TechniqueConfiguration);
+    _configuration->volatileUniformBuffersSize = 0;
 
     _configuration->pipelineType = _pipelineType;
     if( _pipelineType == AbstractPipeline::GRAPHIC_PIPELINE &&
@@ -394,6 +395,16 @@ void TechniqueConfigurator::_processUniformBlock(
   newBuffer.binding = reflectedBinding.binding;
   newBuffer.name = reflectedBinding.name;
   newBuffer.size = block.size;
+  if(newBuffer.set == DescriptorSetType::VOLATILE)
+  {
+    newBuffer.volatileContextOffset =
+                                    _configuration->volatileUniformBuffersSize;
+    _configuration->volatileUniformBuffersSize += newBuffer.size;
+  }
+  else
+  {
+    newBuffer.volatileContextOffset = 0;
+  }
   //  Обходим всё содержимое и ищем куски, которые мы можем интерпретировать
   //  как параметры
   std::string prefix = newBuffer.name + ".";

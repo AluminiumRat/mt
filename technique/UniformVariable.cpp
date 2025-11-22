@@ -1,4 +1,6 @@
-﻿#include <stdexcept>
+﻿#include <cstring>
+#include <stdexcept>
+
 #include <technique/Technique.h>
 #include <technique/UniformVariable.h>
 #include <util/Abort.h>
@@ -125,7 +127,7 @@ void UniformVariable::setValue(ValueRef newValue)
         newValue.dataSize <= _description->size)
     {
       _storage->setData(_description->offsetInBuffer,
-                        _description->size,
+                        (uint32_t)newValue.dataSize,
                         newValue.data);
       _savedValue = std::vector<char>();
     }
@@ -135,4 +137,22 @@ void UniformVariable::setValue(ValueRef newValue)
     }
     _valueIsSetted = true;
   }
+}
+
+void UniformVariable::setValue( TechniqueVolatileContext& context,
+                                ValueRef newValue) const
+{
+  MT_ASSERT(newValue.data != nullptr && newValue.dataSize != 0);
+  if(_storage == nullptr) return;
+  if(_storage->description().set != DescriptorSetType::VOLATILE)
+  {
+    Log::warning() << _technique.debugName() << " : " << name() << ": uniform buffer is not volatile";
+    return;
+  }
+  if(newValue.dataSize > _description->size) return;
+
+  void* dstData = (char*)context.uniformData +
+                  _storage->description().volatileContextOffset +
+                  _description->offsetInBuffer;
+  memcpy(dstData, newValue.data, newValue.dataSize);
 }

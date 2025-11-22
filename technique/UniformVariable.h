@@ -11,6 +11,7 @@
 namespace mt
 {
   class Technique;
+  class TechniqueVolatileContext;
 
   //  Компонент класса Technique
   //  Единичная именованная запись в юниформ буфере. Это могут быть
@@ -38,12 +39,23 @@ namespace mt
 
     inline const std::string& name() const noexcept;
 
+    //  Установить значение переменной, сохранив его в технике
+    //  Значение сохраняется между циклами рендера
     template <typename DataType>
     inline void setValue(const DataType& data);
     template <typename DataType>
     inline void setValue(const std::vector<DataType>& data);
-    //  Общий метод установки значения
     void setValue(ValueRef newValue);
+    //  Установить значение переменной в контекст отрисовки. Значение в технике
+    //  не сохраняется и будет утеряно вместе с TechniqueVolatileContext.
+    template <typename DataType>
+    inline void setValue( TechniqueVolatileContext& context,
+                          const DataType& data) const;
+    template <typename DataType>
+    inline void setValue( TechniqueVolatileContext& context, 
+                          const std::vector<DataType>& data) const;
+    void setValue(TechniqueVolatileContext& context, 
+                  ValueRef newValue) const;
 
     //  Может вернуть data == nullptr, если значение ещё не было установлено
     inline ValueRef getValue() const noexcept;
@@ -121,6 +133,23 @@ namespace mt
     ValueRef valueRef{.data = data.data(),
                       .dataSize = sizeof(DataType) * data.size()};
     setValue(valueRef);
+  }
+
+  template <typename DataType>
+  inline void UniformVariable::setValue(TechniqueVolatileContext& context,
+                                        const DataType& data) const
+  {
+    ValueRef valueRef{ .data = &data, .dataSize = sizeof(DataType) };
+    setValue(context, valueRef);
+  }
+
+  template <typename DataType>
+  inline void UniformVariable::setValue(TechniqueVolatileContext& context,
+                                        const std::vector<DataType>& data) const
+  {
+    ValueRef valueRef{.data = data.data(),
+                      .dataSize = sizeof(DataType) * data.size() };
+    setValue(context, valueRef);
   }
 
   inline UniformVariable::ValueRef UniformVariable::getValue() const noexcept

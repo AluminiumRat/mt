@@ -15,7 +15,8 @@ TechniqueTestWindow::TechniqueTestWindow(Device& device) :
   _sampler(new Sampler(device)),
   _samplerResource(_technique->getOrCreateResource("samplerState")),
   _unusedResource(_technique->getOrCreateResource("unused")),
-  _color(_technique->getOrCreateUniform("colorData.color"))
+  _color(_technique->getOrCreateUniform("colorData.color")),
+  _shift(_technique->getOrCreateUniform("shiftData.shift"))
 {
   _selector1.setValue("1");
   _selector2.setValue("1");
@@ -32,6 +33,7 @@ TechniqueTestWindow::TechniqueTestWindow(Device& device) :
   _samplerResource.setSampler(_sampler);
 
   _color.setValue(glm::vec4(1, 1, 1, 1));
+  _shift.setValue(0.1f);
 
   TechniqueConfigurator& configurator = _technique->configurator();
 
@@ -139,8 +141,9 @@ void TechniqueTestWindow::drawImplementation(
   //_samplerResource.setSampler(volatileContext, _sampler);
 
   float colorFactor = (frameIndex % 100) / 100.0f;
-  std::vector<float> colorValue = {colorFactor, colorFactor, colorFactor, 1.0f};
-  _color.setValue(colorValue);
+  //std::vector<float> colorValue = {colorFactor, colorFactor, colorFactor, 1.0f};
+  glm::vec4 colorValue(colorFactor, colorFactor, colorFactor, 1.0f);
+  _color.setValue(volatileContext, colorValue);
 
   _technique->bindGraphic(commandProducer, &volatileContext);
   commandProducer.draw(3);

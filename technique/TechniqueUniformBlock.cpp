@@ -17,15 +17,16 @@ TechniqueUniformBlock::TechniqueUniformBlock(
 }
 
 void TechniqueUniformBlock::bindToDescriptorSet(
-                                DescriptorSet& set,
-                                CommandProducerTransfer& commandProducer) const
+                          DescriptorSet& set,
+                          CommandProducerTransfer& commandProducer,
+                          const TechniqueVolatileContext* volatileContext) const
 {
-  UniformMemoryPool::MemoryInfo writeInfo =
+  if(_description.set == DescriptorSetType::STATIC)
+  {
+    UniformMemoryPool::MemoryInfo writeInfo =
               commandProducer.uniformMemorySession().write( _cpuBuffer.data(),
                                                             _cpuBuffer.size());
 
-  if(_description.set == DescriptorSetType::STATIC)
-  {
     // Для статик сета создаем новый полноценный буфер
     Ref<DataBuffer> gpuBuffer = Ref(
                                   new DataBuffer( _technique.device(),
@@ -42,7 +43,22 @@ void TechniqueUniformBlock::bindToDescriptorSet(
   }
   else
   {
-    // Для волатильного сета не нужен долговременный буфер, используем временный
+    //  Для начала определяем, откуда будем брать данные
+    const char* srcData;
+    if(volatileContext != nullptr)
+    {
+      srcData = (const char*)volatileContext->uniformData +
+                                            _description.volatileContextOffset;
+    }
+    else
+    {
+      srcData = _cpuBuffer.data();
+    }
+    //  Записываем данные во временный GPU буфер. Для волатильного сета 
+    //  долговременный буфер не нужен, поэтому сразу аттачим его к сету
+    UniformMemoryPool::MemoryInfo writeInfo =
+              commandProducer.uniformMemorySession().write( srcData,
+                                                            _cpuBuffer.size());
     set.attachBuffer( *writeInfo.buffer,
                       _description.binding,
                       VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,

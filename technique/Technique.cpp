@@ -167,7 +167,9 @@ void Technique::_bindResources( DescriptorSet& descriptorSet,
   {
     if(uniformBlock->description().set == setType)
     {
-      uniformBlock->bindToDescriptorSet(descriptorSet, commandProducer);
+      uniformBlock->bindToDescriptorSet(descriptorSet,
+                                        commandProducer,
+                                        nullptr);
     }
   }
 
@@ -183,8 +185,19 @@ void Technique::_bindDescriptorsGraphic(
   {
     if (volatileContext != nullptr)
     {
-      // Сет был создан ранее при создании контекста
+      //  Сет был создан ранее при создании контекста
       MT_ASSERT(volatileContext->descriptorSet != nullptr);
+      //  Ресурсы уже были прибинжены ранее, остались только униформ блоки
+      for (const std::unique_ptr<TechniqueUniformBlock>& uniformBlock :
+                                                                _uniformBlocks)
+      {
+        if(uniformBlock->description().set == DescriptorSetType::VOLATILE)
+        {
+          uniformBlock->bindToDescriptorSet(*volatileContext->descriptorSet,
+                                            producer,
+                                            volatileContext);
+        }
+      }
       volatileContext->descriptorSet->finalize();
       producer.bindDescriptorSetGraphic(*volatileContext->descriptorSet,
                                         uint32_t(DescriptorSetType::VOLATILE),
@@ -246,10 +259,17 @@ TechniqueVolatileContext Technique::createVolatileContext(
   {
     volatileSetLayout = _volatileSetDescription->layout.get();
   }
+
+  size_t uniformDataSize = 0;
+  if(_configuration != nullptr)
+  {
+    uniformDataSize = _configuration->volatileUniformBuffersSize;
+  }
+
   TechniqueVolatileContext context( producer,
                                     volatileSetLayout,
                                     _selections.size(),
-                                    0);
+                                    uniformDataSize);
 
   //  Копируем установленные значения селекшенов в контекст
   for(size_t i = 0; i < _selections.size(); i++)
@@ -268,6 +288,14 @@ TechniqueVolatileContext Technique::createVolatileContext(
         resource->bindToDescriptorSet(*context.descriptorSet);
       }
     }
+  }
+
+  //  Копируем данные униформ буферов
+  for(const std::unique_ptr<TechniqueUniformBlock>& block : _uniformBlocks)
+  {
+    void* dstData = (char*)context.uniformData +
+                                    block->description().volatileContextOffset;
+    block->copyDataTo(dstData);
   }
 
   return context;

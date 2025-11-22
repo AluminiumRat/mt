@@ -13,6 +13,7 @@ namespace mt
   class CommandProducerTransfer;
   class DescriptorSet;
   class Technique;
+  class TechniqueVolatileContext;
 
   //  Хранилище данных для одного униформ буфера. В нормальном режиме
   //    UniformVariable хранят свои значения в нем. Так же отвечает за
@@ -45,9 +46,12 @@ namespace mt
                         uint32_t dataSize,
                         const void* srcData);
     inline const void* getData(uint32_t offset) const;
+    inline void copyDataTo(void* dst) const;
 
-    void bindToDescriptorSet( DescriptorSet& set,
-                              CommandProducerTransfer& commandProducer) const;
+    void bindToDescriptorSet(
+                        DescriptorSet& set,
+                        CommandProducerTransfer& commandProducer,
+                        const TechniqueVolatileContext* volatileContext) const;
 
   private:
     const TechniqueConfiguration::UniformBuffer& _description;
@@ -79,5 +83,10 @@ namespace mt
   {
     MT_ASSERT(offset < _description.size);
     return _cpuBuffer.data() + offset;
+  }
+
+  inline void TechniqueUniformBlock::copyDataTo(void* dst) const
+  {
+    memcpy(dst, _cpuBuffer.data(), _description.size);
   }
 }
