@@ -223,7 +223,8 @@ uint32_t Technique::_getPipelineVariant(
     // Смотрим, что записали селекшены в контекст
     for (size_t i = 0; i < _selections.size(); i++)
     {
-      pipelineVariant += volatileContext->selectionsWeights[i];
+      uint32_t valueIndex = volatileContext->selectionsValues[i];
+      pipelineVariant += _selections[i]->valueWeight(valueIndex);
     }
   }
   else
@@ -253,7 +254,7 @@ TechniqueVolatileContext Technique::createVolatileContext(
   //  Копируем установленные значения селекшенов в контекст
   for(size_t i = 0; i < _selections.size(); i++)
   {
-    context.selectionsWeights[i] = _selections[i]->valueWeight();
+    context.selectionsValues[i] = _selections[i]->valueIndex();
   }
 
   //  Биндим установленные ресурсы

@@ -77,7 +77,9 @@ namespace mt
     ~SelectionImpl() noexcept = default;
 
     inline void setConfiguration(const TechniqueConfiguration* configuration);
+    inline uint32_t valueIndex() const noexcept;
     inline uint32_t valueWeight() const noexcept;
+    inline uint32_t valueWeight(uint32_t valueIndex) const noexcept;
   };
 
   inline const std::string& Selection::name() const noexcept
@@ -107,8 +109,20 @@ namespace mt
     _bindToConfiguration(configuration);
   }
 
+  inline uint32_t SelectionImpl::valueIndex() const noexcept
+  {
+    return _valueIndex;
+  }
+
   inline uint32_t SelectionImpl::valueWeight() const noexcept
   {
     return _valueWeight;
+  }
+
+  inline uint32_t SelectionImpl::valueWeight(uint32_t valueIndex) const noexcept
+  {
+    if(_description == nullptr) return 0;
+    MT_ASSERT(valueIndex < _description->valueVariants.size());
+    return valueIndex * _description->weight;
   }
 }

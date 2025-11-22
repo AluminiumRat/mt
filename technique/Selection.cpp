@@ -63,21 +63,25 @@ inline void Selection::setValue(const std::string& newValue)
 void Selection::setValue( TechniqueVolatileContext& context,
                           const std::string& newValue) const
 {
-  uint32_t weight = 0;
+  uint32_t variantIndex = 0;
   if (_description != nullptr)
   {
-    for ( uint32_t variantIndex = 0;
+    for ( ;
           variantIndex < _description->valueVariants.size();
           variantIndex++)
     {
       if (_description->valueVariants[variantIndex] == newValue)
       {
-        weight = variantIndex * _description->weight;
         break;
       }
     }
+    if(variantIndex == _description->valueVariants.size())
+    {
+      Log::warning() << _technique.debugName() << " : selection " << name() << " doesn't have variant: " << newValue;
+      variantIndex = 0;
+    }
   }
-  context.selectionsWeights[_selectionIndex] = weight;
+  context.selectionsValues[_selectionIndex] = variantIndex;
 }
 
 void Selection::_bindToConfiguration(

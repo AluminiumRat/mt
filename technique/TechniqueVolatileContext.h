@@ -15,7 +15,8 @@ namespace mt
   class TechniqueVolatileContext
   {
   public:
-    uint32_t* selectionsWeights;      //  Таблица с весами выбранных селекшенов
+    uint32_t* selectionsValues;       //  Таблица с индексами значений
+                                      //  селекшенов
     void* uniformData;                //  Временный буфер для записи значений
                                       //  юниформ переменных
     Ref<DescriptorSet> descriptorSet; //  Дескриптер-сет для волатильных
@@ -48,7 +49,7 @@ namespace mt
                                     size_t selectionsNumber,
                                     size_t uniformsDataSize) :
     _producer(nullptr),
-    selectionsWeights(nullptr),
+    selectionsValues(nullptr),
     uniformData(nullptr),
     descriptorSet(nullptr)
   {
@@ -64,7 +65,7 @@ namespace mt
     size_t tmpBufferSize = selectionsTableSize + uniformsDataSize;
     void* tmpBuffer =
                   producer.uniformMemorySession().lockTmpBuffer(tmpBufferSize);
-    selectionsWeights = (uint32_t*)tmpBuffer;
+    selectionsValues = (uint32_t*)tmpBuffer;
     uniformData = (char*)tmpBuffer + selectionsTableSize;
   }
 
@@ -84,7 +85,7 @@ namespace mt
 
   inline TechniqueVolatileContext::TechniqueVolatileContext(
                                     TechniqueVolatileContext&& other) noexcept :
-    selectionsWeights(other.selectionsWeights),
+    selectionsValues(other.selectionsValues),
     uniformData(other.uniformData),
     descriptorSet(other.descriptorSet),
     _producer(other._producer)
@@ -97,7 +98,7 @@ namespace mt
   {
     _release();
 
-    selectionsWeights = other.selectionsWeights;
+    selectionsValues = other.selectionsValues;
     uniformData = other.uniformData;
     descriptorSet = other.descriptorSet;
     _producer = other._producer;

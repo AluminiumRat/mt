@@ -114,9 +114,6 @@ void TechniqueTestWindow::drawImplementation(
 {
   CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
 
-  TechniqueVolatileContext volatileContext =
-                            _technique->createVolatileContext(commandProducer);
-
   static int frameIndex = 0;
   frameIndex++;
 
@@ -124,6 +121,9 @@ void TechniqueTestWindow::drawImplementation(
   {
     _technique->configurator().rebuildConfiguration();
   }
+
+  TechniqueVolatileContext volatileContext =
+                            _technique->createVolatileContext(commandProducer);
 
   if(frameIndex % 360 < 180) _selector2.setValue(volatileContext, "0");
   else _selector2.setValue(volatileContext, "1");
