@@ -119,6 +119,12 @@ void TechniqueTestWindow::drawImplementation(
 
   static int frameIndex = 0;
   frameIndex++;
+
+  if (frameIndex % 250 == 12)
+  {
+    _technique->configurator().rebuildConfiguration();
+  }
+
   if(frameIndex % 360 < 180) _selector2.setValue(volatileContext, "0");
   else _selector2.setValue(volatileContext, "1");
 
@@ -128,11 +134,6 @@ void TechniqueTestWindow::drawImplementation(
 
   _vertexBuffer.setBuffer(volatileContext,
                           _vertexBuffers[frameIndex % 399 / 200]);
-
-  if(frameIndex % 250 == 12)
-  {
-    _technique->configurator().rebuildConfiguration();
-  }
 
   _texture1.setImage(volatileContext, _textures[0]);
   //_samplerResource.setSampler(volatileContext, _sampler);
