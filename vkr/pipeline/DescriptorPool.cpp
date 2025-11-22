@@ -3,8 +3,8 @@
 #include <util/Abort.h>
 #include <util/Assert.h>
 #include <util/Log.h>
+#include <vkr/pipeline/DescriptorPool.h>
 #include <vkr/pipeline/DescriptorSetLayout.h>
-#include <vkr/DescriptorPool.h>
 #include <vkr/Device.h>
 
 using namespace mt;

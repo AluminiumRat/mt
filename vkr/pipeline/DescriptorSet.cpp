@@ -1,8 +1,8 @@
 ﻿#include <util/Assert.h>
 #include <vkr/image/ImageView.h>
+#include <vkr/pipeline/DescriptorPool.h>
+#include <vkr/pipeline/DescriptorSet.h>
 #include <vkr/DataBuffer.h>
-#include <vkr/DescriptorPool.h>
-#include <vkr/DescriptorSet.h>
 #include <vkr/Device.h>
 #include <vkr/Sampler.h>
 

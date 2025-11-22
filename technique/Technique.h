@@ -14,8 +14,8 @@
 #include <util/Ref.h>
 #include <util/RefCounter.h>
 #include <util/SpinLock.h>
-#include <vkr/DescriptorPool.h>
-#include <vkr/DescriptorSet.h>
+#include <vkr/pipeline/DescriptorPool.h>
+#include <vkr/pipeline/DescriptorSet.h>
 
 namespace mt
 {

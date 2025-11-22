@@ -6,7 +6,7 @@
 
 #include <util/RefCounter.h>
 
-#include <vkr/DescriptorCounter.h>
+#include <vkr/pipeline/DescriptorCounter.h>
 
 namespace mt
 {

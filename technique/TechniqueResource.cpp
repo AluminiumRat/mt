@@ -3,7 +3,7 @@
 #include <technique/TechniqueVolatileContext.h>
 #include <util/Assert.h>
 #include <util/Log.h>
-#include <vkr/DescriptorSet.h>
+#include <vkr/pipeline/DescriptorSet.h>
 
 using namespace mt;
 

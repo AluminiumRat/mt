@@ -3,8 +3,8 @@
 #include <vulkan/vulkan.h>
 
 #include <util/RefCounter.h>
-#include <vkr/DescriptorCounter.h>
-#include <vkr/DescriptorSet.h>
+#include <vkr/pipeline/DescriptorCounter.h>
+#include <vkr/pipeline/DescriptorSet.h>
 
 namespace mt
 {

@@ -7,8 +7,8 @@
 
 #include <util/RefCounter.h>
 #include <util/Ref.h>
+#include <vkr/pipeline/DescriptorCounter.h>
 #include <vkr/pipeline/DescriptorSetLayout.h>
-#include <vkr/DescriptorCounter.h>
 
 namespace mt
 {

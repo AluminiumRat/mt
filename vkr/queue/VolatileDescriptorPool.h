@@ -4,7 +4,7 @@
 #include <vector>
 
 #include <util/Ref.h>
-#include <vkr/DescriptorPool.h>
+#include <vkr/pipeline/DescriptorPool.h>
 
 namespace mt
 {

@@ -1,5 +1,5 @@
 ﻿#include <util/Assert.h>
-#include <vkr/DescriptorCounter.h>
+#include <vkr/pipeline/DescriptorCounter.h>
 
 using namespace mt;
 
