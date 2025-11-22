@@ -10,9 +10,11 @@ using namespace mt;
 
 DescriptorSet::DescriptorSet( Device& device,
                               VkDescriptorSet handle,
-                              const DescriptorPool* pool) :
+                              const DescriptorPool* pool,
+                              const DescriptorSetLayout& layout) :
   _device(device),
   _handle(handle),
+  _layout(&layout),
   _finalized(false)
 {
   if(pool != nullptr)

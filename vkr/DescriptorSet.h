@@ -9,6 +9,7 @@
 #include <util/RefCounter.h>
 #include <vkr/image/ImagesAccessSet.h>
 #include <vkr/image/ImageView.h>
+#include <vkr/pipeline/DescriptorSetLayout.h>
 
 namespace mt
 {
@@ -24,7 +25,8 @@ namespace mt
     friend class DescriptorPool;
     DescriptorSet(Device& device,
                   VkDescriptorSet handle,
-                  const DescriptorPool* pool);
+                  const DescriptorPool* pool,
+                  const DescriptorSetLayout& layout);
     DescriptorSet(const DescriptorSet&) = delete;
     DescriptorSet& operator = (const DescriptorSet&) = delete;
     virtual ~DescriptorSet() noexcept = default;
@@ -32,6 +34,7 @@ namespace mt
   public:
     inline Device& device() const noexcept;
     inline VkDescriptorSet handle() const noexcept;
+    inline const DescriptorSetLayout& layout() const noexcept;
 
     inline const ImagesAccessSet& imagesAccess() const noexcept;
 
@@ -83,6 +86,8 @@ namespace mt
     Device& _device;
     VkDescriptorSet _handle;
 
+    ConstRef<DescriptorSetLayout> _layout;
+
     std::vector<ConstRef<RefCounter>> _resources;
     ImagesAccessSet _imagesAccess;
 
@@ -97,6 +102,11 @@ namespace mt
   inline VkDescriptorSet DescriptorSet::handle() const noexcept
   {
     return _handle;
+  }
+
+  inline const DescriptorSetLayout& DescriptorSet::layout() const noexcept
+  {
+    return *_layout;
   }
 
   inline const ImagesAccessSet& DescriptorSet::imagesAccess() const noexcept

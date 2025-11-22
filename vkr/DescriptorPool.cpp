@@ -90,7 +90,8 @@ Ref<DescriptorSet> DescriptorPool::allocateSet(
     //  так как время жизни пула гарантируется вызывающей стороной
     return Ref(new DescriptorSet( _device,
                                   newSet,
-                                  _mode == VOLATILE_POOL ? nullptr : this));
+                                  _mode == VOLATILE_POOL ? nullptr : this,
+                                  layout));
   }
   catch(std::exception& error)
   {
