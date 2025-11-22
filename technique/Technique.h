@@ -72,7 +72,9 @@ namespace mt
     void _bindResources(DescriptorSet& descriptorSet,
                         DescriptorSetType setType,
                         CommandProducerTransfer& commandProducer) const;
-    void _bindDescriptorsGraphic(CommandProducerGraphic& producer) const;
+    void _bindDescriptorsGraphic(
+                        CommandProducerGraphic& producer,
+                        const TechniqueVolatileContext* volatileContext) const;
     //  Определить по селекшенам, какой именно вариант пайплайны мы должны
     //  использовать
     uint32_t _getPipelineVariant(

@@ -112,7 +112,7 @@ bool Technique::bindGraphic(
   }
 
   _updateStaticSet(producer);
-  _bindDescriptorsGraphic(producer);
+  _bindDescriptorsGraphic(producer, volatileContext);
 
   uint32_t pipelineVariant = _getPipelineVariant(volatileContext);
   MT_ASSERT(pipelineVariant < _configuration->graphicPipelineVariants.size());
@@ -174,20 +174,36 @@ void Technique::_bindResources( DescriptorSet& descriptorSet,
   descriptorSet.finalize();
 }
 
-void Technique::_bindDescriptorsGraphic(CommandProducerGraphic& producer) const
+void Technique::_bindDescriptorsGraphic(
+                          CommandProducerGraphic& producer,
+                          const TechniqueVolatileContext* volatileContext) const
 {
-  // Волатильный сет всегда выделяем по новой
+  // Сначала биндим волатильный сет
   if(_volatileSetDescription != nullptr)
   {
-    Ref<DescriptorSet> volatileSet =
+    if (volatileContext != nullptr)
+    {
+      // Сет был создан ранее при создании контекста
+      MT_ASSERT(volatileContext->descriptorSet != nullptr);
+      volatileContext->descriptorSet->finalize();
+      producer.bindDescriptorSetGraphic(*volatileContext->descriptorSet,
+                                        uint32_t(DescriptorSetType::VOLATILE),
+                                        *_configuration->pipelineLayout);
+    }
+    else
+    {
+      // Волатильного контекста нет, поэтому создадим и заполним новый сет
+      Ref<DescriptorSet> volatileSet =
         producer.descriptorPool().allocateSet(*_volatileSetDescription->layout);
-    _bindResources(*volatileSet, DescriptorSetType::VOLATILE, producer);
+      _bindResources(*volatileSet, DescriptorSetType::VOLATILE, producer);
 
-    producer.bindDescriptorSetGraphic(*volatileSet,
-                                      uint32_t(DescriptorSetType::VOLATILE),
-                                      *_configuration->pipelineLayout);
+      producer.bindDescriptorSetGraphic(*volatileSet,
+                                        uint32_t(DescriptorSetType::VOLATILE),
+                                        *_configuration->pipelineLayout);
+    }
   }
 
+  // Биндим статический сет
   if (_staticSetDescription != nullptr)
   {
     std::lock_guard lock(_staticSetMutex);
@@ -224,12 +240,33 @@ uint32_t Technique::_getPipelineVariant(
 TechniqueVolatileContext Technique::createVolatileContext(
                                                 CommandProducer& producer) const
 {
-  TechniqueVolatileContext context(producer, _selections.size(), 0);
+  const DescriptorSetLayout* volatileSetLayout = nullptr;
+  if (_volatileSetDescription != nullptr)
+  {
+    volatileSetLayout = _volatileSetDescription->layout.get();
+  }
+  TechniqueVolatileContext context( producer,
+                                    volatileSetLayout,
+                                    _selections.size(),
+                                    0);
 
-  // Копируем установленные значения в контекст
+  //  Копируем установленные значения селекшенов в контекст
   for(size_t i = 0; i < _selections.size(); i++)
   {
     context.selectionsWeights[i] = _selections[i]->valueWeight();
+  }
+
+  //  Биндим установленные ресурсы
+  if(context.descriptorSet != nullptr)
+  {
+    for (const std::unique_ptr<TechniqueResourceImpl>& resource : _resources)
+    {
+      if (resource->description() != nullptr &&
+          resource->description()->set == DescriptorSetType::VOLATILE)
+      {
+        resource->bindToDescriptorSet(*context.descriptorSet);
+      }
+    }
   }
 
   return context;

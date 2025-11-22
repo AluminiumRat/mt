@@ -34,12 +34,14 @@ namespace mt
     Ref<DataBuffer> _vertexBuffers[2];
     TechniqueResource& _vertexBuffer;
 
-    Ref<ImageView> _textures[2];
+    ConstRef<ImageView> _textures[2];
     TechniqueResource& _texture1;
     TechniqueResource& _texture2;
 
     Ref<Sampler> _sampler;
     TechniqueResource& _samplerResource;
+
+    TechniqueResource& _unusedResource;
 
     UniformVariable& _color;
   };

@@ -12,16 +12,18 @@ namespace mt
   //    время обхода рендера.
   //  Позволяет донастроить технику и выставить волатильные переменные и сеты,
   //    не внося изменений в саму технику, реализуя константный рендер.
-  struct TechniqueVolatileContext
+  class TechniqueVolatileContext
   {
   public:
-    uint32_t* selectionsWeights;  //  Таблица с весами выбранных селекшенов
-    void* uniformData;            //  Временный буфер для записи значений
-                                  //  юниформ переменных
-    DescriptorSet* descriptorSet; //  Дескриптер-сет для волатильных ресурсов
+    uint32_t* selectionsWeights;      //  Таблица с весами выбранных селекшенов
+    void* uniformData;                //  Временный буфер для записи значений
+                                      //  юниформ переменных
+    Ref<DescriptorSet> descriptorSet; //  Дескриптер-сет для волатильных
+                                      //  ресурсов
 
   public:
     inline TechniqueVolatileContext(  CommandProducer& producer,
+                                      const DescriptorSetLayout* setLayout,
                                       size_t selectionsNumber,
                                       size_t uniformsDataSize);
     TechniqueVolatileContext(const TechniqueVolatileContext&) = delete;
@@ -42,6 +44,7 @@ namespace mt
 
   inline TechniqueVolatileContext::TechniqueVolatileContext(
                                     CommandProducer& producer,
+                                    const DescriptorSetLayout* setLayout,
                                     size_t selectionsNumber,
                                     size_t uniformsDataSize) :
     _producer(nullptr),
@@ -49,6 +52,11 @@ namespace mt
     uniformData(nullptr),
     descriptorSet(nullptr)
   {
+    if(setLayout != nullptr)
+    {
+      descriptorSet = producer.descriptorPool().allocateSet(*setLayout);
+    }
+
     if(selectionsNumber == 0 && uniformsDataSize == 0) return;
 
     _producer = &producer;

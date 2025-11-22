@@ -8,7 +8,7 @@
 namespace mt
 {
   class Technique;
-  struct TechniqueVolatileContext;
+  class TechniqueVolatileContext;
 
   //  Компонент класса Technique
   //  Дефайн в шейдере, который может принимать только ограниченное количество
@@ -31,13 +31,14 @@ namespace mt
     inline const std::string& name() const noexcept;
 
     inline const std::string& value() const noexcept;
+    //  Выставить значение в сам селекшен для длительного хранения
     void setValue(const std::string& newValue);
 
     //  Выставить значение в волатильный контекст, а не в сам селекшен.
     //  Позволяет корректировать выбор пайплайна непосредственно во время
     //    рендера, не внося изменений в технику.
-    void setValue(const std::string& newValue,
-                  TechniqueVolatileContext& context) const;
+    void setValue(TechniqueVolatileContext& context,
+                  const std::string& newValue) const;
 
   protected:
     void _bindToConfiguration(const TechniqueConfiguration* configuration);

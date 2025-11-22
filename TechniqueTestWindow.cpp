@@ -14,6 +14,7 @@ TechniqueTestWindow::TechniqueTestWindow(Device& device) :
   _texture2(_technique->getOrCreateResource("colorTexture2")),
   _sampler(new Sampler(device)),
   _samplerResource(_technique->getOrCreateResource("samplerState")),
+  _unusedResource(_technique->getOrCreateResource("unused")),
   _color(_technique->getOrCreateUniform("colorData.color"))
 {
   _selector1.setValue("1");
@@ -22,8 +23,10 @@ TechniqueTestWindow::TechniqueTestWindow(Device& device) :
   _createVertexBuffers(device);
   _vertexBuffer.setBuffer(_vertexBuffers[0]);
 
+  _unusedResource.setBuffer(_vertexBuffers[1]);
+
   _createTextures(device);
-  _texture1.setImages(_textures);
+  //_texture1.setImages(_textures);
   _texture2.setImage(_textures[0]);
 
   _samplerResource.setSampler(_sampler);
@@ -116,19 +119,23 @@ void TechniqueTestWindow::drawImplementation(
 
   static int frameIndex = 0;
   frameIndex++;
-  if(frameIndex % 360 < 180) _selector2.setValue("0", volatileContext);
-  else _selector2.setValue("1", volatileContext);
+  if(frameIndex % 360 < 180) _selector2.setValue(volatileContext, "0");
+  else _selector2.setValue(volatileContext, "1");
 
-  if (frameIndex % 180 < 60) _selector1.setValue("0", volatileContext);
-  else if(frameIndex % 180 < 120) _selector1.setValue("1", volatileContext);
-  else _selector1.setValue("2", volatileContext);
+  if (frameIndex % 180 < 60) _selector1.setValue(volatileContext, "0");
+  else if(frameIndex % 180 < 120) _selector1.setValue(volatileContext, "1");
+  else _selector1.setValue(volatileContext, "2");
 
-  _vertexBuffer.setBuffer(_vertexBuffers[frameIndex % 399 / 200]);
+  _vertexBuffer.setBuffer(volatileContext,
+                          _vertexBuffers[frameIndex % 399 / 200]);
 
   if(frameIndex % 250 == 12)
   {
     _technique->configurator().rebuildConfiguration();
   }
+
+  _texture1.setImage(volatileContext, _textures[0]);
+  //_samplerResource.setSampler(volatileContext, _sampler);
 
   float colorFactor = (frameIndex % 100) / 100.0f;
   std::vector<float> colorValue = {colorFactor, colorFactor, colorFactor, 1.0f};

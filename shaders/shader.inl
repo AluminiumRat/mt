@@ -3,7 +3,7 @@ struct Vertex
     vec3 position;
     vec4 color;
 };
-layout (set = STATIC,
+layout (set = VOLATILE,
         binding = 1) readonly buffer VertexBuffer
 {
     Vertex data[];
@@ -15,7 +15,7 @@ layout (set = STATIC,
     vec4 color;
 } colorData;
 
-layout (set = STATIC,
+layout (set = VOLATILE,
         binding = 3) uniform texture2D colorTexture1;
 layout (set = STATIC,
         binding = 4) uniform texture2D colorTexture2;

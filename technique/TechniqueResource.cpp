@@ -1,5 +1,6 @@
 ﻿#include <technique/TechniqueResource.h>
 #include <technique/Technique.h>
+#include <technique/TechniqueVolatileContext.h>
 #include <util/Assert.h>
 #include <util/Log.h>
 #include <vkr/DescriptorSet.h>
@@ -46,6 +47,95 @@ void TechniqueResource::_bindToConfiguration(
   }
 }
 
+void TechniqueResource::setBuffer(TechniqueVolatileContext& context,
+                                  const DataBuffer& buffer) const
+{
+  if(_description == nullptr) return;
+  if(_description->set != DescriptorSetType::VOLATILE)
+  {
+    Log::warning() << _technique.debugName() << " : " << _name << ": resource is not volatile";
+    return;
+  }
+
+  context.descriptorSet->attachBuffer( buffer,
+                                      _description->bindingIndex,
+                                      _description->type,
+                                      0,
+                                      _buffer->size());
+}
+
+void TechniqueResource::setImage( TechniqueVolatileContext& context,
+                                  const ImageView& image) const
+{
+  if(_description == nullptr) return;
+  if(_description->set != DescriptorSetType::VOLATILE)
+  {
+    Log::warning() << _technique.debugName() << " : " << _name << ": resource is not volatile";
+    return;
+  }
+
+  VkImageLayout layout = _description->writeAccess ?
+                                    VK_IMAGE_LAYOUT_GENERAL:
+                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+  context.descriptorSet->attachImage( image,
+                                      _description->bindingIndex,
+                                      _description->type,
+                                      _description->pipelineStages,
+                                      _description->writeAccess,
+                                      layout);
+}
+
+void TechniqueResource::setImages(
+                            TechniqueVolatileContext& context,
+                            std::span<const ConstRef<ImageView>> images) const
+{
+  MT_ASSERT(!images.empty());
+  if(_description == nullptr) return;
+  if(_description->set != DescriptorSetType::VOLATILE)
+  {
+    Log::warning() << _technique.debugName() << " : " << _name << ": resource is not volatile";
+    return;
+  }
+
+  VkImageLayout layout = _description->writeAccess ?
+                                    VK_IMAGE_LAYOUT_GENERAL:
+                                    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+  if(images.size() == 1)
+  {
+    context.descriptorSet->attachImage( *images[0],
+                                        _description->bindingIndex,
+                                        _description->type,
+                                        _description->pipelineStages,
+                                        _description->writeAccess,
+                                        layout);
+  }
+  else
+  {
+    uint32_t imagesCount = std::min(uint32_t(images.size()),
+                                    _description->count);
+    std::span imagesSpan(images.data(), imagesCount);
+    context.descriptorSet->attachImages(imagesSpan,
+                                        _description->bindingIndex,
+                                        _description->type,
+                                        _description->pipelineStages,
+                                        _description->writeAccess,
+                                        layout);
+  }
+}
+
+void TechniqueResource::setSampler( TechniqueVolatileContext& context,
+                                    const Sampler& sampler) const
+{
+  if(_description == nullptr) return;
+  if(_description->set != DescriptorSetType::VOLATILE)
+  {
+    Log::warning() << _technique.debugName() << " : " << _name << ": resource is not volatile";
+    return;
+  }
+  context.descriptorSet->attachSampler(sampler, _description->bindingIndex);
+}
+
+
 void TechniqueResourceImpl::bindToDescriptorSet(DescriptorSet& set) const
 {
   MT_ASSERT(_description != nullptr);
@@ -75,36 +165,23 @@ void TechniqueResourceImpl::bindToDescriptorSet(DescriptorSet& set) const
 
 void TechniqueResourceImpl::_bindSampler(DescriptorSet& set) const
 {
-  if (_sampler == nullptr)
-  {
-    Log::warning() << _technique.debugName() << " : " << _name << ": sampler is null";
-  }
-  else set.attachSampler(*_sampler, _description->bindingIndex);
+  if (_sampler == nullptr) return;
+  set.attachSampler(*_sampler, _description->bindingIndex);
 }
 
 void TechniqueResourceImpl::_bindBuffer(DescriptorSet& set) const
 {
-    if(_buffer == nullptr)
-    {
-      Log::warning() << _technique.debugName() << " : " << _name << ": buffer is null";
-    }
-    else
-    {
-      set.attachBuffer( *_buffer,
-                        _description->bindingIndex,
-                        _description->type,
-                        0,
-                        _buffer->size());
-    }
+    if(_buffer == nullptr) return;
+    set.attachBuffer( *_buffer,
+                      _description->bindingIndex,
+                      _description->type,
+                      0,
+                      _buffer->size());
 }
 
 void TechniqueResourceImpl::_bindImage(DescriptorSet& set) const
 {
-  if (_images.empty())
-  {
-    Log::warning() << _technique.debugName() << " : " << _name << ": images is null";
-    return;
-  }
+  if (_images.empty()) return;
 
   VkImageLayout layout = _description->writeAccess ?
                                     VK_IMAGE_LAYOUT_GENERAL:

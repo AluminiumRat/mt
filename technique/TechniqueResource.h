@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <technique/TechniqueConfiguration.h>
+#include <util/Assert.h>
 #include <util/Ref.h>
 #include <vkr/image/ImageView.h>
 #include <vkr/DataBuffer.h>
@@ -14,6 +15,7 @@ namespace mt
 {
   class DescriptorSet;
   class Technique;
+  class TechniqueVolatileContext;
 
   //  Компонент класса Technique
   //  Буферы и текстуры.
@@ -39,26 +41,56 @@ namespace mt
     inline const std::string& name() const noexcept;
 
     inline const DataBuffer* buffer() const noexcept;
+    inline const ImageView* image(size_t arrayIndex = 0) const noexcept;
+    inline const Sampler* sampler() const noexcept;
+
+    //  Установить буфер, сохранив указатель на него в сам TechniqueResource
+    //  Ссылка сохраняется в технике между циклами рендера
     inline void setBuffer(const DataBuffer* buffer);
     inline void setBuffer(const Ref<DataBuffer>& buffer);
     inline void setBuffer(const ConstRef<DataBuffer>& buffer);
+    //  Установить буфер в контекст отрисовки. Ссылка в технике не сохраняется.
+    void setBuffer( TechniqueVolatileContext& context,
+                    const DataBuffer& buffer) const;
+    inline void setBuffer(TechniqueVolatileContext& context,
+                          const Ref<DataBuffer>& buffer) const;
+    inline void setBuffer(TechniqueVolatileContext& context,
+                          const ConstRef<DataBuffer>& buffer) const;
 
-    //  Текстуры могут объединяться в массивы дескриптеров (не путать с
-    //  textureArray). arrayIndex указывает на индекс в массиве дескриптеров
-    inline const ImageView* image(size_t arrayIndex = 0) const noexcept;
+    //  Установить Image или массив Image-ей, сохранив указатель на них в сам
+    //    TechniqueResource
+    //  Ссылка сохраняется в технике между циклами рендера
     inline void setImage(const ImageView* image, size_t arrayIndex = 0);
     inline void setImage(const Ref<ImageView>& image, size_t arrayIndex = 0);
     inline void setImage( const ConstRef<ImageView>& image,
                           size_t arrayIndex = 0);
-    //  Установить сразу весь набор текстур для массива дескриптеров
     inline void setImages(std::span<const ImageView*> images);
     inline void setImages(std::span<const Ref<ImageView>> images);
     inline void setImages(std::span<const ConstRef<ImageView>> images);
+    //  Установить Image или массив Image-ей в контекст отрисовки
+    //  Ссылка на ресурсы в технике не сохраняется.
+    void setImage(TechniqueVolatileContext& context,
+                  const ImageView& image) const;
+    inline void setImage( TechniqueVolatileContext& context,
+                          const Ref<ImageView>& image) const;
+    inline void setImage( TechniqueVolatileContext& context,
+                          const ConstRef<ImageView>& image) const;
+    void setImages( TechniqueVolatileContext& context,
+                    std::span<const ConstRef<ImageView>> images) const;
 
-    inline const Sampler* sampler() const noexcept;
+    //  Установить сэмплер, сохранив указатель на него в сам TechniqueResource
+    //  Ссылка сохраняется в технике между циклами рендера
     inline void setSampler(const Sampler* sampler);
     inline void setSampler(const Ref<Sampler>& sampler);
     inline void setSampler(const ConstRef<Sampler>& sampler);
+    //  Установить сэмплер в контекст отрисовки.
+    //  Ссылка в технике не сохраняется.
+    void setSampler(TechniqueVolatileContext& context,
+                    const Sampler& sampler) const;
+    inline void setSampler( TechniqueVolatileContext& context,
+                            const Ref<Sampler>& sampler) const;
+    inline void setSampler( TechniqueVolatileContext& context,
+                            const ConstRef<Sampler>& sampler) const;
 
   protected:
     inline void _clear() noexcept;
@@ -137,6 +169,22 @@ namespace mt
     setBuffer(buffer.get());
   }
 
+  inline void TechniqueResource::setBuffer(
+                                          TechniqueVolatileContext& context,
+                                          const Ref<DataBuffer>& buffer) const
+  {
+    MT_ASSERT(buffer != nullptr);
+    setBuffer(context, *buffer);
+  }
+
+  inline void TechniqueResource::setBuffer(
+                                      TechniqueVolatileContext& context,
+                                      const ConstRef<DataBuffer>& buffer) const
+  {
+    MT_ASSERT(buffer != nullptr);
+    setBuffer(context, *buffer);
+  }
+
   inline const ImageView* TechniqueResource::image(
                                               size_t arrayIndex) const noexcept
   {
@@ -209,6 +257,21 @@ namespace mt
     _images = std::vector(images.begin(), images.end());
   }
 
+  inline void TechniqueResource::setImage(TechniqueVolatileContext& context,
+                                          const Ref<ImageView>& image) const
+  {
+    MT_ASSERT(image != nullptr);
+    setImage(context, *image);
+  }
+
+  inline void TechniqueResource::setImage(
+                                        TechniqueVolatileContext& context,
+                                        const ConstRef<ImageView>& image) const
+  {
+    MT_ASSERT(image != nullptr);
+    setImage(context, *image);
+  }
+
   inline const Sampler* TechniqueResource::sampler() const noexcept
   {
     return _sampler.get();
@@ -229,6 +292,21 @@ namespace mt
   inline void TechniqueResource::setSampler(const ConstRef<Sampler>& sampler)
   {
     setSampler(sampler.get());
+  }
+
+  inline void TechniqueResource::setSampler(TechniqueVolatileContext& context,
+                                            const Ref<Sampler>& sampler) const
+  {
+    MT_ASSERT(sampler != nullptr);
+    setSampler(context, *sampler);
+  }
+
+  inline void TechniqueResource::setSampler(
+                                        TechniqueVolatileContext& context,
+                                        const ConstRef<Sampler>& sampler) const
+  {
+    MT_ASSERT(sampler != nullptr);
+    setSampler(context, *sampler);
   }
 
   inline TechniqueResourceImpl::TechniqueResourceImpl(

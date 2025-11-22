@@ -60,8 +60,8 @@ inline void Selection::setValue(const std::string& newValue)
   }
 }
 
-void Selection::setValue( const std::string& newValue,
-                          TechniqueVolatileContext& context) const
+void Selection::setValue( TechniqueVolatileContext& context,
+                          const std::string& newValue) const
 {
   uint32_t weight = 0;
   if (_description != nullptr)
