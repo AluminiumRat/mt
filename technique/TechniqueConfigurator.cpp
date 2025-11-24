@@ -41,7 +41,7 @@ TechniqueConfigurator::TechniqueConfigurator( Device& device,
   _blendingState.pAttachments = _attachmentsBlending.data();
 }
 
-void TechniqueConfigurator::_propogateConfiguration() noexcept
+void TechniqueConfigurator::propogateConfiguration() noexcept
 {
   try
   {
@@ -59,52 +59,51 @@ void TechniqueConfigurator::_propogateConfiguration() noexcept
 
 void TechniqueConfigurator::rebuildConfiguration()
 {
-  try
+  rebuildOnlyConfiguration();
+  propogateConfiguration();
+}
+
+void TechniqueConfigurator::rebuildOnlyConfiguration()
+{
+  if( _pipelineType == AbstractPipeline::GRAPHIC_PIPELINE &&
+      !_frameBufferFormat.has_value())
   {
-    _configuration = Ref(new TechniqueConfiguration);
-    _configuration->volatileUniformBuffersSize = 0;
-
-    _configuration->pipelineType = _pipelineType;
-    if( _pipelineType == AbstractPipeline::GRAPHIC_PIPELINE &&
-        !_frameBufferFormat.has_value())
-    {
-      throw std::runtime_error(_debugName + ": pipeline type is GRAPHIC_PIPELINE but the frame buffer format is empty");
-    }
-
-    if (_shaders.empty())
-    {
-      Log::warning() << _debugName << ": attempt to create a configuration without shaders";
-      return;
-    }
-
-    ConfigurationBuildContext buildContext{};
-
-    _processSelections(buildContext);
-
-    if(_selections.empty()) _processShadersOneVariant(buildContext);
-    else
-    {
-      _processShadersSeveralVariants( buildContext,
-                                      uint32_t(_selections.size() - 1));
-    }
-
-    _createLayouts(buildContext);
-    _createPipelines(buildContext);
-  }
-  catch(...)
-  {
-    _configuration.reset();
-    throw;
+    throw std::runtime_error(_debugName + ": pipeline type is GRAPHIC_PIPELINE but the frame buffer format is empty");
   }
 
-  _propogateConfiguration();
+  if (_shaders.empty())
+  {
+    Log::warning() << _debugName << ": attempt to create a configuration without shaders";
+    return;
+  }
+
+  ConfigurationBuildContext context{};
+  context.configuration = Ref(new TechniqueConfiguration);
+  context.configuration->pipelineType = _pipelineType;
+  context.configuration->volatileUniformBuffersSize = 0;
+
+  _processSelections(context);
+
+  if(_selections.empty()) _processShadersOneVariant(context);
+  else
+  {
+    _processShadersSeveralVariants(uint32_t(_selections.size() - 1), context);
+  }
+
+  _createLayouts(context);
+  _createPipelines(context);
+
+  {
+    std::lock_guard lock(_configurationMutex);
+    _configuration = context.configuration;
+  }
+
+  propogateConfiguration();
 }
 
 void TechniqueConfigurator::_processSelections(
-                                        ConfigurationBuildContext& buildContext)
+                                        ConfigurationBuildContext& context)
 {
-  MT_ASSERT(_configuration != nullptr);
-
   // Для начала проверим, нет ли дубликатов
   for(size_t i = 0; i < _selections.size(); i++)
   {
@@ -119,12 +118,12 @@ void TechniqueConfigurator::_processSelections(
 
   //  Посчитаем все варианты селекшенов, скопируем их в конфигурацию и
   //  посчитаем их веса
-  buildContext.variantsNumber = 1;
+  context.variantsNumber = 1;
   if(!_selections.empty())
   {
-    buildContext.currentDefines.resize(_selections.size());
+    context.currentDefines.resize(_selections.size());
 
-    _configuration->selections.reserve(_selections.size());
+    context.configuration->selections.reserve(_selections.size());
     for(const SelectionDefine& selection : _selections)
     {
       if(selection.valueVariants.empty())
@@ -132,68 +131,68 @@ void TechniqueConfigurator::_processSelections(
         throw std::runtime_error(_debugName + ": selection " + selection.name + " doesn't have value variants");
       }
 
-      _configuration->selections.push_back(
-                    TechniqueConfiguration::SelectionDefine{
-                                                  selection.name,
-                                                  selection.valueVariants,
-                                                  buildContext.variantsNumber});
-      buildContext.variantsNumber *= uint32_t(selection.valueVariants.size());
+      context.configuration->selections.push_back(
+                        TechniqueConfiguration::SelectionDefine{
+                                                      selection.name,
+                                                      selection.valueVariants,
+                                                      context.variantsNumber});
+      context.variantsNumber *= uint32_t(selection.valueVariants.size());
     }
   }
 
   //  Выделим место под разные варианты шейдерных модулей и пайплайнов
-  buildContext.shaders.resize(buildContext.variantsNumber);
+  context.shaders.resize(context.variantsNumber);
   if (_pipelineType == AbstractPipeline::COMPUTE_PIPELINE)
   {
     Abort("Not implemented");
   }
   else
   {
-    _configuration->graphicPipelineVariants.resize(buildContext.variantsNumber);
+    context.configuration->graphicPipelineVariants.resize(
+                                                  context.variantsNumber);
   }
 }
 
 // Это рекурсивная функция, пребирающая все варианты селекшенов
 void TechniqueConfigurator::_processShadersSeveralVariants(
-                                  ConfigurationBuildContext& buildContext,
-                                  uint32_t selectionIndex)
+                                            uint32_t selectionIndex,
+                                            ConfigurationBuildContext& context)
 {
   const SelectionDefine& selection = _selections[selectionIndex];
   for(const std::string& selectionValue : selection.valueVariants)
   {
-    buildContext.currentDefines[selectionIndex].name = selection.name.c_str();
-    buildContext.currentDefines[selectionIndex].value = selectionValue.c_str();
+    context.currentDefines[selectionIndex].name = selection.name.c_str();
+    context.currentDefines[selectionIndex].value = selectionValue.c_str();
 
     if(selectionIndex == 0)
     {
-      // Мы обрабатываем последний селекшен из списка, пора переходить к шейдерам
-      _processShadersOneVariant(buildContext);
-      buildContext.currentVariantIndex++;
+      //  Мы обрабатываем последний селекшен из списка, пора переходить к
+      //  шейдерам
+      _processShadersOneVariant(context);
+      context.currentVariantIndex++;
     }
     else
     {
-      // Это ещё не последний селекшен, переходим к следующему из списка
-      _processShadersSeveralVariants(buildContext, selectionIndex - 1);
+      //  Это ещё не последний селекшен, переходим к следующему из списка
+      _processShadersSeveralVariants(selectionIndex - 1, context);
     }
   }
 }
 
 void TechniqueConfigurator::_processShadersOneVariant(
-                                      ConfigurationBuildContext& buildContext)
+                                      ConfigurationBuildContext& context)
 {
   for (const ShaderInfo& shader : _shaders)
   {
-    _processShader(shader, buildContext);
+    _processShader(shader, context);
   }
 }
 
 void TechniqueConfigurator::_processShader(
                                         const ShaderInfo& shaderRecord,
-                                        ConfigurationBuildContext& buildContext)
+                                        ConfigurationBuildContext& context)
 {
-  MT_ASSERT(_configuration != nullptr);
-
-  ShaderSet& shaderSet = buildContext.shaders[buildContext.currentVariantIndex];
+  ShaderSet& shaderSet = context.shaders[context.currentVariantIndex];
 
   // Проверяем, что нет дублирования шейдерных стадий
   for(const ShaderModuleInfo& shader : shaderSet)
@@ -208,7 +207,7 @@ void TechniqueConfigurator::_processShader(
   std::vector<uint32_t> spirData =
                       ShaderCompilator::compile(shaderRecord.filename.c_str(),
                                                 shaderRecord.stage,
-                                                buildContext.currentDefines);
+                                                context.currentDefines);
 
   // Парсим spirv код
   spv_reflect::ShaderModule reflection( spirData.size() * sizeof(spirData[0]),
@@ -220,7 +219,7 @@ void TechniqueConfigurator::_processShader(
   const SpvReflectShaderModule& reflectModule = reflection.GetShaderModule();
 
   // Ищем нужные нам данные в рефлексии
-  _processShaderReflection(shaderRecord, reflectModule);
+  _processShaderReflection(shaderRecord, reflectModule, context);
 
   // Создаем шейдерный модуль
   std::unique_ptr<ShaderModule> newShaderModule(
@@ -234,7 +233,8 @@ void TechniqueConfigurator::_processShader(
 
 void TechniqueConfigurator::_processShaderReflection(
                                       const ShaderInfo& shaderRecord,
-                                      const SpvReflectShaderModule& reflection)
+                                      const SpvReflectShaderModule& reflection,
+                                      ConfigurationBuildContext& context)
 {
   for(uint32_t iSet = 0; iSet < reflection.descriptor_set_count; iSet++)
   {
@@ -247,22 +247,25 @@ void TechniqueConfigurator::_processShaderReflection(
     }
 
     DescriptorSetType setType = DescriptorSetType(setIndex);
-    TechniqueConfiguration::DescriptorSet& set = _getOrCreateSet(setType);
-    _processBindings(shaderRecord, set, reflectedSet);
+    TechniqueConfiguration::DescriptorSet& set = _getOrCreateSet( setType,
+                                                                  context);
+    _processBindings(shaderRecord, set, reflectedSet, context);
   }
 }
 
 TechniqueConfiguration::DescriptorSet&
-                  TechniqueConfigurator::_getOrCreateSet(DescriptorSetType type)
+                  TechniqueConfigurator::_getOrCreateSet(
+                                            DescriptorSetType type,
+                                            ConfigurationBuildContext& context)
 {
   for(TechniqueConfiguration::DescriptorSet& set :
-                                                _configuration->descriptorSets)
+                                    context.configuration->descriptorSets)
   {
     if(set.type == type) return set;
   }
 
-  _configuration->descriptorSets.push_back({.type = type});
-  return _configuration->descriptorSets.back();
+  context.configuration->descriptorSets.push_back({.type = type});
+  return context.configuration->descriptorSets.back();
 }
 
 static VkPipelineStageFlagBits getPipelineStage(
@@ -301,7 +304,8 @@ static VkPipelineStageFlagBits getPipelineStage(
 void TechniqueConfigurator::_processBindings(
                                     const ShaderInfo& shaderRecord,
                                     TechniqueConfiguration::DescriptorSet& set,
-                                    const SpvReflectDescriptorSet& reflectedSet)
+                                    const SpvReflectDescriptorSet& reflectedSet,
+                                    ConfigurationBuildContext& context)
 {
   for(uint32_t iBinding = 0; iBinding < reflectedSet.binding_count; iBinding++)
   {
@@ -329,7 +333,8 @@ void TechniqueConfigurator::_processBindings(
 
     // Смотрим, возможно этот биндинг уже появлялся на других стадиях
     bool itIsNewResource = true;
-    for(TechniqueConfiguration::Resource& resource : _configuration->resources)
+    for(TechniqueConfiguration::Resource& resource :
+                                              context.configuration->resources)
     {
       if( resource.set == newResource.set &&
           resource.bindingIndex == newResource.bindingIndex)
@@ -353,27 +358,28 @@ void TechniqueConfigurator::_processBindings(
     // Если не нашли такой же биндинг, то добавляем новый
     if(itIsNewResource)
     {
-      _configuration->resources.push_back(newResource);
+      context.configuration->resources.push_back(newResource);
     }
 
     // Если это юниформ буффер - парсим его
     if(reflectedBinding->descriptor_type ==
                                     SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
     {
-      _processUniformBlock(shaderRecord,*reflectedBinding);
+      _processUniformBlock(shaderRecord,*reflectedBinding, context);
     }
   }
 }
 
 void TechniqueConfigurator::_processUniformBlock(
                           const ShaderInfo& shaderRecord,
-                          const SpvReflectDescriptorBinding& reflectedBinding)
+                          const SpvReflectDescriptorBinding& reflectedBinding,
+                          ConfigurationBuildContext& context)
 {
   const SpvReflectBlockVariable& block = reflectedBinding.block;
 
   // Для начала ищем, возможно буфер с таким биндингом уже встречался
   for(TechniqueConfiguration::UniformBuffer& buffer :
-                                                _configuration->uniformBuffers)
+                                          context.configuration->uniformBuffers)
   {
     if( uint32_t(buffer.set) == reflectedBinding.set &&
         buffer.binding == reflectedBinding.binding)
@@ -398,8 +404,8 @@ void TechniqueConfigurator::_processUniformBlock(
   if(newBuffer.set == DescriptorSetType::VOLATILE)
   {
     newBuffer.volatileContextOffset =
-                                    _configuration->volatileUniformBuffersSize;
-    _configuration->volatileUniformBuffersSize += newBuffer.size;
+                              context.configuration->volatileUniformBuffersSize;
+    context.configuration->volatileUniformBuffersSize += newBuffer.size;
   }
   else
   {
@@ -417,7 +423,7 @@ void TechniqueConfigurator::_processUniformBlock(
                               0);
   }
 
-  _configuration->uniformBuffers.push_back(newBuffer);
+  context.configuration->uniformBuffers.push_back(newBuffer);
 }
 
 void TechniqueConfigurator::_parseUniformBlockMember(
@@ -510,14 +516,13 @@ void TechniqueConfigurator::_parseUniformBlockMember(
 }
 
 void TechniqueConfigurator::_createLayouts(
-                                        ConfigurationBuildContext& buildContext)
+                                        ConfigurationBuildContext& context)
 {
-  MT_ASSERT(_configuration != nullptr);
-
   // Пройдемся по всем ресурсам и рассортирруем их по сетам
   using SetBindings = std::vector<VkDescriptorSetLayoutBinding>;
   std::array<SetBindings, maxDescriptorSetIndex + 1> bindings;
-  for(TechniqueConfiguration::Resource& resource : _configuration->resources)
+  for(TechniqueConfiguration::Resource& resource :
+                                              context.configuration->resources)
   {
     VkDescriptorSetLayoutBinding binding{};
     binding.binding = resource.bindingIndex;
@@ -533,7 +538,7 @@ void TechniqueConfigurator::_createLayouts(
   std::array< ConstRef<DescriptorSetLayout>,
               maxDescriptorSetIndex + 1> setLayouts;
   for(TechniqueConfiguration::DescriptorSet& set :
-                                                _configuration->descriptorSets)
+                                          context.configuration->descriptorSets)
   {
     uint32_t setIndex = uint32_t(set.type);
     set.layout = ConstRef(new DescriptorSetLayout(_device,
@@ -549,20 +554,18 @@ void TechniqueConfigurator::_createLayouts(
       setLayout = ConstRef(new DescriptorSetLayout(_device, {}));
     }
   }
-  _configuration->pipelineLayout = ConstRef(new PipelineLayout( _device,
-                                                                setLayouts));
+  context.configuration->pipelineLayout =
+                            ConstRef(new PipelineLayout( _device, setLayouts));
 }
 
-void TechniqueConfigurator::_createPipelines(
-                                      ConfigurationBuildContext& buildContext)
+void TechniqueConfigurator::_createPipelines(ConfigurationBuildContext& context)
 {
-  MT_ASSERT(_configuration != nullptr);
-  MT_ASSERT(_configuration->pipelineLayout != nullptr)
+  MT_ASSERT(context.configuration->pipelineLayout != nullptr)
 
-  for(uint32_t variant = 0; variant < buildContext.variantsNumber; variant++)
+  for(uint32_t variant = 0; variant < context.variantsNumber; variant++)
   {
     //  Формируем список шейдерных модулей, из которых состоит пайплайн
-    ShaderSet& shaderSet = buildContext.shaders[variant];
+    ShaderSet& shaderSet = context.shaders[variant];
     std::vector<AbstractPipeline::ShaderInfo> shaders;
     for(ShaderModuleInfo& shader : shaderSet)
     {
@@ -579,15 +582,15 @@ void TechniqueConfigurator::_createPipelines(
     }
     else
     {
-      _configuration->graphicPipelineVariants[variant] =
-                              ConstRef(new GraphicPipeline(
-                                              *_frameBufferFormat,
-                                              shaders,
-                                              _topology,
-                                              _rasterizationState,
-                                              _depthStencilState,
-                                              _blendingState,
-                                              *_configuration->pipelineLayout));
+      context.configuration->graphicPipelineVariants[variant] =
+                    ConstRef(new GraphicPipeline(
+                                      *_frameBufferFormat,
+                                      shaders,
+                                      _topology,
+                                      _rasterizationState,
+                                      _depthStencilState,
+                                      _blendingState,
+                                      *context.configuration->pipelineLayout));
     }
   }
 }

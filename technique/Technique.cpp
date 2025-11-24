@@ -29,7 +29,7 @@ Technique::Technique( Device& device,
 
 void Technique::updateConfiguration()
 {
-  const TechniqueConfiguration* newConfiguration =
+  ConstRef<TechniqueConfiguration> newConfiguration =
                                                 _configurator->configuration();
 
   // Пересоздаем юниформ блоки
@@ -51,18 +51,18 @@ void Technique::updateConfiguration()
     // Биндим дочерние компоненты
     for (std::unique_ptr<SelectionImpl>& selection : _selections)
     {
-      selection->setConfiguration(newConfiguration);
+      selection->setConfiguration(newConfiguration.get());
     }
 
     for (std::unique_ptr<TechniqueResourceImpl>& resource : _resources)
     {
-      resource->setConfiguration(newConfiguration);
+      resource->setConfiguration(newConfiguration.get());
     }
     _resourcesRevision++;
 
     for (std::unique_ptr<UniformVariableImpl>& uniform : _uniforms)
     {
-      uniform->setConfiguration(newConfiguration, newUniformBlocks);
+      uniform->setConfiguration(newConfiguration.get(), newUniformBlocks);
     }
   }
   catch(std::exception& error)

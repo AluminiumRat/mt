@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <array>
+#include <mutex>
 #include <optional>
 #include <span>
 #include <string>
@@ -13,6 +14,7 @@
 #include <util/Assert.h>
 #include <util/RefCounter.h>
 #include <util/Ref.h>
+#include <util/SpinLock.h>
 #include <technique/DescriptorSetType.h>
 #include <technique/ShaderCompilator.h>
 #include <technique/TechniqueConfiguration.h>
@@ -69,12 +71,18 @@ namespace mt
     inline Device& device() const noexcept;
 
     //  Может возвращать nullptr, если сборка конфигурации не завершилась
-    //  успешно (например, ошибка в шейдере или неполный набор шейдеров) или
-    //  конфигурация ещё не была собрана
-    inline const TechniqueConfiguration* configuration() const noexcept;
+    //    успешно (например, ошибка в шейдере или неполный набор шейдеров) или
+    //    конфигурация ещё не была собрана
+    //  Доступ к текущей конфигурации потокобезопасен. После того как
+    //    конфигурация выставлена как текущая, она не меняется.
+    inline ConstRef<TechniqueConfiguration> configuration() const noexcept;
 
     //  Пересобрать и раздать конфигурацию всем зависимым техникам.
     void rebuildConfiguration();
+    //  Пересобрать конфигурацию без раздачи техникам
+    void rebuildOnlyConfiguration();
+    //  Сообщить зависимым техникам, что конфигурация поменялась
+    void propogateConfiguration() noexcept;
 
     inline const std::string& debugName() const noexcept;
 
@@ -222,6 +230,8 @@ namespace mt
     // Промежуточные данные, необходимые для построения конфигурации
     struct ConfigurationBuildContext
     {
+      Ref<TechniqueConfiguration> configuration;
+
       std::vector<ShaderSet> shaders;
       uint32_t variantsNumber;
       uint32_t currentVariantIndex;
@@ -230,31 +240,34 @@ namespace mt
 
   private:
     //  Посчитать количество вариантов пайплайна и веса селекшенов
-    void _processSelections(ConfigurationBuildContext& buildContext);
+    void _processSelections(ConfigurationBuildContext& context);
     //  Обойти все варианты селекшенов и создать/обработать для них
     //  шейдерные модули
     //  selectionIndex - параметр для рекурсивного вызова
-    void _processShadersSeveralVariants(
-                                      ConfigurationBuildContext& buildContext,
-                                      uint32_t selectionIndex);
+    void _processShadersSeveralVariants(uint32_t selectionIndex,
+                                        ConfigurationBuildContext& context);
     //  Создать и обработать набор шейдерных модулей для 1 варианта селекшенов
-    void _processShadersOneVariant(ConfigurationBuildContext& buildContext);
+    void _processShadersOneVariant(ConfigurationBuildContext& context);
     //  Создать и обработать отдельный шейдерный модуль
     void _processShader(const ShaderInfo& shaderRecord,
-                        ConfigurationBuildContext& buildContext);
+                        ConfigurationBuildContext& context);
     //  Парсим рефлексию для отдельного шейдерного модуля
     void _processShaderReflection(const ShaderInfo& shaderRecord,
-                                  const SpvReflectShaderModule& reflection);
+                                  const SpvReflectShaderModule& reflection,
+                                  ConfigurationBuildContext& context);
     TechniqueConfiguration::DescriptorSet& _getOrCreateSet(
-                                                        DescriptorSetType type);
+                                            DescriptorSetType type,
+                                            ConfigurationBuildContext& context);
     //  Обработка рефлексии
     void _processBindings(const ShaderInfo& shaderRecord,
                           TechniqueConfiguration::DescriptorSet& set,
-                          const SpvReflectDescriptorSet& reflectedSet);
+                          const SpvReflectDescriptorSet& reflectedSet,
+                          ConfigurationBuildContext& context);
     //  Обработка рефлексии
     void _processUniformBlock(
                           const ShaderInfo& shaderRecord,
-                          const SpvReflectDescriptorBinding& reflectedBinding);
+                          const SpvReflectDescriptorBinding& reflectedBinding,
+                          ConfigurationBuildContext& context);
     //  Обработка рефлексии. Разбираем отдельный фрагмент уноформ буфера
     void _parseUniformBlockMember(
                             const ShaderInfo& shaderRecord,
@@ -264,11 +277,10 @@ namespace mt
                             uint32_t parentBlockOffset);
     //  По пропарсенным данным из рефлексии создаем лэйауты для
     //  дескриптер сетов и пайплайнов
-    void _createLayouts(ConfigurationBuildContext& buildContext);
+    void _createLayouts(ConfigurationBuildContext& context);
     //  Финальная стадия построения конфигурации - создаем все варианты
     //  пайплайнов
-    void _createPipelines(ConfigurationBuildContext& buildContext);
-    void _propogateConfiguration() noexcept;
+    void _createPipelines(ConfigurationBuildContext& context);
 
   private:
     Device& _device;
@@ -276,6 +288,7 @@ namespace mt
     std::string _debugName;
 
     Ref<TechniqueConfiguration> _configuration;
+    mutable SpinLock _configurationMutex;
 
     AbstractPipeline::Type _pipelineType;
 
@@ -299,10 +312,11 @@ namespace mt
     return _device;
   }
 
-  inline const TechniqueConfiguration*
+  inline ConstRef<TechniqueConfiguration>
                           TechniqueConfigurator::configuration() const noexcept
   {
-    return _configuration.get();
+    std::lock_guard lock(_configurationMutex);
+    return _configuration;
   }
 
   inline const std::string& TechniqueConfigurator::debugName() const noexcept
