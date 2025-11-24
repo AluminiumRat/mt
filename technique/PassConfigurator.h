@@ -33,12 +33,12 @@ namespace mt
     };
 
   public:
-    PassConfigurator(const char* debugName = "Pass");
+    PassConfigurator(const char* name = "Pass");
     PassConfigurator(const PassConfigurator&) = delete;
     PassConfigurator& operator = (const PassConfigurator&) = delete;
     ~PassConfigurator() noexcept = default;
 
-    inline const std::string& debugName() const noexcept;
+    inline const std::string& name() const noexcept;
 
     inline AbstractPipeline::Type pipelineType() const noexcept;
     inline void setPipelineType(AbstractPipeline::Type newValue) noexcept;
@@ -215,7 +215,7 @@ namespace mt
                             std::string namePrefix,
                             uint32_t parentBlockOffset) const;
   private:
-    std::string _debugName;
+    std::string _name;
     AbstractPipeline::Type _pipelineType;
     std::vector<ShaderInfo> _shaders;
     std::vector<std::string> _selections;
@@ -230,9 +230,9 @@ namespace mt
                 FrameBufferFormat::maxColorAttachments> _attachmentsBlending;
   };
 
-  inline const std::string& PassConfigurator::debugName() const noexcept
+  inline const std::string& PassConfigurator::name() const noexcept
   {
-    return _debugName;
+    return _name;
   }
 
   inline AbstractPipeline::Type PassConfigurator::pipelineType() const noexcept

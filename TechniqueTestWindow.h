@@ -28,6 +28,9 @@ namespace mt
   private:
     Ref<Technique> _technique;
 
+    TechniquePass& _pass1;
+    TechniquePass& _pass2;
+
     Selection& _selector1;
     Selection& _selector2;
 

@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <string>
+
 #include <util/Ref.h>
 #include <vkr/pipeline/AbstractPipeline.h>
 #include <vkr/pipeline/GraphicPipeline.h>
@@ -12,6 +14,8 @@ namespace mt
   //  Набор предсобранных вариантов пайплайна и доп. информации к нему
   struct PassConfiguration
   {
+    std::string name;
+
     AbstractPipeline::Type pipelineType = AbstractPipeline::GRAPHIC_PIPELINE;
 
     //  Различные варианты собранных пайплайнов для разных значений селекшенов

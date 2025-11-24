@@ -69,6 +69,11 @@ void Technique::updateConfiguration()
     {
       uniform->setConfiguration(newConfiguration.get(), newUniformBlocks);
     }
+
+    for (std::unique_ptr<TechniquePassImpl>& pass : _passes)
+    {
+      pass->setConfiguration(newConfiguration.get());
+    }
   }
   catch(std::exception& error)
   {
@@ -103,6 +108,7 @@ void Technique::updateConfiguration()
 
 bool Technique::bindGraphic(
                           CommandProducerGraphic& producer,
+                          const TechniquePass& pass,
                           const TechniqueVolatileContext* volatileContext) const
 {
   if(_configuration == nullptr)
@@ -111,7 +117,12 @@ bool Technique::bindGraphic(
     return false;
   }
 
-  uint32_t passIndex = 0;
+  uint32_t passIndex = static_cast<const TechniquePassImpl&>(pass).passIndex();
+  if(passIndex == TechniquePassImpl::NOT_PASS_INDEX)
+  {
+    Log::warning() << _debugName << ": pass " << pass.name() << " is not found";
+    return false;
+  }
   if(_configuration->_passes[passIndex].pipelineType != AbstractPipeline::GRAPHIC_PIPELINE)
   {
     Log::warning() << _debugName << ": technique is not graphic";
@@ -363,4 +374,15 @@ UniformVariable& Technique::getOrCreateUniform(const char* uniformFullName)
                                                         _configuration.get(),
                                                         _uniformBlocks));
   return *_uniforms.back();
+}
+
+TechniquePass& Technique::getOrCreatePass(const char* passName)
+{
+  for(std::unique_ptr<TechniquePassImpl>& pass : _passes)
+  {
+    if(pass->name() == passName) return *pass;
+  }
+  _passes.push_back(std::make_unique<TechniquePassImpl>(passName,
+                                                        _configuration.get()));
+  return *_passes.back();
 }

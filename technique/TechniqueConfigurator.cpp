@@ -102,7 +102,7 @@ void TechniqueConfigurator::_createPasses(
   for(uint32_t i = 0; i < _passes.size(); i++)
   {
     context.currentPassIndex = i;
-    context.currentPass = &context.configuration->_passes.back();
+    context.currentPass = &context.configuration->_passes[i];
     _passes[i]->processShaders(context);
   }
 }

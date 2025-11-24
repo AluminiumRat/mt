@@ -7,6 +7,7 @@
 #include <technique/Selection.h>
 #include <technique/TechniqueConfiguration.h>
 #include <technique/TechniqueConfigurator.h>
+#include <technique/TechniquePass.h>
 #include <technique/TechniqueResource.h>
 #include <technique/TechniqueUniformBlock.h>
 #include <technique/TechniqueVolatileContext.h>
@@ -54,12 +55,14 @@ namespace mt
     //    продюсеру.
     bool bindGraphic(
               CommandProducerGraphic& producer,
+              const TechniquePass& pass,
               const TechniqueVolatileContext* volatileContext = nullptr) const;
     void unbindGraphic(CommandProducerGraphic& producer) const noexcept;
 
     Selection& getOrCreateSelection(const char* selectionName);
     TechniqueResource& getOrCreateResource(const char* resourceName);
     UniformVariable& getOrCreateUniform(const char* uniformFullName);
+    TechniquePass& getOrCreatePass(const char* passName);
 
     inline const std::string& debugName() const noexcept;
 
@@ -101,6 +104,8 @@ namespace mt
     UniformBlocks _uniformBlocks;
 
     std::vector<std::unique_ptr<UniformVariableImpl>> _uniforms;
+
+    std::vector<std::unique_ptr<TechniquePassImpl>> _passes;
 
     //  Статик сет использует ленивую инициализацию, но сам используется в
     //  константных методах. Для защиты в многопоточном рендере используем

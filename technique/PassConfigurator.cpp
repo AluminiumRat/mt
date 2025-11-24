@@ -12,8 +12,8 @@
 
 using namespace mt;
 
-PassConfigurator::PassConfigurator(const char* debugName) :
-  _debugName(debugName),
+PassConfigurator::PassConfigurator(const char* name) :
+  _name(name),
   _pipelineType(AbstractPipeline::GRAPHIC_PIPELINE),
   _topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST),
   _rasterizationState{},
@@ -46,14 +46,15 @@ void PassConfigurator::processShaders(ConfigurationBuildContext& context) const
   if( _pipelineType == AbstractPipeline::GRAPHIC_PIPELINE &&
       !_frameBufferFormat.has_value())
   {
-    throw std::runtime_error(context.configuratorName + ":" + _debugName + ": pipeline type is GRAPHIC_PIPELINE but the frame buffer format is empty");
+    throw std::runtime_error(context.configuratorName + ":" + _name + ": pipeline type is GRAPHIC_PIPELINE but the frame buffer format is empty");
   }
   if (_shaders.empty())
   {
-    throw std::runtime_error(context.configuratorName + ":" + _debugName + ": attempt to create a configuration without shaders");
+    throw std::runtime_error(context.configuratorName + ":" + _name + ": attempt to create a configuration without shaders");
   }
 
   context.currentPass->pipelineType = _pipelineType;
+  context.currentPass->name = _name;
 
   _processSelections(context);
   if (_selections.empty()) _processShadersOneVariant(context);
@@ -85,7 +86,7 @@ void PassConfigurator::_processSelections(
     {
       if (_selections[i] == _selections[j])
       {
-        throw std::runtime_error(context.configuratorName + ":" + _debugName + ": duplicate selection " + _selections[i]);
+        throw std::runtime_error(context.configuratorName + ":" + _name + ": duplicate selection " + _selections[i]);
       }
     }
   }
@@ -111,7 +112,7 @@ void PassConfigurator::_processSelections(
                                           findSelection(context, selectionName);
       if(selection == nullptr)
       {
-        throw std::runtime_error(context.configuratorName + ": " + _debugName + ": selection " + selectionName + " is used in the pass but it isn't defined in the technique");
+        throw std::runtime_error(context.configuratorName + ": " + _name + ": selection " + selectionName + " is used in the pass but it isn't defined in the technique");
       }
       selection->weights.back() = variantsNumber;
       variantsNumber *= uint32_t(selection->valueVariants.size());
@@ -179,7 +180,7 @@ void PassConfigurator::_processShader(const ShaderInfo& shaderRecord,
   {
     if(shader.stage == shaderRecord.stage)
     {
-      throw std::runtime_error(_debugName + ": duplicate shader stages: " + shaderRecord.filename.c_str());
+      throw std::runtime_error(_name + ": duplicate shader stages: " + shaderRecord.filename.c_str());
     }
   }
 
@@ -194,7 +195,7 @@ void PassConfigurator::_processShader(const ShaderInfo& shaderRecord,
                                         spirData.data());
   if (reflection.GetResult() != SPV_REFLECT_RESULT_SUCCESS)
   {
-    throw std::runtime_error(_debugName + ": unable to process SPIRV data: " + shaderRecord.filename.c_str());
+    throw std::runtime_error(_name + ": unable to process SPIRV data: " + shaderRecord.filename.c_str());
   }
   const SpvReflectShaderModule& reflectModule = reflection.GetShaderModule();
 
@@ -223,7 +224,7 @@ void PassConfigurator::_processShaderReflection(
     uint32_t setIndex = reflectedSet.set;
     if(setIndex > maxDescriptorSetIndex)
     {
-      throw std::runtime_error(_debugName + ": descriptor set with the wrong set index: " + shaderRecord.filename);
+      throw std::runtime_error(_name + ": descriptor set with the wrong set index: " + shaderRecord.filename);
     }
 
     DescriptorSetType setType = DescriptorSetType(setIndex);
@@ -308,7 +309,7 @@ void PassConfigurator::_processBindings(
         newResource.type != VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE &&
         newResource.type != VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
     {
-      throw std::runtime_error(_debugName + ": " + shaderRecord.filename + ": only images arrays are supported.");
+      throw std::runtime_error(_name + ": " + shaderRecord.filename + ": only images arrays are supported.");
     }
 
     // Смотрим, возможно этот биндинг уже появлялся на других стадиях
@@ -325,8 +326,8 @@ void PassConfigurator::_processBindings(
             resource.writeAccess != newResource.writeAccess ||
             resource.count != newResource.count)
         {
-          Log::warning() << _debugName << ": binding conflict: " << shaderRecord.filename << " set: " << uint32_t(resource.set) << " binding: " << resource.bindingIndex;
-          throw std::runtime_error(_debugName + ": binding conflict: " + shaderRecord.filename);
+          Log::warning() << _name << ": binding conflict: " << shaderRecord.filename << " set: " << uint32_t(resource.set) << " binding: " << resource.bindingIndex;
+          throw std::runtime_error(_name + ": binding conflict: " + shaderRecord.filename);
         }
         // Биндинги совместимы, просто дополняем информацию
         resource.shaderStages |= newResource.shaderStages;
@@ -368,8 +369,8 @@ void PassConfigurator::_processUniformBlock(
       if( buffer.name != reflectedBinding.name ||
           buffer.size != block.size)
       {
-        Log::warning() << _debugName << ": uniform buffer mismatch set:" << reflectedBinding.set << " binding: " << reflectedBinding.binding << " file:" << shaderRecord.filename;
-        throw std::runtime_error(_debugName + ": uniform buffer mismatch: " + shaderRecord.filename);
+        Log::warning() << _name << ": uniform buffer mismatch set:" << reflectedBinding.set << " binding: " << reflectedBinding.binding << " file:" << shaderRecord.filename;
+        throw std::runtime_error(_name + ": uniform buffer mismatch: " + shaderRecord.filename);
       }
       return;
     }

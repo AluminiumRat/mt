@@ -7,6 +7,8 @@ using namespace mt;
 TechniqueTestWindow::TechniqueTestWindow(Device& device) :
   GLFWRenderWindow(device, "Technique test"),
   _technique(new Technique(device, "Test technique")),
+  _pass1(_technique->getOrCreatePass("Pass1")),
+  _pass2(_technique->getOrCreatePass("Pass2")),
   _selector1(_technique->getOrCreateSelection("selector1")),
   _selector2(_technique->getOrCreateSelection("selector2")),
   _vertexBuffer(_technique->getOrCreateResource("vertices")),
@@ -35,21 +37,26 @@ TechniqueTestWindow::TechniqueTestWindow(Device& device) :
   _color.setValue(glm::vec4(1, 1, 1, 1));
   _shift.setValue(0.1f);
 
-  std::unique_ptr<PassConfigurator> pass(new PassConfigurator("Pass1"));
-
-  VkFormat colorAttachments[1] = { VK_FORMAT_B8G8R8A8_SRGB };
-  FrameBufferFormat fbFormat(colorAttachments, VK_FORMAT_UNDEFINED, VK_SAMPLE_COUNT_1_BIT);
-  pass->setFrameBufferFormat(&fbFormat);
-  std::string passSelections[] = {"selector1", "selector2"};
-  pass->setSelections(passSelections);
-
   PassConfigurator::ShaderInfo shaders[2] =
   { {.stage = VK_SHADER_STAGE_VERTEX_BIT, .filename = "shader.vert"},
     {.stage = VK_SHADER_STAGE_FRAGMENT_BIT, .filename = "shader.frag"}};
-  pass->setShaders(shaders);
+
+  VkFormat colorAttachments[1] = { VK_FORMAT_B8G8R8A8_SRGB };
+  FrameBufferFormat fbFormat(colorAttachments, VK_FORMAT_UNDEFINED, VK_SAMPLE_COUNT_1_BIT);
+
+  std::unique_ptr<PassConfigurator> pass1(new PassConfigurator("Pass1"));
+  pass1->setFrameBufferFormat(&fbFormat);
+  pass1->setShaders(shaders);
+
+  std::unique_ptr<PassConfigurator> pass2(new PassConfigurator("Pass2"));
+  pass2->setFrameBufferFormat(&fbFormat);
+  std::string passSelections[] = {"selector1", "selector2"};
+  pass2->setSelections(passSelections);
+  pass2->setShaders(shaders);
 
   TechniqueConfigurator& configurator = _technique->configurator();
-  configurator.addPass(std::move(pass));
+  configurator.addPass(std::move(pass1));
+  configurator.addPass(std::move(pass2));
 
   TechniqueConfigurator::SelectionDefine selections[2] =
     { {.name = "selector1", .valueVariants = {"0", "1", "2"}},
@@ -150,9 +157,11 @@ void TechniqueTestWindow::drawImplementation(
   glm::vec4 colorValue(colorFactor, colorFactor, colorFactor, 1.0f);
   _color.setValue(volatileContext, colorValue);
 
-  _technique->bindGraphic(commandProducer, &volatileContext);
-  commandProducer.draw(3);
-  _technique->unbindGraphic(commandProducer);
+  if(_technique->bindGraphic(commandProducer, _pass1, &volatileContext))
+  {
+    commandProducer.draw(3);
+    _technique->unbindGraphic(commandProducer);
+  }
 
   renderPass.endPass();
 }
