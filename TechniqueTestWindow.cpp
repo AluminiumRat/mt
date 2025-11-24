@@ -35,16 +35,21 @@ TechniqueTestWindow::TechniqueTestWindow(Device& device) :
   _color.setValue(glm::vec4(1, 1, 1, 1));
   _shift.setValue(0.1f);
 
-  TechniqueConfigurator& configurator = _technique->configurator();
+  std::unique_ptr<PassConfigurator> pass(new PassConfigurator("Pass1"));
 
   VkFormat colorAttachments[1] = { VK_FORMAT_B8G8R8A8_SRGB };
   FrameBufferFormat fbFormat(colorAttachments, VK_FORMAT_UNDEFINED, VK_SAMPLE_COUNT_1_BIT);
-  configurator.setFrameBufferFormat(&fbFormat);
+  pass->setFrameBufferFormat(&fbFormat);
+  std::string passSelections[] = {"selector1", "selector2"};
+  pass->setSelections(passSelections);
 
-  TechniqueConfigurator::ShaderInfo shaders[2] =
+  PassConfigurator::ShaderInfo shaders[2] =
   { {.stage = VK_SHADER_STAGE_VERTEX_BIT, .filename = "shader.vert"},
     {.stage = VK_SHADER_STAGE_FRAGMENT_BIT, .filename = "shader.frag"}};
-  configurator.setShaders(shaders);
+  pass->setShaders(shaders);
+
+  TechniqueConfigurator& configurator = _technique->configurator();
+  configurator.addPass(std::move(pass));
 
   TechniqueConfigurator::SelectionDefine selections[2] =
     { {.name = "selector1", .valueVariants = {"0", "1", "2"}},

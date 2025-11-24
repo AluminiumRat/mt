@@ -50,8 +50,6 @@ namespace mt
 
     uint32_t _valueIndex;   //  Номер выбранного значения в списке возможных
                             //  значений
-    uint32_t _valueWeight;  //  Вес выбранного значения при выборе варианта
-                            //  пайплайна
 
     //  Индекс селекшена в списке техники. По нему выставляется значение внутри
     //    волатильного контекста.
@@ -78,8 +76,9 @@ namespace mt
 
     inline void setConfiguration(const TechniqueConfiguration* configuration);
     inline uint32_t valueIndex() const noexcept;
-    inline uint32_t valueWeight() const noexcept;
-    inline uint32_t valueWeight(uint32_t valueIndex) const noexcept;
+    inline uint32_t valueWeight(uint32_t passIndex) const noexcept;
+    inline uint32_t valueWeight(uint32_t valueIndex,
+                                uint32_t passIndex) const noexcept;
   };
 
   inline const std::string& Selection::name() const noexcept
@@ -114,15 +113,19 @@ namespace mt
     return _valueIndex;
   }
 
-  inline uint32_t SelectionImpl::valueWeight() const noexcept
+  inline uint32_t SelectionImpl::valueWeight(uint32_t passIndex) const noexcept
   {
-    return _valueWeight;
+    if (_description == nullptr) return 0;
+    MT_ASSERT(passIndex < _description->weights.size());
+    return _valueIndex * _description->weights[passIndex];
   }
 
-  inline uint32_t SelectionImpl::valueWeight(uint32_t valueIndex) const noexcept
+  inline uint32_t SelectionImpl::valueWeight( uint32_t valueIndex,
+                                              uint32_t passIndex) const noexcept
   {
     if(_description == nullptr) return 0;
     MT_ASSERT(valueIndex < _description->valueVariants.size());
-    return valueIndex * _description->weight;
+    MT_ASSERT(passIndex < _description->weights.size());
+    return valueIndex * _description->weights[passIndex];
   }
 }

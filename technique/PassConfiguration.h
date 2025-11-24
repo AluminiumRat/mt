@@ -8,7 +8,7 @@
 namespace mt
 {
   //  Конфигурация для отдельного прохода техники(класс Technique)
-  //  Входит в состав TechniqueGonfiguration
+  //  Входит в состав TechniqueConfiguration
   //  Набор предсобранных вариантов пайплайна и доп. информации к нему
   struct PassConfiguration
   {

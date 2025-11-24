@@ -169,7 +169,7 @@ namespace mt
     inline void setBlendConstants(const glm::vec4& newValue) noexcept;
 
   private:
-    friend class TechniqueGonfigurator;
+    friend class TechniqueConfigurator;
     //  Создать и обработать шейдерные модули для конфигурации
     void processShaders(ConfigurationBuildContext& context) const;
     //  Пайплайны создаются отдельным вызовом после того как будут пройдены
@@ -194,12 +194,12 @@ namespace mt
     void _processShaderReflection(const ShaderInfo& shaderRecord,
                                   const SpvReflectShaderModule& reflection,
                                   ConfigurationBuildContext& context) const;
-    TechniqueGonfiguration::DescriptorSet& _getOrCreateSet(
+    TechniqueConfiguration::DescriptorSet& _getOrCreateSet(
                                       DescriptorSetType type,
                                       ConfigurationBuildContext& context) const;
     //  Обработка рефлексии
     void _processBindings(const ShaderInfo& shaderRecord,
-                          TechniqueGonfiguration::DescriptorSet& set,
+                          TechniqueConfiguration::DescriptorSet& set,
                           const SpvReflectDescriptorSet& reflectedSet,
                           ConfigurationBuildContext& context) const;
     //  Обработка рефлексии
@@ -210,7 +210,7 @@ namespace mt
     //  Обработка рефлексии. Разбираем отдельный фрагмент уноформ буфера
     void _parseUniformBlockMember(
                             const ShaderInfo& shaderRecord,
-                            TechniqueGonfiguration::UniformBuffer& target,
+                            TechniqueConfiguration::UniformBuffer& target,
                             const SpvReflectBlockVariable& sourceMember,
                             std::string namePrefix,
                             uint32_t parentBlockOffset) const;

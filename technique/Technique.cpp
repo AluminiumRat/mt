@@ -29,7 +29,7 @@ Technique::Technique( Device& device,
 
 Technique::~Technique() noexcept
 {
-  //_configurator->removeObserver(*this);
+  _configurator->removeObserver(*this);
 }
 
 void Technique::updateConfiguration()
@@ -110,7 +110,9 @@ bool Technique::bindGraphic(
     Log::warning() << _debugName << ": configuration is invalid";
     return false;
   }
-  if(_configurator->pipelineType() != AbstractPipeline::GRAPHIC_PIPELINE)
+
+  uint32_t passIndex = 0;
+  if(_configuration->_passes[passIndex].pipelineType != AbstractPipeline::GRAPHIC_PIPELINE)
   {
     Log::warning() << _debugName << ": technique is not graphic";
     return false;
@@ -119,11 +121,12 @@ bool Technique::bindGraphic(
   _updateStaticSet(producer);
   _bindDescriptorsGraphic(producer, volatileContext);
 
-  uint32_t pipelineVariant = _getPipelineVariant(volatileContext);
-  MT_ASSERT(pipelineVariant < _configuration->graphicPipelineVariants.size());
+  uint32_t pipelineVariant = _getPipelineVariant(volatileContext, passIndex);
+  MT_ASSERT(pipelineVariant < _configuration->_passes[passIndex].graphicPipelineVariants.size());
 
   producer.setGraphicPipeline(
-                    *_configuration->graphicPipelineVariants[pipelineVariant]);
+                  *_configuration->_passes[passIndex].
+                                      graphicPipelineVariants[pipelineVariant]);
   return true;
 }
 
@@ -233,7 +236,8 @@ void Technique::_bindDescriptorsGraphic(
 }
 
 uint32_t Technique::_getPipelineVariant(
-                const TechniqueVolatileContext* volatileContext) const noexcept
+                const TechniqueVolatileContext* volatileContext,
+                uint32_t passIndex) const noexcept
 {
   uint32_t pipelineVariant = 0;
   if(volatileContext != nullptr)
@@ -242,7 +246,7 @@ uint32_t Technique::_getPipelineVariant(
     for (size_t i = 0; i < _selections.size(); i++)
     {
       uint32_t valueIndex = volatileContext->selectionsValues[i];
-      pipelineVariant += _selections[i]->valueWeight(valueIndex);
+      pipelineVariant += _selections[i]->valueWeight(valueIndex, passIndex);
     }
   }
   else
@@ -250,7 +254,7 @@ uint32_t Technique::_getPipelineVariant(
     // Волатильного контекста нет - опрашиваем селекшены напрямую
     for (const std::unique_ptr<SelectionImpl>& selection : _selections)
     {
-      pipelineVariant += selection->valueWeight();
+      pipelineVariant += selection->valueWeight(passIndex);
     }
   }
   return pipelineVariant;

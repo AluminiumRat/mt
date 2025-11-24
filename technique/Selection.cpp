@@ -14,7 +14,6 @@ Selection::Selection( const char* name,
   _technique(technique),
   _description(nullptr),
   _valueIndex(0),
-  _valueWeight(0),
   _selectionIndex(selectionIndex),
   _savedName(name),
   _savedValue(DEFAULT_VALUE)
@@ -45,12 +44,7 @@ inline void Selection::setValue(const std::string& newValue)
       newVariantIndex = 0;
     }
 
-    // Выставляем рабочие значения для этого варианта
-    if (_valueIndex != newVariantIndex)
-    {
-      _valueIndex = newVariantIndex;
-      _valueWeight = _valueIndex * _description->weight;
-    }
+    _valueIndex = newVariantIndex;
   }
   else
   {
@@ -112,7 +106,6 @@ void Selection::_bindToConfiguration(
   // Либо новая конфигурация nullptr, либо мы не нашли в ней селекшен
   _description = nullptr;
   _valueIndex = 0;
-  _valueWeight = 0;
   _savedName = myName;
   _savedValue = myValue;
 }

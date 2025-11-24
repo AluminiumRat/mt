@@ -16,18 +16,15 @@
 #include <util/Ref.h>
 #include <util/SpinLock.h>
 #include <technique/DescriptorSetType.h>
+#include <technique/PassConfigurator.h>
 #include <technique/ShaderCompilator.h>
 #include <technique/TechniqueConfiguration.h>
 #include <vkr/pipeline/AbstractPipeline.h>
 #include <vkr/FrameBufferFormat.h>
 
-struct SpvReflectBlockVariable;
-struct SpvReflectDescriptorBinding;
-struct SpvReflectDescriptorSet;
-struct SpvReflectShaderModule;
-
 namespace mt
 {
+  struct ConfigurationBuildContext;
   class Device;
   class Technique;
 
@@ -45,11 +42,8 @@ namespace mt
   class TechniqueConfigurator : public RefCounter
   {
   public:
-    struct ShaderInfo
-    {
-      VkShaderStageFlagBits stage;
-      std::string filename;
-    };
+    //  Настройки для отдельных проходов техники
+    using Passes = std::vector<std::unique_ptr<PassConfigurator>>;
 
     //  Дефайн в шейдере, который может принимать только ограниченное количество
     //  значений. Позволяет заранее скомпилировать все возможные вариации
@@ -61,7 +55,8 @@ namespace mt
     };
 
   public:
-    TechniqueConfigurator(Device& device, const char* debugName = "TechniqueConfigurator") noexcept;
+    TechniqueConfigurator(Device& device,
+                          const char* debugName = "TechniqueConfigurator");
     TechniqueConfigurator(const TechniqueConfigurator&) = delete;
     TechniqueConfigurator& operator = (const TechniqueConfigurator&) = delete;
   protected:
@@ -74,213 +69,56 @@ namespace mt
     //    успешно (например, ошибка в шейдере или неполный набор шейдеров) или
     //    конфигурация ещё не была собрана
     //  Доступ к текущей конфигурации потокобезопасен. После того как
-    //    конфигурация выставлена как текущая, она не меняется.
+    //    конфигурация собрана и выставлена в конфигуратор как текущая, она не
+    //    изменяется.
     inline ConstRef<TechniqueConfiguration> configuration() const noexcept;
 
     //  Пересобрать и раздать конфигурацию всем зависимым техникам.
+    //  ВНИМАНИЕ!!! Настройка конфигуратора и сборка конфигурации должны быть
+    //    синхронизированны внешне.
+    //  ВНИМАНИЕ!!! Хотя доступ к конфигурации и является потокобезопасным,
+    //    но обновление техник не потокобезопасно. Распространение конфигурации
+    //    должно быть внешне синхронизированно с использованием техник.
     void rebuildConfiguration();
-    //  Пересобрать конфигурацию без раздачи техникам
+    //  Пересобрать конфигурацию без раздачи техникам. Метод может быть вызван
+    //    в любое время из любого потока, но настройка конфигуратора и
+    //    сборка конфигурации должны быть синхронизированны внешне.
     void rebuildOnlyConfiguration();
-    //  Сообщить зависимым техникам, что конфигурация поменялась
+    //  Сообщить зависимым техникам, что конфигурация поменялась.
+    //  ВНИМАНИЕ!!! Хотя доступ к конфигурации и является потокобезопасным,
+    //    но обновление техник не потокобезопасно. Распространение конфигурации
+    //    должно быть внешне синхронизированно с использованием техник.
     void propogateConfiguration() noexcept;
 
     inline const std::string& debugName() const noexcept;
 
-    inline AbstractPipeline::Type pipelineType() const noexcept;
-    inline void setPipelineType(AbstractPipeline::Type newValue) noexcept;
-
-    inline const std::vector<ShaderInfo>& shaders() const noexcept;
-    inline void setShaders(std::span<const ShaderInfo> newShaders);
+    inline const Passes& passes() const noexcept;
+    inline void setPasses(Passes&& newPasses) noexcept;
+    inline void addPass(std::unique_ptr<PassConfigurator> newPass);
 
     inline const std::vector<SelectionDefine>& selections() const noexcept;
     inline void setSelections(std::span<const SelectionDefine> newSelections);
 
-    //  Может возвращать nullptr, если формат не установлен (например, для
-    //  компьют пайплайна)
-    inline const FrameBufferFormat* frameBufferFormat() const noexcept;
-    //  Можно передавать nullptr или не устанавливать формат для компьют техник
-    inline const void setFrameBufferFormat(
-                                  const FrameBufferFormat* newFormat) noexcept;
-
-    inline VkPrimitiveTopology topology() const noexcept;
-    inline void setTopology(VkPrimitiveTopology newValue) noexcept;
-
-    //--------------------------
-    inline float lineWidth() const noexcept;
-    inline void setLineWidth(float newValue) noexcept;
-
-    //--------------------------
-    //  Depth конфигурация
-    inline bool depthClampEnable() const noexcept;
-    inline void setDepthClampEnable(bool newValue) noexcept;
-
-    inline bool rasterizationDiscardEnable() const noexcept;
-    inline void setRasterizationDiscardEnable(bool newValue) noexcept;
-
-    inline VkPolygonMode polygonMode() const noexcept;
-    inline void setPolygonMode(VkPolygonMode newValue) noexcept;
-
-    inline VkCullModeFlags cullMode() const noexcept;
-    inline void setCullMode(VkCullModeFlags newValue) noexcept;
-
-    inline VkFrontFace frontFace() const noexcept;
-    inline void setFrontFace(VkFrontFace newValue) noexcept;
-
-    inline bool depthBiasEnable() const noexcept;
-    inline void setDepthBiasEnable(bool newValue) noexcept;
-
-    inline float depthBiasConstantFactor() const noexcept;
-    inline void setDepthBiasConstantFactor(float newValue) noexcept;
-
-    inline float depthBiasClamp() const noexcept;
-    inline void setDepthBiasClamp(float newValue) noexcept;
-
-    inline float depthBiasSlopeFactor() const noexcept;
-    inline void setDepthBiasSlopeFactor(float newValue) noexcept;
-
-    inline bool depthTestEnable() const noexcept;
-    inline void setDepthTestEnable(bool newValue) noexcept;
-
-    inline bool depthWriteEnable() const noexcept;
-    inline void setDepthWriteEnable(bool newValue) noexcept;
-
-    inline VkCompareOp depthCompareOp() const noexcept;
-    inline void setDepthCompareOp(VkCompareOp newValue) noexcept;
-
-    inline bool depthBoundsTestEnable() const noexcept;
-    inline void setDepthBoundsTestEnable(bool newValue) noexcept;
-
-    inline float minDepthBounds() const noexcept;
-    inline void setMinDepthBounds(float newValue) noexcept;
-
-    inline float maxDepthBounds() const noexcept;
-    inline void setMaxDepthBounds(float newValue) noexcept;
-
-    //--------------------------
-    //  Stencil конфигурация
-    inline VkStencilOpState frontStencilOp() const noexcept;
-    inline void setFrontStencilOp(VkStencilOpState newValue) noexcept;
-
-    inline VkStencilOpState backStencilOp() const noexcept;
-    inline void setBackStencilOp(VkStencilOpState newValue) noexcept;
-
-    //--------------------------
-    //  Блэндинг конфигурация
-    inline bool blendEnable(uint32_t attachmentIndex) const noexcept;
-    inline void setBlendEnable( uint32_t attachmentIndex,
-                                bool newValue) noexcept;
-
-    inline VkBlendFactor srcColorBlendFactor(
-                                      uint32_t attachmentIndex) const noexcept;
-    inline void setSrcColorBlendFactor( uint32_t attachmentIndex,
-                                        VkBlendFactor newValue) noexcept;
-
-    inline VkBlendFactor dstColorBlendFactor(
-                                      uint32_t attachmentIndex) const noexcept;
-    inline void setDstColorBlendFactor( uint32_t attachmentIndex,
-                                        VkBlendFactor newValue) noexcept;
-
-    inline VkBlendOp colorBlendOp(uint32_t attachmentIndex) const noexcept;
-    inline void setColorBlendOp(uint32_t attachmentIndex,
-                                VkBlendOp newValue) noexcept;
-
-    inline VkBlendFactor srcAlphaBlendFactor(
-                                      uint32_t attachmentIndex) const noexcept;
-    inline void setSrcAlphaBlendFactor( uint32_t attachmentIndex,
-                                        VkBlendFactor newValue) noexcept;
-
-    inline VkBlendFactor dstAlphaBlendFactor(
-                                      uint32_t attachmentIndex) const noexcept;
-    inline void setDstAlphaBlendFactor( uint32_t attachmentIndex,
-                                        VkBlendFactor newValue) noexcept;
-
-    inline VkBlendOp alphaBlendOp(uint32_t attachmentIndex) const noexcept;
-    inline void setAlphaBlendOp(uint32_t attachmentIndex,
-                                VkBlendOp newValue) noexcept;
-
-    inline VkColorComponentFlags colorWriteMask(
-                                        uint32_t attachmentIndex) const noexcept;
-    inline void setColorWriteMask(uint32_t attachmentIndex,
-                                  VkColorComponentFlags newValue) noexcept;
-
-    inline bool blendLogicOpEnable() const noexcept;
-    inline void setBlendLogicOpEnable(bool newValue) noexcept;
-
-    inline VkLogicOp blendLogicOp() const noexcept;
-    inline void setBlendLogicOp(VkLogicOp newValue) noexcept;
-
-    inline glm::vec4 blendConstants() const noexcept;
-    inline void setBlendConstants(const glm::vec4& newValue) noexcept;
+    //  Удалить все проходы и все селекшены
+    inline void clear() noexcept;
 
   private:
+    //  Работа с обсерверами потокобезопасна. Зависимые техники можно создавать
+    //  в любом потоке когда угодно
     friend class Technique;
     inline void addObserver(Technique& technique);
+    inline void removeObserver(Technique& technique) noexcept;
 
   private:
-    //  Промежуточные данные, необходимые для построения конфигурации
-    //  Один собранный шейдерный модуль
-    struct ShaderModuleInfo
-    {
-      std::unique_ptr<ShaderModule> shaderModule;
-      VkShaderStageFlagBits stage;
-    };
-    //  Набор шейдерных модулей для одного варианта пайплайна
-    using ShaderSet = std::vector<ShaderModuleInfo>;
-
-    // Промежуточные данные, необходимые для построения конфигурации
-    struct ConfigurationBuildContext
-    {
-      Ref<TechniqueConfiguration> configuration;
-
-      std::vector<ShaderSet> shaders;
-      uint32_t variantsNumber;
-      uint32_t currentVariantIndex;
-      std::vector<ShaderCompilator::Define> currentDefines;
-    };
-
-  private:
-    //  Посчитать количество вариантов пайплайна и веса селекшенов
-    void _processSelections(ConfigurationBuildContext& context);
-    //  Обойти все варианты селекшенов и создать/обработать для них
-    //  шейдерные модули
-    //  selectionIndex - параметр для рекурсивного вызова
-    void _processShadersSeveralVariants(uint32_t selectionIndex,
-                                        ConfigurationBuildContext& context);
-    //  Создать и обработать набор шейдерных модулей для 1 варианта селекшенов
-    void _processShadersOneVariant(ConfigurationBuildContext& context);
-    //  Создать и обработать отдельный шейдерный модуль
-    void _processShader(const ShaderInfo& shaderRecord,
-                        ConfigurationBuildContext& context);
-    //  Парсим рефлексию для отдельного шейдерного модуля
-    void _processShaderReflection(const ShaderInfo& shaderRecord,
-                                  const SpvReflectShaderModule& reflection,
-                                  ConfigurationBuildContext& context);
-    TechniqueConfiguration::DescriptorSet& _getOrCreateSet(
-                                            DescriptorSetType type,
-                                            ConfigurationBuildContext& context);
-    //  Обработка рефлексии
-    void _processBindings(const ShaderInfo& shaderRecord,
-                          TechniqueConfiguration::DescriptorSet& set,
-                          const SpvReflectDescriptorSet& reflectedSet,
-                          ConfigurationBuildContext& context);
-    //  Обработка рефлексии
-    void _processUniformBlock(
-                          const ShaderInfo& shaderRecord,
-                          const SpvReflectDescriptorBinding& reflectedBinding,
-                          ConfigurationBuildContext& context);
-    //  Обработка рефлексии. Разбираем отдельный фрагмент уноформ буфера
-    void _parseUniformBlockMember(
-                            const ShaderInfo& shaderRecord,
-                            TechniqueConfiguration::UniformBuffer& target,
-                            const SpvReflectBlockVariable& sourceMember,
-                            std::string namePrefix,
-                            uint32_t parentBlockOffset);
+    void _createSelections(ConfigurationBuildContext& context) const;
+    //  Создать и обработать проходы в конфигурации (без создания пайплайнов)
+    void _createPasses(ConfigurationBuildContext& context) const;
     //  По пропарсенным данным из рефлексии создаем лэйауты для
     //  дескриптер сетов и пайплайнов
-    void _createLayouts(ConfigurationBuildContext& context);
+    void _createLayouts(ConfigurationBuildContext& context) const;
     //  Финальная стадия построения конфигурации - создаем все варианты
     //  пайплайнов
-    void _createPipelines(ConfigurationBuildContext& context);
+    void _createPipelines(ConfigurationBuildContext& context) const;
 
   private:
     Device& _device;
@@ -290,21 +128,13 @@ namespace mt
     Ref<TechniqueConfiguration> _configuration;
     mutable SpinLock _configurationMutex;
 
-    AbstractPipeline::Type _pipelineType;
+    Passes _passes;
 
-    std::vector<ShaderInfo> _shaders;
     std::vector<SelectionDefine> _selections;
 
-    // Настройки графического пайплайна. Игнорируются компьют пайплайном.
-    std::optional<FrameBufferFormat> _frameBufferFormat;
-    VkPrimitiveTopology _topology;
-    VkPipelineRasterizationStateCreateInfo _rasterizationState;
-    VkPipelineDepthStencilStateCreateInfo _depthStencilState;
-    VkPipelineColorBlendStateCreateInfo _blendingState;
-    std::array< VkPipelineColorBlendAttachmentState,
-                FrameBufferFormat::maxColorAttachments> _attachmentsBlending;
-
-    std::vector<Technique*> _observers;
+    using Observers = std::vector<Technique*>;
+    Observers _observers;
+    mutable SpinLock _observersMutex;
   };
 
   inline Device& TechniqueConfigurator::device() const noexcept
@@ -324,31 +154,45 @@ namespace mt
     return _debugName;
   }
 
-  inline AbstractPipeline::Type TechniqueConfigurator::pipelineType()
-                                                                  const noexcept
+  inline void TechniqueConfigurator::addObserver(Technique& technique)
   {
-    return _pipelineType;
+    std::lock_guard lock(_observersMutex);
+    _observers.push_back(&technique);
   }
 
-  inline void TechniqueConfigurator::setPipelineType(
-                                      AbstractPipeline::Type newValue) noexcept
+  inline void TechniqueConfigurator::removeObserver(
+                                                  Technique& technique) noexcept
   {
-    _pipelineType = newValue;
+    std::lock_guard lock(_observersMutex);
+    for(Observers::iterator iObserver = _observers.begin();
+        iObserver != _observers.end();
+        iObserver++)
+    {
+      if(*iObserver == &technique)
+      {
+        _observers.erase(iObserver);
+        return;
+      }
+    }
   }
 
-  inline const std::vector<TechniqueConfigurator::ShaderInfo>&
-                                TechniqueConfigurator::shaders() const noexcept
+  inline const TechniqueConfigurator::Passes&
+                                TechniqueConfigurator::passes() const noexcept
   {
-    return _shaders;
+    return _passes;
   }
 
-  inline void TechniqueConfigurator::setShaders(
-                                        std::span<const ShaderInfo> newShaders)
+  inline void TechniqueConfigurator::setPasses(Passes&& newPasses) noexcept
   {
-    std::vector<ShaderInfo> newShadersTable(newShaders.begin(),
-                                            newShaders.end());
-    _shaders = std::move(newShadersTable);
+    _passes = std::move(newPasses);
   }
+
+  inline void TechniqueConfigurator::addPass(
+                                    std::unique_ptr<PassConfigurator> newPass)
+  {
+    _passes.push_back(std::move(newPass));
+  }
+
 
   inline const std::vector<TechniqueConfigurator::SelectionDefine>&
                             TechniqueConfigurator::selections() const noexcept
@@ -364,385 +208,9 @@ namespace mt
     _selections = std::move(newSelectionsVector);
   }
 
-  inline const FrameBufferFormat*
-                      TechniqueConfigurator::frameBufferFormat() const noexcept
+  inline void TechniqueConfigurator::clear() noexcept
   {
-    if(!_frameBufferFormat.has_value()) return nullptr;
-    return &_frameBufferFormat.value();
-  }
-
-  inline const void TechniqueConfigurator::setFrameBufferFormat(
-                                  const FrameBufferFormat* newFormat) noexcept
-  {
-    if(newFormat == nullptr) _frameBufferFormat.reset();
-    else
-    {
-      _frameBufferFormat = *newFormat;
-      _blendingState.attachmentCount =
-                        uint32_t(_frameBufferFormat->colorAttachments().size());
-    }
-  }
-
-  inline VkPrimitiveTopology TechniqueConfigurator::topology() const noexcept
-  {
-    return _topology;
-  }
-
-  inline void TechniqueConfigurator::setTopology(
-                                          VkPrimitiveTopology newValue) noexcept
-  {
-    _topology = newValue;
-  }
-
-  inline bool TechniqueConfigurator::depthClampEnable() const noexcept
-  {
-    return _rasterizationState.depthClampEnable;
-  }
-
-  inline void TechniqueConfigurator::setDepthClampEnable(bool newValue) noexcept
-  {
-    _rasterizationState.depthClampEnable = newValue;
-  }
-
-  inline bool TechniqueConfigurator::rasterizationDiscardEnable() const noexcept
-  {
-    return _rasterizationState.rasterizerDiscardEnable;
-  }
-
-  inline void TechniqueConfigurator::setRasterizationDiscardEnable(
-                                                        bool newValue) noexcept
-  {
-    _rasterizationState.rasterizerDiscardEnable = newValue;
-  }
-
-  inline VkPolygonMode TechniqueConfigurator::polygonMode() const noexcept
-  {
-    return _rasterizationState.polygonMode;
-  }
-
-  inline void TechniqueConfigurator::setPolygonMode(
-                                                VkPolygonMode newValue) noexcept
-  {
-    _rasterizationState.polygonMode = newValue;
-  }
-
-  inline VkCullModeFlags TechniqueConfigurator::cullMode() const noexcept
-  {
-    return _rasterizationState.cullMode;
-  }
-
-  inline void TechniqueConfigurator::setCullMode(
-                                              VkCullModeFlags newValue) noexcept
-  {
-    _rasterizationState.cullMode = newValue;
-  }
-
-  inline VkFrontFace TechniqueConfigurator::frontFace() const noexcept
-  {
-    return _rasterizationState.frontFace;
-  }
-
-  inline void TechniqueConfigurator::setFrontFace(VkFrontFace newValue) noexcept
-  {
-    _rasterizationState.frontFace = newValue;
-  }
-
-  inline bool TechniqueConfigurator::depthBiasEnable() const noexcept
-  {
-    return _rasterizationState.depthBiasEnable;
-  }
-
-  inline void TechniqueConfigurator::setDepthBiasEnable(bool newValue) noexcept
-  {
-    _rasterizationState.depthBiasEnable = newValue;
-  }
-
-  inline float TechniqueConfigurator::depthBiasConstantFactor() const noexcept
-  {
-    return _rasterizationState.depthBiasConstantFactor;
-  }
-
-  inline void TechniqueConfigurator::setDepthBiasConstantFactor(
-                                                        float newValue) noexcept
-  {
-    _rasterizationState.depthBiasConstantFactor = newValue;
-  }
-
-  inline float TechniqueConfigurator::depthBiasClamp() const noexcept
-  {
-    return _rasterizationState.depthBiasClamp;
-  }
-
-  inline void TechniqueConfigurator::setDepthBiasClamp(float newValue) noexcept
-  {
-    _rasterizationState.depthBiasClamp = newValue;
-  }
-
-  inline float TechniqueConfigurator::depthBiasSlopeFactor() const noexcept
-  {
-    return _rasterizationState.depthBiasSlopeFactor;
-  }
-
-  inline void TechniqueConfigurator::setDepthBiasSlopeFactor(
-                                                        float newValue) noexcept
-  {
-    _rasterizationState.depthBiasSlopeFactor = newValue;
-  }
-
-  inline float TechniqueConfigurator::lineWidth() const noexcept
-  {
-    return _rasterizationState.lineWidth;
-  }
-
-  inline void TechniqueConfigurator::setLineWidth(float newValue) noexcept
-  {
-    _rasterizationState.lineWidth = newValue;
-  }
-
-  inline bool TechniqueConfigurator::depthTestEnable() const noexcept
-  {
-    return _depthStencilState.depthTestEnable;
-  }
-
-  inline void TechniqueConfigurator::setDepthTestEnable(bool newValue) noexcept
-  {
-    _depthStencilState.depthTestEnable = newValue;
-  }
-
-  inline bool TechniqueConfigurator::depthWriteEnable() const noexcept
-  {
-    return _depthStencilState.depthWriteEnable;
-  }
-
-  inline void TechniqueConfigurator::setDepthWriteEnable(bool newValue) noexcept
-  {
-    _depthStencilState.depthWriteEnable = newValue;
-  }
-
-  inline VkCompareOp TechniqueConfigurator::depthCompareOp() const noexcept
-  {
-    return _depthStencilState.depthCompareOp;
-  }
-
-  inline void TechniqueConfigurator::setDepthCompareOp(
-                                                  VkCompareOp newValue) noexcept
-  {
-    _depthStencilState.depthCompareOp = newValue;
-  }
-
-  inline bool TechniqueConfigurator::depthBoundsTestEnable() const noexcept
-  {
-    return _depthStencilState.depthBoundsTestEnable;
-  }
-
-  inline void TechniqueConfigurator::setDepthBoundsTestEnable(
-                                                        bool newValue) noexcept
-  {
-    _depthStencilState.depthBoundsTestEnable = newValue;
-  }
-
-  inline VkStencilOpState TechniqueConfigurator::frontStencilOp() const noexcept
-  {
-    return _depthStencilState.front;
-  }
-
-  inline void TechniqueConfigurator::setFrontStencilOp(
-                                            VkStencilOpState newValue) noexcept
-  {
-    _depthStencilState.front = newValue;
-  }
-
-  inline VkStencilOpState TechniqueConfigurator::backStencilOp() const noexcept
-  {
-    return _depthStencilState.back;
-  }
-
-  inline void TechniqueConfigurator::setBackStencilOp(
-                                            VkStencilOpState newValue) noexcept
-  {
-    _depthStencilState.back = newValue;
-  }
-
-  inline float TechniqueConfigurator::minDepthBounds() const noexcept
-  {
-    return _depthStencilState.minDepthBounds;
-  }
-
-  inline void TechniqueConfigurator::setMinDepthBounds(float newValue) noexcept
-  {
-    _depthStencilState.minDepthBounds = newValue;
-  }
-
-  inline float TechniqueConfigurator::maxDepthBounds() const noexcept
-  {
-    return _depthStencilState.maxDepthBounds;
-  }
-
-  inline void TechniqueConfigurator::setMaxDepthBounds(float newValue) noexcept
-  {
-    _depthStencilState.maxDepthBounds = newValue;
-  }
-
-  inline bool TechniqueConfigurator::blendLogicOpEnable() const noexcept
-  {
-    return _blendingState.logicOpEnable;
-  }
-
-  inline void TechniqueConfigurator::setBlendLogicOpEnable(
-                                                        bool newValue) noexcept
-  {
-    _blendingState.logicOpEnable = newValue;
-  }
-
-  inline VkLogicOp TechniqueConfigurator::blendLogicOp() const noexcept
-  {
-    return _blendingState.logicOp;
-  }
-
-  inline void TechniqueConfigurator::setBlendLogicOp(
-                                                    VkLogicOp newValue) noexcept
-  {
-    _blendingState.logicOp = newValue;
-  }
-
-  inline glm::vec4 TechniqueConfigurator::blendConstants() const noexcept
-  {
-    return glm::vec4( _blendingState.blendConstants[0],
-                      _blendingState.blendConstants[1],
-                      _blendingState.blendConstants[2],
-                      _blendingState.blendConstants[3]);
-  }
-
-  inline void TechniqueConfigurator::setBlendConstants(
-                                            const glm::vec4& newValue) noexcept
-  {
-    _blendingState.blendConstants[0] = newValue.r;
-    _blendingState.blendConstants[0] = newValue.g;
-    _blendingState.blendConstants[0] = newValue.b;
-    _blendingState.blendConstants[0] = newValue.a;
-  }
-
-  inline bool TechniqueConfigurator::blendEnable(
-                                        uint32_t attachmentIndex) const noexcept
-  {
-    MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
-    return _attachmentsBlending[attachmentIndex].blendEnable;
-  }
-
-  inline void TechniqueConfigurator::setBlendEnable(uint32_t attachmentIndex,
-                                                    bool newValue) noexcept
-  {
-    MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
-    _attachmentsBlending[attachmentIndex].blendEnable = newValue;
-  }
-
-  inline VkBlendFactor TechniqueConfigurator::srcColorBlendFactor(
-                                        uint32_t attachmentIndex) const noexcept
-  {
-    MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
-    return _attachmentsBlending[attachmentIndex].srcColorBlendFactor;
-  }
-
-  inline void TechniqueConfigurator::setSrcColorBlendFactor(
-                                                uint32_t attachmentIndex,
-                                                VkBlendFactor newValue) noexcept
-  {
-    MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
-    _attachmentsBlending[attachmentIndex].srcColorBlendFactor = newValue;
-  }
-
-  inline VkBlendFactor TechniqueConfigurator::dstColorBlendFactor(
-                                        uint32_t attachmentIndex) const noexcept
-  {
-    MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
-    return _attachmentsBlending[attachmentIndex].dstColorBlendFactor;
-  }
-
-  inline void TechniqueConfigurator::setDstColorBlendFactor(
-                                                uint32_t attachmentIndex,
-                                                VkBlendFactor newValue) noexcept
-  {
-    MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
-    _attachmentsBlending[attachmentIndex].dstColorBlendFactor = newValue;
-  }
-
-  inline VkBlendOp TechniqueConfigurator::colorBlendOp(
-                                        uint32_t attachmentIndex) const noexcept
-  {
-    MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
-    return _attachmentsBlending[attachmentIndex].colorBlendOp;
-  }
-
-  inline void TechniqueConfigurator::setColorBlendOp(
-                                                  uint32_t attachmentIndex,
-                                                  VkBlendOp newValue) noexcept
-  {
-    MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
-    _attachmentsBlending[attachmentIndex].colorBlendOp = newValue;
-  }
-
-  inline VkBlendFactor TechniqueConfigurator::srcAlphaBlendFactor(
-                                        uint32_t attachmentIndex) const noexcept
-  {
-    MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
-    return _attachmentsBlending[attachmentIndex].srcAlphaBlendFactor;
-  }
-
-  inline void TechniqueConfigurator::setSrcAlphaBlendFactor(
-                                                uint32_t attachmentIndex,
-                                                VkBlendFactor newValue) noexcept
-  {
-    MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
-    _attachmentsBlending[attachmentIndex].srcAlphaBlendFactor = newValue;
-  }
-
-  inline VkBlendFactor TechniqueConfigurator::dstAlphaBlendFactor(
-                                        uint32_t attachmentIndex) const noexcept
-  {
-    MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
-    return _attachmentsBlending[attachmentIndex].dstAlphaBlendFactor;
-  }
-
-  inline void TechniqueConfigurator::setDstAlphaBlendFactor(
-                                                uint32_t attachmentIndex,
-                                                VkBlendFactor newValue) noexcept
-  {
-    MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
-    _attachmentsBlending[attachmentIndex].dstAlphaBlendFactor = newValue;
-  }
-
-  inline VkBlendOp TechniqueConfigurator::alphaBlendOp(
-                                        uint32_t attachmentIndex) const noexcept
-  {
-    MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
-    return _attachmentsBlending[attachmentIndex].alphaBlendOp;
-  }
-
-  inline void TechniqueConfigurator::setAlphaBlendOp(
-                                                    uint32_t attachmentIndex,
-                                                    VkBlendOp newValue) noexcept
-  {
-    MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
-    _attachmentsBlending[attachmentIndex].alphaBlendOp = newValue;
-  }
-
-  inline VkColorComponentFlags TechniqueConfigurator::colorWriteMask(
-                                        uint32_t attachmentIndex) const noexcept
-  {
-    MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
-    return _attachmentsBlending[attachmentIndex].colorWriteMask;
-  }
-
-  inline void TechniqueConfigurator::setColorWriteMask(
-                                        uint32_t attachmentIndex,
-                                        VkColorComponentFlags newValue) noexcept
-  {
-    MT_ASSERT(attachmentIndex < FrameBufferFormat::maxColorAttachments);
-    _attachmentsBlending[attachmentIndex].colorWriteMask = newValue;
-  }
-
-  inline void TechniqueConfigurator::addObserver(Technique& technique)
-  {
-    _observers.push_back(&technique);
+    _passes.clear();
+    _selections.clear();
   }
 }

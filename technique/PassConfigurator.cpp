@@ -4,7 +4,7 @@
 
 #include <technique/ConfigurationBuildContext.h>
 #include <technique/PassConfigurator.h>
-#include <technique/TechniqueGonfiguration.h>
+#include <technique/TechniqueConfiguration.h>
 #include <util/Abort.h>
 #include <util/Log.h>
 #include <vkr/pipeline/GraphicPipeline.h>
@@ -63,11 +63,11 @@ void PassConfigurator::processShaders(ConfigurationBuildContext& context) const
   }
 }
 
-static TechniqueGonfiguration::SelectionDefine* findSelection(
+static TechniqueConfiguration::SelectionDefine* findSelection(
                                             ConfigurationBuildContext& context,
                                             const std::string& selectionName)
 {
-  for (TechniqueGonfiguration::SelectionDefine& selection :
+  for (TechniqueConfiguration::SelectionDefine& selection :
                                               context.configuration->selections)
   {
     if(selection.name == selectionName) return &selection;
@@ -92,7 +92,7 @@ void PassConfigurator::_processSelections(
 
   //  Добавим во все результирующие селекшены дефолтный нулевой вес для этого
   //  прохода
-  for(TechniqueGonfiguration::SelectionDefine& selection :
+  for(TechniqueConfiguration::SelectionDefine& selection :
                                               context.configuration->selections)
   {
     selection.weights.push_back(0);
@@ -107,7 +107,7 @@ void PassConfigurator::_processSelections(
 
     for(const std::string& selectionName : _selections)
     {
-      TechniqueGonfiguration::SelectionDefine* selection =
+      TechniqueConfiguration::SelectionDefine* selection =
                                           findSelection(context, selectionName);
       if(selection == nullptr)
       {
@@ -119,7 +119,7 @@ void PassConfigurator::_processSelections(
   }
 
   //  Выделим место под разные варианты шейдерных модулей и пайплайнов
-  context.shaders.resize(variantsNumber);
+  context.shaders[context.currentPassIndex].resize(variantsNumber);
   if (_pipelineType == AbstractPipeline::COMPUTE_PIPELINE)
   {
     Abort("Not implemented");
@@ -136,7 +136,7 @@ void PassConfigurator::_processShadersSeveralVariants(
                                       ConfigurationBuildContext& context) const
 {
   const std::string& selectionName = _selections[selectionIndex];
-  TechniqueGonfiguration::SelectionDefine* selection =
+  TechniqueConfiguration::SelectionDefine* selection =
                                           findSelection(context, selectionName);
   MT_ASSERT(selection != nullptr);
   for(const std::string& selectionValue : selection->valueVariants)
@@ -167,6 +167,7 @@ void PassConfigurator::_processShadersOneVariant(
     _processShader(shader, context);
   }
 }
+
 void PassConfigurator::_processShader(const ShaderInfo& shaderRecord,
                                       ConfigurationBuildContext& context) const
 {
@@ -226,18 +227,18 @@ void PassConfigurator::_processShaderReflection(
     }
 
     DescriptorSetType setType = DescriptorSetType(setIndex);
-    TechniqueGonfiguration::DescriptorSet& set = _getOrCreateSet( setType,
+    TechniqueConfiguration::DescriptorSet& set = _getOrCreateSet( setType,
                                                                   context);
     _processBindings(shaderRecord, set, reflectedSet, context);
   }
 }
 
-TechniqueGonfiguration::DescriptorSet&
+TechniqueConfiguration::DescriptorSet&
                   PassConfigurator::_getOrCreateSet(
                                       DescriptorSetType type,
                                       ConfigurationBuildContext& context) const
 {
-  for(TechniqueGonfiguration::DescriptorSet& set :
+  for(TechniqueConfiguration::DescriptorSet& set :
                                           context.configuration->descriptorSets)
   {
     if(set.type == type) return set;
@@ -282,7 +283,7 @@ static VkPipelineStageFlagBits getPipelineStage(
 
 void PassConfigurator::_processBindings(
                                     const ShaderInfo& shaderRecord,
-                                    TechniqueGonfiguration::DescriptorSet& set,
+                                    TechniqueConfiguration::DescriptorSet& set,
                                     const SpvReflectDescriptorSet& reflectedSet,
                                     ConfigurationBuildContext& context) const
 {
@@ -293,7 +294,7 @@ void PassConfigurator::_processBindings(
     MT_ASSERT(reflectedBinding != nullptr);
 
     // Для начала собираем общие данные о биндинге из рефлексии
-    TechniqueGonfiguration::Resource newResource;
+    TechniqueConfiguration::Resource newResource;
     newResource.type = VkDescriptorType(reflectedBinding->descriptor_type);
     newResource.set = set.type;
     newResource.bindingIndex = reflectedBinding->binding;
@@ -312,7 +313,7 @@ void PassConfigurator::_processBindings(
 
     // Смотрим, возможно этот биндинг уже появлялся на других стадиях
     bool itIsNewResource = true;
-    for(TechniqueGonfiguration::Resource& resource :
+    for(TechniqueConfiguration::Resource& resource :
                                               context.configuration->resources)
     {
       if( resource.set == newResource.set &&
@@ -357,7 +358,7 @@ void PassConfigurator::_processUniformBlock(
   const SpvReflectBlockVariable& block = reflectedBinding.block;
 
   // Для начала ищем, возможно буфер с таким биндингом уже встречался
-  for(TechniqueGonfiguration::UniformBuffer& buffer :
+  for(TechniqueConfiguration::UniformBuffer& buffer :
                                           context.configuration->uniformBuffers)
   {
     if( uint32_t(buffer.set) == reflectedBinding.set &&
@@ -375,7 +376,7 @@ void PassConfigurator::_processUniformBlock(
   }
 
   // Этот буфер раньше не встречался, посмотрим что внутри
-  TechniqueGonfiguration::UniformBuffer newBuffer{};
+  TechniqueConfiguration::UniformBuffer newBuffer{};
   newBuffer.set = DescriptorSetType(reflectedBinding.set);
   newBuffer.binding = reflectedBinding.binding;
   newBuffer.name = reflectedBinding.name;
@@ -407,7 +408,7 @@ void PassConfigurator::_processUniformBlock(
 
 void PassConfigurator::_parseUniformBlockMember(
                                 const ShaderInfo& shaderRecord,
-                                TechniqueGonfiguration::UniformBuffer& target,
+                                TechniqueConfiguration::UniformBuffer& target,
                                 const SpvReflectBlockVariable& sourceMember,
                                 std::string namePrefix,
                                 uint32_t parentBlockOffset) const
@@ -434,7 +435,7 @@ void PassConfigurator::_parseUniformBlockMember(
   }
 
   // Этот блок - не структура. Парсим его как отдельную униформ переменную
-  TechniqueGonfiguration::UniformVariable newUniform{};
+  TechniqueConfiguration::UniformVariable newUniform{};
   newUniform.shortName = sourceMember.name;
   newUniform.fullName = fullName;
   newUniform.offsetInBuffer = blockOffset;
@@ -443,17 +444,17 @@ void PassConfigurator::_parseUniformBlockMember(
   // Определяем базовый тип
   if(type->type_flags & SPV_REFLECT_TYPE_FLAG_BOOL)
   {
-    newUniform.baseType = TechniqueGonfiguration::BOOL_TYPE;
+    newUniform.baseType = TechniqueConfiguration::BOOL_TYPE;
   }
   else if (type->type_flags & SPV_REFLECT_TYPE_FLAG_INT)
   {
-    newUniform.baseType = TechniqueGonfiguration::INT_TYPE;
+    newUniform.baseType = TechniqueConfiguration::INT_TYPE;
   }
   else if (type->type_flags & SPV_REFLECT_TYPE_FLAG_FLOAT)
   {
-    newUniform.baseType = TechniqueGonfiguration::FLOAT_TYPE;
+    newUniform.baseType = TechniqueConfiguration::FLOAT_TYPE;
   }
-  else newUniform.baseType = TechniqueGonfiguration::UNKNOWN_TYPE;
+  else newUniform.baseType = TechniqueConfiguration::UNKNOWN_TYPE;
 
   // Это вектор или массив векторов
   if(type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)
@@ -485,7 +486,7 @@ void PassConfigurator::_parseUniformBlockMember(
     }
     else
     {
-      newUniform.baseType = TechniqueGonfiguration::UNKNOWN_TYPE;
+      newUniform.baseType = TechniqueConfiguration::UNKNOWN_TYPE;
       newUniform.isVector = false;
       newUniform.isMatrix = false;
     }
@@ -503,8 +504,7 @@ void PassConfigurator::createPipelines(ConfigurationBuildContext& context) const
       variant++)
   {
     //  Формируем список шейдерных модулей, из которых состоит пайплайн
-    ShaderSet& shaderSet =
-        context.shaders[context.currentPassIndex][context.currentVariantIndex];
+    ShaderSet& shaderSet = context.shaders[context.currentPassIndex][variant];
     std::vector<AbstractPipeline::ShaderInfo> shaders;
     for(ShaderModuleInfo& shader : shaderSet)
     {

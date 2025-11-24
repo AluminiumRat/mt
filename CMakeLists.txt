@@ -40,7 +40,6 @@ add_executable (vkTest
                 "technique/ShaderCompilator.cpp"
                 "technique/Technique.cpp"
                 "technique/TechniqueConfigurator.cpp"
-                "technique/TechniqueGonfigurator.cpp"
                 "technique/TechniqueResource.cpp"
                 "technique/TechniqueUniformBlock.cpp"
                 "technique/UniformVariable.cpp"

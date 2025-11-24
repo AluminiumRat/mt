@@ -65,7 +65,6 @@ namespace mt
 
   private:
     friend class TechniqueConfigurator;
-    friend class TechniqueGonfigurator;
     void updateConfiguration();
 
   private:
@@ -79,7 +78,8 @@ namespace mt
     //  Определить по селекшенам, какой именно вариант пайплайны мы должны
     //  использовать
     uint32_t _getPipelineVariant(
-                const TechniqueVolatileContext* volatileContext) const noexcept;
+                const TechniqueVolatileContext* volatileContext,
+                uint32_t passIndex) const noexcept;
 
   private:
     Device& _device;

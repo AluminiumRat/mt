@@ -6,7 +6,7 @@
 #include <vulkan/vulkan.hpp>
 
 #include <technique/ShaderCompilator.h>
-#include <technique/TechniqueGonfiguration.h>
+#include <technique/TechniqueConfiguration.h>
 #include <vkr/pipeline/ShaderModule.h>
 
 namespace mt
@@ -37,7 +37,7 @@ namespace mt
     std::string configuratorName;
 
     //  Конфигурация, которую мы создаем
-    Ref<TechniqueGonfiguration> configuration;
+    Ref<TechniqueConfiguration> configuration;
 
     //  Все варианты шейдеров для всех проходов
     std::vector<PassShaderVariants> shaders;
