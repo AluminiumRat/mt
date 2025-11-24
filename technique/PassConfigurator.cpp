@@ -2,9 +2,9 @@
 
 #include <spirv_reflect.h>
 
-#include <technique/DescriptorSetType.h>
-#include <technique/TechniqueConfigurator.h>
-#include <technique/Technique.h>
+#include <technique/ConfigurationBuildContext.h>
+#include <technique/PassConfigurator.h>
+#include <technique/TechniqueGonfiguration.h>
 #include <util/Abort.h>
 #include <util/Log.h>
 #include <vkr/pipeline/GraphicPipeline.h>
@@ -12,9 +12,7 @@
 
 using namespace mt;
 
-TechniqueConfigurator::TechniqueConfigurator( Device& device,
-                                              const char* debugName) noexcept :
-  _device(device),
+PassConfigurator::PassConfigurator(const char* debugName) :
   _debugName(debugName),
   _pipelineType(AbstractPipeline::GRAPHIC_PIPELINE),
   _topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST),
@@ -22,11 +20,13 @@ TechniqueConfigurator::TechniqueConfigurator( Device& device,
   _depthStencilState{},
   _blendingState{}
 {
-  _rasterizationState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+  _rasterizationState.sType =
+                    VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
   _rasterizationState.polygonMode = VK_POLYGON_MODE_FILL;
   _rasterizationState.lineWidth = 1;
 
-  _depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+  _depthStencilState.sType =
+                    VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 
   for(VkPipelineColorBlendAttachmentState& attachment : _attachmentsBlending)
   {
@@ -41,125 +41,107 @@ TechniqueConfigurator::TechniqueConfigurator( Device& device,
   _blendingState.pAttachments = _attachmentsBlending.data();
 }
 
-void TechniqueConfigurator::propogateConfiguration() noexcept
-{
-  try
-  {
-    for(Technique* observer : _observers)
-    {
-      observer->updateConfiguration();
-    }
-  }
-  catch(std::exception& error)
-  {
-    Log::error() << _debugName << ": unable to propagate configuration: " << error.what();
-    Abort("TechniqueConfigurator :: Unable to propagate configuration");
-  }
-}
-
-void TechniqueConfigurator::rebuildConfiguration()
-{
-  rebuildOnlyConfiguration();
-  propogateConfiguration();
-}
-
-void TechniqueConfigurator::rebuildOnlyConfiguration()
+void PassConfigurator::processShaders(ConfigurationBuildContext& context) const
 {
   if( _pipelineType == AbstractPipeline::GRAPHIC_PIPELINE &&
       !_frameBufferFormat.has_value())
   {
-    throw std::runtime_error(_debugName + ": pipeline type is GRAPHIC_PIPELINE but the frame buffer format is empty");
+    throw std::runtime_error(context.configuratorName + ":" + _debugName + ": pipeline type is GRAPHIC_PIPELINE but the frame buffer format is empty");
   }
-
   if (_shaders.empty())
   {
-    Log::warning() << _debugName << ": attempt to create a configuration without shaders";
-    return;
+    throw std::runtime_error(context.configuratorName + ":" + _debugName + ": attempt to create a configuration without shaders");
   }
 
-  ConfigurationBuildContext context{};
-  context.configuration = Ref(new TechniqueConfiguration);
-  context.configuration->pipelineType = _pipelineType;
-  context.configuration->volatileUniformBuffersSize = 0;
+  context.currentPass->pipelineType = _pipelineType;
 
   _processSelections(context);
-
-  if(_selections.empty()) _processShadersOneVariant(context);
+  if (_selections.empty()) _processShadersOneVariant(context);
   else
   {
     _processShadersSeveralVariants(uint32_t(_selections.size() - 1), context);
   }
-
-  _createLayouts(context);
-  _createPipelines(context);
-
-  {
-    std::lock_guard lock(_configurationMutex);
-    _configuration = context.configuration;
-  }
 }
 
-void TechniqueConfigurator::_processSelections(
-                                        ConfigurationBuildContext& context)
+static TechniqueGonfiguration::SelectionDefine* findSelection(
+                                            ConfigurationBuildContext& context,
+                                            const std::string& selectionName)
 {
-  // Для начала проверим, нет ли дубликатов
-  for(size_t i = 0; i < _selections.size(); i++)
+  for (TechniqueGonfiguration::SelectionDefine& selection :
+                                              context.configuration->selections)
   {
-    for(size_t j = i + 1; j < _selections.size(); j++)
+    if(selection.name == selectionName) return &selection;
+  }
+  return nullptr;
+}
+
+void PassConfigurator::_processSelections(
+                                      ConfigurationBuildContext& context) const
+{
+  // Проверим, нет ли дубликатов
+  for (size_t i = 0; i < _selections.size(); i++)
+  {
+    for (size_t j = i + 1; j < _selections.size(); j++)
     {
-      if(_selections[i].name == _selections[j].name)
+      if (_selections[i] == _selections[j])
       {
-        throw std::runtime_error(_debugName + ": duplicate selection " + _selections[i].name);
+        throw std::runtime_error(context.configuratorName + ":" + _debugName + ": duplicate selection " + _selections[i]);
       }
     }
   }
 
-  //  Посчитаем все варианты селекшенов, скопируем их в конфигурацию и
-  //  посчитаем их веса
-  context.variantsNumber = 1;
-  if(!_selections.empty())
+  //  Добавим во все результирующие селекшены дефолтный нулевой вес для этого
+  //  прохода
+  for(TechniqueGonfiguration::SelectionDefine& selection :
+                                              context.configuration->selections)
+  {
+    selection.weights.push_back(0);
+  }
+
+  //  Обходим селекшены, которые используются в этом проходе, посчитаем
+  //  количество вариантов и веса селекшенов
+  uint32_t variantsNumber = 1;
+  if (!_selections.empty())
   {
     context.currentDefines.resize(_selections.size());
 
-    context.configuration->selections.reserve(_selections.size());
-    for(const SelectionDefine& selection : _selections)
+    for(const std::string& selectionName : _selections)
     {
-      if(selection.valueVariants.empty())
+      TechniqueGonfiguration::SelectionDefine* selection =
+                                          findSelection(context, selectionName);
+      if(selection == nullptr)
       {
-        throw std::runtime_error(_debugName + ": selection " + selection.name + " doesn't have value variants");
+        throw std::runtime_error(context.configuratorName + ": " + _debugName + ": selection " + selectionName + " is used in the pass but it isn't defined in the technique");
       }
-
-      context.configuration->selections.push_back(
-                        TechniqueConfiguration::SelectionDefine{
-                                                      selection.name,
-                                                      selection.valueVariants,
-                                                      context.variantsNumber});
-      context.variantsNumber *= uint32_t(selection.valueVariants.size());
+      selection->weights.back() = variantsNumber;
+      variantsNumber *= uint32_t(selection->valueVariants.size());
     }
   }
 
   //  Выделим место под разные варианты шейдерных модулей и пайплайнов
-  context.shaders.resize(context.variantsNumber);
+  context.shaders.resize(variantsNumber);
   if (_pipelineType == AbstractPipeline::COMPUTE_PIPELINE)
   {
     Abort("Not implemented");
   }
   else
   {
-    context.configuration->graphicPipelineVariants.resize(
-                                                  context.variantsNumber);
+    context.currentPass->graphicPipelineVariants.resize(variantsNumber);
   }
 }
 
 // Это рекурсивная функция, пребирающая все варианты селекшенов
-void TechniqueConfigurator::_processShadersSeveralVariants(
-                                            uint32_t selectionIndex,
-                                            ConfigurationBuildContext& context)
+void PassConfigurator::_processShadersSeveralVariants(
+                                      uint32_t selectionIndex,
+                                      ConfigurationBuildContext& context) const
 {
-  const SelectionDefine& selection = _selections[selectionIndex];
-  for(const std::string& selectionValue : selection.valueVariants)
+  const std::string& selectionName = _selections[selectionIndex];
+  TechniqueGonfiguration::SelectionDefine* selection =
+                                          findSelection(context, selectionName);
+  MT_ASSERT(selection != nullptr);
+  for(const std::string& selectionValue : selection->valueVariants)
   {
-    context.currentDefines[selectionIndex].name = selection.name.c_str();
+    context.currentDefines[selectionIndex].name = selectionName.c_str();
     context.currentDefines[selectionIndex].value = selectionValue.c_str();
 
     if(selectionIndex == 0)
@@ -177,20 +159,19 @@ void TechniqueConfigurator::_processShadersSeveralVariants(
   }
 }
 
-void TechniqueConfigurator::_processShadersOneVariant(
-                                      ConfigurationBuildContext& context)
+void PassConfigurator::_processShadersOneVariant(
+                                      ConfigurationBuildContext& context) const
 {
   for (const ShaderInfo& shader : _shaders)
   {
     _processShader(shader, context);
   }
 }
-
-void TechniqueConfigurator::_processShader(
-                                        const ShaderInfo& shaderRecord,
-                                        ConfigurationBuildContext& context)
+void PassConfigurator::_processShader(const ShaderInfo& shaderRecord,
+                                      ConfigurationBuildContext& context) const
 {
-  ShaderSet& shaderSet = context.shaders[context.currentVariantIndex];
+  ShaderSet& shaderSet =
+        context.shaders[context.currentPassIndex][context.currentVariantIndex];
 
   // Проверяем, что нет дублирования шейдерных стадий
   for(const ShaderModuleInfo& shader : shaderSet)
@@ -222,17 +203,17 @@ void TechniqueConfigurator::_processShader(
   // Создаем шейдерный модуль
   std::unique_ptr<ShaderModule> newShaderModule(
                                     new ShaderModule(
-                                                _device,
+                                                *context.device,
                                                 spirData,
                                                 shaderRecord.filename.c_str()));
   shaderSet.push_back(ShaderModuleInfo{ std::move(newShaderModule),
                                         shaderRecord.stage});
 }
 
-void TechniqueConfigurator::_processShaderReflection(
+void PassConfigurator::_processShaderReflection(
                                       const ShaderInfo& shaderRecord,
                                       const SpvReflectShaderModule& reflection,
-                                      ConfigurationBuildContext& context)
+                                      ConfigurationBuildContext& context) const
 {
   for(uint32_t iSet = 0; iSet < reflection.descriptor_set_count; iSet++)
   {
@@ -245,19 +226,19 @@ void TechniqueConfigurator::_processShaderReflection(
     }
 
     DescriptorSetType setType = DescriptorSetType(setIndex);
-    TechniqueConfiguration::DescriptorSet& set = _getOrCreateSet( setType,
+    TechniqueGonfiguration::DescriptorSet& set = _getOrCreateSet( setType,
                                                                   context);
     _processBindings(shaderRecord, set, reflectedSet, context);
   }
 }
 
-TechniqueConfiguration::DescriptorSet&
-                  TechniqueConfigurator::_getOrCreateSet(
-                                            DescriptorSetType type,
-                                            ConfigurationBuildContext& context)
+TechniqueGonfiguration::DescriptorSet&
+                  PassConfigurator::_getOrCreateSet(
+                                      DescriptorSetType type,
+                                      ConfigurationBuildContext& context) const
 {
-  for(TechniqueConfiguration::DescriptorSet& set :
-                                    context.configuration->descriptorSets)
+  for(TechniqueGonfiguration::DescriptorSet& set :
+                                          context.configuration->descriptorSets)
   {
     if(set.type == type) return set;
   }
@@ -299,11 +280,11 @@ static VkPipelineStageFlagBits getPipelineStage(
   }
 }
 
-void TechniqueConfigurator::_processBindings(
+void PassConfigurator::_processBindings(
                                     const ShaderInfo& shaderRecord,
-                                    TechniqueConfiguration::DescriptorSet& set,
+                                    TechniqueGonfiguration::DescriptorSet& set,
                                     const SpvReflectDescriptorSet& reflectedSet,
-                                    ConfigurationBuildContext& context)
+                                    ConfigurationBuildContext& context) const
 {
   for(uint32_t iBinding = 0; iBinding < reflectedSet.binding_count; iBinding++)
   {
@@ -312,7 +293,7 @@ void TechniqueConfigurator::_processBindings(
     MT_ASSERT(reflectedBinding != nullptr);
 
     // Для начала собираем общие данные о биндинге из рефлексии
-    TechniqueConfiguration::Resource newResource;
+    TechniqueGonfiguration::Resource newResource;
     newResource.type = VkDescriptorType(reflectedBinding->descriptor_type);
     newResource.set = set.type;
     newResource.bindingIndex = reflectedBinding->binding;
@@ -331,7 +312,7 @@ void TechniqueConfigurator::_processBindings(
 
     // Смотрим, возможно этот биндинг уже появлялся на других стадиях
     bool itIsNewResource = true;
-    for(TechniqueConfiguration::Resource& resource :
+    for(TechniqueGonfiguration::Resource& resource :
                                               context.configuration->resources)
     {
       if( resource.set == newResource.set &&
@@ -368,15 +349,15 @@ void TechniqueConfigurator::_processBindings(
   }
 }
 
-void TechniqueConfigurator::_processUniformBlock(
+void PassConfigurator::_processUniformBlock(
                           const ShaderInfo& shaderRecord,
                           const SpvReflectDescriptorBinding& reflectedBinding,
-                          ConfigurationBuildContext& context)
+                          ConfigurationBuildContext& context) const
 {
   const SpvReflectBlockVariable& block = reflectedBinding.block;
 
   // Для начала ищем, возможно буфер с таким биндингом уже встречался
-  for(TechniqueConfiguration::UniformBuffer& buffer :
+  for(TechniqueGonfiguration::UniformBuffer& buffer :
                                           context.configuration->uniformBuffers)
   {
     if( uint32_t(buffer.set) == reflectedBinding.set &&
@@ -394,7 +375,7 @@ void TechniqueConfigurator::_processUniformBlock(
   }
 
   // Этот буфер раньше не встречался, посмотрим что внутри
-  TechniqueConfiguration::UniformBuffer newBuffer{};
+  TechniqueGonfiguration::UniformBuffer newBuffer{};
   newBuffer.set = DescriptorSetType(reflectedBinding.set);
   newBuffer.binding = reflectedBinding.binding;
   newBuffer.name = reflectedBinding.name;
@@ -424,12 +405,12 @@ void TechniqueConfigurator::_processUniformBlock(
   context.configuration->uniformBuffers.push_back(newBuffer);
 }
 
-void TechniqueConfigurator::_parseUniformBlockMember(
+void PassConfigurator::_parseUniformBlockMember(
                                 const ShaderInfo& shaderRecord,
-                                TechniqueConfiguration::UniformBuffer& target,
+                                TechniqueGonfiguration::UniformBuffer& target,
                                 const SpvReflectBlockVariable& sourceMember,
                                 std::string namePrefix,
-                                uint32_t parentBlockOffset)
+                                uint32_t parentBlockOffset) const
 {
   std::string fullName = namePrefix + sourceMember.name;
   uint32_t blockOffset = parentBlockOffset + sourceMember.offset;
@@ -453,7 +434,7 @@ void TechniqueConfigurator::_parseUniformBlockMember(
   }
 
   // Этот блок - не структура. Парсим его как отдельную униформ переменную
-  TechniqueConfiguration::UniformVariable newUniform{};
+  TechniqueGonfiguration::UniformVariable newUniform{};
   newUniform.shortName = sourceMember.name;
   newUniform.fullName = fullName;
   newUniform.offsetInBuffer = blockOffset;
@@ -462,17 +443,17 @@ void TechniqueConfigurator::_parseUniformBlockMember(
   // Определяем базовый тип
   if(type->type_flags & SPV_REFLECT_TYPE_FLAG_BOOL)
   {
-    newUniform.baseType = TechniqueConfiguration::BOOL_TYPE;
+    newUniform.baseType = TechniqueGonfiguration::BOOL_TYPE;
   }
   else if (type->type_flags & SPV_REFLECT_TYPE_FLAG_INT)
   {
-    newUniform.baseType = TechniqueConfiguration::INT_TYPE;
+    newUniform.baseType = TechniqueGonfiguration::INT_TYPE;
   }
   else if (type->type_flags & SPV_REFLECT_TYPE_FLAG_FLOAT)
   {
-    newUniform.baseType = TechniqueConfiguration::FLOAT_TYPE;
+    newUniform.baseType = TechniqueGonfiguration::FLOAT_TYPE;
   }
-  else newUniform.baseType = TechniqueConfiguration::UNKNOWN_TYPE;
+  else newUniform.baseType = TechniqueGonfiguration::UNKNOWN_TYPE;
 
   // Это вектор или массив векторов
   if(type->type_flags & SPV_REFLECT_TYPE_FLAG_VECTOR)
@@ -504,7 +485,7 @@ void TechniqueConfigurator::_parseUniformBlockMember(
     }
     else
     {
-      newUniform.baseType = TechniqueConfiguration::UNKNOWN_TYPE;
+      newUniform.baseType = TechniqueGonfiguration::UNKNOWN_TYPE;
       newUniform.isVector = false;
       newUniform.isMatrix = false;
     }
@@ -513,57 +494,17 @@ void TechniqueConfigurator::_parseUniformBlockMember(
   target.variables.push_back(newUniform);
 }
 
-void TechniqueConfigurator::_createLayouts(
-                                        ConfigurationBuildContext& context)
-{
-  // Пройдемся по всем ресурсам и рассортирруем их по сетам
-  using SetBindings = std::vector<VkDescriptorSetLayoutBinding>;
-  std::array<SetBindings, maxDescriptorSetIndex + 1> bindings;
-  for(TechniqueConfiguration::Resource& resource :
-                                              context.configuration->resources)
-  {
-    VkDescriptorSetLayoutBinding binding{};
-    binding.binding = resource.bindingIndex;
-    binding.descriptorType = resource.type;
-    binding.descriptorCount = resource.count;
-    binding.stageFlags = resource.shaderStages;
-
-    uint32_t setIndex = uint32_t(resource.set);
-    bindings[setIndex].push_back(binding);
-  }
-
-  // Теперь можно создать лэйауты для сетов
-  std::array< ConstRef<DescriptorSetLayout>,
-              maxDescriptorSetIndex + 1> setLayouts;
-  for(TechniqueConfiguration::DescriptorSet& set :
-                                          context.configuration->descriptorSets)
-  {
-    uint32_t setIndex = uint32_t(set.type);
-    set.layout = ConstRef(new DescriptorSetLayout(_device,
-                                                  bindings[setIndex]));
-    setLayouts[setIndex] = set.layout;
-  }
-
-  // Создаем лэйаут пайплайна. Но сначала досоздаем лэйауты пустых сетов
-  for(ConstRef<DescriptorSetLayout>& setLayout : setLayouts)
-  {
-    if(setLayout == nullptr)
-    {
-      setLayout = ConstRef(new DescriptorSetLayout(_device, {}));
-    }
-  }
-  context.configuration->pipelineLayout =
-                            ConstRef(new PipelineLayout( _device, setLayouts));
-}
-
-void TechniqueConfigurator::_createPipelines(ConfigurationBuildContext& context)
+void PassConfigurator::createPipelines(ConfigurationBuildContext& context) const
 {
   MT_ASSERT(context.configuration->pipelineLayout != nullptr)
 
-  for(uint32_t variant = 0; variant < context.variantsNumber; variant++)
+  for(uint32_t variant = 0;
+      variant < context.currentPass->graphicPipelineVariants.size();
+      variant++)
   {
     //  Формируем список шейдерных модулей, из которых состоит пайплайн
-    ShaderSet& shaderSet = context.shaders[variant];
+    ShaderSet& shaderSet =
+        context.shaders[context.currentPassIndex][context.currentVariantIndex];
     std::vector<AbstractPipeline::ShaderInfo> shaders;
     for(ShaderModuleInfo& shader : shaderSet)
     {
@@ -580,7 +521,7 @@ void TechniqueConfigurator::_createPipelines(ConfigurationBuildContext& context)
     }
     else
     {
-      context.configuration->graphicPipelineVariants[variant] =
+      context.currentPass->graphicPipelineVariants[variant] =
                     ConstRef(new GraphicPipeline(
                                       *_frameBufferFormat,
                                       shaders,

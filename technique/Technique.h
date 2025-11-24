@@ -33,7 +33,7 @@ namespace mt
     Technique(const Technique&) = delete;
     Technique& operator = (const Technique&) = delete;
   protected:
-    virtual ~Technique() noexcept = default;
+    virtual ~Technique() noexcept;
   public:
 
     inline Device& device() const noexcept;
@@ -65,6 +65,7 @@ namespace mt
 
   private:
     friend class TechniqueConfigurator;
+    friend class TechniqueGonfigurator;
     void updateConfiguration();
 
   private:

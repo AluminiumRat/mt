@@ -27,6 +27,11 @@ Technique::Technique( Device& device,
   _configurator->addObserver(*this);
 }
 
+Technique::~Technique() noexcept
+{
+  //_configurator->removeObserver(*this);
+}
+
 void Technique::updateConfiguration()
 {
   ConstRef<TechniqueConfiguration> newConfiguration =

@@ -1,8 +1,6 @@
 ﻿#pragma once
 
 #include <array>
-#include <memory>
-#include <optional>
 #include <string>
 #include <vector>
 
@@ -11,14 +9,10 @@
 #include <glm/glm.hpp>
 
 #include <technique/DescriptorSetType.h>
+#include <technique/PassConfiguration.h>
 #include <util/RefCounter.h>
 #include <util/Ref.h>
-#include <vkr/pipeline/AbstractPipeline.h>
 #include <vkr/pipeline/DescriptorSetLayout.h>
-#include <vkr/pipeline/GraphicPipeline.h>
-#include <vkr/pipeline/PipelineLayout.h>
-#include <vkr/pipeline/ShaderModule.h>
-#include <vkr/FrameBufferFormat.h>
 
 namespace mt
 {
@@ -28,7 +22,7 @@ namespace mt
   //  Позволяет разделять один набор собранных пайплайнов между несколькими
   //    техниками (например, отрисовывать раздные данные данные одним и
   //    тем же способом, не пересобирая шейдеры для каждого набора данных).
-  struct TechniqueConfiguration : public RefCounter
+  struct TechniqueGonfiguration : public RefCounter
   {
     //  Дефайн в шейдере, который может принимать только ограниченное количество
     //  значений. Позволяет заранее скомпилировать все возможные вариации
@@ -37,19 +31,18 @@ namespace mt
     {
       std::string name;
       std::vector<std::string> valueVariants;
+      //  Веса селекшена для отдельных проходов
       //  weight используется для выбора пайплайна из набора скомпилированных
       //    PipelineIndex = index1 * weight1 + index2 * weight2 + ...
       //    Здесь indexX - это номер выбранного значения из valueVariants для
       //                    дефайна X
-      //          weightX - значение weight для этого дефайна
-      uint32_t weight;
+      //          weightX - значение weight для нужного прохода
+      std::vector<uint32_t> weights;
     };
     std::vector<SelectionDefine> selections;
 
-    AbstractPipeline::Type pipelineType = AbstractPipeline::GRAPHIC_PIPELINE;
     ConstRef<PipelineLayout> pipelineLayout;
-
-    std::vector<ConstRef<GraphicPipeline>> graphicPipelineVariants;
+    std::vector<PassConfiguration> _passes;
 
     struct DescriptorSet
     {
@@ -60,7 +53,7 @@ namespace mt
 
     //  Базовый тип, лежащий в основе типа параметра
     //  Например для float - это FLOAT_TYPE, для uvec3 - INT_TYPE,
-    //    для vec4 - float
+    //    для vec4 - FLOAT_TYPE
     enum BaseScalarType
     {
       BOOL_TYPE,
@@ -109,8 +102,8 @@ namespace mt
       std::vector<UniformVariable> variables;
     };
     std::vector<UniformBuffer> uniformBuffers;
-    size_t volatileUniformBuffersSize = 0;  //  Суммарный размер всех юниформ
-                                            //  буферов в статик сете
+    //  Суммарный размер всех юниформ буферов в статик сете
+    size_t volatileUniformBuffersSize = 0;
 
     //  Описание отдельного источника данных, который используется пайплайном
     //  Здесь описываются текстуры, буферы, сэмплеры и т.д
