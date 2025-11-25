@@ -10,6 +10,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(Vulkan REQUIRED)
 find_package(Shaderc REQUIRED)
+find_package(YamlCPP REQUIRED)
 
 find_path(GLFW_PATH
           include/GLFW/glfw3.h
@@ -32,6 +33,7 @@ include_directories(.
                     ${Shaderc_INCLUDE_DIRS}
                     ${VKMEMALLOC_PATH}
                     ${GLFW_PATH}/include
+                    ${YamlCPP_INCLUDE_DIRS}
                     "./third_party/spirv_reflect")
 
 add_executable (vkTest
@@ -100,4 +102,7 @@ add_executable (vkTest
 target_link_libraries(vkTest
                       ${Vulkan_LIBRARIES}
                       ${Shaderc_LIBRARIES}
-                      ${GLFW_PATH}/lib-vc2022/glfw3.lib)
+                      ${GLFW_PATH}/lib-vc2022/glfw3.lib
+                      ${YamlCPP_LIBRARIES})
+
+target_compile_definitions(vkTest PRIVATE YAML_CPP_STATIC_DEFINE)

@@ -2,3 +2,4 @@
 out
 *.spv
 .vscode
+CMakeSettings.json
