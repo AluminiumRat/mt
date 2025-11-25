@@ -7,6 +7,9 @@ namespace mt
   //  Некоторые свойства форматов VkFormat
   struct ImageFormatFeatures
   {
+    std::string name;
+    VkFormat format;
+
     // Полный набор доступных слоев
     VkImageAspectFlags aspectMask;
 
@@ -30,4 +33,5 @@ namespace mt
   };
 
   const ImageFormatFeatures& getFormatFeatures(VkFormat format);
+  const ImageFormatFeatures& getFormatFeatures(const std::string& formatName);
 }

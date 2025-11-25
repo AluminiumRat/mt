@@ -46,6 +46,7 @@ add_executable (vkTest
                 "technique/UniformVariable.cpp"
                 "third_party/spirv_reflect/spirv_reflect.c"
                 "util/Log.cpp"
+                "util/vkMeta.cpp"
                 "vkr/image/Image.cpp"
                 "vkr/image/ImageAccess.cpp"
                 "vkr/image/ImageAccessMultiset.cpp"
