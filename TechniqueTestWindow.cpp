@@ -65,7 +65,6 @@ TechniqueTestWindow::TechniqueTestWindow(Device& device) :
       {.name = "selector2", .valueVariants = {"0", "1"}}};
   configurator.setSelections(selections);*/
 
-  TechniqueConfigurator& configurator = _technique->configurator();
   loadConfigurator(configurator, "technique.tch");
   configurator.rebuildConfiguration();
 }
