@@ -57,6 +57,8 @@ void PassConfigurator::processShaders(ConfigurationBuildContext& context) const
   context.currentPass->name = _name;
 
   _processSelections(context);
+
+  context.currentVariantIndex = 0;
   if (_selections.empty()) _processShadersOneVariant(context);
   else
   {
