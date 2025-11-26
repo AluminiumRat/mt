@@ -15,8 +15,8 @@ TechniqueTestWindow::TechniqueTestWindow(Device& device) :
   _vertexBuffer(_technique->getOrCreateResource("vertices")),
   _texture1(_technique->getOrCreateResource("colorTexture1")),
   _texture2(_technique->getOrCreateResource("colorTexture2")),
-  _sampler(new Sampler(device)),
-  _samplerResource(_technique->getOrCreateResource("samplerState")),
+  //_sampler(new Sampler(device)),
+  //_samplerResource(_technique->getOrCreateResource("samplerState")),
   _unusedResource(_technique->getOrCreateResource("unused")),
   _color(_technique->getOrCreateUniform("colorData.color")),
   _shift(_technique->getOrCreateUniform("shiftData.shift"))
@@ -33,7 +33,7 @@ TechniqueTestWindow::TechniqueTestWindow(Device& device) :
   //_texture1.setImages(_textures);
   _texture2.setImage(_textures[0]);
 
-  _samplerResource.setSampler(_sampler);
+  //_samplerResource.setSampler(_sampler);
 
   _color.setValue(glm::vec4(1, 1, 1, 1));
   _shift.setValue(0.1f);

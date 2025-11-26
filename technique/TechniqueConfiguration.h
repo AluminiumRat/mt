@@ -13,6 +13,7 @@
 #include <util/RefCounter.h>
 #include <util/Ref.h>
 #include <vkr/pipeline/DescriptorSetLayout.h>
+#include <vkr/Sampler.h>
 
 namespace mt
 {
@@ -123,5 +124,14 @@ namespace mt
                                   //  то здесь будет его размер. Иначе 1;
     };
     std::vector<Resource> resources;
+
+    // Дефолтные сэмплеры. Настраиваются через конфигурацию (файл техники)
+    struct DefaultSampler
+    {
+      std::string resourceName;
+      ConstRef<Sampler> defaultSampler;
+    };
+    using Samplers = std::vector<DefaultSampler>;
+    Samplers defaultSamplers;
   };
 }

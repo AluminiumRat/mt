@@ -20,6 +20,8 @@ namespace mt
                     uint32_t attachmentIndex);
   VkBlendFactor getBlendFactor(YAML::Node settings, const char* name);
   VkBlendOp getBlendOp(YAML::Node settings, const char* name);
+  void loadDefaultSamplers( YAML::Node techniqueNode,
+                            TechniqueConfigurator& target);
 
   void loadConfigurator(TechniqueConfigurator& target, const char* filename)
   {
@@ -60,6 +62,8 @@ namespace mt
         loadPass(iPass->second, *newPass);
         target.addPass(std::move(newPass));
       }
+
+      loadDefaultSamplers(node, target);
     }
     catch(...)
     {
@@ -353,5 +357,82 @@ namespace mt
   {
     std::string valueStr = settings[name].as<std::string>("ADD");
     return blendOpMap[valueStr];
+  }
+
+  void loadDefaultSamplers( YAML::Node techniqueNode,
+                            TechniqueConfigurator& target)
+  {
+    YAML::Node listNode = techniqueNode["defaultSamplers"];
+    if(!listNode.IsMap()) return;
+
+    std::vector<TechniqueConfiguration::DefaultSampler> samplers;
+
+    for(YAML::const_iterator iSampler = listNode.begin();
+        iSampler != listNode.end();
+        iSampler++)
+    {
+      TechniqueConfiguration::DefaultSampler sampler;
+      sampler.resourceName = iSampler->first.as<std::string>("");
+      sampler.defaultSampler = loadSampler(iSampler->second, target.device());
+      samplers.push_back(sampler);
+    }
+
+    target.setDefaultSamplers(samplers);
+  }
+
+  ConstRef<Sampler> loadSampler(YAML::Node samplerNode, Device& device)
+  {
+    std::string valueStr = samplerNode["magFilter"].as<std::string>("NEAREST");
+    VkFilter magFilter = filterMap[valueStr];
+
+    valueStr = samplerNode["minFilter"].as<std::string>("NEAREST");
+    VkFilter minFilter = filterMap[valueStr];
+
+    valueStr = samplerNode["mipmapMode"].as<std::string>("NEAREST");
+    VkSamplerMipmapMode mipmapMode = mipmapModeMap[valueStr];
+
+    valueStr = samplerNode["addressModeU"].as<std::string>("REPEAT");
+    VkSamplerAddressMode addressModeU = addressModeMap[valueStr];
+
+    valueStr = samplerNode["addressModeV"].as<std::string>("REPEAT");
+    VkSamplerAddressMode addressModeV = addressModeMap[valueStr];
+
+    valueStr = samplerNode["addressModeW"].as<std::string>("REPEAT");
+    VkSamplerAddressMode addressModeW = addressModeMap[valueStr];
+
+    float mipLodBias = samplerNode["mipLodBias"].as<float>(0.0f);
+    bool anisotropyEnable = samplerNode["anisotropyEnable"].as<bool>(false);
+    float maxAnisotropy = samplerNode["maxAnisotropy"].as<float>(1.0f);
+    bool compareEnable = samplerNode["compareEnable"].as<bool>(false);
+
+    valueStr = samplerNode["compareOp"].as<std::string>("NEVER");
+    VkCompareOp compareOp = compareOpMap[valueStr];
+
+    float minLod = samplerNode["minLod"].as<float>(0.0f);
+    float maxLod = samplerNode["maxLod"].as<float>(VK_LOD_CLAMP_NONE);
+
+    valueStr =
+          samplerNode["borderColor"].as<std::string>("FLOAT_TRANSPARENT_BLACK");
+    VkBorderColor borderColor = borderColorMap[valueStr];
+
+    bool unnormalizedCoordinates =
+                        samplerNode["unnormalizedCoordinates"].as<bool>(false);
+
+    return ConstRef(new Sampler(device,
+                                magFilter,
+                                minFilter,
+                                mipmapMode,
+                                addressModeU,
+                                addressModeV,
+                                addressModeW,
+                                mipLodBias,
+                                anisotropyEnable,
+                                maxAnisotropy,
+                                compareEnable,
+                                compareOp,
+                                minLod,
+                                maxLod,
+                                borderColor,
+                                unnormalizedCoordinates));
   }
 }

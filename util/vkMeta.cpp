@@ -244,4 +244,48 @@ namespace mt
       {VK_LOGIC_OP_SET, "SET"}
     }
   };
+
+  extern const Bimap<VkFilter> filterMap
+  {
+    "FilterMap",
+    {
+      {VK_FILTER_NEAREST, "NEAREST"},
+      {VK_FILTER_LINEAR, "LINEAR"},
+      {VK_FILTER_CUBIC_EXT, "CUBIC"}
+    }
+  };
+
+  extern const Bimap<VkSamplerMipmapMode> mipmapModeMap
+  {
+    "MipmapModeMap",
+    {
+      {VK_SAMPLER_MIPMAP_MODE_NEAREST, "NEAREST"},
+      {VK_SAMPLER_MIPMAP_MODE_LINEAR, "LINEAR"}
+    }
+  };
+
+  extern const Bimap<VkSamplerAddressMode> addressModeMap
+  {
+    "AddressModeMap",
+    {
+      {VK_SAMPLER_ADDRESS_MODE_REPEAT, "REPEAT"},
+      {VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT, "MIRRORED_REPEAT"},
+      {VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, "CLAMP_TO_EDGE"},
+      {VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, "CLAMP_TO_BORDER"},
+      {VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE, "MIRROR_CLAMP_TO_EDGE"}
+    }
+  };
+
+  extern const Bimap<VkBorderColor> borderColorMap
+  {
+    "BorderColorMap",
+    {
+      {VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK, "FLOAT_TRANSPARENT_BLACK"},
+      {VK_BORDER_COLOR_INT_TRANSPARENT_BLACK, "INT_TRANSPARENT_BLACK"},
+      {VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK, "FLOAT_OPAQUE_BLACK"},
+      {VK_BORDER_COLOR_INT_OPAQUE_BLACK, "INT_OPAQUE_BLACK"},
+      {VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE, "FLOAT_OPAQUE_WHITE"},
+      {VK_BORDER_COLOR_INT_OPAQUE_WHITE, "INT_OPAQUE_WHITE"}
+    }
+  };
 }

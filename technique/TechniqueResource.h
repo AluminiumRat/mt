@@ -92,8 +92,10 @@ namespace mt
     inline void setSampler( TechniqueVolatileContext& context,
                             const ConstRef<Sampler>& sampler) const;
 
+    // Сбросить все подключенные ресурсы
+    inline void clear() noexcept;
+
   protected:
-    inline void _clear() noexcept;
     void _bindToConfiguration(const TechniqueConfiguration* configuration);
 
   protected:
@@ -105,6 +107,8 @@ namespace mt
     ConstRef<DataBuffer> _buffer;
     std::vector<ConstRef<ImageView>> _images;
     ConstRef<Sampler> _sampler;
+
+    bool _defaultValue;
   };
 
   //  Дополнение для внутреннего использования внутри техники
@@ -123,6 +127,9 @@ namespace mt
     void bindToDescriptorSet(DescriptorSet& set) const;
     inline const TechniqueConfiguration::Resource* description() const noexcept;
 
+    inline bool isDefault() const noexcept;
+    inline void setSamplerAsDefault(const Sampler* sampler);
+
   private:
     void _bindSampler(DescriptorSet& set) const;
     void _bindBuffer(DescriptorSet& set) const;
@@ -134,7 +141,7 @@ namespace mt
     return _name;
   }
 
-  inline void TechniqueResource::_clear() noexcept
+  inline void TechniqueResource::clear() noexcept
   {
     _buffer.reset();
     _images.clear();
@@ -154,8 +161,9 @@ namespace mt
 
   inline void TechniqueResource::setBuffer(const DataBuffer* buffer)
   {
+    _defaultValue = false;
     if(buffer == _buffer) return;
-    _clear();
+    clear();
     _buffer = ConstRef(buffer);
   }
 
@@ -195,6 +203,8 @@ namespace mt
   inline void TechniqueResource::setImage(const ImageView* image,
                                           size_t arrayIndex)
   {
+    _defaultValue = false;
+
     if(_images.size() <= arrayIndex) _images.resize(arrayIndex + 1);
 
     if(image == _images[arrayIndex]) return;
@@ -224,36 +234,42 @@ namespace mt
 
   inline void TechniqueResource::setImages(std::span<const ImageView*> images)
   {
+    _defaultValue = false;
+
     if( _images.size() == images.size() &&
         std::equal(_images.begin(), _images.end(), images.begin()))
     {
       return;
     }
-    _clear();
+    clear();
     _images = std::vector<ConstRef<ImageView>>(images.begin(), images.end());
   }
 
   inline void TechniqueResource::setImages(
                                         std::span<const Ref<ImageView>> images)
   {
+    _defaultValue = false;
+
     if( _images.size() == images.size() &&
         std::equal(_images.begin(), _images.end(), images.begin()))
     {
       return;
     }
-    _clear();
+    clear();
     _images = std::vector<ConstRef<ImageView>>(images.begin(), images.end());
   }
 
   inline void TechniqueResource::setImages(
                                     std::span<const ConstRef<ImageView>> images)
   {
+    _defaultValue = false;
+
     if( _images.size() == images.size() &&
         std::equal(_images.begin(), _images.end(), images.begin()))
     {
       return;
     }
-    _clear();
+    clear();
     _images = std::vector(images.begin(), images.end());
   }
 
@@ -279,8 +295,9 @@ namespace mt
 
   inline void TechniqueResource::setSampler(const Sampler* sampler)
   {
+    _defaultValue = false;
     if(sampler == _sampler) return;
-    _clear();
+    clear();
     _sampler = ConstRef(sampler);
   }
 
@@ -328,5 +345,18 @@ namespace mt
                             TechniqueResourceImpl::description() const noexcept
   {
     return _description;
+  }
+
+  inline bool TechniqueResourceImpl::isDefault() const noexcept
+  {
+    return _defaultValue;
+  }
+
+  inline void TechniqueResourceImpl::setSamplerAsDefault(const Sampler* sampler)
+  {
+    _defaultValue = true;
+    if (sampler == _sampler) return;
+    clear();
+    _sampler = ConstRef(sampler);
   }
 }

@@ -46,6 +46,7 @@ void TechniqueConfigurator::rebuildOnlyConfiguration()
   context.device = &_device;
   context.configuration = Ref(new TechniqueConfiguration);
   context.configuration->volatileUniformBuffersSize = 0;
+  context.configuration->defaultSamplers = _defaultSamplers;
 
   _createSelections(context);
   _createPasses(context);

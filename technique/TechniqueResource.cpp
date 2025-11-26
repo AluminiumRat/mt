@@ -14,7 +14,8 @@ TechniqueResource::TechniqueResource(
                                   const TechniqueConfiguration* configuration) :
   _name(name),
   _technique(technique),
-  _revisionCounter(revisionCounter)
+  _revisionCounter(revisionCounter),
+  _defaultValue(true)
 {
   _bindToConfiguration(configuration);
 }

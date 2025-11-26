@@ -51,8 +51,31 @@ void Technique::updateConfiguration()
     }
   }
 
+  //  Чистим ресурсы с дефолтными значениями, на случай, если они не прописаны в
+  //  новой конфигурации
+  for (std::unique_ptr<TechniqueResourceImpl>& resource : _resources)
+  {
+    if(resource->isDefault()) resource->clear();
+  }
+
   try
   {
+    // Добавляем дефолтные сэмплеры
+    if(newConfiguration != nullptr)
+    {
+      for(const TechniqueConfiguration::DefaultSampler& sampler :
+                                            newConfiguration->defaultSamplers)
+      {
+        TechniqueResourceImpl& samplerResource =
+                      static_cast<TechniqueResourceImpl&>(
+                            getOrCreateResource(sampler.resourceName.c_str()));
+        if(samplerResource.isDefault())
+        {
+          samplerResource.setSamplerAsDefault(sampler.defaultSampler.get());
+        }
+      }
+    }
+
     // Биндим дочерние компоненты
     for (std::unique_ptr<SelectionImpl>& selection : _selections)
     {

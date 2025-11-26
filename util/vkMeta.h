@@ -20,4 +20,8 @@ namespace mt
   extern const Bimap<VkBlendOp> blendOpMap;
   extern const Bimap<VkColorComponentFlagBits> colorComponentMap;
   extern const Bimap<VkLogicOp> logicOpMap;
+  extern const Bimap<VkFilter> filterMap;
+  extern const Bimap<VkSamplerMipmapMode> mipmapModeMap;
+  extern const Bimap<VkSamplerAddressMode> addressModeMap;
+  extern const Bimap<VkBorderColor> borderColorMap;
 }

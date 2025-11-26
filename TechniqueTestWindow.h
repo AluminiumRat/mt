@@ -41,8 +41,8 @@ namespace mt
     TechniqueResource& _texture1;
     TechniqueResource& _texture2;
 
-    Ref<Sampler> _sampler;
-    TechniqueResource& _samplerResource;
+    //Ref<Sampler> _sampler;
+    //TechniqueResource& _samplerResource;
 
     TechniqueResource& _unusedResource;
 

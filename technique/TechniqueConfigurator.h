@@ -55,6 +55,9 @@ namespace mt
     };
     using Selections = std::vector<SelectionDefine>;
 
+    using DefaultSampler = TechniqueConfiguration::DefaultSampler;
+    using Samplers = TechniqueConfiguration::Samplers;
+
   public:
     TechniqueConfigurator(Device& device,
                           const char* debugName = "TechniqueConfigurator");
@@ -100,7 +103,10 @@ namespace mt
     inline const Selections& selections() const noexcept;
     inline void setSelections(std::span<const SelectionDefine> newSelections);
 
-    //  Удалить все проходы и все селекшены
+    inline const Samplers& defaultSamplers() const noexcept;
+    inline void setDefaultSamplers(std::span<const DefaultSampler> newSamplers);
+
+    //  Удалить все проходы, селекшены и дефолтные сэмплеры
     inline void clear() noexcept;
 
   private:
@@ -132,6 +138,8 @@ namespace mt
     Passes _passes;
 
     Selections _selections;
+
+    Samplers _defaultSamplers;
 
     using Observers = std::vector<Technique*>;
     Observers _observers;
@@ -208,9 +216,23 @@ namespace mt
     _selections = std::move(newSelectionsVector);
   }
 
+  inline const TechniqueConfigurator::Samplers&
+                        TechniqueConfigurator::defaultSamplers() const noexcept
+  {
+    return _defaultSamplers;
+  }
+
+  inline void TechniqueConfigurator::setDefaultSamplers(
+                                    std::span<const DefaultSampler> newSamplers)
+  {
+    Samplers newSamplersVector(newSamplers.begin(), newSamplers.end());
+    _defaultSamplers = std::move(newSamplersVector);
+  }
+
   inline void TechniqueConfigurator::clear() noexcept
   {
     _passes.clear();
     _selections.clear();
+    _defaultSamplers.clear();
   }
 }

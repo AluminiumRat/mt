@@ -2,6 +2,49 @@ selections:
   selector1: [0, 1, 2]
   selector2: [0, 1]
 
+defaultSamplers:
+  samplerState:
+    # Может быть NEAREST, LINEAR, CUBIC
+    # Дефолт NEAREST
+    magFilter: LINEAR
+    minFilter: LINEAR
+
+    # Может быть NEAREST, LINEAR
+    # Дефолт NEAREST
+    mipmapMode: LINEAR
+
+    # Может быть REPEAT, MIRRORED_REPEAT, CLAMP_TO_EDGE, CLAMP_TO_BORDER,
+    #   MIRROR_CLAMP_TO_EDGE
+    # Дефолт REPEAT
+    addressModeU: REPEAT
+    addressModeV: REPEAT
+    addressModeW: REPEAT
+
+    mipLodBias: 0             # Дефолт 0
+    anisotropyEnable: false   # Дефолт false
+    maxAnisotropy: 1          # Дефолт 1
+    compareEnable: false      # Дефолт false
+
+    # Может быть NEVER, LESS, EQUAL, LESS_OR_EQUAL, GREATER, NOT_EQUAL,
+    #   GREATER_OR_EQUAL, ALWAYS
+    # Дефолт NEVER
+    compareOp: NEVER
+
+    minLod: 0                 # Дефолт 0
+    maxLod: 1000              # Дефолт 1000
+
+    # Может быть FLOAT_TRANSPARENT_BLACK, INT_TRANSPARENT_BLACK,
+    #   FLOAT_OPAQUE_BLACK, INT_OPAQUE_BLACK, FLOAT_OPAQUE_WHITE,
+    #   INT_OPAQUE_WHITE
+    # Дефолт FLOAT_TRANSPARENT_BLACK
+    borderColor: FLOAT_TRANSPARENT_BLACK
+
+    unnormalizedCoordinates: false    # Дефолт false
+
+  otherSampler:
+    magFilter: NEAREST
+    minFilter: NEAREST
+
 passes:
   Pass1 :
     # Может быть GRAPHIC, COMPUTE

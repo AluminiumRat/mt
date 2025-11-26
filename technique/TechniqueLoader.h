@@ -3,9 +3,13 @@
 #include <yaml-cpp/yaml.h>
 
 #include <technique/TechniqueConfigurator.h>
+#include <util/Ref.h>
+#include <vkr/Sampler.h>
 
 namespace mt
 {
+  class Device;
+
   //  Загрузить настройки техники из файла
   void loadConfigurator(TechniqueConfigurator& target, const char* filename);
 
@@ -17,4 +21,7 @@ namespace mt
 
   //  Загрузить один отдельный проход
   void loadPass(YAML::Node passNode, PassConfigurator& target);
+
+  //  Загрузить сэмплер
+  ConstRef<Sampler> loadSampler(YAML::Node samplerNode, Device& device);
 }
