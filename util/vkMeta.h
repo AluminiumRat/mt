@@ -9,7 +9,7 @@ namespace mt
 {
   extern const Bimap<AbstractPipeline::Type> pipelineMap;
   extern const Bimap<VkShaderStageFlagBits> shaderStageMap;
-  extern const Bimap<VkSampleCountFlagBits> sampleCountMap
+  extern const Bimap<VkSampleCountFlagBits> sampleCountMap;
   extern const Bimap<VkPrimitiveTopology> topologyMap;
   extern const Bimap<VkPolygonMode> polygonModeMap;
   extern const Bimap<VkCullModeFlagBits> cullModeMap;

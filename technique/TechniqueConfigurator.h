@@ -53,6 +53,7 @@ namespace mt
       std::string name;
       std::vector<std::string> valueVariants;
     };
+    using Selections = std::vector<SelectionDefine>;
 
   public:
     TechniqueConfigurator(Device& device,
@@ -96,7 +97,7 @@ namespace mt
     inline void setPasses(Passes&& newPasses) noexcept;
     inline void addPass(std::unique_ptr<PassConfigurator> newPass);
 
-    inline const std::vector<SelectionDefine>& selections() const noexcept;
+    inline const Selections& selections() const noexcept;
     inline void setSelections(std::span<const SelectionDefine> newSelections);
 
     //  Удалить все проходы и все селекшены
@@ -130,7 +131,7 @@ namespace mt
 
     Passes _passes;
 
-    std::vector<SelectionDefine> _selections;
+    Selections _selections;
 
     using Observers = std::vector<Technique*>;
     Observers _observers;
@@ -203,8 +204,7 @@ namespace mt
   inline void TechniqueConfigurator::setSelections(
                                 std::span<const SelectionDefine> newSelections)
   {
-    std::vector<SelectionDefine> newSelectionsVector( newSelections.begin(),
-                                                      newSelections.end());
+    Selections newSelectionsVector( newSelections.begin(), newSelections.end());
     _selections = std::move(newSelectionsVector);
   }
 

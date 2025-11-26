@@ -1,4 +1,5 @@
-﻿#include <vkr/queue/CommandProducerGraphic.h>
+﻿#include <technique/TechniqueLoader.h>
+#include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/Device.h>
 #include <TechniqueTestWindow.h>
 
@@ -37,7 +38,9 @@ TechniqueTestWindow::TechniqueTestWindow(Device& device) :
   _color.setValue(glm::vec4(1, 1, 1, 1));
   _shift.setValue(0.1f);
 
-  PassConfigurator::ShaderInfo shaders[2] =
+  TechniqueConfigurator& configurator = _technique->configurator();
+
+  /*PassConfigurator::ShaderInfo shaders[2] =
   { {.stage = VK_SHADER_STAGE_VERTEX_BIT, .filename = "shader.vert"},
     {.stage = VK_SHADER_STAGE_FRAGMENT_BIT, .filename = "shader.frag"}};
 
@@ -54,15 +57,16 @@ TechniqueTestWindow::TechniqueTestWindow(Device& device) :
   pass2->setSelections(passSelections);
   pass2->setShaders(shaders);
 
-  TechniqueConfigurator& configurator = _technique->configurator();
   configurator.addPass(std::move(pass1));
   configurator.addPass(std::move(pass2));
 
   TechniqueConfigurator::SelectionDefine selections[2] =
     { {.name = "selector1", .valueVariants = {"0", "1", "2"}},
       {.name = "selector2", .valueVariants = {"0", "1"}}};
-  configurator.setSelections(selections);
+  configurator.setSelections(selections);*/
 
+  TechniqueConfigurator& configurator = _technique->configurator();
+  loadConfigurator(configurator, "technique.tch");
   configurator.rebuildConfiguration();
 }
 

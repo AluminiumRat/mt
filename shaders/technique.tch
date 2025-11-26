@@ -1,0 +1,156 @@
+selections:
+  selector1: [0, 1, 2]
+  selector2: [0, 1]
+
+passes:
+  Pass1 :
+    # Может быть GRAPHIC, COMPUTE
+    # Дефолт GRAPHIC
+    pipeline: GRAPHIC
+
+    selections: [selector1, selector2]
+
+    # VERTEX GEOMETRY FRAGMENT COMPUTE TESSELLATION_CONTROL
+    # TESSELLATION_EVALUATION
+    # RAYGEN ANY_HIT CLOSEST_HIT MISS INTERSECTION CALLABLE
+    # TASK MESH
+    shaders:
+      VERTEX : shader.vert
+      FRAGMENT : shader.frag
+
+    frameBuffer:
+      # Может быть 1 значение или массив до 8 штук
+      #color: [VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_SRGB]
+      color: VK_FORMAT_B8G8R8A8_SRGB
+
+      # Опционально. По дефолту ничего (нет деф буфера)
+      #depthStencil: VK_FORMAT_D32_SFLOAT_S8_UINT
+
+      # Опционально. По дефолту 1
+      # Может быть 1,2,4,8,16,32 или 64
+      samples: 1
+
+    # Опциональный раздел
+    # Нужен только для GRAPHIC пайплайна, но можно пропустить и для
+    # него, тогда будут использованы дефолтные значения
+    graphicSettings:
+      # Может быть POINT_LIST, LINE_LIST, LINE_STRIP, TRIANGLE_LIST
+      #   TRIANGLE_STRIP, TRIANGLE_FAN, LINE_LIST_WITH_ADJACENCY,
+      #   LINE_STRIP_WITH_ADJACENCY, TRIANGLE_LIST_WITH_ADJACENCY,
+      #   TRIANGLE_STRIP_WITH_ADJACENCY, PATCH_LIST
+      # По дефолту TRIANGLE_LIST
+      topology: TRIANGLE_LIST
+
+      # Может быть FILL, LINE, POINT
+      # Дефолт FILL
+      polygonMode: FILL
+
+      lineWidth: 1                      # Дефолт 1
+
+      # Может быть NONE, FRONT, BACK, FRONT_AND_BACK
+      # Дефолт NONE
+      cullMode : NONE
+
+      # Может быть COUNTER_CLOCKWISE, CLOCKWISE
+      # Дефолт COUNTER_CLOCKWISE
+      frontFace : COUNTER_CLOCKWISE
+
+      rasterizationDiscardEnable: false # Дефолт false
+
+      depthTest: false                  # Дефолт false
+      depthWrite: false                 # Дефолт false
+
+      # Может быть NEVER, LESS, EQUAL, LESS_OR_EQUAL, GREATER, NOT_EQUAL,
+      #   GREATER_OR_EQUAL, ALWAYS
+      # Дефолт NEVER
+      depthCompareOp : NEVER
+
+      depthClampEnable: false           # Дефолт false
+      depthBias: false                  # Дефолт false
+      depthBiasConstant: 0              # Дефолт 0
+      depthBiasSlope: 0                 # Дефолт 0
+      depthBiasClamp: false             # Дефолт false
+      depthBoundsTest: false            # Дефолт false
+      minDepthBounds: 0                 # Дефолт 0
+      maxDepthBounds: 0                 # Дефолт 0
+
+      # Опционально. Если секции нет, то используются дефолтные значения
+      frontStencilOp:
+        # failOp, passOp и depthFailOp настраиваются одинаково
+        # Могут быть KEEP, ZERO, REPLACE, INCREMENT_AND_CLAMP,
+        #   DECREMENT_AND_CLAMP INVERT, INCREMENT_AND_WRAP, DECREMENT_AND_WRAP
+        # Дефолт KEEP
+        failOp: KEEP
+        passOp: KEEP
+        depthFailOp: KEEP
+
+        # Может быть NEVER, LESS, EQUAL, LESS_OR_EQUAL, GREATER, NOT_EQUAL,
+        #   GREATER_OR_EQUAL, ALWAYS
+        # Дефолт NEVER
+        compareOp: NEVER
+
+        compareMask: 0        # Дефолт 0
+        writeMask: 0          # Дефолт 0
+        reference: 0          # Дефолт 0
+
+      # Опционально. Настраивается так же как и frontStencilOp
+      backStencilOp:
+        failOp: KEEP
+        passOp: KEEP
+        depthFailOp: KEEP
+        compareOp: NEVER
+        compareMask: 0
+        writeMask: 0
+        reference: 0
+
+      # Настройки смешивания для отдельных таргетов цвета
+      # Можно сделать в виде списка (каждому таргету по отдельной настройке)
+      # blending:
+      #   - blendEnable: true
+      #     srcColorBlendFactor: ONE
+      #   - blendEnable: false
+      # А можно сделать одной записью (одни настройки на все таргеты)
+      blending:
+        blendEnable: false        # Дефолт false
+
+        # Может быть ZERO, ONE, SRC_COLOR, ONE_MINUS_SRC_COLOR, DST_COLOR,
+        #   ONE_MINUS_DST_COLOR, SRC_ALPHA, DST_ALPHA, ONE_MINUS_DST_ALPHA,
+        #   CONSTANT_COLOR, ONE_MINUS_CONSTANT_COLOR, CONSTANT_ALPHA,
+        #   ONE_MINUS_CONSTANT_ALPHA, SRC_ALPHA_SATURATE, SRC1_COLOR,
+        #   ONE_MINUS_SRC1_COLOR, SRC1_ALPHA, ONE_MINUS_SRC1_ALPHA
+        # Дефолт ZERO
+        srcColorBlendFactor: ZERO
+
+        # Настраивается так же как и srcColorBlendFactor
+        dstColorBlendFactor: ZERO
+
+        # Основные значения: ADD, SUBTRACT, REVERSE_SUBTRACT, MIN, MAX
+        # Доп. значения смотреть в VkBlendOp или blendOpMap(vkMeta.cpp)
+        # Дефолт ADD
+        colorBlendOp: ADD
+
+        # Альфа настраивается так же как и цвет
+        srcAlphaBlendFactor: ZERO
+        dstAlphaBlendFactor: ZERO
+        alphaBlendOp: ADD
+
+        # Дефолт - включены все каналы
+        colorWriteMask: [R,G,B,A]
+
+      # Если отсутствует, то логические операции отключены
+      # Может быть CLEAR, AND, AND_REVERSE, COPY, AND_INVERTED, NO_OP, XOR,
+      #   OR, NOR, EQUIVALENT, INVERT, OR_REVERSE, COPY_INVERTED, OR_INVERTED,
+      #   NAND, SET
+      # По дефолту логические операции отключены
+      # blendLogicOp : CLEAR
+
+      # По дефолту все нули
+      blendConstants: [0, 0, 0, 0]
+
+  Pass2 :
+    shaders:
+      VERTEX : shader.vert
+      FRAGMENT : shader.frag
+
+    frameBuffer:
+      color: VK_FORMAT_B8G8R8A8_SRGB

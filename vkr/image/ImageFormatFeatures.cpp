@@ -159,7 +159,7 @@ const ImageFormatFeatures& mt::getFormatFeatures(VkFormat format)
   return iFeature->second;
 }
 
-const ImageFormatFeatures& getFormatFeatures(const std::string& formatName)
+const ImageFormatFeatures& mt::getFormatFeatures(const std::string& formatName)
 {
   for(FormatsMap::const_iterator iFeature = formatsMap.begin();
       iFeature != formatsMap.end();

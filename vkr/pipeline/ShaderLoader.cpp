@@ -81,13 +81,11 @@ std::vector<uint32_t> DefaultShaderLoader::loadSPIRV(const char* filename)
 std::string DefaultShaderLoader::loadText(const char* filename)
 {
   std::ifstream file = openFile(filename);
+  if(!file) throw std::runtime_error(std::string("Unable to open ") + filename);
 
   // Определяем размер данных
   size_t dataSize = (size_t)file.tellg();
-  if(dataSize == 0)
-  {
-    throw std::runtime_error(std::string("File ") + filename + " is empty");
-  }
+  if(dataSize == 0) throw std::runtime_error(std::string("File ") + filename + " is empty");
 
   // Считываем данные
   std::string result;

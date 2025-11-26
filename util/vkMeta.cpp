@@ -5,16 +5,16 @@
 
 namespace mt
 {
-  const Bimap<AbstractPipeline::Type> pipelineMap
+  extern const Bimap<AbstractPipeline::Type> pipelineMap
   {
     "PipelineTypeMap",
     {
-      {AbstractPipeline::GRAPHIC_PIPELINE, "GRAPHIC_PIPELINE"},
-      {AbstractPipeline::COMPUTE_PIPELINE, "COMPUTE_PIPELINE"}
+      {AbstractPipeline::GRAPHIC_PIPELINE, "GRAPHIC"},
+      {AbstractPipeline::COMPUTE_PIPELINE, "COMPUTE"}
     }
   };
 
-  const Bimap<VkShaderStageFlagBits> shaderStageMap
+  extern const Bimap<VkShaderStageFlagBits> shaderStageMap
   {
     "ShaderStageMap",
     {
@@ -35,21 +35,21 @@ namespace mt
     }
   };
 
-  const Bimap<VkSampleCountFlagBits> sampleCountMap
+  extern const Bimap<VkSampleCountFlagBits> sampleCountMap
   {
     "SampleCountMap",
     {
-      {VK_SAMPLE_COUNT_1_BIT, "SAMPLE_COUNT_1"},
-      {VK_SAMPLE_COUNT_2_BIT, "SAMPLE_COUNT_2"},
-      {VK_SAMPLE_COUNT_4_BIT, "SAMPLE_COUNT_4"},
-      {VK_SAMPLE_COUNT_8_BIT, "SAMPLE_COUNT_8"},
-      {VK_SAMPLE_COUNT_16_BIT, "SAMPLE_COUNT_16"},
-      {VK_SAMPLE_COUNT_32_BIT, "SAMPLE_COUNT_32"},
-      {VK_SAMPLE_COUNT_64_BIT, "SAMPLE_COUNT_64"}
+      {VK_SAMPLE_COUNT_1_BIT, "1"},
+      {VK_SAMPLE_COUNT_2_BIT, "2"},
+      {VK_SAMPLE_COUNT_4_BIT, "4"},
+      {VK_SAMPLE_COUNT_8_BIT, "8"},
+      {VK_SAMPLE_COUNT_16_BIT, "16"},
+      {VK_SAMPLE_COUNT_32_BIT, "32"},
+      {VK_SAMPLE_COUNT_64_BIT, "64"}
     }
   };
 
-  const Bimap<VkPrimitiveTopology> topologyMap
+  extern const Bimap<VkPrimitiveTopology> topologyMap
   {
     "TopologyMap",
     {
@@ -67,7 +67,7 @@ namespace mt
     }
   };
 
-  const Bimap<VkPolygonMode> polygonModeMap
+  extern const Bimap<VkPolygonMode> polygonModeMap
   {
     "PolygonModeMap",
     {
@@ -77,7 +77,7 @@ namespace mt
     }
   };
 
-  const Bimap<VkCullModeFlagBits> cullModeMap
+  extern const Bimap<VkCullModeFlagBits> cullModeMap
   {
     "CullModeMap",
     {
@@ -88,7 +88,7 @@ namespace mt
     }
   };
 
-  const Bimap<VkFrontFace> fronFaceMap
+  extern const Bimap<VkFrontFace> fronFaceMap
   {
     "FronFaceMap",
     {
@@ -97,7 +97,7 @@ namespace mt
     }
   };
 
-  const Bimap<VkCompareOp> compareOpMap
+  extern const Bimap<VkCompareOp> compareOpMap
   {
     "CompareOpMap",
     {
@@ -112,7 +112,7 @@ namespace mt
     }
   };
 
-  const Bimap<VkStencilOp> stencilOpMap
+  extern const Bimap<VkStencilOp> stencilOpMap
   {
     "StencilOpMap",
     {
@@ -127,7 +127,7 @@ namespace mt
     }
   };
 
-  const Bimap<VkBlendFactor> blendFactorMap
+  extern const Bimap<VkBlendFactor> blendFactorMap
   {
     "BlendFactorMap",
     {
@@ -153,7 +153,7 @@ namespace mt
     }
   };
 
-  const Bimap<VkBlendOp> blendOpMap
+  extern const Bimap<VkBlendOp> blendOpMap
   {
     "BlendOpMap",
     {
@@ -162,56 +162,56 @@ namespace mt
       {VK_BLEND_OP_REVERSE_SUBTRACT, "REVERSE_SUBTRACT"},
       {VK_BLEND_OP_MIN, "MIN"},
       {VK_BLEND_OP_MAX, "MAX"},
-      {VK_BLEND_OP_ZERO_EXT, "ZERO"},
-      {VK_BLEND_OP_SRC_EXT, "SRC"},
-      {VK_BLEND_OP_DST_EXT, "DST"},
-      {VK_BLEND_OP_SRC_OVER_EXT, "SRC_OVER"},
-      {VK_BLEND_OP_DST_OVER_EXT, "DST_OVER"},
-      {VK_BLEND_OP_SRC_IN_EXT, "SRC_IN"},
-      {VK_BLEND_OP_DST_IN_EXT, "DST_IN"},
-      {VK_BLEND_OP_SRC_OUT_EXT, "SRC_OUT"},
-      {VK_BLEND_OP_DST_OUT_EXT, "DST_OUT"},
-      {VK_BLEND_OP_SRC_ATOP_EXT, "SRC_ATOP"},
-      {VK_BLEND_OP_DST_ATOP_EXT, "DST_ATOP"},
-      {VK_BLEND_OP_XOR_EXT, "XOR"},
-      {VK_BLEND_OP_MULTIPLY_EXT, "MULTIPLY"},
-      {VK_BLEND_OP_SCREEN_EXT, "SCREEN"},
-      {VK_BLEND_OP_OVERLAY_EXT, "OVERLAY"},
-      {VK_BLEND_OP_DARKEN_EXT, "DARKEN"},
-      {VK_BLEND_OP_LIGHTEN_EXT, "LIGHTEN"},
-      {VK_BLEND_OP_COLORDODGE_EXT, "COLORDODGE"},
-      {VK_BLEND_OP_COLORBURN_EXT, "COLORBURN"},
-      {VK_BLEND_OP_HARDLIGHT_EXT, "HARDLIGHT"},
-      {VK_BLEND_OP_SOFTLIGHT_EXT, "SOFTLIGHT"},
-      {VK_BLEND_OP_DIFFERENCE_EXT, "DIFFERENCE"},
-      {VK_BLEND_OP_EXCLUSION_EXT, "EXCLUSION"},
-      {VK_BLEND_OP_INVERT_EXT, "INVERT"},
-      {VK_BLEND_OP_INVERT_RGB_EXT, "INVERT_RGB"},
-      {VK_BLEND_OP_LINEARDODGE_EXT, "LINEARDODGE"},
-      {VK_BLEND_OP_LINEARBURN_EXT, "LINEARBURN"},
-      {VK_BLEND_OP_VIVIDLIGHT_EXT, "VIVIDLIGHT"},
-      {VK_BLEND_OP_LINEARLIGHT_EXT, "LINEARLIGHT"},
-      {VK_BLEND_OP_PINLIGHT_EXT, "PINLIGHT"},
-      {VK_BLEND_OP_HARDMIX_EXT, "HARDMIX"},
-      {VK_BLEND_OP_HSL_HUE_EXT, "HSL_HUE"},
-      {VK_BLEND_OP_HSL_SATURATION_EXT, "HSL_SATURATION"},
-      {VK_BLEND_OP_HSL_COLOR_EXT, "HSL_COLOR"},
-      {VK_BLEND_OP_HSL_LUMINOSITY_EXT, "HSL_LUMINOSITY"},
-      {VK_BLEND_OP_PLUS_EXT, "PLUS"},
-      {VK_BLEND_OP_PLUS_CLAMPED_EXT, "PLUS_CLAMPED"},
-      {VK_BLEND_OP_PLUS_CLAMPED_ALPHA_EXT, "PLUS_CLAMPED_ALPHA"},
-      {VK_BLEND_OP_PLUS_DARKER_EXT, "PLUS_DARKER"},
-      {VK_BLEND_OP_MINUS_EXT, "MINUS"},
-      {VK_BLEND_OP_MINUS_CLAMPED_EXT, "MINUS_CLAMPED"},
-      {VK_BLEND_OP_CONTRAST_EXT, "CONTRAST"},
-      {VK_BLEND_OP_INVERT_OVG_EXT, "INVERT_OVG"},
-      {VK_BLEND_OP_RED_EXT, "RED"},
-      {VK_BLEND_OP_GREEN_EXT, "GREEN"},
-      {VK_BLEND_OP_BLUE_EXT, "BLUE"}
+      {VK_BLEND_OP_ZERO_EXT, "VK_BLEND_OP_ZERO_EXT"},
+      {VK_BLEND_OP_SRC_EXT, "VK_BLEND_OP_SRC_EXT"},
+      {VK_BLEND_OP_DST_EXT, "VK_BLEND_OP_DST_EXT"},
+      {VK_BLEND_OP_SRC_OVER_EXT, "VK_BLEND_OP_SRC_OVER_EXT"},
+      {VK_BLEND_OP_DST_OVER_EXT, "VK_BLEND_OP_DST_OVER_EXT"},
+      {VK_BLEND_OP_SRC_IN_EXT, "VK_BLEND_OP_SRC_IN_EXT"},
+      {VK_BLEND_OP_DST_IN_EXT, "VK_BLEND_OP_DST_IN_EXT"},
+      {VK_BLEND_OP_SRC_OUT_EXT, "VK_BLEND_OP_SRC_OUT_EXT"},
+      {VK_BLEND_OP_DST_OUT_EXT, "VK_BLEND_OP_DST_OUT_EXT"},
+      {VK_BLEND_OP_SRC_ATOP_EXT, "VK_BLEND_OP_SRC_ATOP_EXT"},
+      {VK_BLEND_OP_DST_ATOP_EXT, "VK_BLEND_OP_DST_ATOP_EXT"},
+      {VK_BLEND_OP_XOR_EXT, "VK_BLEND_OP_XOR_EXT"},
+      {VK_BLEND_OP_MULTIPLY_EXT, "VK_BLEND_OP_MULTIPLY_EXT"},
+      {VK_BLEND_OP_SCREEN_EXT, "VK_BLEND_OP_SCREEN_EXT"},
+      {VK_BLEND_OP_OVERLAY_EXT, "VK_BLEND_OP_OVERLAY_EXT"},
+      {VK_BLEND_OP_DARKEN_EXT, "VK_BLEND_OP_DARKEN_EXT"},
+      {VK_BLEND_OP_LIGHTEN_EXT, "VK_BLEND_OP_LIGHTEN_EXT"},
+      {VK_BLEND_OP_COLORDODGE_EXT, "VK_BLEND_OP_COLORDODGE_EXT"},
+      {VK_BLEND_OP_COLORBURN_EXT, "VK_BLEND_OP_COLORBURN_EXT"},
+      {VK_BLEND_OP_HARDLIGHT_EXT, "VK_BLEND_OP_HARDLIGHT_EXT"},
+      {VK_BLEND_OP_SOFTLIGHT_EXT, "VK_BLEND_OP_SOFTLIGHT_EXT"},
+      {VK_BLEND_OP_DIFFERENCE_EXT, "VK_BLEND_OP_DIFFERENCE_EXT"},
+      {VK_BLEND_OP_EXCLUSION_EXT, "VK_BLEND_OP_EXCLUSION_EXT"},
+      {VK_BLEND_OP_INVERT_EXT, "VK_BLEND_OP_INVERT_EXT"},
+      {VK_BLEND_OP_INVERT_RGB_EXT, "VK_BLEND_OP_INVERT_RGB_EXT"},
+      {VK_BLEND_OP_LINEARDODGE_EXT, "VK_BLEND_OP_LINEARDODGE_EXT"},
+      {VK_BLEND_OP_LINEARBURN_EXT, "VK_BLEND_OP_LINEARBURN_EXT"},
+      {VK_BLEND_OP_VIVIDLIGHT_EXT, "VK_BLEND_OP_VIVIDLIGHT_EXT"},
+      {VK_BLEND_OP_LINEARLIGHT_EXT, "VK_BLEND_OP_LINEARLIGHT_EXT"},
+      {VK_BLEND_OP_PINLIGHT_EXT, "VK_BLEND_OP_PINLIGHT_EXT"},
+      {VK_BLEND_OP_HARDMIX_EXT, "VK_BLEND_OP_HARDMIX_EXT"},
+      {VK_BLEND_OP_HSL_HUE_EXT, "VK_BLEND_OP_HSL_HUE_EXT"},
+      {VK_BLEND_OP_HSL_SATURATION_EXT, "VK_BLEND_OP_HSL_SATURATION_EXT"},
+      {VK_BLEND_OP_HSL_COLOR_EXT, "VK_BLEND_OP_HSL_COLOR_EXT"},
+      {VK_BLEND_OP_HSL_LUMINOSITY_EXT, "VK_BLEND_OP_HSL_LUMINOSITY_EXT"},
+      {VK_BLEND_OP_PLUS_EXT, "VK_BLEND_OP_PLUS_EXT"},
+      {VK_BLEND_OP_PLUS_CLAMPED_EXT, "VK_BLEND_OP_PLUS_CLAMPED_EXT"},
+      {VK_BLEND_OP_PLUS_CLAMPED_ALPHA_EXT, "VK_BLEND_OP_PLUS_CLAMPED_ALPHA_EXT"},
+      {VK_BLEND_OP_PLUS_DARKER_EXT, "VK_BLEND_OP_PLUS_DARKER_EXT"},
+      {VK_BLEND_OP_MINUS_EXT, "VK_BLEND_OP_MINUS_EXT"},
+      {VK_BLEND_OP_MINUS_CLAMPED_EXT, "VK_BLEND_OP_MINUS_CLAMPED_EXT"},
+      {VK_BLEND_OP_CONTRAST_EXT, "VK_BLEND_OP_CONTRAST_EXT"},
+      {VK_BLEND_OP_INVERT_OVG_EXT, "VK_BLEND_OP_INVERT_OVG_EXT"},
+      {VK_BLEND_OP_RED_EXT, "VK_BLEND_OP_RED_EXT"},
+      {VK_BLEND_OP_GREEN_EXT, "VK_BLEND_OP_GREEN_EXT"},
+      {VK_BLEND_OP_BLUE_EXT, "VK_BLEND_OP_BLUE_EXT"}
     }
   };
 
-  const Bimap<VkColorComponentFlagBits> colorComponentMap
+  extern const Bimap<VkColorComponentFlagBits> colorComponentMap
   {
     "ColorComponentMap",
     {
@@ -222,7 +222,7 @@ namespace mt
     }
   };
 
-  const Bimap<VkLogicOp> logicOpMap
+  extern const Bimap<VkLogicOp> logicOpMap
   {
     "LogicOpMap",
     {

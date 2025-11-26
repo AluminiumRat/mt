@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
 
+#include <technique/TechniqueConfiguration.h>
 #include <util/Assert.h>
 #include <vkr/pipeline/AbstractPipeline.h>
 #include <vkr/FrameBufferFormat.h>
@@ -31,6 +32,7 @@ namespace mt
       VkShaderStageFlagBits stage;
       std::string filename;
     };
+    using Shaders = std::vector<ShaderInfo>;
 
   public:
     PassConfigurator(const char* name = "Pass");
@@ -43,7 +45,7 @@ namespace mt
     inline AbstractPipeline::Type pipelineType() const noexcept;
     inline void setPipelineType(AbstractPipeline::Type newValue) noexcept;
 
-    inline const std::vector<ShaderInfo>& shaders() const noexcept;
+    inline const Shaders& shaders() const noexcept;
     inline void setShaders(std::span<const ShaderInfo> newShaders);
 
     //  Названия селекшенов, которые используются для этого прохода
@@ -61,20 +63,11 @@ namespace mt
     inline VkPrimitiveTopology topology() const noexcept;
     inline void setTopology(VkPrimitiveTopology newValue) noexcept;
 
-    //--------------------------
-    inline float lineWidth() const noexcept;
-    inline void setLineWidth(float newValue) noexcept;
-
-    //--------------------------
-    //  Depth конфигурация
-    inline bool depthClampEnable() const noexcept;
-    inline void setDepthClampEnable(bool newValue) noexcept;
-
-    inline bool rasterizationDiscardEnable() const noexcept;
-    inline void setRasterizationDiscardEnable(bool newValue) noexcept;
-
     inline VkPolygonMode polygonMode() const noexcept;
     inline void setPolygonMode(VkPolygonMode newValue) noexcept;
+
+    inline float lineWidth() const noexcept;
+    inline void setLineWidth(float newValue) noexcept;
 
     inline VkCullModeFlags cullMode() const noexcept;
     inline void setCullMode(VkCullModeFlags newValue) noexcept;
@@ -82,18 +75,11 @@ namespace mt
     inline VkFrontFace frontFace() const noexcept;
     inline void setFrontFace(VkFrontFace newValue) noexcept;
 
-    inline bool depthBiasEnable() const noexcept;
-    inline void setDepthBiasEnable(bool newValue) noexcept;
+    inline bool rasterizationDiscardEnable() const noexcept;
+    inline void setRasterizationDiscardEnable(bool newValue) noexcept;
 
-    inline float depthBiasConstantFactor() const noexcept;
-    inline void setDepthBiasConstantFactor(float newValue) noexcept;
-
-    inline float depthBiasClamp() const noexcept;
-    inline void setDepthBiasClamp(float newValue) noexcept;
-
-    inline float depthBiasSlopeFactor() const noexcept;
-    inline void setDepthBiasSlopeFactor(float newValue) noexcept;
-
+    //--------------------------
+    //  Depth конфигурация
     inline bool depthTestEnable() const noexcept;
     inline void setDepthTestEnable(bool newValue) noexcept;
 
@@ -102,6 +88,21 @@ namespace mt
 
     inline VkCompareOp depthCompareOp() const noexcept;
     inline void setDepthCompareOp(VkCompareOp newValue) noexcept;
+
+    inline bool depthClampEnable() const noexcept;
+    inline void setDepthClampEnable(bool newValue) noexcept;
+
+    inline bool depthBiasEnable() const noexcept;
+    inline void setDepthBiasEnable(bool newValue) noexcept;
+
+    inline float depthBiasConstantFactor() const noexcept;
+    inline void setDepthBiasConstantFactor(float newValue) noexcept;
+
+    inline float depthBiasSlopeFactor() const noexcept;
+    inline void setDepthBiasSlopeFactor(float newValue) noexcept;
+
+    inline float depthBiasClamp() const noexcept;
+    inline void setDepthBiasClamp(float newValue) noexcept;
 
     inline bool depthBoundsTestEnable() const noexcept;
     inline void setDepthBoundsTestEnable(bool newValue) noexcept;
@@ -246,7 +247,7 @@ namespace mt
     _pipelineType = newValue;
   }
 
-  inline const std::vector<PassConfigurator::ShaderInfo>&
+  inline const PassConfigurator::Shaders&
                                       PassConfigurator::shaders() const noexcept
   {
     return _shaders;
@@ -255,8 +256,7 @@ namespace mt
   inline void PassConfigurator::setShaders(
                                         std::span<const ShaderInfo> newShaders)
   {
-    std::vector<ShaderInfo> newShadersTable(newShaders.begin(),
-                                            newShaders.end());
+    Shaders newShadersTable(newShaders.begin(), newShaders.end());
     _shaders = std::move(newShadersTable);
   }
 
