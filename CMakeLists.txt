@@ -37,3 +37,4 @@ add_subdirectory(vkr)
 
 add_subdirectory(examples/1_0_dumpHardware)
 add_subdirectory(examples/1_1_raw_vkr)
+add_subdirectory(examples/2_0_technique_manual)

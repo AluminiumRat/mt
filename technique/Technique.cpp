@@ -136,7 +136,7 @@ bool Technique::bindGraphic(
 {
   if(_configuration == nullptr)
   {
-    Log::warning() << _debugName << ": configuration is invalid";
+    Log::warning() << _debugName << ": configuration is invalid or not builded";
     return false;
   }
 
