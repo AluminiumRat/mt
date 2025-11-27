@@ -1,6 +1,8 @@
+# Описание всех селекшенов, которые используются во всех проходах техники
+# Набор пао вида
+# имя : [значение1, значение2, ...]
 selections:
-  selector1: [0, 1, 2]
-  selector2: [0, 1]
+  colorSelector: [0, 1]
 
 defaultSamplers:
   samplerState:
@@ -41,25 +43,29 @@ defaultSamplers:
 
     unnormalizedCoordinates: false    # Дефолт false
 
+  # Просто пример короткой конфигурации сэмплера
   otherSampler:
-    magFilter: NEAREST
-    minFilter: NEAREST
+    magFilter: LINEAR
+    minFilter: LINEAR
+    mipmapMode: LINEAR
 
 passes:
-  Pass1 :
+  RenderPass :
     # Может быть GRAPHIC, COMPUTE
     # Дефолт GRAPHIC
     pipeline: GRAPHIC
 
-    selections: [selector1, selector2]
+    # Здесь должен быть список селекшенов, которые используются именно в
+    #   этом проходе. Только имена.
+    selections: [colorSelector]
 
     # VERTEX GEOMETRY FRAGMENT COMPUTE TESSELLATION_CONTROL
     # TESSELLATION_EVALUATION
     # RAYGEN ANY_HIT CLOSEST_HIT MISS INTERSECTION CALLABLE
     # TASK MESH
     shaders:
-      VERTEX : shader.vert
-      FRAGMENT : shader.frag
+      VERTEX : examples/technique/shader.vert
+      FRAGMENT : examples/technique/shader.frag
 
     frameBuffer:
       # Может быть 1 значение или массив до 8 штук
@@ -190,10 +196,11 @@ passes:
       # По дефолту все нули
       blendConstants: [0, 0, 0, 0]
 
-  Pass2 :
+  # Просто пример короткого описания прохода
+  otherPass :
     shaders:
-      VERTEX : shader.vert
-      FRAGMENT : shader.frag
+      VERTEX : examples/technique/shader.vert
+      FRAGMENT : examples/technique/shader.frag
 
     frameBuffer:
       color: VK_FORMAT_B8G8R8A8_SRGB

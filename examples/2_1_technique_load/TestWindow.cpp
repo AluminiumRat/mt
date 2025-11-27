@@ -6,97 +6,52 @@
 using namespace mt;
 
 TestWindow::TestWindow(Device& device) :
-  GLFWRenderWindow(device, "Technique test"),
+  GLFWRenderWindow(device, "Test window"),
   _technique(new Technique(device, "Test technique")),
-  _pass1(_technique->getOrCreatePass("Pass1")),
-  _pass2(_technique->getOrCreatePass("Pass2")),
-  _selector1(_technique->getOrCreateSelection("selector1")),
-  _selector2(_technique->getOrCreateSelection("selector2")),
+  _pass(_technique->getOrCreatePass("RenderPass")),
+  _colorSelector(_technique->getOrCreateSelection("colorSelector")),
   _vertexBuffer(_technique->getOrCreateResource("vertices")),
-  _texture1(_technique->getOrCreateResource("colorTexture1")),
-  _texture2(_technique->getOrCreateResource("colorTexture2")),
-  //_sampler(new Sampler(device)),
-  //_samplerResource(_technique->getOrCreateResource("samplerState")),
-  _unusedResource(_technique->getOrCreateResource("unused")),
-  _color(_technique->getOrCreateUniform("colorData.color")),
-  _shift(_technique->getOrCreateUniform("shiftData.shift"))
+  _texture(_technique->getOrCreateResource("colorTexture")),
+  _color(_technique->getOrCreateUniform("colorData.color"))
 {
-  _selector1.setValue("1");
-  _selector2.setValue("1");
+  _makeConfiguration();
+  _createVertexBuffer();
+  _createTexture();
+}
 
-  _createVertexBuffers(device);
-  _vertexBuffer.setBuffer(_vertexBuffers[0]);
-
-  _unusedResource.setBuffer(_vertexBuffers[1]);
-
-  _createTextures(device);
-  //_texture1.setImages(_textures);
-  _texture2.setImage(_textures[0]);
-
-  //_samplerResource.setSampler(_sampler);
-
-  _color.setValue(glm::vec4(1, 1, 1, 1));
-  _shift.setValue(0.1f);
-
+void TestWindow::_makeConfiguration()
+{
   TechniqueConfigurator& configurator = _technique->configurator();
-
-  /*PassConfigurator::ShaderInfo shaders[2] =
-  { {.stage = VK_SHADER_STAGE_VERTEX_BIT, .filename = "shader.vert"},
-    {.stage = VK_SHADER_STAGE_FRAGMENT_BIT, .filename = "shader.frag"}};
-
-  VkFormat colorAttachments[1] = { VK_FORMAT_B8G8R8A8_SRGB };
-  FrameBufferFormat fbFormat(colorAttachments, VK_FORMAT_UNDEFINED, VK_SAMPLE_COUNT_1_BIT);
-
-  std::unique_ptr<PassConfigurator> pass1(new PassConfigurator("Pass1"));
-  pass1->setFrameBufferFormat(&fbFormat);
-  pass1->setShaders(shaders);
-
-  std::unique_ptr<PassConfigurator> pass2(new PassConfigurator("Pass2"));
-  pass2->setFrameBufferFormat(&fbFormat);
-  std::string passSelections[] = {"selector1", "selector2"};
-  pass2->setSelections(passSelections);
-  pass2->setShaders(shaders);
-
-  configurator.addPass(std::move(pass1));
-  configurator.addPass(std::move(pass2));
-
-  TechniqueConfigurator::SelectionDefine selections[2] =
-    { {.name = "selector1", .valueVariants = {"0", "1", "2"}},
-      {.name = "selector2", .valueVariants = {"0", "1"}}};
-  configurator.setSelections(selections);*/
-
-  loadConfigurator(configurator, "technique.tch");
+  //  Техника, описанная одним файлом. Внутри описаны все настройки со
+  //  всеми значениями
+  loadConfigurator(configurator, "examples/technique/technique.tch");
   configurator.rebuildConfiguration();
 }
 
-void TestWindow::_createVertexBuffers(Device& device)
+void TestWindow::_createVertexBuffer()
 {
-  for(int i = 0; i < 2; i++)
+  struct Vertex
   {
-    struct Vertex
-    {
-      alignas(16) glm::vec3 position;
-      alignas(16) glm::vec4 color;
-    };
-    Vertex vertices[3] ={{.position = {0.0f, (i * 2 - 1) * -0.5f, 0.0f},
-                          .color = {1, 0, 0, 1}},
-                         {.position = {0.5f, (i * 2 - 1) * 0.5f, 0.0f},
-                          .color = {0, 1, 0, 1}},
-                         {.position = {-0.5f, (i * 2 - 1) * 0.5f, 0.0f},
-                          .color = {0, 0, 1, 1}}};
-    _vertexBuffers[i] = Ref(new DataBuffer( device,
-                                            sizeof(vertices),
-                                            DataBuffer::STORAGE_BUFFER));
-    device.graphicQueue()->uploadToBuffer(*_vertexBuffers[i],
+    alignas(16) glm::vec3 position;
+    alignas(16) glm::vec4 color;
+  };
+  Vertex vertices[3] =
+                    { {.position = {0.0f, -0.5f, 0.0f}, .color = {1, 0, 0, 1}},
+                      {.position = {0.5f, 0.5f, 0.0f}, .color = {0, 1, 0, 1}},
+                      {.position = {-0.5f, 0.5f, 0.0f}, .color = {0, 0, 1, 1}}};
+  Ref<DataBuffer> buffer(new DataBuffer(device(),
+                                        sizeof(vertices),
+                                        DataBuffer::STORAGE_BUFFER));
+  device().graphicQueue()->uploadToBuffer(*buffer,
                                           0,
                                           sizeof(vertices),
                                           vertices);
-  }
+  _vertexBuffer.setBuffer(buffer);
 }
 
-void TestWindow::_createTextures(Device& device)
+void TestWindow::_createTexture()
 {
-  Ref<Image> image(new Image( device,
+  Ref<Image> image(new Image( device(),
                               VK_IMAGE_TYPE_2D,
                               VK_IMAGE_USAGE_SAMPLED_BIT |
                                 VK_IMAGE_USAGE_TRANSFER_DST_BIT,
@@ -109,20 +64,18 @@ void TestWindow::_createTextures(Device& device)
                               true));
 
   uint32_t pixels[4] = { 0xFF0000FF, 0xFF00FF00, 0xFF00FFFF, 0xFFFF0000 };
-  device.graphicQueue()->uploadToImage( *image,
-                                        VK_IMAGE_ASPECT_COLOR_BIT,
-                                        0,
-                                        0,
-                                        glm::uvec3(0,0,0),
-                                        glm::uvec3(2,2,1),
-                                        pixels);
+  device().graphicQueue()->uploadToImage( *image,
+                                          VK_IMAGE_ASPECT_COLOR_BIT,
+                                          0,
+                                          0,
+                                          glm::uvec3(0,0,0),
+                                          glm::uvec3(2,2,1),
+                                          pixels);
 
-  _textures[0] = Ref(new ImageView( *image,
-                                    ImageSlice(*image),
-                                    VK_IMAGE_VIEW_TYPE_2D));
-  _textures[1] = Ref(new ImageView( *image,
-                                    ImageSlice(*image),
-                                    VK_IMAGE_VIEW_TYPE_2D));
+  Ref<ImageView> imageView(new ImageView( *image,
+                                          ImageSlice(*image),
+                                          VK_IMAGE_VIEW_TYPE_2D));
+  _texture.setImage(imageView);
 }
 
 void TestWindow::drawImplementation(
@@ -132,39 +85,30 @@ void TestWindow::drawImplementation(
   CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
 
   static int frameIndex = 0;
-  frameIndex++;
 
-  if (frameIndex % 250 == 12)
+  //  Выбираем вариант рендера через селекшен
+  if (frameIndex % 360 < 180)
   {
-    _technique->configurator().rebuildConfiguration();
+    _colorSelector.setValue("0");
+  }
+  else
+  {
+    _colorSelector.setValue("1");
   }
 
-  TechniqueVolatileContext volatileContext =
-                            _technique->createVolatileContext(commandProducer);
-
-  if(frameIndex % 360 < 180) _selector2.setValue(volatileContext, "0");
-  else _selector2.setValue(volatileContext, "1");
-
-  if (frameIndex % 180 < 60) _selector1.setValue(volatileContext, "0");
-  else if(frameIndex % 180 < 120) _selector1.setValue(volatileContext, "1");
-  else _selector1.setValue(volatileContext, "2");
-
-  _vertexBuffer.setBuffer(volatileContext,
-                          _vertexBuffers[frameIndex % 399 / 200]);
-
-  _texture1.setImage(volatileContext, _textures[0]);
-  //_samplerResource.setSampler(volatileContext, _sampler);
-
+  //  Выставляем волатильную юниформ переменную цвета
   float colorFactor = (frameIndex % 100) / 100.0f;
-  //std::vector<float> colorValue = {colorFactor, colorFactor, colorFactor, 1.0f};
   glm::vec4 colorValue(colorFactor, colorFactor, colorFactor, 1.0f);
-  _color.setValue(volatileContext, colorValue);
+  _color.setValue(colorValue);
 
-  if(_technique->bindGraphic(commandProducer, _pass1, &volatileContext))
+  //  Бинд техники и отрисовка
+  Technique::Bind bind(*_technique, _pass, commandProducer);
+  if (bind.isValid())
   {
     commandProducer.draw(3);
-    _technique->unbindGraphic(commandProducer);
+    bind.release();
   }
 
   renderPass.endPass();
+  frameIndex++;
 }

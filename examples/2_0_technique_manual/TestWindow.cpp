@@ -1,5 +1,4 @@
-﻿#include <technique/TechniqueLoader.h>
-#include <vkr/queue/CommandProducerGraphic.h>
+﻿#include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/Device.h>
 #include <TestWindow.h>
 

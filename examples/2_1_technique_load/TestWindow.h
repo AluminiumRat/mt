@@ -22,31 +22,20 @@ namespace mt
                                     FrameBuffer& frameBuffer) override;
 
   private:
-    void _createVertexBuffers(Device& device);
-    void _createTextures(Device& device);
+    void _makeConfiguration();
+    void _createVertexBuffer();
+    void _createTexture();
 
   private:
     Ref<Technique> _technique;
 
-    TechniquePass& _pass1;
-    TechniquePass& _pass2;
+    TechniquePass& _pass;
 
-    Selection& _selector1;
-    Selection& _selector2;
+    Selection& _colorSelector;
 
-    Ref<DataBuffer> _vertexBuffers[2];
     TechniqueResource& _vertexBuffer;
-
-    ConstRef<ImageView> _textures[2];
-    TechniqueResource& _texture1;
-    TechniqueResource& _texture2;
-
-    //Ref<Sampler> _sampler;
-    //TechniqueResource& _samplerResource;
-
-    TechniqueResource& _unusedResource;
+    TechniqueResource& _texture;
 
     UniformVariable& _color;
-    UniformVariable& _shift;
   };
 }
