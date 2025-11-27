@@ -144,7 +144,7 @@ void TestWindow::_drawSimple(CommandProducerGraphic& commandProducer)
 
   static int frameIndex = 0;
 
-  // Выбираем вариант рендера через селекшен
+  //  Выбираем вариант рендера через селекшен
   if(frameIndex % 360 < 180)
   {
     _colorSelector.setValue("0");
@@ -154,15 +154,17 @@ void TestWindow::_drawSimple(CommandProducerGraphic& commandProducer)
     _colorSelector.setValue("1");
   }
 
-  // Выставляем волатильную юниформ переменную цвета
+  //  Выставляем волатильную юниформ переменную цвета
   float colorFactor = (frameIndex % 100) / 100.0f;
   glm::vec4 colorValue(colorFactor, colorFactor, colorFactor, 1.0f);
   _color.setValue(colorValue);
 
-  if(_technique->bindGraphic(commandProducer, _pass))
+  //  Бинд техники и отрисовка
+  Technique::Bind bind(*_technique, _pass, commandProducer);
+  if (bind.isValid())
   {
     commandProducer.draw(3);
-    _technique->unbindGraphic(commandProducer);
+    bind.release();
   }
 
   frameIndex++;
@@ -179,7 +181,7 @@ void TestWindow::_drawVolatileContext(
 
   static int frameIndex = 0;
 
-  // Выбираем вариант рендера через селекшен
+  //  Выбираем вариант рендера через селекшен
   if(frameIndex % 360 < 180)
   {
     _colorSelector.setValue(volatileContext, "0");
@@ -189,15 +191,17 @@ void TestWindow::_drawVolatileContext(
     _colorSelector.setValue(volatileContext, "1");
   }
 
-  // Выставляем волатильную юниформ переменную цвета
+  //  Выставляем волатильную юниформ переменную цвета
   float colorFactor = (frameIndex % 100) / 100.0f;
   glm::vec4 colorValue(colorFactor, colorFactor, colorFactor, 1.0f);
   _color.setValue(volatileContext, colorValue);
 
-  if(_technique->bindGraphic(commandProducer, _pass, &volatileContext))
+  //  Бинд техники и отрисовка
+  Technique::Bind bind(*_technique, _pass, commandProducer, &volatileContext);
+  if(bind.isValid())
   {
     commandProducer.draw(3);
-    _technique->unbindGraphic(commandProducer);
+    bind.release();
   }
 
   frameIndex++;

@@ -29,6 +29,31 @@ namespace mt
   class Technique : public RefCounter
   {
   public:
+    //  RAII обертка вокруг биндинга техники к комманд продюсеру
+    //  Автоматически анбиндит технику в деструкторе
+    class Bind
+    {
+    public:
+      inline Bind() noexcept;
+      inline Bind(Technique& technique,
+                  const TechniquePass& pass,
+                  CommandProducerGraphic& producer,
+                  const TechniqueVolatileContext* volatileContext = nullptr);
+      Bind(const Bind&) = delete;
+      inline Bind(Bind&& other) noexcept;
+      Bind& operator = (const Bind&) = delete;
+      inline Bind& operator == (Bind&& other) noexcept;
+      inline ~Bind() noexcept;
+
+      inline void release() noexcept;
+      inline bool isValid() const noexcept;
+
+    private:
+      Technique* _technique;
+      CommandProducerGraphic* _graphicProducer;
+    };
+
+  public:
     Technique(Device& device,
               const char* debugName = "Technique");
     Technique(const Technique&) = delete;
@@ -115,6 +140,64 @@ namespace mt
     mutable size_t _lastProcessedResourcesRevision;
     mutable SpinLock _staticSetMutex;
   };
+
+  inline Technique::Bind::Bind() noexcept :
+    _technique(nullptr),
+    _graphicProducer(nullptr)
+  {
+  }
+
+  inline Technique::Bind::Bind(
+                            Technique& technique,
+                            const TechniquePass& pass,
+                            CommandProducerGraphic& producer,
+                            const TechniqueVolatileContext* volatileContext) :
+    _technique(nullptr),
+    _graphicProducer(nullptr)
+  {
+    if(technique.bindGraphic(producer, pass, volatileContext))
+    {
+      _technique = &technique;
+      _graphicProducer = &producer;
+    }
+  }
+
+  inline Technique::Bind::Bind(Bind&& other) noexcept :
+    _technique(other._technique),
+    _graphicProducer(other._graphicProducer)
+  {
+    other._technique = nullptr;
+    other._graphicProducer = nullptr;
+  }
+
+  inline Technique::Bind& Technique::Bind::operator == (Bind&& other) noexcept
+  {
+    release();
+    _technique = other._technique;
+    other._technique = nullptr;
+    _graphicProducer = other._graphicProducer;
+    other._graphicProducer = nullptr;
+  }
+
+  inline Technique::Bind::~Bind() noexcept
+  {
+    release();
+  }
+
+  inline void Technique::Bind::release() noexcept
+  {
+    if(_technique != nullptr)
+    {
+      _technique->unbindGraphic(*_graphicProducer);
+      _technique = nullptr;
+      _graphicProducer = nullptr;
+    }
+  }
+
+  inline bool Technique::Bind::isValid() const noexcept
+  {
+    return _technique != nullptr;
+  }
 
   inline Device& Technique::device() const noexcept
   {
