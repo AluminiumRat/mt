@@ -11,3 +11,5 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 add_subdirectory(technique)
 add_subdirectory(util)
 add_subdirectory(vkr)
+
+add_subdirectory(examples/1_0_dumpHardware)
