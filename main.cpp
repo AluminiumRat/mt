@@ -5,8 +5,8 @@
 #include <GLFW/glfw3.h>
 
 #include <util/util.h>
+#include <vkr/dumpHardware.h>
 #include <vkr/VKRLib.h>
-#include <dumpHardware.h>
 #include <TechniqueTestWindow.h>
 //#include <TestWindow.h>
 

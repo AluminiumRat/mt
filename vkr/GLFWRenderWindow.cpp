@@ -4,9 +4,9 @@
 #include <util/Assert.h>
 #include <util/Log.h>
 
+#include <vkr/GLFWRenderWindow.h>
 #include <vkr/Device.h>
 #include <vkr/VKRLib.h>
-#include <GLFWRenderWindow.h>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define GLFW_INCLUDE_VULKAN

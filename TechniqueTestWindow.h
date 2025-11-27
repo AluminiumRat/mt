@@ -4,8 +4,8 @@
 #include <util/Ref.h>
 #include <vkr/image/ImageView.h>
 #include <vkr/DataBuffer.h>
+#include <vkr/GLFWRenderWindow.h>
 #include <vkr/Sampler.h>
-#include <GLFWRenderWindow.h>
 
 namespace mt
 {

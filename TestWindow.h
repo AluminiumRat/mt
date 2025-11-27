@@ -1,9 +1,9 @@
 ﻿#pragma once
 
 #include <util/Ref.h>
-#include <GLFWRenderWindow.h>
 #include <vkr/pipeline/DescriptorSet.h>
 #include <vkr/pipeline/GraphicPipeline.h>
+#include <vkr/GLFWRenderWindow.h>
 
 namespace mt
 {
