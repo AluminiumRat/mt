@@ -1,0 +1,5 @@
+# Пример библиотечной настройки конфигурации
+# Здесь описываются настройки сэмплера для техники
+# examples/technique/techniqueWithRefs.tch
+
+magFilter: LINEAR

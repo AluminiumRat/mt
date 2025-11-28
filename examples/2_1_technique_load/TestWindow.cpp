@@ -22,9 +22,14 @@ TestWindow::TestWindow(Device& device) :
 void TestWindow::_makeConfiguration()
 {
   TechniqueConfigurator& configurator = _technique->configurator();
+
   //  Техника, описанная одним файлом. Внутри описаны все настройки со
   //  всеми значениями
-  loadConfigurator(configurator, "examples/technique/technique.tch");
+  //loadConfigurator(configurator, "examples/technique/technique.tch");
+
+  //  Техника, использующая ссылки на библиотечные настройки
+  loadConfigurator(configurator, "examples/technique/techniqueWithRefs.tch");
+
   configurator.rebuildConfiguration();
 }
 
@@ -98,7 +103,7 @@ void TestWindow::drawImplementation(
 
   //  Выставляем волатильную юниформ переменную цвета
   float colorFactor = (frameIndex % 100) / 100.0f;
-  glm::vec4 colorValue(colorFactor, colorFactor, colorFactor, 1.0f);
+  glm::vec4 colorValue(colorFactor, colorFactor, colorFactor, colorFactor);
   _color.setValue(colorValue);
 
   //  Бинд техники и отрисовка

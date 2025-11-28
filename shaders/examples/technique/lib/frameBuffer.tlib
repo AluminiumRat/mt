@@ -1,0 +1,6 @@
+# Пример библиотечной настройки конфигурации
+# Здесь описываются настройки фрэйм буфера для техники
+# examples/technique/techniqueWithRefs.tch
+
+color: VK_FORMAT_B8G8R8A8_SRGB
+samples: 1

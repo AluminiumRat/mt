@@ -1,0 +1,26 @@
+# Эта техника показывает как использовать ссылки на библиотечные настройки
+# Везде, где это возможно применено наследование настроек из внешних источников
+# Библиотечные настройки лежат в подпапке lib
+
+selections:
+  colorSelector: [0, 1]
+
+defaultSamplers:
+  samplerState:
+    inherits: [examples/technique/lib/sampler1.tlib, examples/technique/lib/sampler2.tlib]
+    mipmapMode: LINEAR
+
+passes:
+  RenderPass :
+    selections: [colorSelector]
+
+    shaders:
+      VERTEX : examples/technique/shader.vert
+      FRAGMENT : examples/technique/shader.frag
+
+    frameBuffer:
+      inherits: examples/technique/lib/frameBuffer.tlib
+
+    graphicSettings:
+      inherits: examples/technique/lib/graphicSettings.tlib
+

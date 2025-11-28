@@ -1,0 +1,7 @@
+# Пример библиотечной настройки конфигурации
+# Здесь описываются настройки работы со стенсилом для техники
+# examples/technique/techniqueWithRefs.tch
+
+failOp: KEEP
+passOp: KEEP
+depthFailOp: KEEP

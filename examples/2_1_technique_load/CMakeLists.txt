@@ -7,8 +7,7 @@ include_directories(.
                     ${GLM_PATH}
                     ${Vulkan_INCLUDE_DIRS}
                     ${VKMEMALLOC_PATH}
-                    ${GLFW_PATH}/include
-                    ${YamlCPP_INCLUDE_DIRS})
+                    ${GLFW_PATH}/include)
 
 add_executable (technique_load
                 "main.cpp"
@@ -22,5 +21,3 @@ target_link_libraries(technique_load
                       util
                       vkr
                       technique)
-
-target_compile_definitions(technique_load PRIVATE YAML_CPP_STATIC_DEFINE)

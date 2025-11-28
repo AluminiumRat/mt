@@ -1,0 +1,18 @@
+# Пример библиотечной настройки конфигурации
+# Здесь описываются настройки фиксированных стадий пайплайна для
+# техники examples/technique/techniqueWithRefs.tch
+
+topology: TRIANGLE_LIST
+polygonMode: FILL
+
+frontStencilOp:
+  inherits: examples/technique/lib/stencilOp.tlib
+
+backStencilOp:
+  inherits: examples/technique/lib/stencilOp.tlib
+
+blending:
+  # Здесь не только загрузка настроек из blending.tlib, но ещё и переопределение
+  # маски записи
+  inherits: examples/technique/lib/blending.tlib
+  colorWriteMask: [R,G,B,A]

@@ -1,0 +1,10 @@
+# Пример библиотечной настройки конфигурации
+# Здесь описываются настройки блендинга для техники
+# examples/technique/techniqueWithRefs.tch
+
+blendEnable: true
+srcColorBlendFactor: SRC_ALPHA
+dstColorBlendFactor: ONE_MINUS_SRC_ALPHA
+
+# Это значение будет переопределено
+colorWriteMask: [G,B]
