@@ -7,18 +7,11 @@ include_directories(.
                     ${GLM_PATH}
                     ${Vulkan_INCLUDE_DIRS}
                     ${VKMEMALLOC_PATH}
-                    ${GLFW_PATH}/include
                     ${IMGUI_PATH})
 
 add_executable (imgui
                 "main.cpp"
-                "TestWindow.cpp"
-                ${IMGUI_PATH}"/imgui.cpp"
-                ${IMGUI_PATH}"/imgui_draw.cpp"
-                ${IMGUI_PATH}"/imgui_tables.cpp"
-                ${IMGUI_PATH}"/imgui_widgets.cpp"
-                ${IMGUI_PATH}"/backends/imgui_impl_glfw.cpp"
-                ${IMGUI_PATH}"/backends/imgui_impl_vulkan.cpp")
+                "TestWindow.cpp")
 
 target_link_libraries(imgui
                       ${Vulkan_LIBRARIES}

@@ -1,6 +1,7 @@
 ﻿#include <util/Assert.h>
 
 #include <gui/BaseWindow.h>
+#include <gui/GUILib.h>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define GLFW_INCLUDE_VULKAN
@@ -21,6 +22,8 @@ BaseWindow::BaseWindow(const char* name) :
     _handle = glfwCreateWindow(_size.x, _size.y, name, nullptr, nullptr);
     glfwSetWindowUserPointer(_handle, this);
     glfwSetWindowSizeCallback(_handle, &BaseWindow::_resizeHandler);
+
+    GUILib::instance().registerWindow(*this);
   }
   catch(...)
   {
@@ -40,6 +43,7 @@ void BaseWindow::cleanup() noexcept
   {
     glfwDestroyWindow(_handle);
     _handle = nullptr;
+    GUILib::instance().unregisterWindow(*this);
   }
 }
 

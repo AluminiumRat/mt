@@ -1,9 +1,6 @@
 ﻿#include <exception>
 
-#define GLFW_EXPOSE_NATIVE_WIN32
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
+#include <gui/GUILib.h>
 #include <util/util.h>
 #include <vkr/VKRLib.h>
 
@@ -20,36 +17,25 @@ int main(int argc, char* argv[])
                   VK_API_VERSION_1_3,
                   true,
                   true);
+    GUILib guiLib("");
 
-    glfwInit();
-
+    std::unique_ptr<Device> device = RenderWindow::createDevice(
+                                                      {},
+                                                      {},
+                                                      GRAPHICS_CONFIGURATION);
+    TestWindow mainWindow(*device);
+    TestWindow mainWindow2(*device);
+    while (!mainWindow.shouldClose())
     {
-      std::unique_ptr<Device> device = RenderWindow::createDevice(
-                                                        {},
-                                                        {},
-                                                        GRAPHICS_CONFIGURATION);
-      TestWindow mainWindow(*device);
-      TestWindow mainWindow2(*device);
-      while (!mainWindow.shouldClose())
-      {
-        glfwPollEvents();
-
-        mainWindow.update();
-        mainWindow2.update();
-
-        mainWindow.draw();
-        mainWindow2.draw();
-      }
+      guiLib.updateWindows();
+      guiLib.drawWindows();
     }
 
-    glfwTerminate();
     return 0;
   }
   catch (std::exception& error)
   {
     Log::error() << error.what();
-
-    glfwTerminate();
     return 1;
   }
 }

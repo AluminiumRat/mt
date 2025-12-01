@@ -6,8 +6,7 @@ include_directories(.
                     ../..
                     ${GLM_PATH}
                     ${Vulkan_INCLUDE_DIRS}
-                    ${VKMEMALLOC_PATH}
-                    ${GLFW_PATH}/include)
+                    ${VKMEMALLOC_PATH})
 
 add_executable (technique_manual
                 "main.cpp"
