@@ -2,15 +2,15 @@
 
 #include <imgui.h>
 
-#include <vkr/GLFWRenderWindow.h>
+#include <gui/RenderWindow.h>
 
 namespace mt
 {
-  class TestWindow : public GLFWRenderWindow
+  class TestWindow : public RenderWindow
   {
   public:
     TestWindow(Device& device);
-    TestWindow(const GLFWRenderWindow&) = delete;
+    TestWindow(const TestWindow&) = delete;
     TestWindow& operator = (const TestWindow&) = delete;
     virtual ~TestWindow() noexcept;
 

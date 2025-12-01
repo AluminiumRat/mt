@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
     glfwInit();
 
     {
-      std::unique_ptr<Device> device = GLFWRenderWindow::createDevice(
+      std::unique_ptr<Device> device = RenderWindow::createDevice(
                                                         {},
                                                         {},
                                                         GRAPHICS_CONFIGURATION);

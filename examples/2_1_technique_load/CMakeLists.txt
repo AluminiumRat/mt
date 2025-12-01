@@ -20,4 +20,5 @@ target_link_libraries(technique_load
                       ${YamlCPP_LIBRARIES}
                       util
                       vkr
-                      technique)
+                      technique
+                      gui)

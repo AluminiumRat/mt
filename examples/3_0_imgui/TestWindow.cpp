@@ -9,7 +9,7 @@
 using namespace mt;
 
 TestWindow::TestWindow(Device& device) :
-  GLFWRenderWindow(device, "Test window"),
+  RenderWindow(device, "Test window"),
   _imguiContext(nullptr),
   _imGuiIO(nullptr)
 {

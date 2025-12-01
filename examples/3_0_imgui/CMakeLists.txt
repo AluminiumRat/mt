@@ -27,4 +27,5 @@ target_link_libraries(imgui
                       ${YamlCPP_LIBRARIES}
                       util
                       vkr
-                      technique)
+                      technique
+                      gui)

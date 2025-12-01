@@ -11,7 +11,7 @@ using namespace mt;
 static Ref<DescriptorSet> createDescriptorSet(GraphicPipeline& pipeline);
 
 TestWindow::TestWindow(Device& device) :
-  GLFWRenderWindow(device, "Vulkan window"),
+  RenderWindow(device, "Vulkan window"),
   _pipeline(_createPipeline()),
   _descriptorSet(_createDescriptorSet(*_pipeline))
 {

@@ -4,7 +4,7 @@
 #include <util/Assert.h>
 #include <util/Log.h>
 
-#include <vkr/GLFWRenderWindow.h>
+#include <gui/RenderWindow.h>
 #include <vkr/Device.h>
 #include <vkr/VKRLib.h>
 
@@ -16,7 +16,7 @@
 
 using namespace mt;
 
-GLFWRenderWindow::GLFWRenderWindow(Device& device, const char* title) :
+RenderWindow::RenderWindow(Device& device, const char* title) :
   _device(device),
   _handle(nullptr),
   _size(800,600)
@@ -26,7 +26,7 @@ GLFWRenderWindow::GLFWRenderWindow(Device& device, const char* title) :
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     _handle = glfwCreateWindow(_size.x, _size.y, title, nullptr, nullptr);
     glfwSetWindowUserPointer(_handle, this);
-    glfwSetWindowSizeCallback(_handle, &GLFWRenderWindow::_resizeHandler);
+    glfwSetWindowSizeCallback(_handle, &RenderWindow::_resizeHandler);
 
     _surface.reset(new Win32WindowSurface(glfwGetWin32Window(_handle)));
     MT_ASSERT(device.isSurfaceSuitable(*_surface));
@@ -39,7 +39,7 @@ GLFWRenderWindow::GLFWRenderWindow(Device& device, const char* title) :
   }
 }
 
-void GLFWRenderWindow::_createSwapchain()
+void RenderWindow::_createSwapchain()
 {
   _deleteSwapchain();
   if(_size.x == 0 || _size.y == 0) return;
@@ -48,12 +48,12 @@ void GLFWRenderWindow::_createSwapchain()
                 new SwapChain(_device, *_surface, std::nullopt, std::nullopt));
 }
 
-GLFWRenderWindow::~GLFWRenderWindow() noexcept
+RenderWindow::~RenderWindow() noexcept
 {
   _cleanup();
 }
 
-void GLFWRenderWindow::_cleanup() noexcept
+void RenderWindow::_cleanup() noexcept
 {
   _deleteSwapchain();
   if(_handle != nullptr)
@@ -63,14 +63,14 @@ void GLFWRenderWindow::_cleanup() noexcept
   }
 }
 
-void GLFWRenderWindow::_deleteSwapchain() noexcept
+void RenderWindow::_deleteSwapchain() noexcept
 {
   std::unique_lock queuesLock = _device.lockQueues();
   _frameBuffers.clear();
   _swapChain.reset();
 }
 
-void GLFWRenderWindow::draw()
+void RenderWindow::draw()
 {
   if (_size.x == 0 || _size.y == 0) return;
   MT_ASSERT(_swapChain != nullptr);
@@ -119,7 +119,7 @@ void GLFWRenderWindow::draw()
   frame.present();
 }
 
-Ref<FrameBuffer> GLFWRenderWindow::createFrameBuffer(Image& targetColorBuffer)
+Ref<FrameBuffer> RenderWindow::createFrameBuffer(Image& targetColorBuffer)
 {
   Ref<ImageView> colorTarget(new ImageView( targetColorBuffer,
                                             ImageSlice(targetColorBuffer),
@@ -136,7 +136,7 @@ Ref<FrameBuffer> GLFWRenderWindow::createFrameBuffer(Image& targetColorBuffer)
                                 nullptr));
 }
 
-void GLFWRenderWindow::drawImplementation(
+void RenderWindow::drawImplementation(
                                         CommandProducerGraphic& commandProducer,
                                         FrameBuffer& frameBuffer)
 {
@@ -144,22 +144,22 @@ void GLFWRenderWindow::drawImplementation(
   renderPass.endPass();
 }
 
-bool GLFWRenderWindow::shouldClose() const noexcept
+bool RenderWindow::shouldClose() const noexcept
 {
   return glfwWindowShouldClose(_handle);
 }
 
-void GLFWRenderWindow::_resizeHandler(GLFWwindow* window, int width, int height)
+void RenderWindow::_resizeHandler(GLFWwindow* window, int width, int height)
 {
-  GLFWRenderWindow* renderWindow =
-                          (GLFWRenderWindow*)(glfwGetWindowUserPointer(window));
+  RenderWindow* renderWindow =
+                          (RenderWindow*)(glfwGetWindowUserPointer(window));
   MT_ASSERT(renderWindow != nullptr);
 
   renderWindow->_size = glm::uvec2(width, height);
   renderWindow->onResize();
 }
 
-void GLFWRenderWindow::onResize() noexcept
+void RenderWindow::onResize() noexcept
 {
   _deleteSwapchain();
 
@@ -169,12 +169,12 @@ void GLFWRenderWindow::onResize() noexcept
   }
   catch (std::exception& error)
   {
-    Log::error() << "GLFWRenderWindow::onResize: " << error.what();
+    Log::error() << "RenderWindow::onResize: " << error.what();
     Abort("Unable to create new swaochain");
   }
 }
 
-std::unique_ptr<Device> GLFWRenderWindow::createDevice(
+std::unique_ptr<Device> RenderWindow::createDevice(
                             VkPhysicalDeviceFeatures requiredFeatures,
                             const std::vector<std::string>& requiredExtensions,
                             QueuesConfiguration configuration)

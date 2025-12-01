@@ -17,4 +17,5 @@ target_link_libraries(rawVkr
                       ${Vulkan_LIBRARIES}
                       ${GLFW_PATH}/lib-vc2022/glfw3.lib
                       util
-                      vkr)
+                      vkr
+                      gui)

@@ -5,8 +5,7 @@ project(vkr)
 include_directories(..
                     ${GLM_PATH}
                     ${Vulkan_INCLUDE_DIRS}
-                    ${VKMEMALLOC_PATH}
-                    ${GLFW_PATH}/include)
+                    ${VKMEMALLOC_PATH})
 
 set(SOURCES
     "image/Image.cpp"
@@ -49,7 +48,6 @@ set(SOURCES
     "Device.cpp"
     "FrameBuffer.cpp"
     "FrameBufferFormat.cpp"
-    "GLFWRenderWindow.cpp"
     "PhysicalDevice.cpp"
     "SwapChain.cpp"
     "VKRLib.cpp"

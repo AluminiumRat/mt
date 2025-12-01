@@ -1,7 +1,7 @@
 ﻿#pragma once
 
+#include <gui/RenderWindow.h>
 #include <util/Ref.h>
-#include <vkr/GLFWRenderWindow.h>
 #include <vkr/image/ImageView.h>
 #include <vkr/pipeline/DescriptorSet.h>
 #include <vkr/pipeline/GraphicPipeline.h>
@@ -9,11 +9,11 @@
 
 namespace mt
 {
-  class TestWindow : public GLFWRenderWindow
+  class TestWindow : public RenderWindow
   {
   public:
     TestWindow(Device& device);
-    TestWindow(const GLFWRenderWindow&) = delete;
+    TestWindow(const TestWindow&) = delete;
     TestWindow& operator = (const TestWindow&) = delete;
     virtual ~TestWindow() noexcept = default;
 

@@ -26,13 +26,13 @@ namespace mt
   // Реализует рутины по управлению окном, свапчейном и циклом рендера. При этом
   //  сам рендер должен быть реализован потомками.
   // glfwInit должен быть вызван до созданиея первого окна
-  class GLFWRenderWindow
+  class RenderWindow
   {
   public:
-    GLFWRenderWindow(Device& device, const char* title);
-    GLFWRenderWindow(const GLFWRenderWindow&) = delete;
-    GLFWRenderWindow& operator = (const GLFWRenderWindow&) = delete;
-    virtual ~GLFWRenderWindow() noexcept;
+    RenderWindow(Device& device, const char* title);
+    RenderWindow(const RenderWindow&) = delete;
+    RenderWindow& operator = (const RenderWindow&) = delete;
+    virtual ~RenderWindow() noexcept;
 
     void draw();
 
@@ -87,22 +87,22 @@ namespace mt
     glm::uvec2 _size;
   };
 
-  inline glm::vec2 GLFWRenderWindow::size() const noexcept
+  inline glm::vec2 RenderWindow::size() const noexcept
   {
     return _size;
   }
 
-  inline Device& GLFWRenderWindow::device() const noexcept
+  inline Device& RenderWindow::device() const noexcept
   {
     return _device;
   }
 
-  inline GLFWwindow& GLFWRenderWindow::handle() const noexcept
+  inline GLFWwindow& RenderWindow::handle() const noexcept
   {
     return *_handle;
   }
 
-  inline const SwapChain& GLFWRenderWindow::swapChain() const noexcept
+  inline const SwapChain& RenderWindow::swapChain() const noexcept
   {
     MT_ASSERT(_swapChain != nullptr);
     return *_swapChain;

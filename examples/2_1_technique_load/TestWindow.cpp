@@ -6,7 +6,7 @@
 using namespace mt;
 
 TestWindow::TestWindow(Device& device) :
-  GLFWRenderWindow(device, "Test window"),
+  RenderWindow(device, "Test window"),
   _technique(new Technique(device, "Test technique")),
   _pass(_technique->getOrCreatePass("RenderPass")),
   _colorSelector(_technique->getOrCreateSelection("colorSelector")),

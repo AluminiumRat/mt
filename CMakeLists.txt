@@ -36,6 +36,7 @@ find_path(VKMEMALLOC_PATH
           HINTS "$ENV{VKMEMALLOC_PATH}"
           REQUIRED)
 
+add_subdirectory(gui)
 add_subdirectory(technique)
 add_subdirectory(util)
 add_subdirectory(vkr)
