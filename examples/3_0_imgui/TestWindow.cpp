@@ -14,6 +14,7 @@ TestWindow::TestWindow(Device& device) :
   _imGuiIO(nullptr)
 {
   _imguiContext = ImGui::CreateContext();
+  ImGui::SetCurrentContext(_imguiContext);
 
   _imGuiIO = &ImGui::GetIO();
   _imGuiIO->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;

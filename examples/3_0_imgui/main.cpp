@@ -29,11 +29,16 @@ int main(int argc, char* argv[])
                                                         {},
                                                         GRAPHICS_CONFIGURATION);
       TestWindow mainWindow(*device);
+      TestWindow mainWindow2(*device);
       while (!mainWindow.shouldClose())
       {
         glfwPollEvents();
+
         mainWindow.update();
+        mainWindow2.update();
+
         mainWindow.draw();
+        mainWindow2.draw();
       }
     }
 
