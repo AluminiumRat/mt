@@ -43,6 +43,10 @@ namespace mt
   class CommandProducer
   {
   public:
+    using ImageUsage = std::pair<const Image*, ImageAccess>;
+    using MultipleImageUsage = std::span<const ImageUsage>;
+
+  public:
     CommandProducer(CommandPoolSet& poolSet);
     CommandProducer(const CommandProducer&) = delete;
     CommandProducer& operator = (const CommandProducer&) = delete;
@@ -85,6 +89,28 @@ namespace mt
                       VkAccessFlags readAccessMask,
                       VkPipelineStageFlags writeStages,
                       VkAccessFlags writeAccessMask);
+
+    //  Получить буфер команд, предназначенный для основных выполняемых операций
+    CommandBuffer& getOrCreateBuffer();
+    //  Получить буфер для подготовительных команд. Этот буфер попадет
+    //  в очередь команд перед всеми остальными буферами. Предназначен для
+    //  команд команд загрузки/копирования, которые не могут быть выполнены
+    //  внутри рендер пасса
+    CommandBuffer& getOrCreatePreparationBuffer();
+
+    //  Зарегистрировать использование Image. Работает для поддержки
+    //  автоконтроля лэйаутов
+    void addImageUsage(const Image& image, const ImageAccess& access);
+    //  Зарегистрировать использование нескольких Image. Работает для поддержки
+    //    автоконтроля лэйаутов.
+    //  В отличии от addImageUsage позволяет немного сэкономить на буферах
+    //    согласования
+    void addMultipleImagesUsage(MultipleImageUsage usages);
+
+    //  Захватить владение ресурсом. Это продляет жизнь ресурса и позволяет
+    //  предотвратить его удаление, пока буферы команд находятся на исполнении в
+    //  очереди команд
+    inline void lockResource(const RefCounter& resource);
 
   private:
     //  Отправка буфера на выполнение и релиз продюсера должны выполняться
@@ -135,31 +161,6 @@ namespace mt
     //  Вызывается при финализации продюсера. Предназначен для классов-потомков,
     //  чтобы они могли корректно завершать запись команд.
     virtual void finalizeCommands() noexcept;
-
-    //  Получить буфер команд, предназначенный для основных выполняемых операций
-    CommandBuffer& getOrCreateBuffer();
-    //  Получить буфер для подготовительных команд. Этот буфер попадет
-    //  в очередь команд перед всеми остальными буферами. Предназначен для
-    //  команд команд загрузки/копирования, которые не могут быть выполнены
-    //  внутри рендер пасса
-    CommandBuffer& getOrCreatePreparationBuffer();
-
-    //  Зарегистрировать использование Image. Работает для поддержки
-    //  автоконтроля лэйаутов
-    void addImageUsage(const Image& image, const ImageAccess& access);
-
-    using ImageUsage = std::pair<const Image*, ImageAccess>;
-    using MultipleImageUsage = std::span<const ImageUsage>;
-    //  Зарегистрировать использование нескольких Image. Работает для поддержки
-    //    автоконтроля лэйаутов.
-    //  В отличии от addImageUsage позволяет немного сэкономить на буферах
-    //    согласования
-    void addMultipleImagesUsage(MultipleImageUsage usages);
-
-    //  Захватить владение ресурсом. Это продляет жизнь ресурса и позволяет
-    //  предотвратить его удаление, пока буферы команд находятся на исполнении в
-    //  очереди команд
-    inline void lockResource(const RefCounter& resource);
 
   private:
     CommandPoolSet& _commandPoolSet;

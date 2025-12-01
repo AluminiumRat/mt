@@ -8,6 +8,7 @@
 
 #include <glm/glm.hpp>
 
+#include <util/Assert.h>
 #include <util/Ref.h>
 #include <vkr/queue/QueueSources.h>
 #include <vkr/FrameBuffer.h>
@@ -51,6 +52,7 @@ namespace mt
   protected:
     inline Device& device() const noexcept;
     inline GLFWwindow& handle() const noexcept;
+    inline const SwapChain& swapChain() const noexcept;
 
     //  Обработчик изменения размеров. К моменту вызова этого обработчика
     //  все команды из очередей GPU будут выполнены, а сами очереди
@@ -98,5 +100,11 @@ namespace mt
   inline GLFWwindow& GLFWRenderWindow::handle() const noexcept
   {
     return *_handle;
+  }
+
+  inline const SwapChain& GLFWRenderWindow::swapChain() const noexcept
+  {
+    MT_ASSERT(_swapChain != nullptr);
+    return *_swapChain;
   }
 }

@@ -26,6 +26,11 @@ find_path(GLFW_PATH
           HINTS "$ENV{GLFW_PATH}"
           REQUIRED)
 
+find_path(IMGUI_PATH
+          imgui.h
+          HINTS "third_party/imgui"
+          REQUIRED)
+
 find_path(VKMEMALLOC_PATH
           vk_mem_alloc.h
           HINTS "$ENV{VKMEMALLOC_PATH}"
@@ -39,3 +44,4 @@ add_subdirectory(examples/1_0_dumpHardware)
 add_subdirectory(examples/1_1_raw_vkr)
 add_subdirectory(examples/2_0_technique_manual)
 add_subdirectory(examples/2_1_technique_load)
+add_subdirectory(examples/3_0_imgui)
