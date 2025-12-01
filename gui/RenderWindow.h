@@ -8,6 +8,7 @@
 
 #include <glm/glm.hpp>
 
+#include <gui/BaseWindow.h>
 #include <util/Assert.h>
 #include <util/Ref.h>
 #include <vkr/queue/QueueSources.h>
@@ -22,28 +23,22 @@ namespace mt
   class CommandProducerGraphic;
   class Device;
 
-  // Базовый класс окна для рендера, построенный на GLFW.
-  // Реализует рутины по управлению окном, свапчейном и циклом рендера. При этом
-  //  сам рендер должен быть реализован потомками.
-  // glfwInit должен быть вызван до созданиея первого окна
-  class RenderWindow
+  //  Базовый класс окна для рендера.
+  //  Реализует рутины по управлению окном, свапчейном и циклом рендера. При этом
+  //    сам рендер должен быть реализован потомками.
+  //  GUILib должна быть инициализированная до создания первого окна
+  class RenderWindow : public BaseWindow
   {
   public:
-    RenderWindow(Device& device, const char* title);
+    RenderWindow(Device& device, const char* name);
     RenderWindow(const RenderWindow&) = delete;
     RenderWindow& operator = (const RenderWindow&) = delete;
     virtual ~RenderWindow() noexcept;
 
-    void draw();
+    virtual void draw() override;
 
-    // Размер активной области для рисования(колор таргета). То есть сюда не
-    //  включены рамки, кнопки и тайтл бар.
-    inline glm::vec2 size() const noexcept;
-
-    // Пользователь закрыл окно
-    bool shouldClose() const noexcept;
-
-    // Создать устройство, подходящее для рендера в окно
+    //  Создать устройство, подходящее для рендера в окно
+    //  GUILib должна быть инициализированная до вызова этого метода
     static std::unique_ptr<Device> createDevice(
                             VkPhysicalDeviceFeatures requiredFeatures,
                             const std::vector<std::string>& requiredExtensions,
@@ -51,13 +46,11 @@ namespace mt
 
   protected:
     inline Device& device() const noexcept;
-    inline GLFWwindow& handle() const noexcept;
     inline const SwapChain& swapChain() const noexcept;
 
-    //  Обработчик изменения размеров. К моменту вызова этого обработчика
-    //  все команды из очередей GPU будут выполнены, а сами очереди
-    //  заблокированы от доступа из других потоков.
-    virtual void onResize() noexcept;
+    void cleanup() noexcept;
+
+  protected:
     //  Если нужно создать фрэйм буфер, состоящий не только из Image-а из
     //  свапчейна, то в потомке необходимо переопределить этот метод
     virtual Ref<FrameBuffer> createFrameBuffer(Image& targetColorBuffer);
@@ -71,35 +64,23 @@ namespace mt
     virtual void drawImplementation(CommandProducerGraphic& commandProducer,
                                     FrameBuffer& frameBuffer);
 
+  protected:
+    virtual void onResize() noexcept override;
+
   private:
     void _createSwapchain();
-    void _cleanup() noexcept;
     void _deleteSwapchain() noexcept;
-    static void _resizeHandler(GLFWwindow* window, int width, int height);
 
   private:
     Device& _device;
-    GLFWwindow* _handle;
     std::unique_ptr<WindowSurface> _surface;
     Ref<SwapChain> _swapChain;
     std::vector<Ref<FrameBuffer>> _frameBuffers;
-
-    glm::uvec2 _size;
   };
-
-  inline glm::vec2 RenderWindow::size() const noexcept
-  {
-    return _size;
-  }
 
   inline Device& RenderWindow::device() const noexcept
   {
     return _device;
-  }
-
-  inline GLFWwindow& RenderWindow::handle() const noexcept
-  {
-    return *_handle;
   }
 
   inline const SwapChain& RenderWindow::swapChain() const noexcept

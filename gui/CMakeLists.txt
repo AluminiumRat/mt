@@ -9,6 +9,7 @@ include_directories(..
                     ${GLFW_PATH}/include)
 
 set(SOURCES
+    "BaseWindow.cpp"
     "RenderWindow.cpp")
 
 add_library(gui

@@ -16,25 +16,19 @@
 
 using namespace mt;
 
-RenderWindow::RenderWindow(Device& device, const char* title) :
-  _device(device),
-  _handle(nullptr),
-  _size(800,600)
+RenderWindow::RenderWindow(Device& device, const char* name) :
+  BaseWindow(name),
+  _device(device)
 {
   try
   {
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    _handle = glfwCreateWindow(_size.x, _size.y, title, nullptr, nullptr);
-    glfwSetWindowUserPointer(_handle, this);
-    glfwSetWindowSizeCallback(_handle, &RenderWindow::_resizeHandler);
-
-    _surface.reset(new Win32WindowSurface(glfwGetWin32Window(_handle)));
+    _surface.reset(new Win32WindowSurface(glfwGetWin32Window(&handle())));
     MT_ASSERT(device.isSurfaceSuitable(*_surface));
     _createSwapchain();
   }
   catch(...)
   {
-    _cleanup();
+    cleanup();
     throw;
   }
 }
@@ -42,7 +36,7 @@ RenderWindow::RenderWindow(Device& device, const char* title) :
 void RenderWindow::_createSwapchain()
 {
   _deleteSwapchain();
-  if(_size.x == 0 || _size.y == 0) return;
+  if(size().x == 0 || size().y == 0) return;
 
   _swapChain = Ref<SwapChain>(
                 new SwapChain(_device, *_surface, std::nullopt, std::nullopt));
@@ -50,17 +44,13 @@ void RenderWindow::_createSwapchain()
 
 RenderWindow::~RenderWindow() noexcept
 {
-  _cleanup();
+  cleanup();
 }
 
-void RenderWindow::_cleanup() noexcept
+void RenderWindow::cleanup() noexcept
 {
   _deleteSwapchain();
-  if(_handle != nullptr)
-  {
-    glfwDestroyWindow(_handle);
-    _handle = nullptr;
-  }
+  BaseWindow::cleanup();
 }
 
 void RenderWindow::_deleteSwapchain() noexcept
@@ -72,7 +62,7 @@ void RenderWindow::_deleteSwapchain() noexcept
 
 void RenderWindow::draw()
 {
-  if (_size.x == 0 || _size.y == 0) return;
+  if (size().x == 0 || size().y == 0) return;
   MT_ASSERT(_swapChain != nullptr);
   MT_ASSERT(_swapChain->framesCount() != 0);
 
@@ -136,31 +126,17 @@ Ref<FrameBuffer> RenderWindow::createFrameBuffer(Image& targetColorBuffer)
                                 nullptr));
 }
 
-void RenderWindow::drawImplementation(
-                                        CommandProducerGraphic& commandProducer,
-                                        FrameBuffer& frameBuffer)
+void RenderWindow::drawImplementation(CommandProducerGraphic& commandProducer,
+                                      FrameBuffer& frameBuffer)
 {
   CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
   renderPass.endPass();
 }
 
-bool RenderWindow::shouldClose() const noexcept
-{
-  return glfwWindowShouldClose(_handle);
-}
-
-void RenderWindow::_resizeHandler(GLFWwindow* window, int width, int height)
-{
-  RenderWindow* renderWindow =
-                          (RenderWindow*)(glfwGetWindowUserPointer(window));
-  MT_ASSERT(renderWindow != nullptr);
-
-  renderWindow->_size = glm::uvec2(width, height);
-  renderWindow->onResize();
-}
-
 void RenderWindow::onResize() noexcept
 {
+  BaseWindow::onResize();
+
   _deleteSwapchain();
 
   try
