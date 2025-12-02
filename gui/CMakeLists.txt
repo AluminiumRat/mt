@@ -12,6 +12,7 @@ include_directories(..
 set(SOURCES
     "BaseWindow.cpp"
     "GUILib.cpp"
+    "GUIWindow.cpp"
     "RenderWindow.cpp"
     ${IMGUI_PATH}"/imgui.cpp"
     ${IMGUI_PATH}"/imgui_draw.cpp"

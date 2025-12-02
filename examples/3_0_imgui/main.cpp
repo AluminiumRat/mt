@@ -23,8 +23,9 @@ int main(int argc, char* argv[])
                                                       {},
                                                       {},
                                                       GRAPHICS_CONFIGURATION);
-    TestWindow mainWindow(*device);
-    TestWindow mainWindow2(*device);
+    TestWindow window1(*device, "Test window1");
+    TestWindow window2(*device, "Test window2");
+
     while (!guiLib.shouldBeClosed())
     {
       guiLib.updateWindows();

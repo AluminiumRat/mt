@@ -1,30 +1,18 @@
 ﻿#pragma once
 
-#include <imgui.h>
-
-#include <gui/RenderWindow.h>
+#include <gui/GUIWindow.h>
 
 namespace mt
 {
-  class TestWindow : public RenderWindow
+  class TestWindow : public GUIWindow
   {
   public:
-    TestWindow(Device& device);
+    TestWindow(Device& device, const char* name);
     TestWindow(const TestWindow&) = delete;
     TestWindow& operator = (const TestWindow&) = delete;
-    virtual ~TestWindow() noexcept;
-
-    virtual void update() override;
+    virtual ~TestWindow() noexcept = default;
 
   protected:
-    virtual void onClose() noexcept override;
-    virtual void drawImplementation(CommandProducerGraphic& commandProducer,
-                                    FrameBuffer& frameBuffer) override;
-
-  private:
-    void _clean() noexcept;
-
-  private:
-    ImGuiContext* _imguiContext;
+    virtual void guiImplementation() override;
   };
 }
