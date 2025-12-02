@@ -36,6 +36,11 @@ find_path(VKMEMALLOC_PATH
           HINTS "$ENV{VKMEMALLOC_PATH}"
           REQUIRED)
 
+find_path(DDSIMAGE_PATH
+          dds.hpp
+          HINTS "third_party/dds_image/include"
+          REQUIRED)
+
 add_subdirectory(gui)
 add_subdirectory(technique)
 add_subdirectory(util)
