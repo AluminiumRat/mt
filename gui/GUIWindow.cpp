@@ -9,10 +9,6 @@
 
 using namespace mt;
 
-//  Контекст окно, в котором будет рисоваться Imgui, созданный вне методов
-//  guiImplementation
-static ImGuiContext* defaultImguiContext = nullptr;
-
 //  Стэк контекстов ImGUI. Нужен для корректного возврата к предыдущему
 //  контексту, если потребовалось переключиться на контекст какого-либо окна
 static std::vector<ImGuiContext*> contextStack;
@@ -35,7 +31,7 @@ public:
     MT_ASSERT(!contextStack.empty());
     contextStack.pop_back();
 
-    ImGuiContext* previousContext = defaultImguiContext;
+    ImGuiContext* previousContext = nullptr;
     if(!contextStack.empty())
     {
       previousContext = contextStack.back();
@@ -97,8 +93,6 @@ GUIWindow::~GUIWindow() noexcept
 
 void GUIWindow::_clean() noexcept
 {
-  if(defaultImguiContext == _imguiContext) defaultImguiContext = nullptr;
-
   if (_imguiContext != nullptr)
   {
     device().presentationQueue()->waitIdle();
@@ -117,13 +111,6 @@ void GUIWindow::onClose() noexcept
 {
   _clean();
   RenderWindow::onClose();
-}
-
-void GUIWindow::setAsDefault()
-{
-  MT_ASSERT(!isClosed());
-  defaultImguiContext = _imguiContext;
-  if(contextStack.empty()) ImGui::SetCurrentContext(_imguiContext);
 }
 
 void GUIWindow::update()
