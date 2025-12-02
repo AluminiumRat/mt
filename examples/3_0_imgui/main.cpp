@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
                                                       GRAPHICS_CONFIGURATION);
     TestWindow mainWindow(*device);
     TestWindow mainWindow2(*device);
-    while (!mainWindow.shouldClose())
+    while (!guiLib.shouldBeClosed())
     {
       guiLib.updateWindows();
       guiLib.drawWindows();

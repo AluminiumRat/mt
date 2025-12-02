@@ -43,28 +43,42 @@ void BaseWindow::cleanup() noexcept
   {
     glfwDestroyWindow(_handle);
     _handle = nullptr;
-    GUILib::instance().unregisterWindow(*this);
   }
+  GUILib::instance().unregisterWindow(*this);
+}
+
+void BaseWindow::onClose() noexcept
+{
+}
+
+void BaseWindow::close() noexcept
+{
+  if (isClosed()) return;
+  onClose();
+  glfwDestroyWindow(_handle);
+  _handle = nullptr;
 }
 
 void BaseWindow::update()
 {
+  if(isClosed()) return;
+
+  if(glfwWindowShouldClose(_handle))
+  {
+    close();
+  }
 }
 
 void BaseWindow::draw()
 {
 }
 
-bool BaseWindow::shouldClose() const noexcept
-{
-  return glfwWindowShouldClose(_handle);
-}
-
 void BaseWindow::_resizeHandler(GLFWwindow* window, int width, int height)
 {
   BaseWindow* baseWindow = (BaseWindow*)(glfwGetWindowUserPointer(window));
-  MT_ASSERT(window != nullptr);
+  MT_ASSERT(baseWindow != nullptr);
 
+  if(baseWindow->isClosed()) return;
   baseWindow->_size = glm::uvec2(width, height);
   baseWindow->onResize();
 }

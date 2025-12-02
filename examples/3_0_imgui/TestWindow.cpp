@@ -10,14 +10,13 @@ using namespace mt;
 
 TestWindow::TestWindow(Device& device) :
   RenderWindow(device, "Test window"),
-  _imguiContext(nullptr),
-  _imGuiIO(nullptr)
+  _imguiContext(nullptr)
 {
   _imguiContext = ImGui::CreateContext();
   ImGui::SetCurrentContext(_imguiContext);
 
-  _imGuiIO = &ImGui::GetIO();
-  _imGuiIO->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+  ImGuiIO& imGuiIO = ImGui::GetIO();
+  imGuiIO.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
   ImGui::StyleColorsDark();
 
@@ -54,7 +53,12 @@ TestWindow::TestWindow(Device& device) :
 
 TestWindow::~TestWindow() noexcept
 {
-  if(_imguiContext != nullptr)
+  _clean();
+}
+
+void TestWindow::_clean() noexcept
+{
+  if (_imguiContext != nullptr)
   {
     device().presentationQueue()->waitIdle();
 
@@ -63,14 +67,23 @@ TestWindow::~TestWindow() noexcept
     ImGui_ImplVulkan_Shutdown();
 
     ImGui::DestroyContext(_imguiContext);
+
+    _imguiContext = nullptr;
   }
+}
+
+void TestWindow::onClose() noexcept
+{
+  _clean();
+  RenderWindow::onClose();
 }
 
 void TestWindow::update()
 {
-  ImGui::SetCurrentContext(_imguiContext);
+  RenderWindow::update();
+  if(!isVisible()) return;
 
-  if(size().x == 0 || size().y == 0) return;
+  ImGui::SetCurrentContext(_imguiContext);
 
   ImGui_ImplVulkan_NewFrame();
   ImGui_ImplGlfw_NewFrame();

@@ -62,7 +62,7 @@ void RenderWindow::_deleteSwapchain() noexcept
 
 void RenderWindow::draw()
 {
-  if (size().x == 0 || size().y == 0) return;
+  if (!isVisible()) return;
   MT_ASSERT(_swapChain != nullptr);
   MT_ASSERT(_swapChain->framesCount() != 0);
 
@@ -149,6 +149,13 @@ void RenderWindow::onResize() noexcept
     Abort("Unable to create new swaochain");
   }
 }
+
+void RenderWindow::onClose() noexcept
+{
+  _deleteSwapchain();
+  BaseWindow::onClose();
+}
+
 
 std::unique_ptr<Device> RenderWindow::createDevice(
                             VkPhysicalDeviceFeatures requiredFeatures,

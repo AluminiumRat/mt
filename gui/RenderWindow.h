@@ -66,6 +66,7 @@ namespace mt
 
   protected:
     virtual void onResize() noexcept override;
+    virtual void onClose() noexcept override;
 
   private:
     void _createSwapchain();

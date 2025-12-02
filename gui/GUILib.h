@@ -30,6 +30,10 @@ namespace mt
     void updateWindows();
     void drawWindows();
 
+    //  Проверяет, есть ли ещё не закрытые окна. Возвращает true, если все окна
+    //    закрыты
+    bool shouldBeClosed() const noexcept;
+
   private:
     friend class BaseWindow;
     inline void registerWindow(BaseWindow& window);

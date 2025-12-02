@@ -19,6 +19,12 @@ namespace mt
     BaseWindow& operator = (const BaseWindow&) = delete;
     virtual ~BaseWindow() noexcept;
 
+    void close() noexcept;
+    inline bool isClosed() const noexcept;
+
+    // Окно открыто и имеет не нулевой размер
+    inline bool isVisible() const noexcept;
+
     virtual void update();
     virtual void draw();
 
@@ -28,18 +34,19 @@ namespace mt
     // кнопки и тайтл бар.
     inline glm::vec2 size() const noexcept;
 
-    // Пользователь закрыл окно
-    bool shouldClose() const noexcept;
-
   protected:
     void cleanup() noexcept;
 
     inline GLFWwindow& handle() const noexcept;
 
-    //  Обработчик изменения размеров. К моменту вызова этого обработчика
-    //  все команды из очередей GPU будут выполнены, а сами очереди
-    //  заблокированы от доступа из других потоков.
+    //  Обработчик изменения размеров.
+    //  К моменту вызова этого обработчика размеры окна уже изменились
     virtual void onResize() noexcept;
+
+    //  Обработчик закрытия окна
+    //  Вызывается непосредственно перед glfwDestroyWindow
+    //  Не вызывается при закрытии окна в деструкторе класса
+    virtual void onClose() noexcept;
 
   private:
     static void _resizeHandler(GLFWwindow* window, int width, int height);
@@ -49,6 +56,16 @@ namespace mt
     glm::uvec2 _size;
     std::string _name;
   };
+
+  inline bool BaseWindow::isClosed() const noexcept
+  {
+    return _handle == nullptr;
+  }
+
+  inline bool BaseWindow::isVisible() const noexcept
+  {
+    return !isClosed() && _size.x != 0 && _size.y != 0;
+  }
 
   inline const std::string& BaseWindow::name() const noexcept
   {

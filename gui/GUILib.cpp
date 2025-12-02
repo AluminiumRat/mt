@@ -39,3 +39,12 @@ void GUILib::drawWindows()
 {
   for (BaseWindow* window : _windows) window->draw();
 }
+
+bool GUILib::shouldBeClosed() const noexcept
+{
+  for(const BaseWindow* window : _windows)
+  {
+    if(!window->isClosed()) return false;
+  }
+  return true;
+}

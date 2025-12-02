@@ -14,14 +14,17 @@ namespace mt
     TestWindow& operator = (const TestWindow&) = delete;
     virtual ~TestWindow() noexcept;
 
-    virtual void update();
+    virtual void update() override;
 
   protected:
+    virtual void onClose() noexcept override;
     virtual void drawImplementation(CommandProducerGraphic& commandProducer,
                                     FrameBuffer& frameBuffer) override;
 
   private:
+    void _clean() noexcept;
+
+  private:
     ImGuiContext* _imguiContext;
-    ImGuiIO* _imGuiIO;
   };
 }
