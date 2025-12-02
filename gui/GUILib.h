@@ -1,8 +1,10 @@
 ﻿#pragma once
 
+#include <map>
 #include <string>
 #include <vector>
 
+#include <gui/WindowConfiguration.h>
 #include <util/Assert.h>
 
 namespace mt
@@ -19,13 +21,24 @@ namespace mt
   class GUILib
   {
   public:
-    GUILib(const char* configFilename);
+    GUILib();
     GUILib(const GUILib&) = delete;
     GUILib& operator = (const GUILib&) = delete;
     ~GUILib() noexcept;
 
     // Нельзя вызывать до создания GUILib
     inline static GUILib& instance() noexcept;
+
+    //  Загрузить настройки положений и размеров окон из конфигурационного файла
+    //  Не влияет на уже созданные окна. Новые настройки применяются только
+    //    к вновь создаваемым окнам.
+    //  В случае каких-либо ошибок этот метод пишет warning-и в лог, а не
+    //    выбрасывает исключения
+    void loadConfiguration(const char* filename) noexcept;
+    //  Сохранить в файл настройки положений и размеров окон
+    //  В случае каких-либо ошибок этот метод пишет warning-и в лог, а не
+    //    выбрасывает исключения
+    void saveConfiguration(const char* filename) const noexcept;
 
     void updateWindows();
     void drawWindows();
@@ -38,14 +51,21 @@ namespace mt
     friend class BaseWindow;
     inline void registerWindow(BaseWindow& window);
     inline void unregisterWindow(BaseWindow& window) noexcept;
+    inline const WindowConfiguration* getConfiguration(
+                                        const std::string& windowName) noexcept;
+    inline void addConfiguration( const std::string& windowName,
+                                  const WindowConfiguration& cofiguration);
 
   private:
     static GUILib* _instance;
 
-    std::string _configFilename;
-
     using Windows = std::vector<BaseWindow*>;
     Windows _windows;
+
+    //  Настройки для окон. Используются для восстановления состояния
+    //  после закрытия и нового запуска приложения
+    using ComfigurationMap = std::map<std::string, WindowConfiguration>;
+    ComfigurationMap _configurationMap;
   };
 
   inline GUILib& GUILib::instance() noexcept
@@ -71,5 +91,21 @@ namespace mt
         return;
       }
     }
+  }
+
+  inline const WindowConfiguration* GUILib::getConfiguration(
+                                        const std::string& windowName) noexcept
+  {
+    ComfigurationMap::const_iterator iConfig =
+                                            _configurationMap.find(windowName);
+    if(iConfig == _configurationMap.end()) return nullptr;
+    return &iConfig->second;
+  }
+
+  inline void GUILib::addConfiguration( const std::string& windowName,
+                                        const WindowConfiguration& cofiguration)
+  {
+    if(windowName.empty()) return;
+    _configurationMap[windowName] = cofiguration;
   }
 }

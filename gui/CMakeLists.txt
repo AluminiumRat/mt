@@ -7,6 +7,7 @@ include_directories(..
                     ${Vulkan_INCLUDE_DIRS}
                     ${VKMEMALLOC_PATH}
                     ${GLFW_PATH}/include
+                    ${YamlCPP_INCLUDE_DIRS}
                     ${IMGUI_PATH})
 
 set(SOURCES
@@ -23,3 +24,5 @@ set(SOURCES
 
 add_library(gui
             ${SOURCES})
+
+target_compile_definitions(gui PRIVATE YAML_CPP_STATIC_DEFINE)

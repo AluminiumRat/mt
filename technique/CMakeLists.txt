@@ -7,7 +7,6 @@ include_directories(..
                     ${Vulkan_INCLUDE_DIRS}
                     ${Shaderc_INCLUDE_DIRS}
                     ${VKMEMALLOC_PATH}
-                    ${GLFW_PATH}/include
                     ${YamlCPP_INCLUDE_DIRS}
                     "../third_party/spirv_reflect")
 

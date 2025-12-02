@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
                   VK_API_VERSION_1_3,
                   true,
                   true);
-    GUILib guiLib("");
+    GUILib guiLib;
 
     std::unique_ptr<Device> device = RenderWindow::createDevice(
                                                       {},

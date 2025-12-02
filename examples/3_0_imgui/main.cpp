@@ -17,20 +17,26 @@ int main(int argc, char* argv[])
                   VK_API_VERSION_1_3,
                   true,
                   true);
-    GUILib guiLib("");
+    GUILib guiLib;
+    guiLib.loadConfiguration("ImguiDemo.cfg");
 
     std::unique_ptr<Device> device = RenderWindow::createDevice(
                                                       {},
                                                       {},
                                                       GRAPHICS_CONFIGURATION);
     TestWindow window1(*device, "Test window1");
+    window1.loadConfiguration();
+
     TestWindow window2(*device, "Test window2");
+    window2.loadConfiguration();
 
     while (!guiLib.shouldBeClosed())
     {
       guiLib.updateWindows();
       guiLib.drawWindows();
     }
+
+    guiLib.saveConfiguration("ImguiDemo.cfg");
 
     return 0;
   }

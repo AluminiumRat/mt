@@ -22,7 +22,7 @@ namespace mt
     void close() noexcept;
     inline bool isClosed() const noexcept;
 
-    // Окно открыто и имеет не нулевой размер
+    //  Окно открыто и имеет не нулевой размер
     inline bool isVisible() const noexcept;
 
     virtual void update();
@@ -30,14 +30,48 @@ namespace mt
 
     inline const std::string& name() const noexcept;
 
-    // Размер активной области для рисования. То есть сюда не включены рамки,
-    // кнопки и тайтл бар.
-    inline glm::vec2 size() const noexcept;
+    //  Координаты левого верхнего угла окна (вместе с рамками)
+    inline glm::ivec2 position() const noexcept;
+    //  Переместить окно. newPosition - координаты левого верхнего угла окна
+    //    (вместе с рамками)
+    void move(glm::ivec2 newPosition) noexcept;
+
+    //  Размер активной области для рисования. То есть сюда не включены рамки,
+    //  кнопки и тайтл бар.
+    inline glm::uvec2 size() const noexcept;
+    //  Изменить размер. Указывается размер активной области для рисования.
+    //  То есть сюда не включены рамки, кнопки и тайтл бар.
+    void resize(glm::uvec2 newSize) noexcept;
+
+    inline bool isMinimized() const noexcept;
+    void minimize() noexcept;
+
+    inline bool isMaximized() const noexcept;
+    void maximize() noexcept;
+
+    //  Сохранить положение и размер окна для воостановления при следующем
+    //    открытии. При сохранении и восстановлении окна отличают конфигурации
+    //    друг друга по имени окна. Если вы используете loadConfiguration,
+    //    то позабодьтесь о том, чтобы окна имели уникальные имена.
+    //  Этот метод автоматически вызывается при закрытии окна, в деструкторе и
+    //    в GUILib::saveConfiguration, так что, как правило, нет необходимости
+    //    вызывать его вручную
+    void saveConfiguration() const;
+
+    //  Получить ранее сохраненную конфигурацию и выставить по ней окно
+    //  При сохранении и восстановлении окна отличают конфигурации друг друга
+    //    по имени окна. Если вы используете этот метод, то позабодьтесь о том,
+    //    чтобы окна имели уникальные имена.
+    void loadConfiguration();
 
   protected:
     void cleanup() noexcept;
 
     inline GLFWwindow& handle() const noexcept;
+
+    //  Обработчик изменения позиции окна.
+    //  К моменту вызова этого обработчика координаты окна уже изменились
+    virtual void onMove() noexcept;
 
     //  Обработчик изменения размеров.
     //  К моменту вызова этого обработчика размеры окна уже изменились
@@ -49,11 +83,25 @@ namespace mt
     virtual void onClose() noexcept;
 
   private:
+    static void _moveHandler(GLFWwindow* window, int xPos, int yPos);
     static void _resizeHandler(GLFWwindow* window, int width, int height);
+    static void _iconifyHandler(GLFWwindow* window, int iconified);
+    static void _maximizeHandler(GLFWwindow* window, int maximized);
 
   private:
     GLFWwindow* _handle;
+
+    //  Верхний левый край окна
+    glm::ivec2 _position;
+
+    //  Актуальный размер области отрисовки
     glm::uvec2 _size;
+    //  Размер области отрисовки в обычном режиме (не свернуто и не развернуто
+    //  на весь экран)
+    glm::uvec2 _storedSize;
+
+    bool _isMinimized;
+    bool _isMaximized;
     std::string _name;
   };
 
@@ -72,9 +120,24 @@ namespace mt
     return _name;
   }
 
-  inline glm::vec2 BaseWindow::size() const noexcept
+  inline glm::ivec2 BaseWindow::position() const noexcept
+  {
+    return _position;
+  }
+
+  inline glm::uvec2 BaseWindow::size() const noexcept
   {
     return _size;
+  }
+
+  inline bool BaseWindow::isMinimized() const noexcept
+  {
+    return _isMinimized;
+  }
+
+  inline bool BaseWindow::isMaximized() const noexcept
+  {
+    return _isMaximized;
   }
 
   inline GLFWwindow& BaseWindow::handle() const noexcept
