@@ -117,6 +117,7 @@ void CommandProducerTransfer::copyFromImageToBuffer(
                                             const Image& srcImage,
                                             VkImageAspectFlags srcAspectMask,
                                             uint32_t srcArrayIndex,
+                                            uint32_t srcLayerCount,
                                             uint32_t srcMipLevel,
                                             glm::uvec3 srcOffset,
                                             glm::uvec3 srcExtent,
@@ -131,7 +132,7 @@ void CommandProducerTransfer::copyFromImageToBuffer(
                                       srcMipLevel,
                                       1,
                                       srcArrayIndex,
-                                      1);
+                                      srcLayerCount);
   imageAccess.layouts[0] = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
   imageAccess.memoryAccess[0] = MemoryAccess{
                               .readStagesMask = VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -152,7 +153,7 @@ void CommandProducerTransfer::copyFromImageToBuffer(
   region.imageSubresource.aspectMask = srcAspectMask;
   region.imageSubresource.mipLevel = srcMipLevel;
   region.imageSubresource.baseArrayLayer = srcArrayIndex;
-  region.imageSubresource.layerCount = 1;
+  region.imageSubresource.layerCount = srcLayerCount;
 
   region.imageOffset.x = uint32_t(srcOffset.x);
   region.imageOffset.y = uint32_t(srcOffset.y);

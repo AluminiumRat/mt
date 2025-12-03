@@ -82,6 +82,7 @@ namespace mt
     void copyFromImageToBuffer( const Image& srcImage,
                                 VkImageAspectFlags srcAspectMask,
                                 uint32_t srcArrayIndex,
+                                uint32_t srcLayerCount,
                                 uint32_t srcMipLevel,
                                 glm::uvec3 srcOffset,
                                 glm::uvec3 srcExtent,
