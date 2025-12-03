@@ -8,7 +8,9 @@ include_directories(..
                     )
 
 set(SOURCES
+    "ContentLoader.cpp"
     "Log.cpp"
+    "ShaderLoader.cpp"
     "vkMeta.cpp"
     )
 

@@ -2,7 +2,7 @@
 
 #include <util/Abort.h>
 #include <util/Log.h>
-#include <vkr/pipeline/ShaderLoader.h>
+#include <util/ShaderLoader.h>
 #include <vkr/pipeline/ShaderModule.h>
 #include <vkr/Device.h>
 

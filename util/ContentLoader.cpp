@@ -6,7 +6,7 @@
 #include <sstream>
 
 #include <util/Assert.h>
-#include <ddsSupport/ContentLoader.h>
+#include <util/ContentLoader.h>
 
 using namespace mt;
 

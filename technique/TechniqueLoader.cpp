@@ -5,9 +5,9 @@
 
 #include <technique/TechniqueConfigurator.h>
 #include <technique/TechniqueLoader.h>
+#include <util/ShaderLoader.h>
 #include <util/vkMeta.h>
 #include <vkr/image/ImageFormatFeatures.h>
-#include <vkr/pipeline/ShaderLoader.h>
 
 namespace mt
 {

@@ -5,7 +5,7 @@
 
 #include <technique/ShaderCompilator.h>
 #include <util/Abort.h>
-#include <vkr/pipeline/ShaderLoader.h>
+#include <util/ShaderLoader.h>
 
 using namespace mt;
 

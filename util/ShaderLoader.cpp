@@ -6,7 +6,7 @@
 #include <sstream>
 
 #include <util/Assert.h>
-#include <vkr/pipeline/ShaderLoader.h>
+#include <util/ShaderLoader.h>
 
 using namespace mt;
 

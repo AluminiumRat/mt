@@ -23,7 +23,6 @@ set(SOURCES
     "pipeline/DescriptorSetLayout.cpp"
     "pipeline/GraphicPipeline.cpp"
     "pipeline/PipelineLayout.cpp"
-    "pipeline/ShaderLoader.cpp"
     "pipeline/ShaderModule.cpp"
     "queue/CommandBuffer.cpp"
     "queue/CommandPool.cpp"

@@ -3,8 +3,8 @@
 #include <vulkan/vulkan.h>
 #include <dds.hpp>
 
-#include <ddsSupport/ContentLoader.h>
 #include <ddsSupport/ddsSupport.h>
+#include <util/ContentLoader.h>
 #include <vkr/image/ImageFormatFeatures.h>
 #include <vkr/queue/CommandQueueTransfer.h>
 #include <vkr/Device.h>
