@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "dds_formats.hpp"
 
@@ -13,6 +13,7 @@ namespace fs = std::filesystem;
 
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 namespace dds {
     // Not going to include <algorithm> just for std::max and std::min
@@ -524,50 +525,52 @@ namespace dds {
         if (!blockSizeBytes && !bitsPerPixel)
             return dds::ReadResult::UnsupportedFormat;
 
-        auto computeMipmapSize = [bitsPerPixel, blockSizeBytes](DXGI_FORMAT dxgiFormat, uint32_t width, uint32_t height) -> uint32_t {
+        auto computeMipmapSize = [bitsPerPixel, blockSizeBytes](DXGI_FORMAT dxgiFormat, uint32_t width, uint32_t height, uint32_t depth) -> uint32_t {
             // Instead of checking each format enum each we'll check for the range in
             // which the BCn compressed formats are.
             if ((dxgiFormat >= DXGI_FORMAT_BC1_TYPELESS && dxgiFormat <= DXGI_FORMAT_BC5_SNORM) ||
                 (dxgiFormat >= DXGI_FORMAT_BC6H_TYPELESS && dxgiFormat <= DXGI_FORMAT_BC7_UNORM_SRGB)) {
                 auto pitch = max(1u, (width + 3) / 4) * blockSizeBytes;
-                return pitch * max(1u, (height + 3) / 4);
+                return pitch * max(1u, (height + 3) / 4) * depth;
             }
 
             // These formats are special
             if (dxgiFormat == DXGI_FORMAT_R8G8_B8G8_UNORM || dxgiFormat == DXGI_FORMAT_G8R8_G8B8_UNORM) {
-                return ((width + 1) >> 1) * 4 * height;
+                return ((width + 1) >> 1) * 4 * height * depth;
             }
 
-            return max(1u, static_cast<uint32_t>((width * bitsPerPixel + 7) / 8)) * height;
+            return max(1u, static_cast<uint32_t>((width * bitsPerPixel + 7) / 8)) * height * depth;
         };
-
-        // TODO: Support files with multiple resources.
-        if (image->arraySize > 1)
-            return ReadResult::UnsupportedFormat;
 
         // arraySize is populated with the additional DX10 header.
         uint64_t totalSize = 0;
-        for (uint32_t i = 0; i < image->arraySize; ++i) {
-            auto mipmaps = max(header->mipmapCount, 1u);
-            auto width = header->width;
-            auto height = header->height;
+        auto mipmapsCount = max(header->mipmapCount, 1u);
+        auto depth = max(header->depth, 1u);
 
-			image->mipmaps.reserve(mipmaps);
-            for (uint32_t mip = 0; mip < mipmaps && width != 0; ++mip) {
-                uint32_t size = computeMipmapSize(image->format, width, height);
-                totalSize += static_cast<uint64_t>(size);
+        image->layers.reserve(image->arraySize);
+        for (uint32_t layer = 0; layer < image->arraySize; layer++) {
+          image->layers.push_back({});
+          Image::Mipmaps& mips = image->layers.back();
+          mips.reserve(mipmapsCount);
 
-                image->mipmaps.emplace_back(ptr, size);
-                ptr += size;
+          auto width = header->width;
+          auto height = header->height;
+          for (uint32_t mip = 0; mip < mipmapsCount && width != 0; ++mip) {
+              uint32_t size = computeMipmapSize(image->format, width, height, depth);
+              totalSize += static_cast<uint64_t>(size);
 
-                width = max(width / 2, 1u);
-                height = max(height / 2, 1u);
-            }
+              mips.emplace_back(ptr, size);
+              ptr += size;
+
+              width = max(width / 2, 1u);
+              height = max(height / 2, 1u);
+          }
         }
 
         image->numMips = max(header->mipmapCount, 1u);
         image->width = header->width;
         image->height = header->height;
+        image->depth = depth;
         image->supportsAlpha = header->hasAlphaFlag();
 
         return dds::ReadResult::Success;

@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 #if defined(_MSVC_LANG)
@@ -320,6 +321,8 @@ namespace dds {
         bool supportsAlpha = false;
         DXGI_FORMAT format;
         std::unique_ptr<uint8_t[]> data = nullptr;
-        std::vector<dds::span<uint8_t>> mipmaps;
+        using Mipmaps = std::vector<dds::span<uint8_t>>;
+        using Layers = std::vector<Mipmaps>;
+        Layers layers;
     };
 } // namespace dds

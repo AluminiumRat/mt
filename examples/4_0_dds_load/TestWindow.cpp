@@ -62,9 +62,8 @@ void TestWindow::_createTexture()
   _texture.setImage(imageView);
 }
 
-void TestWindow::drawImplementation(
-                                      CommandProducerGraphic& commandProducer,
-                                      FrameBuffer& frameBuffer)
+void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,
+                                    FrameBuffer& frameBuffer)
 {
   CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
 

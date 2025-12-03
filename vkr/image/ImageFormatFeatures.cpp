@@ -10,6 +10,20 @@ using namespace mt;
 using FormatsMap = std::unordered_map<VkFormat, ImageFormatFeatures>;
 FormatsMap formatsMap =
   {
+    {VK_FORMAT_R8_UINT,         { .name = "VK_FORMAT_R8_UINT",
+                                  .format = VK_FORMAT_R8_UINT,
+                                  .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                                  .isColor = true,
+                                  .hasR = true,
+                                  .hasG = false,
+                                  .hasB = false,
+                                  .hasA = false,
+                                  .isDepthStencil = false,
+                                  .hasDepth = false,
+                                  .hasStencil = false,
+                                  .texelSize = 8,
+                                  .isCompressed = false}},
+
     {VK_FORMAT_R8G8B8_UNORM,    { .name = "VK_FORMAT_R8G8B8_UNORM",
                                   .format = VK_FORMAT_R8G8B8_UNORM,
                                   .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,

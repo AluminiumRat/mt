@@ -1,5 +1,4 @@
 ﻿#include <fstream>
-#include <memory>
 
 #include <vulkan/vulkan.h>
 #include <dds.hpp>
@@ -64,27 +63,32 @@ static void uploadDataToImage(Image& targetImage,
                             0);
   }
 
-  for (uint32_t mipIndex = 0; mipIndex < srcData.numMips; mipIndex++)
+  for (uint32_t layerIndex = 0; layerIndex < srcData.arraySize; layerIndex++)
   {
-    size_t dataSize = srcData.mipmaps[mipIndex].size();
-    Ref<DataBuffer> uploadBuffer(new DataBuffer(device,
-                                                dataSize,
-                                                DataBuffer::UPLOADING_BUFFER));
-    uploadBuffer->uploadData(srcData.mipmaps[mipIndex].data(), 0, dataSize);
+    for (uint32_t mipIndex = 0; mipIndex < srcData.numMips; mipIndex++)
+    {
+      size_t dataSize = srcData.layers[layerIndex][mipIndex].size();
+      Ref<DataBuffer> uploadBuffer(new DataBuffer(device,
+                                                  dataSize,
+                                                  DataBuffer::UPLOADING_BUFFER));
+      uploadBuffer->uploadData( srcData.layers[layerIndex][mipIndex].data(),
+                                0,
+                                dataSize);
 
-    glm::uvec3 dstExtent = targetImage.extent(mipIndex);
+      glm::uvec3 dstExtent = targetImage.extent(mipIndex);
 
-    producer->copyFromBufferToImage(*uploadBuffer,
-                                    0,
-                                    0,
-                                    0,
-                                    targetImage,
-                                    VK_IMAGE_ASPECT_COLOR_BIT,
-                                    0,
-                                    srcData.arraySize,
-                                    mipIndex,
-                                    glm::uvec3(0,0,0),
-                                    dstExtent);
+      producer->copyFromBufferToImage(*uploadBuffer,
+                                      0,
+                                      0,
+                                      0,
+                                      targetImage,
+                                      VK_IMAGE_ASPECT_COLOR_BIT,
+                                      layerIndex,
+                                      1,
+                                      mipIndex,
+                                      glm::uvec3(0,0,0),
+                                      dstExtent);
+    }
   }
 
   if(!targetImage.isLayoutAutoControlEnabled())
