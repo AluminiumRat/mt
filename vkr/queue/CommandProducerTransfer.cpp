@@ -62,6 +62,7 @@ void CommandProducerTransfer::copyFromBufferToImage(
                                             const Image& dstImage,
                                             VkImageAspectFlags dstAspectMask,
                                             uint32_t dstArrayIndex,
+                                            uint32_t dstArrayCount,
                                             uint32_t dstMipLevel,
                                             glm::uvec3 dstOffset,
                                             glm::uvec3 dstExtent)
@@ -72,7 +73,7 @@ void CommandProducerTransfer::copyFromBufferToImage(
                                       dstMipLevel,
                                       1,
                                       dstArrayIndex,
-                                      1);
+                                      dstArrayCount);
   imageAccess.layouts[0] = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
   imageAccess.memoryAccess[0] = MemoryAccess{
                               .readStagesMask = 0,
@@ -93,7 +94,7 @@ void CommandProducerTransfer::copyFromBufferToImage(
   region.imageSubresource.aspectMask = dstAspectMask;
   region.imageSubresource.mipLevel = dstMipLevel;
   region.imageSubresource.baseArrayLayer = dstArrayIndex;
-  region.imageSubresource.layerCount = 1;
+  region.imageSubresource.layerCount = dstArrayCount;
 
   region.imageOffset.x = uint32_t(dstOffset.x);
   region.imageOffset.y = uint32_t(dstOffset.y);

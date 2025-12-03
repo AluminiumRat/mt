@@ -25,11 +25,14 @@ namespace mt
     bool hasDepth;
     bool hasStencil;
 
-    //  Размер одного текселя в байтах. Для сжатых ворматов размер выводится
+    //  Размер одного текселя в битах. Для сжатых ворматов размер выводится
     //    как средний размер по блоку
     //  Имеет значение только при передаче данных на/из ГПУ для вычисления
     //    размера буферов
     uint32_t texelSize;
+
+    //  true для блочных форматов (bc1, bc2, bc3, bc4, bc5, bc6 и bc7)
+    bool isCompressed;
   };
 
   const ImageFormatFeatures& getFormatFeatures(VkFormat format);

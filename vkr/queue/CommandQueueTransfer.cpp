@@ -47,6 +47,7 @@ void CommandQueueTransfer::uploadToImage( const Image& dstImage,
 {
   uint32_t texelSize = getFormatFeatures(dstImage.format()).texelSize;
   size_t dataSize = size_t(texelSize) * dstExtent.x * dstExtent.y * dstExtent.z;
+  dataSize = dataSize / 8 + (dataSize % 8 == 0 ? 0 : 1);
   Ref<DataBuffer> stagingBuffer(new DataBuffer( device(),
                                                 dataSize,
                                                 DataBuffer::UPLOADING_BUFFER));
@@ -61,6 +62,7 @@ void CommandQueueTransfer::uploadToImage( const Image& dstImage,
                                   dstImage,
                                   dstAspectMask,
                                   dstArrayIndex,
+                                  1,
                                   dstMipLevel,
                                   dstOffset,
                                   dstExtent);

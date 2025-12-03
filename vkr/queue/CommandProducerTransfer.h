@@ -62,6 +62,7 @@ namespace mt
                                 const Image& dstImage,
                                 VkImageAspectFlags dstAspectMask,
                                 uint32_t dstArrayIndex,
+                                uint32_t dstArrayCount,
                                 uint32_t dstMipLevel,
                                 glm::uvec3 dstOffset,
                                 glm::uvec3 dstExtent);
