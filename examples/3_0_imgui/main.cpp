@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
     GUILib guiLib;
     guiLib.loadConfiguration("ImguiDemo.cfg");
 
-    std::unique_ptr<Device> device = RenderWindow::createDevice(
+    std::unique_ptr<Device> device = guiLib.createDevice(
                                                       {},
                                                       {},
                                                       GRAPHICS_CONFIGURATION);

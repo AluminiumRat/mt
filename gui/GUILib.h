@@ -6,6 +6,7 @@
 
 #include <gui/WindowConfiguration.h>
 #include <util/Assert.h>
+#include <vkr/Device.h>
 
 namespace mt
 {
@@ -47,6 +48,11 @@ namespace mt
     //    закрыты
     bool shouldBeClosed() const noexcept;
 
+    //  Создать устройство, подходящее для рендера в окно
+    std::unique_ptr<Device> createDevice(
+                            VkPhysicalDeviceFeatures requiredFeatures,
+                            const std::vector<std::string>& requiredExtensions,
+                            QueuesConfiguration configuration);
   private:
     friend class BaseWindow;
     inline void registerWindow(BaseWindow& window);

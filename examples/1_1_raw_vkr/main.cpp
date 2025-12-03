@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
                   true);
     GUILib guiLib;
 
-    std::unique_ptr<Device> device = RenderWindow::createDevice(
+    std::unique_ptr<Device> device = guiLib.createDevice(
                                                       {},
                                                       {},
                                                       GRAPHICS_CONFIGURATION);

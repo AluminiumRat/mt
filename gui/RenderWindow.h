@@ -11,7 +11,6 @@
 #include <gui/BaseWindow.h>
 #include <util/Assert.h>
 #include <util/Ref.h>
-#include <vkr/queue/QueueSources.h>
 #include <vkr/FrameBuffer.h>
 #include <vkr/SwapChain.h>
 #include <vkr/WindowSurface.h>
@@ -36,13 +35,6 @@ namespace mt
     virtual ~RenderWindow() noexcept;
 
     virtual void draw() override;
-
-    //  Создать устройство, подходящее для рендера в окно
-    //  GUILib должна быть инициализированная до вызова этого метода
-    static std::unique_ptr<Device> createDevice(
-                            VkPhysicalDeviceFeatures requiredFeatures,
-                            const std::vector<std::string>& requiredExtensions,
-                            QueuesConfiguration configuration);
 
   protected:
     inline Device& device() const noexcept;

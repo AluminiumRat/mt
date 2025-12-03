@@ -6,7 +6,6 @@
 
 #include <gui/RenderWindow.h>
 #include <vkr/Device.h>
-#include <vkr/VKRLib.h>
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define GLFW_INCLUDE_VULKAN
@@ -154,32 +153,4 @@ void RenderWindow::onClose() noexcept
 {
   _deleteSwapchain();
   BaseWindow::onClose();
-}
-
-
-std::unique_ptr<Device> RenderWindow::createDevice(
-                            VkPhysicalDeviceFeatures requiredFeatures,
-                            const std::vector<std::string>& requiredExtensions,
-                            QueuesConfiguration configuration)
-{
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  GLFWwindow* testWindow = glfwCreateWindow(1, 1, "Test window", nullptr, nullptr);
-
-  std::unique_ptr<Device> device;
-  try
-  {
-    Win32WindowSurface testSurface(glfwGetWin32Window(testWindow));
-    device = VKRLib::instance().createDevice( requiredFeatures,
-                                              requiredExtensions,
-                                              configuration,
-                                              &testSurface);
-  }
-  catch(...)
-  {
-    glfwDestroyWindow(testWindow);
-    throw;
-  }
-
-  glfwDestroyWindow(testWindow);
-  return device;
 }
