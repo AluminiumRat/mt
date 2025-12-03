@@ -9,6 +9,7 @@ include_directories(..
                     ${DDSIMAGE_PATH})
 
 set(SOURCES
+    "ContentLoader.cpp"
     "ddsSupport.cpp")
 
 add_library(ddsSupport

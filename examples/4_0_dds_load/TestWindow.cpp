@@ -51,7 +51,7 @@ void TestWindow::_createVertexBuffer()
 
 void TestWindow::_createTexture()
 {
-  Ref<Image> image = loadDDS( "C:/projects/images/image.dds",
+  Ref<Image> image = loadDDS( "examples/image.dds",
                               device(),
                               nullptr,
                               true);

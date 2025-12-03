@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.h>
 #include <dds.hpp>
 
+#include <ddsSupport/ContentLoader.h>
 #include <ddsSupport/ddsSupport.h>
 #include <vkr/image/ImageFormatFeatures.h>
 #include <vkr/queue/CommandQueueTransfer.h>
@@ -109,8 +110,13 @@ Ref<Image> mt::loadDDS( const char* filename,
 {
   if(transferQueue == nullptr) transferQueue = &device.primaryQueue();
 
+  ContentLoader& loader = ContentLoader::getContentLoader();
+  std::vector<char> fileData = loader.loadData(filename);
+
   dds::Image ddsImage;
-  if(dds::readFile(filename, &ddsImage) != dds::Success)
+  if(dds::readImage((std::uint8_t*)fileData.data(),
+                    fileData.size(),
+                    &ddsImage) != dds::Success)
   {
     throw std::runtime_error(std::string("Unable to read ") + filename);
   }
