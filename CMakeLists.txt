@@ -41,6 +41,7 @@ find_path(DDSIMAGE_PATH
           HINTS "third_party/dds_image/include"
           REQUIRED)
 
+add_subdirectory(ddsSupport)
 add_subdirectory(gui)
 add_subdirectory(technique)
 add_subdirectory(util)

@@ -6,8 +6,7 @@ include_directories(.
                     ../..
                     ${GLM_PATH}
                     ${Vulkan_INCLUDE_DIRS}
-                    ${VKMEMALLOC_PATH}
-                    ${DDSIMAGE_PATH})
+                    ${VKMEMALLOC_PATH})
 
 add_executable (dds_load
                 "main.cpp"
@@ -18,6 +17,7 @@ target_link_libraries(dds_load
                       ${Shaderc_LIBRARIES}
                       ${GLFW_PATH}/lib-vc2022/glfw3.lib
                       ${YamlCPP_LIBRARIES}
+                      ddsSupport
                       util
                       vkr
                       technique
