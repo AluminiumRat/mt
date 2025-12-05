@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <filesystem>
+
 #include <vulkan/vulkan.hpp>
 
 #include <util/Ref.h>
@@ -24,7 +26,7 @@ namespace mt
   //    ожидает их выполнения. Если вы используете image в очереди, отличной от
   //    transferQueue, то необходима внешняя синхронизация. Впрочем,
   //    CommandQueue::ownershipTransfer и так её делает
-  Ref<Image> loadDDS( const char* filename,
+  Ref<Image> loadDDS( const std::filesystem::path& file,
                       Device& device,
                       CommandQueueTransfer* transferQueue = nullptr,
                       bool layoutAutocontrol = false);
@@ -42,6 +44,6 @@ namespace mt
   //  ВНИМАНИЕ! srcImage должен быть создан со включенным флагом
   //    VK_IMAGE_USAGE_TRANSFER_SRC_BIT
   void saveToDDS( const Image& srcImage,
-                  const char* filename,
+                  const std::filesystem::path& file,
                   CommandQueueTransfer* transferQueue = nullptr);
 };

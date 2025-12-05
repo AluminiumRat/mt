@@ -9,9 +9,12 @@
 #include <vkr/queue/CommandQueueTransfer.h>
 #include <vkr/Device.h>
 
+namespace fs = std::filesystem;
+
 using namespace mt;
 
-static void checkDDSImage(const dds::Image& ddsImage, const char* filename)
+static void checkDDSImage(const dds::Image& ddsImage,
+                          const std::string& filename)
 {
   if(ddsImage.numMips == 0)
   {
@@ -30,7 +33,7 @@ static void checkDDSImage(const dds::Image& ddsImage, const char* filename)
 }
 
 static VkImageType getImageType(const dds::Image& ddsImage,
-                                const char* filename)
+                                const std::string& filename)
 {
   switch (ddsImage.dimension) {
   case dds::Texture1D:
@@ -109,7 +112,7 @@ static void uploadDataToImage(Image& targetImage,
   transferQueue.submitCommands(std::move(producer));
 }
 
-Ref<Image> mt::loadDDS( const char* filename,
+Ref<Image> mt::loadDDS( const fs::path& file,
                         Device& device,
                         CommandQueueTransfer* transferQueue,
                         bool layoutAutocontrol)
@@ -117,7 +120,9 @@ Ref<Image> mt::loadDDS( const char* filename,
   if(transferQueue == nullptr) transferQueue = &device.primaryQueue();
 
   ContentLoader& loader = ContentLoader::getContentLoader();
-  std::vector<char> fileData = loader.loadData(filename);
+  std::vector<char> fileData = loader.loadData(file);
+
+  std::string filename = (const char*)file.u8string().c_str();
 
   dds::Image ddsImage;
   if(dds::readImage((std::uint8_t*)fileData.data(),
@@ -151,7 +156,7 @@ Ref<Image> mt::loadDDS( const char* filename,
                               ddsImage.arraySize,
                               ddsImage.numMips,
                               layoutAutocontrol,
-                              filename));
+                              filename.c_str()));
 
   uploadDataToImage(*image, ddsImage, device, *transferQueue);
 
@@ -347,7 +352,7 @@ dds::ResourceDimension getResourceDimension(const Image& srcImage)
 }
 
 void mt::saveToDDS( const Image& srcImage,
-                    const char* filename,
+                    const fs::path& file,
                     CommandQueueTransfer* transferQueue)
 {
   Device& device = srcImage.device();
@@ -363,14 +368,11 @@ void mt::saveToDDS( const Image& srcImage,
   const ImageFormatFeatures& formatDesc = getFormatFeatures(format);
   DXGI_FORMAT dxgiFormat = getDXGIFormat(formatDesc);
 
-  std::ofstream file(filename, std::ios::binary);
-  if (!file.is_open())
-  {
-    throw std::runtime_error(std::string("Unable to open file ") + filename);
-  }
+  std::ofstream fileStraem(file, std::ios::binary);
+  if (!fileStraem.is_open()) throw std::runtime_error(std::string("Unable to open file: ") + (const char*)file.u8string().c_str());
 
   uint32_t ddsMagic = dds::DDS;
-  file.write((const char*)&ddsMagic, sizeof(ddsMagic));
+  fileStraem.write((const char*)&ddsMagic, sizeof(ddsMagic));
 
   uint32_t pixelFormatFlags = (uint32_t)dds::PixelFormatFlags::FourCC;
   if (formatDesc.hasA)
@@ -388,18 +390,18 @@ void mt::saveToDDS( const Image& srcImage,
   header.height = srcImage.extent().y;
   header.depth = srcImage.extent().z;
 
-  file.write((const char*)&header, sizeof(header));
+  fileStraem.write((const char*)&header, sizeof(header));
 
   dds::Dx10Header dx10Header{};
   dx10Header.dxgiFormat = dxgiFormat;
   dx10Header.resourceDimension = getResourceDimension(srcImage);
   dx10Header.arraySize = srcImage.arraySize();
 
-  file.write((const char*)&dx10Header, sizeof(dx10Header));
+  fileStraem.write((const char*)&dx10Header, sizeof(dx10Header));
 
   for(Ref<DataBuffer> buffer : mipBuffers)
   {
     DataBuffer::Mapper map(*buffer, DataBuffer::Mapper::GPU_TO_CPU);
-    file.write((const char*)map.data(), buffer->size());
+    fileStraem.write((const char*)map.data(), buffer->size());
   }
 }
