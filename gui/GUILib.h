@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <filesystem>
 #include <map>
 #include <string>
 #include <vector>
@@ -35,11 +36,11 @@ namespace mt
     //    к вновь создаваемым окнам.
     //  В случае каких-либо ошибок этот метод пишет warning-и в лог, а не
     //    выбрасывает исключения
-    void loadConfiguration(const char* filename) noexcept;
+    void loadConfiguration(const std::filesystem::path& file) noexcept;
     //  Сохранить в файл настройки положений и размеров окон
     //  В случае каких-либо ошибок этот метод пишет warning-и в лог, а не
     //    выбрасывает исключения
-    void saveConfiguration(const char* filename) const noexcept;
+    void saveConfiguration(const std::filesystem::path& file) const noexcept;
 
     void updateWindows();
     void drawWindows();

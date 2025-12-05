@@ -14,6 +14,8 @@
 #include <GLFW/glfw3native.h>
 #include <vkr/Win32WindowSurface.h>
 
+namespace fs = std::filesystem;
+
 using namespace mt;
 
 GUILib* GUILib::_instance = nullptr;
@@ -55,12 +57,13 @@ bool GUILib::shouldBeClosed() const noexcept
   return true;
 }
 
-void GUILib::loadConfiguration(const char* filename) noexcept
+void GUILib::loadConfiguration(const fs::path& file) noexcept
 {
   try
   {
-    YAML::Node configNode = YAML::LoadFile(filename);
-    if(!configNode.IsMap()) throw std::runtime_error(std::string("GUILib: wrong config file format: ") + filename);
+    std::ifstream fileStream(file, std::ios::binary);
+    YAML::Node configNode = YAML::Load(fileStream);
+    if(!configNode.IsMap()) throw std::runtime_error(std::string("GUILib: wrong config file format: ") + (const char*)file.u8string().c_str());
 
     _configurationMap.clear();
 
@@ -95,7 +98,7 @@ void GUILib::loadConfiguration(const char* filename) noexcept
   }
 }
 
-void GUILib::saveConfiguration(const char* filename) const noexcept
+void GUILib::saveConfiguration(const fs::path& file) const noexcept
 {
   try
   {
@@ -132,12 +135,12 @@ void GUILib::saveConfiguration(const char* filename) const noexcept
     out << YAML::EndMap;
 
     // А теперь сохраняем это всё в файл
-    std::ofstream file(filename, std::ios::binary);
-    if(!file.is_open())
+    std::ofstream fileStream(file, std::ios::binary);
+    if(!fileStream.is_open())
     {
-      throw std::runtime_error(std::string("Unable to open file ") + filename);
+      throw std::runtime_error(std::string("Unable to open file ") + (const char*)file.u8string().c_str());
     }
-    file.write(out.c_str(), out.size());
+    fileStream.write(out.c_str(), out.size());
   }
   catch (std::exception& error)
   {
