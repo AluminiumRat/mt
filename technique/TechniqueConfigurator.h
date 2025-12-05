@@ -59,8 +59,7 @@ namespace mt
     using Samplers = TechniqueConfiguration::Samplers;
 
   public:
-    TechniqueConfigurator(Device& device,
-                          const char* debugName = "TechniqueConfigurator");
+    TechniqueConfigurator(Device& device, const char* debugName);
     TechniqueConfigurator(const TechniqueConfigurator&) = delete;
     TechniqueConfigurator& operator = (const TechniqueConfigurator&) = delete;
   protected:

@@ -54,8 +54,7 @@ namespace mt
     };
 
   public:
-    Technique(Device& device,
-              const char* debugName = "Technique");
+    Technique(Device& device, const char* debugName);
     Technique(const Technique&) = delete;
     Technique& operator = (const Technique&) = delete;
   protected:
