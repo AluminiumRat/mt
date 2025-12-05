@@ -4,6 +4,7 @@
 #include <vkr/image/Image.h>
 #include <vkr/image/ImageFormatFeatures.h>
 #include <vkr/Device.h>
+#include <vkr/VKRLib.h>
 
 using namespace mt;
 
@@ -16,7 +17,8 @@ Image::Image( Device& device,
               VkSampleCountFlagBits samples,
               uint32_t arraySize,
               uint32_t mipmapCount,
-              bool enableLayoutAutoControl) :
+              bool enableLayoutAutoControl,
+              const char* debugName) :
   owner(nullptr),
   _handle(VK_NULL_HANDLE),
   _allocation(VK_NULL_HANDLE),
@@ -30,6 +32,7 @@ Image::Image( Device& device,
   _mipmapCount(mipmapCount),
   _sharingMode(VK_SHARING_MODE_EXCLUSIVE),
   _layoutAutoControlEnabled(enableLayoutAutoControl),
+  _debugName(debugName),
   _device(device)
 {
   MT_ASSERT(extent.x > 0 && extent.y > 0 && extent.z > 0);
@@ -70,6 +73,8 @@ Image::Image( Device& device,
     }
 
     _memorySize = allocInfo.size;
+
+    _setDebugName();
   }
   catch(...)
   {
@@ -88,7 +93,8 @@ Image::Image( Device& device,
               uint32_t mipmapCount,
               VkSharingMode sharingMode,
               bool enableLayoutAutoControl,
-              const ImageAccess& theLastAccess) :
+              const ImageAccess& theLastAccess,
+              const char* debugName) :
   owner(nullptr),
   lastAccess(theLastAccess),
   _handle(handle),
@@ -103,6 +109,7 @@ Image::Image( Device& device,
   _mipmapCount(mipmapCount),
   _sharingMode(sharingMode),
   _layoutAutoControlEnabled(enableLayoutAutoControl),
+  _debugName(debugName),
   _device(device)
 {
   MT_ASSERT(_handle != VK_NULL_HANDLE)
@@ -119,6 +126,21 @@ Image::Image( Device& device,
                                 _handle,
                                 &memoryRequirements);
   _memorySize = memoryRequirements.size;
+
+  _setDebugName();
+}
+
+void Image::_setDebugName()
+{
+  if(!VKRLib::instance().isDebugEnabled()) return;
+
+  VkDebugUtilsObjectNameInfoEXT nameInfo{};
+  nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+  nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
+  nameInfo.objectHandle = (uint64_t)_handle;
+  nameInfo.pObjectName = _debugName.c_str();
+
+  _device.extFunctions().vkSetDebugUtilsObjectNameEXT(&nameInfo);
 }
 
 Image::~Image()

@@ -149,7 +149,8 @@ Ref<Image> mt::loadDDS( const char* filename,
                               VK_SAMPLE_COUNT_1_BIT,
                               ddsImage.arraySize,
                               ddsImage.numMips,
-                              layoutAutocontrol));
+                              layoutAutocontrol,
+                              filename));
 
   uploadDataToImage(*image, ddsImage, device, *transferQueue);
 

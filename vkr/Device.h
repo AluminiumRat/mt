@@ -3,6 +3,7 @@
 #include <array>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -16,6 +17,7 @@
 #include <vkr/queue/CommandQueueTransfer.h>
 #include <vkr/queue/QueueSources.h>
 #include <vkr/queue/QueueTypes.h>
+#include <vkr/ExtFunctions.h>
 
 namespace mt
 {
@@ -78,6 +80,8 @@ namespace mt
     //    не дает другим потокам добавлять новые команды в очередь
     std::unique_lock<std::recursive_mutex> lockQueues() noexcept;
 
+    inline const ExtFunctions& extFunctions() const noexcept;
+
   private:
     void _cleanup() noexcept;
     void _createHandle( const std::vector<std::string>& requiredExtensions,
@@ -99,6 +103,9 @@ namespace mt
     std::recursive_mutex _commonQueuesMutex;
     std::vector<std::unique_ptr<CommandQueue>> _queues;
     std::array<CommandQueue*, QueueTypeCount> _queuesByTypes;
+
+    // std::optional для отложенного создания в конце конструктора
+    std::optional<ExtFunctions> _extFunctions;
   };
 
   inline VkDevice Device::handle() const noexcept
@@ -189,5 +196,10 @@ namespace mt
       return *static_cast<CommandQueueCompute*>(_queuesByTypes[COMPUTE_QUEUE]);
     }
     MT_ASSERT(false && "At least one of the graphic queue or the compute queue must exists");
+  }
+
+  inline const ExtFunctions& Device::extFunctions() const noexcept
+  {
+    return *_extFunctions;
   }
 }

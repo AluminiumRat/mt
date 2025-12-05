@@ -45,6 +45,7 @@ set(SOURCES
     "queue/VolatileDescriptorPool.cpp"
     "DataBuffer.cpp"
     "Device.cpp"
+    "ExtFunctions.cpp"
     "FrameBuffer.cpp"
     "FrameBufferFormat.cpp"
     "PhysicalDevice.cpp"

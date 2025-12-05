@@ -137,7 +137,8 @@ Ref<ImageView> TestWindow::_createTexture()
                               VK_SAMPLE_COUNT_1_BIT,
                               1,
                               1,
-                              true));
+                              true,
+                              "Test image"));
 
   uint32_t pixels[4] = { 0xFF0000FF, 0xFF00FF00, 0xFF00FFFF, 0xFFFF0000 };
   device().graphicQueue()->uploadToImage( *image,

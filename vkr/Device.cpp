@@ -25,6 +25,7 @@ Device::Device( PhysicalDevice& physicalDevice,
     _createHandle(requiredExtensions, enabledLayers, queueSources);
     _initVMA();
     _buildQueues(queueSources);
+    _extFunctions.emplace(_handle);
   }
   catch(...)
   {

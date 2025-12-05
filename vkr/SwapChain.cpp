@@ -222,7 +222,8 @@ void SwapChain::_createHandle(
                                           1,
                                           createInfo.imageSharingMode,
                                           false,
-                                          ImageAccess());
+                                          ImageAccess(),
+                                          "Swapchain image");
   }
 }
 

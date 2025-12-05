@@ -3,6 +3,7 @@
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -38,7 +39,8 @@ namespace mt
           VkSampleCountFlagBits samples,
           uint32_t arraySize,
           uint32_t mipmapCount,
-          bool enableLayoutAutoControl);
+          bool enableLayoutAutoControl,
+          const char* debugName);
 
     //  Создать объект-обертку вокруг уже существующего VkImage
     //  enableLayoutAutoControl - необходимо ли производить автоматический
@@ -58,7 +60,8 @@ namespace mt
           uint32_t mipmapCount,
           VkSharingMode sharingMode,
           bool enableLayoutAutoControl,
-          const ImageAccess& theLastAccess);
+          const ImageAccess& theLastAccess,
+          const char* debugName);
     Image(const Image&) = delete;
     Image& operator = (const Image&) = delete;
   protected:
@@ -90,10 +93,14 @@ namespace mt
     inline VkSharingMode sharingMode() const noexcept;
     inline bool isLayoutAutoControlEnabled() const noexcept;
 
-    inline static uint32_t calculateMipNumber(const glm::uvec2& extent);
+    inline static uint32_t calculateMipNumber(
+                                            const glm::uvec2& extent) noexcept;
+
+    inline const std::string& debugName() const noexcept;
 
   private:
     void _cleanup() noexcept;
+    void _setDebugName();
 
   private:
     //  Эти данные полностью контролируются классом CommandQueue и используются
@@ -121,6 +128,8 @@ namespace mt
 
     VkSharingMode _sharingMode;
     bool _layoutAutoControlEnabled;
+
+    std::string _debugName;
 
     Device& _device;
   };
@@ -194,9 +203,14 @@ namespace mt
     return _layoutAutoControlEnabled;
   }
 
-  inline uint32_t Image::calculateMipNumber(const glm::uvec2& extent)
+  inline uint32_t Image::calculateMipNumber(const glm::uvec2& extent) noexcept
   {
     unsigned int maxDimension = std::max(extent.x, extent.y);
     return uint32_t(std::floor(std::log2(maxDimension)) + 1);
+  }
+
+  inline const std::string& Image::debugName() const noexcept
+  {
+    return _debugName;
   }
 }
