@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <filesystem>
 #include <span>
 #include <optional>
 #include <string>
@@ -30,7 +31,7 @@ namespace mt
     struct ShaderInfo
     {
       VkShaderStageFlagBits stage;
-      std::string filename;
+      std::filesystem::path file;
     };
     using Shaders = std::vector<ShaderInfo>;
 

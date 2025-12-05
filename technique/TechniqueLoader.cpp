@@ -9,6 +9,8 @@
 #include <util/vkMeta.h>
 #include <vkr/image/ImageFormatFeatures.h>
 
+namespace fs = std::filesystem;
+
 namespace mt
 {
   struct FrameBufferDescription
@@ -201,8 +203,9 @@ namespace mt
     {
       std::string shaderStage = iShader->first.as<std::string>();
       std::string shaderFile = iShader->second.as<std::string>();
+      std::filesystem::path file = ((const char8_t*)shaderFile.c_str());
       shaders.push_back({ .stage = shaderStageMap[shaderStage],
-                          .filename = shaderFile});
+                          .file = file});
     }
 
     target.setShaders(shaders);

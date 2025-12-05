@@ -177,27 +177,30 @@ void PassConfigurator::_processShader(const ShaderInfo& shaderRecord,
   ShaderSet& shaderSet =
         context.shaders[context.currentPassIndex][context.currentVariantIndex];
 
+  std::string shaderFilename =
+                              (const char*)shaderRecord.file.u8string().c_str();
+
   // Проверяем, что нет дублирования шейдерных стадий
   for(const ShaderModuleInfo& shader : shaderSet)
   {
     if(shader.stage == shaderRecord.stage)
     {
-      throw std::runtime_error(_name + ": duplicate shader stages: " + shaderRecord.filename.c_str());
+      throw std::runtime_error(_name + ": duplicate shader stages: " + shaderFilename);
     }
   }
 
   // Получаем spirv код
-  std::vector<uint32_t> spirData =
-                      ShaderCompilator::compile(shaderRecord.filename.c_str(),
-                                                shaderRecord.stage,
-                                                context.currentDefines);
+  std::vector<uint32_t> spirData = ShaderCompilator::compile(
+                                                        shaderRecord.file,
+                                                        shaderRecord.stage,
+                                                        context.currentDefines);
 
   // Парсим spirv код
   spv_reflect::ShaderModule reflection( spirData.size() * sizeof(spirData[0]),
                                         spirData.data());
   if (reflection.GetResult() != SPV_REFLECT_RESULT_SUCCESS)
   {
-    throw std::runtime_error(_name + ": unable to process SPIRV data: " + shaderRecord.filename.c_str());
+    throw std::runtime_error(_name + ": unable to process SPIRV data: " + shaderFilename);
   }
   const SpvReflectShaderModule& reflectModule = reflection.GetShaderModule();
 
@@ -209,7 +212,7 @@ void PassConfigurator::_processShader(const ShaderInfo& shaderRecord,
                                     new ShaderModule(
                                                 *context.device,
                                                 spirData,
-                                                shaderRecord.filename.c_str()));
+                                                shaderFilename.c_str()));
   shaderSet.push_back(ShaderModuleInfo{ std::move(newShaderModule),
                                         shaderRecord.stage});
 }
@@ -226,7 +229,7 @@ void PassConfigurator::_processShaderReflection(
     uint32_t setIndex = reflectedSet.set;
     if(setIndex > maxDescriptorSetIndex)
     {
-      throw std::runtime_error(_name + ": descriptor set with the wrong set index: " + shaderRecord.filename);
+      throw std::runtime_error(_name + ": descriptor set with the wrong set index: " + (const char*)shaderRecord.file.u8string().c_str());
     }
 
     DescriptorSetType setType = DescriptorSetType(setIndex);
@@ -296,6 +299,9 @@ void PassConfigurator::_processBindings(
                                                 reflectedSet.bindings[iBinding];
     MT_ASSERT(reflectedBinding != nullptr);
 
+    std::string shaderFilename =
+                              (const char*)shaderRecord.file.u8string().c_str();
+
     // Для начала собираем общие данные о биндинге из рефлексии
     TechniqueConfiguration::Resource newResource;
     newResource.type = VkDescriptorType(reflectedBinding->descriptor_type);
@@ -311,7 +317,7 @@ void PassConfigurator::_processBindings(
         newResource.type != VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE &&
         newResource.type != VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
     {
-      throw std::runtime_error(_name + ": " + shaderRecord.filename + ": only images arrays are supported.");
+      throw std::runtime_error(_name + ": " + shaderFilename + ": only images arrays are supported.");
     }
 
     // Смотрим, возможно этот биндинг уже появлялся на других стадиях
@@ -328,8 +334,8 @@ void PassConfigurator::_processBindings(
             resource.writeAccess != newResource.writeAccess ||
             resource.count != newResource.count)
         {
-          Log::warning() << _name << ": binding conflict: " << shaderRecord.filename << " set: " << uint32_t(resource.set) << " binding: " << resource.bindingIndex;
-          throw std::runtime_error(_name + ": binding conflict: " + shaderRecord.filename);
+          Log::warning() << _name << ": binding conflict: " << shaderFilename << " set: " << uint32_t(resource.set) << " binding: " << resource.bindingIndex;
+          throw std::runtime_error(_name + ": binding conflict: " + shaderFilename);
         }
         // Биндинги совместимы, просто дополняем информацию
         resource.shaderStages |= newResource.shaderStages;
@@ -371,8 +377,10 @@ void PassConfigurator::_processUniformBlock(
       if( buffer.name != reflectedBinding.name ||
           buffer.size != block.size)
       {
-        Log::warning() << _name << ": uniform buffer mismatch set:" << reflectedBinding.set << " binding: " << reflectedBinding.binding << " file:" << shaderRecord.filename;
-        throw std::runtime_error(_name + ": uniform buffer mismatch: " + shaderRecord.filename);
+        std::string shaderFilename =
+                              (const char*)shaderRecord.file.u8string().c_str();
+        Log::warning() << _name << ": uniform buffer mismatch set:" << reflectedBinding.set << " binding: " << reflectedBinding.binding << " file:" << shaderFilename;
+        throw std::runtime_error(_name + ": uniform buffer mismatch: " + shaderFilename);
       }
       return;
     }

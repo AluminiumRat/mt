@@ -40,9 +40,9 @@ void TestWindow::_makeConfiguration()
 {
   PassConfigurator::ShaderInfo shaders[2] =
   { { .stage = VK_SHADER_STAGE_VERTEX_BIT,
-      .filename = "examples/technique/shader.vert"},
+      .file = "examples/technique/shader.vert"},
     { .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-      .filename = "examples/technique/shader.frag"}};
+      .file = "examples/technique/shader.frag"}};
 
   VkFormat colorAttachments[1] = { VK_FORMAT_B8G8R8A8_SRGB };
   FrameBufferFormat fbFormat(colorAttachments, VK_FORMAT_UNDEFINED, VK_SAMPLE_COUNT_1_BIT);

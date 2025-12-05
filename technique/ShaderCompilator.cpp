@@ -47,7 +47,8 @@ shaderc_include_result* ShaderIncluder::GetInclude(
     std::string errorString;
     try
     {
-      shaderText = ShaderLoader::getShaderLoader().loadText(requested_source);
+      std::filesystem::path filePatch((const char8_t*)requested_source);
+      shaderText = ShaderLoader::getShaderLoader().loadText(filePatch);
     }
     catch (std::exception& error)
     {
@@ -134,11 +135,12 @@ static shaderc_shader_kind getShaderKind(VkShaderStageFlagBits shaderStage)
 }
 
 std::vector<uint32_t> ShaderCompilator::compile(
-                                              const char* filename,
+                                              const std::filesystem::path& file,
                                               VkShaderStageFlagBits shaderStage,
                                               std::span<const Define> defines)
 {
-  std::string shaderText = ShaderLoader::getShaderLoader().loadText(filename);
+  std::string shaderFilename = (const char*)file.u8string().c_str();
+  std::string shaderText = ShaderLoader::getShaderLoader().loadText(file);
 
   // Настраиваем макросы
   shaderc::CompileOptions options;
@@ -163,7 +165,7 @@ std::vector<uint32_t> ShaderCompilator::compile(
     std::lock_guard lock(compilerMutex);
     compilationResult = compiler.CompileGlslToSpv(shaderText,
                                                   getShaderKind(shaderStage),
-                                                  filename,
+                                                  shaderFilename.c_str(),
                                                   options);
   }
 
@@ -171,7 +173,7 @@ std::vector<uint32_t> ShaderCompilator::compile(
   if (compilationResult.GetCompilationStatus() !=
                                             shaderc_compilation_status_success)
   {
-    throw std::runtime_error(std::string("Shader compilation error. File: ") + filename + "\n" + compilationResult.GetErrorMessage());
+    throw std::runtime_error(std::string("Shader compilation error. File: ") + shaderFilename.c_str() + "\n" + compilationResult.GetErrorMessage());
   }
   return std::vector<uint32_t>( compilationResult.cbegin(),
                                 compilationResult.cend());

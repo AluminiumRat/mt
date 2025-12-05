@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <filesystem>
 #include <span>
 #include <vector>
 
@@ -17,7 +18,7 @@ namespace mt
       const char* value;
     };
 
-    static std::vector<uint32_t> compile( const char* filename,
+    static std::vector<uint32_t> compile( const std::filesystem::path& file,
                                           VkShaderStageFlagBits shaderStage,
                                           std::span<const Define> defines);
   };
