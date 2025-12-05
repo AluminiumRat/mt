@@ -8,6 +8,8 @@
 #include <util/Assert.h>
 #include <util/ShaderLoader.h>
 
+namespace fs = std::filesystem;
+
 using namespace mt;
 
 static std::unique_ptr<ShaderLoader> shaderLoader(new DefaultShaderLoader);
@@ -23,16 +25,17 @@ ShaderLoader& ShaderLoader::getShaderLoader() noexcept
   return *shaderLoader;
 }
 
-static std::ifstream openFile(const char* filename)
+static std::ifstream openFile(const fs::path& file)
 {
   // Для начала ищем в текущей папке
-  std::ifstream file(filename, std::ios::ate | std::ios::binary);
-  if (!file.is_open())
+  std::ifstream fileStream(file, std::ios::ate | std::ios::binary);
+  if (!fileStream.is_open())
   {
     // В подкаталоге shaders
-    file.open(std::string("shaders/") + filename, std::ios::ate | std::ios::binary);
+    fileStream.open(fs::path("shaders") / file,
+                    std::ios::ate | std::ios::binary);
   }
-  if (!file.is_open())
+  if (!fileStream.is_open())
   {
     // Парсим переменную окружения и ищем по путям в ней
     const char* patchesEnv = std::getenv("MT_SHADERS");
@@ -42,56 +45,54 @@ static std::ifstream openFile(const char* filename)
       std::string path;
       while(std::getline(envStream, path, ';'))
       {
-        file.open(path + "/" + filename, std::ios::ate | std::ios::binary);
-        if (file.is_open()) break;
+        fileStream.open(fs::path(path) / file,
+                        std::ios::ate | std::ios::binary);
+        if (fileStream.is_open()) break;
       }
     }
   }
 
-  if (!file.is_open())
+  if (!fileStream.is_open())
   {
-    throw std::runtime_error(std::string("Unable to open file: ") + filename);
+    throw std::runtime_error(std::string("Unable to open file: ") + (const char*)file.u8string().c_str());
   }
 
-  return file;
+  return fileStream;
 }
 
-std::vector<uint32_t> DefaultShaderLoader::loadSPIRV(const char* filename)
+std::vector<uint32_t> DefaultShaderLoader::loadSPIRV(const fs::path& file)
 {
-  std::ifstream file = openFile(filename);
+  std::ifstream fileStream = openFile(file);
 
   // Определяем размер данных
-  size_t dataSize = (size_t)file.tellg();
-  if(dataSize == 0)
-  {
-    throw std::runtime_error(std::string("File ") + filename + " is empty");
-  }
+  size_t dataSize = (size_t)fileStream.tellg();
+  if(dataSize == 0) throw std::runtime_error(std::string("File ") + (const char*)file.u8string().c_str() + " is empty");
+
   size_t vectorSize = dataSize / sizeof(uint32_t);
   if(dataSize % sizeof(uint32_t) != 0) vectorSize++;
 
   // Считываем данные
   std::vector<uint32_t> dataVector;
   dataVector.resize(vectorSize);
-  file.seekg(0);
-  file.read((char*)(dataVector.data()), dataSize);
+  fileStream.seekg(0);
+  fileStream.read((char*)(dataVector.data()), dataSize);
 
   return dataVector;
 }
 
-std::string DefaultShaderLoader::loadText(const char* filename)
+std::string DefaultShaderLoader::loadText(const fs::path& file)
 {
-  std::ifstream file = openFile(filename);
-  if(!file) throw std::runtime_error(std::string("Unable to open ") + filename);
+  std::ifstream fileStream = openFile(file);
 
   // Определяем размер данных
-  size_t dataSize = (size_t)file.tellg();
-  if(dataSize == 0) throw std::runtime_error(std::string("File ") + filename + " is empty");
+  size_t dataSize = (size_t)fileStream.tellg();
+  if (dataSize == 0) throw std::runtime_error(std::string("File ") + (const char*)file.u8string().c_str() + " is empty");
 
   // Считываем данные
   std::string result;
   result.resize(dataSize);
-  file.seekg(0);
-  file.read((char*)(result.data()), dataSize);
+  fileStream.seekg(0);
+  fileStream.read((char*)(result.data()), dataSize);
 
   return result;
 }

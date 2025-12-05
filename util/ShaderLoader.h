@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <cstdlib>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -16,9 +17,10 @@ namespace mt
   public:
     virtual ~ShaderLoader() noexcept = default;
     //  Этот метод должен быть потокобезопасным
-    virtual std::vector<uint32_t> loadSPIRV(const char* filename) = 0;
+    virtual std::vector<uint32_t> loadSPIRV(
+                                        const std::filesystem::path& file) = 0;
     //  Этот метод должен быть потокобезопасным
-    virtual std::string loadText(const char* filename) = 0;
+    virtual std::string loadText(const std::filesystem::path& file) = 0;
 
     //  Установить загрузчик данных для шейдеров
     //  По умолчанию установлен DefaultShaderLoader
@@ -35,7 +37,8 @@ namespace mt
   class DefaultShaderLoader : public ShaderLoader
   {
   public:
-    virtual std::vector<uint32_t> loadSPIRV(const char* filename) override;
-    virtual std::string loadText(const char* filename) override;
+    virtual std::vector<uint32_t> loadSPIRV(
+                                    const std::filesystem::path& file) override;
+    virtual std::string loadText(const std::filesystem::path& file) override;
   };
 }

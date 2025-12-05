@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <cstdlib>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -16,7 +17,7 @@ namespace mt
   public:
     virtual ~ContentLoader() noexcept = default;
     //  Этот метод должен быть потокобезопасным
-    virtual std::vector<char> loadData(const char* filename) = 0;
+    virtual std::vector<char> loadData(const std::filesystem::path& file) = 0;
 
     //  Установить загрузчик данных
     //  По умолчанию установлен DefaultContentLoader
@@ -33,6 +34,7 @@ namespace mt
   class DefaultContentLoader : public ContentLoader
   {
   public:
-    virtual std::vector<char> loadData(const char* filename) override;
+    virtual std::vector<char> loadData(
+                                    const std::filesystem::path& file) override;
   };
 }
