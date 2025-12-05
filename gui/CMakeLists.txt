@@ -12,6 +12,7 @@ include_directories(..
 
 set(SOURCES
     "BaseWindow.cpp"
+    "fileDialog.cpp"
     "GUILib.cpp"
     "GUIWindow.cpp"
     "RenderWindow.cpp"

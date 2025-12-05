@@ -64,6 +64,9 @@ namespace mt
     //    чтобы окна имели уникальные имена.
     void loadConfiguration();
 
+    //  HWND для Windows
+    inline uint64_t platformDescriptor() const noexcept;
+
   protected:
     void cleanup() noexcept;
 
@@ -90,6 +93,7 @@ namespace mt
 
   private:
     GLFWwindow* _handle;
+    uint64_t _platformDescriptor;
 
     //  Верхний левый край окна
     glm::ivec2 _position;
@@ -143,5 +147,10 @@ namespace mt
   inline GLFWwindow& BaseWindow::handle() const noexcept
   {
     return *_handle;
+  }
+
+  inline uint64_t BaseWindow::platformDescriptor() const noexcept
+  {
+    return _platformDescriptor;
   }
 }

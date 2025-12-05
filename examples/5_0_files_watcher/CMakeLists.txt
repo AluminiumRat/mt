@@ -1,6 +1,6 @@
 ﻿cmake_minimum_required (VERSION 3.10)
 
-project (imgui)
+project (files_watcher)
 
 include_directories(.
                     ../..
@@ -9,11 +9,11 @@ include_directories(.
                     ${VKMEMALLOC_PATH}
                     ${IMGUI_PATH})
 
-add_executable (imgui
+add_executable (files_watcher
                 "main.cpp"
                 "TestWindow.cpp")
 
-target_link_libraries(imgui
+target_link_libraries(files_watcher
                       ${Vulkan_LIBRARIES}
                       ${Shaderc_LIBRARIES}
                       ${GLFW_PATH}/lib-vc2022/glfw3.lib

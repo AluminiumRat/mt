@@ -16,6 +16,7 @@ using namespace mt;
 
 BaseWindow::BaseWindow(const char* name) :
   _handle(nullptr),
+  _platformDescriptor(0),
   _size(800,600),
   _storedSize(_size),
   _isMinimized(false),
@@ -33,6 +34,8 @@ BaseWindow::BaseWindow(const char* name) :
     glfwSetWindowMaximizeCallback(_handle, &BaseWindow::_maximizeHandler);
 
     glfwGetWindowPos(_handle, &_position.x, &_position.y);
+
+    _platformDescriptor = (uint64_t)glfwGetWin32Window(_handle);
 
     GUILib::instance().registerWindow(*this);
   }

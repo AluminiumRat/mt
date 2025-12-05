@@ -21,7 +21,7 @@ RenderWindow::RenderWindow(Device& device, const char* name) :
 {
   try
   {
-    _surface.reset(new Win32WindowSurface(glfwGetWin32Window(&handle())));
+    _surface.reset(new Win32WindowSurface((HWND)platformDescriptor()));
     MT_ASSERT(device.isSurfaceSuitable(*_surface));
     _createSwapchain();
   }
