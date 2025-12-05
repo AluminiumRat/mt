@@ -66,25 +66,26 @@ namespace mt
   //  Загрузить настройки сэмплера
   static void updateSamplerSettings(YAML::Node samplerNode,
                                     SamplerSettings& target);
-  static std::vector<std::string> getInheritanceSources(YAML::Node optionsNode);
+  static std::vector<fs::path> getInheritanceSources(YAML::Node optionsNode);
 
-  YAML::Node readFile(const char* filename)
+  YAML::Node readFile(const fs::path& file)
   {
     ShaderLoader& textLoader = ShaderLoader::getShaderLoader();
-    std::string fileText = textLoader.loadText(filename);
+    std::string fileText = textLoader.loadText(file);
     YAML::Node config = YAML::Load(fileText);
     return config;
   }
 
-  void loadConfigurator(TechniqueConfigurator& target, const char* filename)
+  void loadConfigurator(TechniqueConfigurator& target, const fs::path& file)
   {
     try
     {
-      loadConfigurator(target, readFile(filename));
+      loadConfigurator(target, readFile(file));
     }
     catch (const std::runtime_error& error)
     {
-      throw std::runtime_error(std::string(filename) + ": " + error.what());
+      std::string filename = (const char*)file.u8string().c_str();
+      throw std::runtime_error(filename + ": " + error.what());
     }
   }
 
@@ -219,16 +220,17 @@ namespace mt
     if (!frameBufferNode.IsMap())  throw std::runtime_error(passName + ": unable to parse 'frameBuffer' description");
 
     // Для начала смотрим, надо ли наследовать настройки от кого-нибудь
-    std::vector<std::string> parents = getInheritanceSources(frameBufferNode);
-    for(const std::string& filename : parents)
+    std::vector<fs::path> parents = getInheritanceSources(frameBufferNode);
+    for(const fs::path& file : parents)
     {
       try
       {
-        YAML::Node config = readFile(filename.c_str());
+        YAML::Node config = readFile(file);
         updateFrameBufferFormat(config, target, passName);
       }
       catch(std::runtime_error error)
       {
+        std::string filename = (const char*)file.u8string().c_str();
         throw std::runtime_error(filename + ": " + error.what());
       }
     }
@@ -274,16 +276,17 @@ namespace mt
     if (!settingsNode.IsMap()) return;
 
     // Для начала прогружаем унаследованные настройки
-    std::vector<std::string> parents = getInheritanceSources(settingsNode);
-    for (const std::string& filename : parents)
+    std::vector<fs::path> parents = getInheritanceSources(settingsNode);
+    for (const fs::path& file : parents)
     {
       try
       {
-        YAML::Node config = readFile(filename.c_str());
+        YAML::Node config = readFile(file);
         loadGraphicSettings(config, target);
       }
       catch (std::runtime_error error)
       {
+        std::string filename = (const char*)file.u8string().c_str();
         throw std::runtime_error(filename + ": " + error.what());
       }
     }
@@ -433,16 +436,17 @@ namespace mt
     if(!opNode.IsMap()) return;
 
     // Для начала прогружаем унаследованные настройки
-    std::vector<std::string> parents = getInheritanceSources(opNode);
-    for (const std::string& filename : parents)
+    std::vector<fs::path> parents = getInheritanceSources(opNode);
+    for (const fs::path& file : parents)
     {
       try
       {
-        YAML::Node config = readFile(filename.c_str());
+        YAML::Node config = readFile(file);
         updateStencilOp(config, target);
       }
       catch (std::runtime_error error)
       {
+        std::string filename = (const char*)file.u8string().c_str();
         throw std::runtime_error(filename + ": " + error.what());
       }
     }
@@ -492,16 +496,17 @@ namespace mt
   static void loadBlending(YAML::Node blendingNode, PassConfigurator& target)
   {
     // Для начала прогружаем унаследованные настройки
-    std::vector<std::string> parents = getInheritanceSources(blendingNode);
-    for (const std::string& filename : parents)
+    std::vector<fs::path> parents = getInheritanceSources(blendingNode);
+    for (const fs::path& file : parents)
     {
       try
       {
-        YAML::Node config = readFile(filename.c_str());
+        YAML::Node config = readFile(file);
         loadBlending(config, target);
       }
       catch (std::runtime_error error)
       {
+        std::string filename = (const char*)file.u8string().c_str();
         throw std::runtime_error(filename + ": " + error.what());
       }
     }
@@ -653,16 +658,17 @@ namespace mt
                                     SamplerSettings& target)
   {
     // Для начала прогружаем унаследованные настройки
-    std::vector<std::string> parents = getInheritanceSources(samplerNode);
-    for (const std::string& filename : parents)
+    std::vector<fs::path> parents = getInheritanceSources(samplerNode);
+    for (const fs::path& file : parents)
     {
       try
       {
-        YAML::Node config = readFile(filename.c_str());
+        YAML::Node config = readFile(file);
         updateSamplerSettings(config, target);
       }
       catch (std::runtime_error error)
       {
+        std::string filename = (const char*)file.u8string().c_str();
         throw std::runtime_error(filename + ": " + error.what());
       }
     }
@@ -765,23 +771,27 @@ namespace mt
   //  Используется для обработки наследования настроек
   //  В ноде optionsNode ищет такую строку, и читает имена файлов, которые в ней
   //    описаны
-  static std::vector<std::string> getInheritanceSources(YAML::Node optionsNode)
+  static std::vector<fs::path> getInheritanceSources(YAML::Node optionsNode)
   {
-    std::vector<std::string> fileNames;
+    std::vector<fs::path> files;
 
     // Получаем список файлов, от которых необходимо унаследоваться
     YAML::Node inheritsNode = optionsNode["inherits"];
     if(inheritsNode.IsScalar())
     {
-      fileNames.push_back(inheritsNode.as<std::string>("wrong value"));
+      std::string filename = inheritsNode.as<std::string>("wrong value");
+      fs::path filePatch((const char8_t*)filename.c_str());
+      files.push_back(filePatch);
     }
     else if(inheritsNode.IsSequence())
     {
       for(YAML::Node filenameNode : inheritsNode)
       {
-        fileNames.push_back(filenameNode.as<std::string>("wrong value"));
+        std::string filename = filenameNode.as<std::string>("wrong value");
+        fs::path filePatch((const char8_t*)filename.c_str());
+        files.push_back(filePatch);
       }
     }
-    return fileNames;
+    return files;
   }
 }

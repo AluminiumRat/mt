@@ -25,10 +25,10 @@ void TestWindow::_makeConfiguration()
 
   //  Техника, описанная одним файлом. Внутри описаны все настройки со
   //  всеми значениями
-  //loadConfigurator(configurator, "examples/technique/technique.tch");
+  loadConfigurator(configurator, "examples/technique/technique.tch");
 
   //  Техника, использующая ссылки на библиотечные настройки
-  loadConfigurator(configurator, "examples/technique/techniqueWithRefs.tch");
+  //loadConfigurator(configurator, "examples/technique/techniqueWithRefs.tch");
 
   configurator.rebuildConfiguration();
 }
