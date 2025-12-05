@@ -31,7 +31,8 @@ void TechniqueUniformBlock::bindToDescriptorSet(
     Ref<DataBuffer> gpuBuffer = Ref(
                                   new DataBuffer( _technique.device(),
                                                   _cpuBuffer.size(),
-                                                  DataBuffer::UNIFORM_BUFFER));
+                                                  DataBuffer::UNIFORM_BUFFER,
+                                                  "Static uniform buffer"));
 
     commandProducer.uniformBufferTransfer(*writeInfo.buffer,
                                           *gpuBuffer,

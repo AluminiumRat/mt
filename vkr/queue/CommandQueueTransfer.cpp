@@ -26,7 +26,8 @@ void CommandQueueTransfer::uploadToBuffer(const DataBuffer& dstBuffer,
 {
   Ref<DataBuffer> stagingBuffer(new DataBuffer( device(),
                                                 dataSize,
-                                                DataBuffer::UPLOADING_BUFFER));
+                                                DataBuffer::UPLOADING_BUFFER,
+                                                "Uploading buffer"));
   stagingBuffer->uploadData(srcData, 0, dataSize);
   std::unique_ptr<CommandProducerTransfer> producer = startCommands();
   producer->copyFromBufferToBuffer( *stagingBuffer,
@@ -50,7 +51,8 @@ void CommandQueueTransfer::uploadToImage( const Image& dstImage,
   dataSize = dataSize / 8 + (dataSize % 8 == 0 ? 0 : 1);
   Ref<DataBuffer> stagingBuffer(new DataBuffer( device(),
                                                 dataSize,
-                                                DataBuffer::UPLOADING_BUFFER));
+                                                DataBuffer::UPLOADING_BUFFER,
+                                                "Uploading buffer"));
   stagingBuffer->uploadData(srcData, 0, dataSize);
 
   std::unique_ptr<CommandProducerTransfer> producer = startCommands();

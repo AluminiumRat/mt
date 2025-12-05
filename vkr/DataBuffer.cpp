@@ -5,6 +5,7 @@
 #include <vkr/DataBuffer.h>
 #include <vkr/Device.h>
 #include <vkr/PhysicalDevice.h>
+#include <vkr/VKRLib.h>
 
 using namespace mt;
 
@@ -125,11 +126,13 @@ static VmaAllocationCreateInfo getVmaCreateInfo(DataBuffer::Usage usage)
 
 DataBuffer::DataBuffer( Device& device,
                         size_t size,
-                        Usage usage) :
+                        Usage usage,
+                        const char* debugName) :
   _device(device),
   _handle(VK_NULL_HANDLE),
   _size(size),
-  _allocation(VK_NULL_HANDLE)
+  _allocation(VK_NULL_HANDLE),
+  _debugName(debugName)
 {
   try
   {
@@ -148,8 +151,10 @@ DataBuffer::DataBuffer( Device& device,
                         &_allocation,
                         nullptr) != VK_SUCCESS)
     {
-      throw std::runtime_error("DataBuffer: Failed to create buffer.");
+      throw std::runtime_error("DataBuffer: Failed to create buffer " + _debugName);
     }
+
+    _setDebugName();
   }
   catch(...)
   {
@@ -162,11 +167,13 @@ DataBuffer::DataBuffer( Device& device,
                         size_t size,
                         VkBufferUsageFlags bufferUsageFlags,
                         VkMemoryPropertyFlags requiredFlags,
-                        VkMemoryPropertyFlags preferredFlags) :
+                        VkMemoryPropertyFlags preferredFlags,
+                        const char* debugName) :
   _device(device),
   _handle(VK_NULL_HANDLE),
   _size(size),
-  _allocation(VK_NULL_HANDLE)
+  _allocation(VK_NULL_HANDLE),
+  _debugName(debugName)
 {
   try
   {
@@ -189,12 +196,27 @@ DataBuffer::DataBuffer( Device& device,
     {
       throw std::runtime_error("DataBuffer: Failed to create buffer.");
     }
+
+    _setDebugName();
   }
   catch(...)
   {
     _cleanup();
     throw;
   }
+}
+
+void DataBuffer::_setDebugName() noexcept
+{
+  if(!VKRLib::instance().isDebugEnabled()) return;
+
+  VkDebugUtilsObjectNameInfoEXT nameInfo{};
+  nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+  nameInfo.objectType = VK_OBJECT_TYPE_BUFFER;
+  nameInfo.objectHandle = (uint64_t)_handle;
+  nameInfo.pObjectName = _debugName.c_str();
+
+  _device.extFunctions().vkSetDebugUtilsObjectNameEXT(&nameInfo);
 }
 
 DataBuffer::~DataBuffer()

@@ -97,6 +97,7 @@ void UniformMemoryPool::_addBuffer()
   Ref<DataBuffer> newBuffer(new DataBuffer(
                                         _device,
                                         _bufferSize,
-                                        DataBuffer::VOLATILE_UNIFORM_BUFFER));
+                                        DataBuffer::VOLATILE_UNIFORM_BUFFER,
+                                        "Volatile uniform buffer"));
   _buffers.push_back(std::move(newBuffer));
 }

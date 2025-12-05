@@ -69,7 +69,7 @@ Image::Image( Device& device,
                       &_allocation,
                       &allocInfo) != VK_SUCCESS)
     {
-      throw std::runtime_error("Image: Failed to create image.");
+      throw std::runtime_error("Image: Failed to create image " + _debugName);
     }
 
     _memorySize = allocInfo.size;

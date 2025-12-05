@@ -70,7 +70,8 @@ static void uploadDataToImage(Image& targetImage,
       size_t dataSize = srcData.layers[layerIndex][mipIndex].size();
       Ref<DataBuffer> uploadBuffer(new DataBuffer(device,
                                                   dataSize,
-                                                  DataBuffer::UPLOADING_BUFFER));
+                                                  DataBuffer::UPLOADING_BUFFER,
+                                                  "DDS uploading buffer"));
       uploadBuffer->uploadData( srcData.layers[layerIndex][mipIndex].data(),
                                 0,
                                 dataSize);
@@ -185,7 +186,8 @@ static std::vector<Ref<DataBuffer>> readMips(
 
     Ref<DataBuffer> mipBuffer(new DataBuffer( device,
                                               mipDataSize,
-                                              DataBuffer::DOWNLOADING_BUFFER));
+                                              DataBuffer::DOWNLOADING_BUFFER,
+                                              "DDS downloading buffer"));
     producer->copyFromImageToBuffer(srcImage,
                                     VK_IMAGE_ASPECT_COLOR_BIT,
                                     0,

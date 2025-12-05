@@ -41,7 +41,8 @@ void TestWindow::_createVertexBuffer()
                           {.position = {0.5f, 0.5f, 0.0f}}};
   Ref<DataBuffer> buffer(new DataBuffer(device(),
                                         sizeof(vertices),
-                                        DataBuffer::STORAGE_BUFFER));
+                                        DataBuffer::STORAGE_BUFFER,
+                                        "Vertex buffer"));
   device().graphicQueue()->uploadToBuffer(*buffer,
                                           0,
                                           sizeof(vertices),

@@ -159,7 +159,8 @@ Ref<DataBuffer> TestWindow::_createUniformBuffer()
   glm::vec4 color(0.5f, 0.5f, 1.0f, 1.0f);
   Ref<DataBuffer> uniformBuffer(new DataBuffer( device(),
                                                 sizeof(color),
-                                                DataBuffer::UNIFORM_BUFFER));
+                                                DataBuffer::UNIFORM_BUFFER,
+                                                "Uniform buffer"));
   device().graphicQueue()->uploadToBuffer(*uniformBuffer,
                                           0,
                                           sizeof(color),
@@ -182,7 +183,8 @@ Ref<DataBuffer> TestWindow::_createVertexBuffer()
                         .color = {0, 0, 1, 1}}};
   Ref<DataBuffer> vertexBuffer(new DataBuffer( device(),
                                                sizeof(vertices),
-                                               DataBuffer::STORAGE_BUFFER));
+                                               DataBuffer::STORAGE_BUFFER,
+                                               "Vertex buffer"));
   device().graphicQueue()->uploadToBuffer(*vertexBuffer,
                                           0,
                                           sizeof(vertices),

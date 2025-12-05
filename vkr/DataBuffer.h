@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <string>
+
 #include <vulkan/vulkan.h>
 
 #include <vk_mem_alloc.h>
@@ -67,21 +69,22 @@ namespace mt
 
   public:
     // Упрощенный конструктор для типового использования
-    DataBuffer(Device& device, size_t size, Usage usage);
+    DataBuffer(Device& device, size_t size, Usage usage, const char* debugName);
     // Полнофункциональный конструктор для кастома
     DataBuffer( Device& device,
                 size_t size,
                 VkBufferUsageFlags bufferUsageFlags,
                 VkMemoryPropertyFlags requiredFlags,
-                VkMemoryPropertyFlags preferredFlags);
+                VkMemoryPropertyFlags preferredFlags,
+                const char* debugName);
     DataBuffer(const DataBuffer&) = delete;
     DataBuffer& operator = (const DataBuffer&) = delete;
   protected:
     virtual ~DataBuffer();
 
   public:
-    inline VkBuffer handle() const;
-    inline size_t size() const;
+    inline VkBuffer handle() const noexcept;
+    inline size_t size() const noexcept;
 
     //  Загрузка данных с хоста на ГПУ.
     //  ВНИМАНИЕ! Буфер должен быть создан с Usage UPLOAD_BUFFER или 
@@ -91,7 +94,10 @@ namespace mt
     //    DataBuffer::uploadData на одном и том же буфере
     void uploadData(const void* data, size_t shift, size_t dataSize);
 
+    inline const std::string& debugName() const noexcept;
+
   private:
+    void _setDebugName() noexcept;
     void _cleanup() noexcept;
 
   private:
@@ -100,6 +106,8 @@ namespace mt
     size_t _size;
 
     VmaAllocation _allocation;
+
+    std::string _debugName;
   };
 
   inline DataBuffer::Mapper::Mapper(DataBuffer::Mapper&& other) noexcept :
@@ -126,14 +134,19 @@ namespace mt
     return *this;
   }
 
-  inline VkBuffer DataBuffer::handle() const
+  inline VkBuffer DataBuffer::handle() const noexcept
   {
     return _handle;
   }
 
-  inline size_t DataBuffer::size() const
+  inline size_t DataBuffer::size() const noexcept
   {
     return _size;
+  }
+
+  inline const std::string& DataBuffer::debugName() const noexcept
+  {
+    return _debugName;
   }
 
   inline void* DataBuffer::Mapper::data() const
