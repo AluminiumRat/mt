@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <memory>
 #include <mutex>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -43,10 +44,13 @@ namespace mt
   //    на протяжении всего времени, пока существует хотябы один FileObserver
   //  Доступ к объекту можно производить через метод instance, но только после
   //    явного создания объекта
+  //  Отслеживание изменений происходит в отдельном потоке. Информация о них
+  //    накапливается в очереди событий. Для того чтобы проинформировать
+  //    обсерверов об накопленных изменениях необходимо вызвать propagateChandes
   //  Сам по себе класс полностью потокобезопасный, однако FileObserver-ы не
-  //    обязаны быть потокобезопасными. Поэтому метод update должен иметь
-  //    внешнюю синхронизацию (лучше используйте в основном потоке с синхронной
-  //    части основного цикла)
+  //    обязаны быть потокобезопасными. Поэтому метод propagateChandes должен
+  //    иметь внешнюю синхронизацию (лучше используйте в основном потоке с
+  //    синхронной части основного цикла)
   class FileWatcher
   {
   public:
@@ -73,11 +77,10 @@ namespace mt
     //  Возвращает false, если этот обсервер не зарегистрирован
     bool removeObserver(const FileObserver& observer) noexcept;
 
-    //  Проверить, были ли изменения в отслеживаемых файлах и раздать
-    //    сообщения об изменениях обсерверам.
+    // раздать сообщения об изменениях обсерверам.
     //  Внимание! Обсерверы не обязаны быть потокобезопасными, поэтому
     //    вызывайте этот метод в безопасном месте.
-    void update();
+    void propagateChanges();
 
   private:
     //  Таблица наблюдаемых файлов
@@ -98,6 +101,7 @@ namespace mt
                           const std::filesystem::path& filePath);
     void _removeFromFileTable( const FileObserver& observer,
                                const std::filesystem::path& filePath) noexcept;
+    void _updateCycle();
 
   private:
     static FileWatcher* _instance;
@@ -111,7 +115,10 @@ namespace mt
     using EventQueue = std::deque<Event>;
     EventQueue _eventQueue;
 
-    mutable std::recursive_mutex _mutex;
+    mutable std::recursive_mutex _dataMutex;
+
+    std::thread _updateThread;
+    std::atomic<bool> _stopUpdate;
   };
 
   inline FileWatcher& FileWatcher::instance() noexcept

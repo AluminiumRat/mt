@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
 
     while (!guiLib.shouldBeClosed())
     {
-      fileWatcher.update();
+      fileWatcher.propagateChanges();
       guiLib.updateWindows();
       guiLib.drawWindows();
     }

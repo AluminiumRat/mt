@@ -77,18 +77,48 @@ public:
   }
 };
 
-FileWatcher::FileWatcher()
+FileWatcher::FileWatcher()  :
+  _stopUpdate(false)
 {
   MT_ASSERT(_instance == nullptr);
   _instance = this;
+  _updateThread = std::thread(&FileWatcher::_updateCycle, this);
 }
 
 FileWatcher::~FileWatcher() noexcept
 {
+  _stopUpdate = true;
+  _updateThread.join();
+
   MT_ASSERT(_instance != nullptr);
   MT_ASSERT(_observers.empty());
   MT_ASSERT(_files.empty());
   _instance = nullptr;
+}
+
+void FileWatcher::_updateCycle()
+{
+  size_t lastProcessedFile = 0;
+
+  while(!_stopUpdate)
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds(30));
+
+    std::unique_lock lock(_dataMutex);
+    try
+    {
+      size_t filesToCheck = std::min(_files.size(), (size_t)10);
+      for(; filesToCheck != 0; filesToCheck--)
+      {
+        lastProcessedFile = (lastProcessedFile + 1) % _files.size();
+        _files[lastProcessedFile]->update(_eventQueue);
+      }
+    }
+    catch(std::exception& error)
+    {
+      Log::warning() << "FileWatcher::update: " << error.what();
+    }
+  }
 }
 
 FileWatcher::ObservedFile* FileWatcher::_getFileRecord(
@@ -133,7 +163,7 @@ bool FileWatcher::addWatching(const fs::path& filePatch,
   fs::path normalizedPath = filePatch.lexically_normal();
   MT_ASSERT(!normalizedPath.empty());
 
-  std::lock_guard lock(_mutex);
+  std::lock_guard lock(_dataMutex);
 
   //  Проверяем, не регистрировалась ли уже эта пара
   FileList& files = _observers[&observer];
@@ -187,7 +217,7 @@ bool FileWatcher::removeWatching( const fs::path& filePatch,
   fs::path normalizedPath = filePatch.lexically_normal();
   MT_ASSERT(!normalizedPath.empty());
 
-  std::lock_guard lock(_mutex);
+  std::lock_guard lock(_dataMutex);
 
   Observers::iterator observerRecord = _observers.find(&observer);
   if(observerRecord == _observers.end()) return false;
@@ -232,7 +262,7 @@ bool FileWatcher::removeWatching( const fs::path& filePatch,
 
 bool FileWatcher::removeObserver(const FileObserver& observer) noexcept
 {
-  std::lock_guard lock(_mutex);
+  std::lock_guard lock(_dataMutex);
 
   Observers::iterator observerRecord = _observers.find(&observer);
   if (observerRecord == _observers.end()) return false;
@@ -259,24 +289,10 @@ bool FileWatcher::removeObserver(const FileObserver& observer) noexcept
   return true;
 }
 
-void FileWatcher::update()
+void FileWatcher::propagateChanges()
 {
-  std::lock_guard lock(_mutex);
+  std::lock_guard lock(_dataMutex);
 
-  // Для начала пополняем очередь событий
-  try
-  {
-    for(std::unique_ptr<ObservedFile>& fileRecord : _files)
-    {
-      fileRecord->update(_eventQueue);
-    }
-  }
-  catch(std::exception& error)
-  {
-    Log::warning() << "FileWatcher::update: " << error.what();
-  }
-
-  // Раздаем события обсерверам
   while(!_eventQueue.empty())
   {
     Event theEvent = _eventQueue.back();
