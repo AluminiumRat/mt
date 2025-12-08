@@ -80,9 +80,9 @@ namespace mt
     void update();
 
   private:
-    // Ноды для построения дерева наблюдаемых папок
-    class PathTreeNode;
-    using PathNodes = std::vector<std::unique_ptr<PathTreeNode>>;
+    //  Таблица наблюдаемых файлов
+    class ObservedFile;
+    using FilesTable = std::vector<std::unique_ptr<ObservedFile>>;
 
     struct Event
     {
@@ -92,16 +92,21 @@ namespace mt
     };
 
   private:
+    ObservedFile* _getFileRecord(
+                                const std::filesystem::path& filePath) noexcept;
+    void _addToFileTable( FileObserver& observer,
+                          const std::filesystem::path& filePath);
+    void _removeFromFileTable( const FileObserver& observer,
+                               const std::filesystem::path& filePath) noexcept;
+
+  private:
     static FileWatcher* _instance;
 
     using FileList = std::vector<std::filesystem::path>;
     using Observers = std::unordered_map<const FileObserver*, FileList>;
     Observers _observers;
 
-    //  Корневая нода для дерева каталогов, в которых находятся наблюдаемые
-    //  файлы. Сама по себе не указывает ни на какой файл или каталог, просто
-    //  список корневых каталогов
-    std::unique_ptr<PathTreeNode> _pathTree;
+    FilesTable _files;
 
     using EventQueue = std::deque<Event>;
     EventQueue _eventQueue;

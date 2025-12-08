@@ -13,129 +13,21 @@ using Filetime = fs::file_time_type;
 FileWatcher* FileWatcher::_instance = nullptr;
 
 //  Нода в дереве обозреваемых каталогов
-class FileWatcher::PathTreeNode
+class FileWatcher::ObservedFile
 {
 public:
-  //  Имя без пути
-  fs::path name;
   //  Полный путь до файла/каталога (может быть и абсолютным и относительным)
-  fs::path fullPath;
-  //  Сколько FileObserver-ов отслеживают состояние этого файла(каталога) и
-  //    файлов, которые находятся внутри(если это каталог)
-  size_t usingCounter = 0;
-  //  Если нода указывает на каталог, то здесь находится список дочерних файлов
-  //    или подкаталогов которые также отслеживаются
-  PathNodes childs;
-  //  Список обсерверов, которые отслеживают состояние именно этого файла
-  //  То есть для каталогов сюда не попадают обсерверы, которые следят за
-  //    дочерними файлами
+  fs::path filePath;
+  //  Список обсерверов, которые отслеживают состояние этого файла
   std::vector<FileObserver*> observers;
-  //  Время последней известной модификации файла/каталога. По нему определяем,
-  //    что произошли изменения.
+  //  Время последней известной модификации. По нему определяем, что произошли
+  //  изменения.
   Filetime modificationTime;
   //  Существовал ли файл на момент последней проверки
   bool exists = false;
 
-  PathTreeNode* getDirectChild(const fs::path& name) noexcept
-  {
-    for(std::unique_ptr<PathTreeNode>& child : childs)
-    {
-      if(child->name == name) return child.get();
-    }
-    return nullptr;
-  }
-
-  // Рекурсивная вставка в дерево
-  void insert(FileObserver& observer,
-              const fs::path& filePath,
-              fs::path::iterator pathBegin,   // Итераторы для рекурсивного
-              fs::path::iterator pathEnd)     //  обхода
-  {
-    if(pathBegin == pathEnd)
-    {
-      // Мы дошли до конечной части в пути, добавим нового обсервера
-      observers.push_back(&observer);
-    }
-    else
-    {
-      // Эта нода - только каталог, в котором находится файл, идем глубже
-      PathTreeNode* childNode = getDirectChild(*pathBegin);
-      if(childNode != nullptr)
-      {
-        childNode->insert(observer, filePath, ++pathBegin, pathEnd);
-      }
-      else
-      {
-        std::unique_ptr<PathTreeNode> newNode(new PathTreeNode);
-        newNode->name = *pathBegin;
-        newNode->fullPath = fullPath.empty() ?  *pathBegin :
-                                                fullPath / *pathBegin;
-
-        if(exists)
-        {
-          //  Если родительский каталог существует, то получим информацию
-          //  об отслеживаемом файле/каталоге
-          fs::directory_entry entry(newNode->fullPath);
-          std::error_code errCode;
-          newNode->exists = entry.exists(errCode);
-          if(newNode->exists && !errCode)
-          {
-            newNode->modificationTime = entry.last_write_time(errCode);
-          }
-          newNode->exists &= !errCode;
-        }
-
-        newNode->insert(observer, filePath, ++pathBegin, pathEnd);
-        childs.push_back(std::move(newNode));
-      }
-    }
-
-    usingCounter++;
-  }
-
-  // Рекурсивное удаление из дерева
-  void remove(const FileObserver& observer,
-              fs::path::iterator pathBegin,   // Итераторы для рекурсивного
-              fs::path::iterator pathEnd) noexcept
-  {
-    if (pathBegin == pathEnd)
-    {
-      //  Это - конечная нода, она указывает на нужный файл. Просто удаляем
-      //  обсервер из списка
-      std::vector<FileObserver*>::iterator iObserver =
-                      std::find(observers.begin(), observers.end(), &observer);
-      MT_ASSERT(iObserver != observers.end());
-      observers.erase(iObserver);
-    }
-    else
-    {
-      //  Это - каталог, в котором лежит нужный файл, ищем нужную ноду глубже
-      PathTreeNode* childNode = getDirectChild(*pathBegin);
-      MT_ASSERT(childNode != nullptr);
-      childNode->remove(observer, ++pathBegin, pathEnd);
-
-      // Если никто не следит за потомком, то его лучше удалить
-      if(childNode->usingCounter == 0)
-      {
-        for(PathNodes::iterator iChild = childs.begin();
-            iChild != childs.end();
-            iChild++)
-        {
-          if(childNode  == iChild->get())
-          {
-            childs.erase(iChild);
-            break;
-          }
-        }
-      }
-    }
-
-    MT_ASSERT(usingCounter != 0)
-    usingCounter--;
-  }
-
-  //  Добавить в очередь events события для всех обсерверов, привязаных к
-  //  ноде. Вспомогательный метод, вызывается при обновлении.
+  //  Добавить в очередь events события для всех связанных обсерверов
+  //  Вспомогательный метод, вызывается при обновлении.
   void addEvents(EventQueue& events, FileObserver::EventType type)
   {
     size_t oldQueueSize = events.size();
@@ -143,7 +35,7 @@ public:
     {
       for (FileObserver* observer : observers)
       {
-        events.emplace_back(observer, fullPath, type);
+        events.emplace_back(observer, filePath, type);
       }
     }
     catch(...)
@@ -155,57 +47,24 @@ public:
     }
   }
 
-  //  Файл этой ноды или какой-то каталог, в котором файл находится, недоступен.
-  //  Сформировать события для этой ноды и её потомков.
-  //  Вспомогательный метод, вызывается при обновлении
-  void propogateDisappear(EventQueue& events)
-  {
-    if(!exists) return;
-
-    // Сначала обойдем потомков, чтобы они добавили сообщения первыми
-    for (std::unique_ptr<PathTreeNode>& child : childs)
-    {
-      child->propogateDisappear(events);
-    }
-
-    // Добавим сообщения про себя
-    addEvents(events, FileObserver::FILE_DISAPPEARANCE);
-    exists = false;
-  }
-
-  //  Найти в дереве изменения с последнего update и поместить сообщения о них
-  //  в events
   void update(EventQueue& events)
   {
-    if( name.empty()/* ||
-        fullPath.root_path() == fullPath ||
-        fullPath.root_name() == fullPath*/)
+    if(!fs::exists(filePath))
     {
-      // Это рутовая нода, просто транслируем команду потомкам
-      for(std::unique_ptr<PathTreeNode>& child : childs) child->update(events);
-      return;
-    }
-
-    fs::directory_entry entry(fullPath);
-    entry.refresh();
-    if(!entry.exists())
-    {
-      propogateDisappear(events);
+      if(exists)
+      {
+        addEvents(events, FileObserver::FILE_DISAPPEARANCE);
+        exists = false;
+      }
     }
     else
     {
-      bool needUpdateChilds = false;
-
-      Filetime lastWriteTime = entry.last_write_time();
-      //  Добавляем сообщение, о том, что файл только что появился.
-      //  Это надо сделать до того как такие же сообщения будут добавлены
-      //  потомками
+      Filetime lastWriteTime = fs::last_write_time(filePath);
       if (!exists)
       {
         addEvents(events, FileObserver::FILE_APPEARANCE);
         exists = true;
         modificationTime = lastWriteTime;
-        needUpdateChilds = true;
       }
 
       //  Проверяем, были ли изменения в файловой системе
@@ -213,34 +72,59 @@ public:
       {
         addEvents(events, FileObserver::FILE_CHANGE);
         modificationTime = lastWriteTime;
-        needUpdateChilds = true;
-      }
-
-      if(needUpdateChilds)
-      {
-        for (std::unique_ptr<PathTreeNode>& child : childs)
-        {
-          child->update(events);
-        }
       }
     }
   }
 };
 
-FileWatcher::FileWatcher() :
-  _pathTree(new PathTreeNode)
+FileWatcher::FileWatcher()
 {
   MT_ASSERT(_instance == nullptr);
   _instance = this;
-  _pathTree->exists = true;
 }
 
 FileWatcher::~FileWatcher() noexcept
 {
   MT_ASSERT(_instance != nullptr);
   MT_ASSERT(_observers.empty());
-  MT_ASSERT(_pathTree->childs.empty());
+  MT_ASSERT(_files.empty());
   _instance = nullptr;
+}
+
+FileWatcher::ObservedFile* FileWatcher::_getFileRecord(
+                                              const fs::path& filePath) noexcept
+{
+  for (std::unique_ptr<ObservedFile>& record : _files)
+  {
+    if (record->filePath == filePath) return record.get();
+  }
+  return nullptr;
+}
+
+void FileWatcher::_addToFileTable(FileObserver& observer,
+                                  const fs::path& filePath)
+{
+  ObservedFile* fileRecord = _getFileRecord(filePath);
+  if (fileRecord == nullptr)
+  {
+    std::unique_ptr<ObservedFile> newRecord(new ObservedFile);
+    newRecord->filePath = filePath;
+
+    std::error_code errCode;
+    newRecord->exists = fs::exists(filePath, errCode);
+    if(newRecord->exists && !errCode)
+    {
+      newRecord->modificationTime = fs::last_write_time(newRecord->filePath,
+                                                        errCode);
+    }
+    newRecord->exists &= !errCode;
+    newRecord->observers.push_back(&observer);
+    _files.push_back(std::move(newRecord));
+  }
+  else
+  {
+    fileRecord->observers.push_back(&observer);
+  }
 }
 
 bool FileWatcher::addWatching(const fs::path& filePatch,
@@ -262,10 +146,7 @@ bool FileWatcher::addWatching(const fs::path& filePatch,
 
   try
   {
-    _pathTree->insert(observer,
-                      normalizedPath,
-                      normalizedPath.begin(),
-                      normalizedPath.end());
+    _addToFileTable(observer, normalizedPath);
   }
   catch(...)
   {
@@ -274,6 +155,30 @@ bool FileWatcher::addWatching(const fs::path& filePatch,
   }
 
   return true;
+}
+
+void FileWatcher::_removeFromFileTable( const FileObserver& observer,
+                                        const fs::path& filePath) noexcept
+{
+  for(FilesTable::iterator iFile = _files.begin();
+      iFile != _files.end();
+      iFile++)
+  {
+    ObservedFile* fileRecord = iFile->get();
+    if(fileRecord->filePath == filePath)
+    {
+      std::vector<FileObserver*>::iterator iObserver =
+                                      std::find(fileRecord->observers.begin(),
+                                                fileRecord->observers.end(),
+                                                &observer);
+      MT_ASSERT(iObserver != fileRecord->observers.end());
+      fileRecord->observers.erase(iObserver);
+
+      if(fileRecord->observers.empty()) _files.erase(iFile);
+
+      break;
+    }
+  }
 }
 
 bool FileWatcher::removeWatching( const fs::path& filePatch,
@@ -318,8 +223,10 @@ bool FileWatcher::removeWatching( const fs::path& filePatch,
     //  Если у обсервера нет больше файлов, за которыми он смотрит, то удаляем
     //  обсервер из списка зарегестрированных обсерверов
     if(observerRecord->second.empty()) _observers.erase(observerRecord);
-    _pathTree->remove(observer, normalizedPath.begin(), normalizedPath.end());
+
+    _removeFromFileTable(observer, normalizedPath);
   }
+
   return fileIsFound;
 }
 
@@ -330,10 +237,10 @@ bool FileWatcher::removeObserver(const FileObserver& observer) noexcept
   Observers::iterator observerRecord = _observers.find(&observer);
   if (observerRecord == _observers.end()) return false;
 
-  //  Удаляем из дерева каталогов все файлы обсервера
+  //  Удаляем из списка файлов все файлы обсервера
   for(const fs::path& file : observerRecord->second)
   {
-    _pathTree->remove(*observerRecord->first, file.begin(), file.end());
+    _removeFromFileTable(*observerRecord->first, file);
   }
 
   //  Удаляем все события с этим обсервером
@@ -354,10 +261,15 @@ bool FileWatcher::removeObserver(const FileObserver& observer) noexcept
 
 void FileWatcher::update()
 {
+  std::lock_guard lock(_mutex);
+
   // Для начала пополняем очередь событий
   try
   {
-    _pathTree->update(_eventQueue);
+    for(std::unique_ptr<ObservedFile>& fileRecord : _files)
+    {
+      fileRecord->update(_eventQueue);
+    }
   }
   catch(std::exception& error)
   {
