@@ -1,19 +1,14 @@
-﻿#include <filesystem>
-
-#include <backends/imgui_impl_glfw.h>
+﻿#include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 
 #include <gui/GUIWindow.h>
+#include <gui/WindowConfiguration.h>
 #include <util/Assert.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/Device.h>
 #include <vkr/VKRLib.h>
 
 using namespace mt;
-
-// Место, куда будем писать конфиги imgui
-std::string imguiIni = (const char*)
-            (std::filesystem::current_path() / "imgui.ini").u8string().c_str();
 
 //  Стэк контекстов ImGUI. Нужен для корректного возврата к предыдущему
 //  контексту, если потребовалось переключиться на контекст какого-либо окна
@@ -58,7 +53,7 @@ GUIWindow::GUIWindow(Device& device, const char* name) :
 
   ImGuiIO& imGuiIO = ImGui::GetIO();
   imGuiIO.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-  imGuiIO.IniFilename = imguiIni.c_str();
+  imGuiIO.IniFilename = nullptr;
 
   ImGui::StyleColorsDark();
 
@@ -152,4 +147,26 @@ void GUIWindow::drawImplementation( CommandProducerGraphic& commandProducer,
   ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer.handle());
 
   renderPass.endPass();
+}
+
+void GUIWindow::applyConfiguration(const WindowConfiguration& configuration)
+{
+  RenderWindow::applyConfiguration(configuration);
+
+  if(!configuration.imguiConfig.empty())
+  {
+    ImguiContextSetter setter(*_imguiContext);
+    ImGui::LoadIniSettingsFromMemory( configuration.imguiConfig.c_str(),
+                                      configuration.imguiConfig.size());
+  }
+}
+
+void GUIWindow::fillConfiguration(WindowConfiguration& configuration) const
+{
+  RenderWindow::fillConfiguration(configuration);
+
+  ImguiContextSetter setter(*_imguiContext);
+  configuration.imguiConfig = ImGui::SaveIniSettingsToMemory();
+  ImGuiIO& imGuiIO = ImGui::GetIO();
+  imGuiIO.WantSaveIniSettings = false;
 }

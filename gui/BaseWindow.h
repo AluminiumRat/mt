@@ -8,6 +8,8 @@ struct GLFWwindow;
 
 namespace mt
 {
+  struct WindowConfiguration;
+
   //  Базовая работа с окном приложения.
   //  Построен на GLFW
   //  GUILib должна быть инициализированная до создания первого окна
@@ -84,6 +86,11 @@ namespace mt
     //  Вызывается непосредственно перед glfwDestroyWindow
     //  Не вызывается при закрытии окна в деструкторе класса
     virtual void onClose() noexcept;
+
+    //  Настроить конфигурацию окна перед сохранением
+    virtual void fillConfiguration(WindowConfiguration& configuration) const;
+    //  Применить конфигурацию после загрузки
+    virtual void applyConfiguration(const WindowConfiguration& configuration);
 
   private:
     static void _moveHandler(GLFWwindow* window, int xPos, int yPos);

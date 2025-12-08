@@ -48,16 +48,6 @@ BaseWindow::BaseWindow(const char* name) :
 
 BaseWindow::~BaseWindow() noexcept
 {
-  try
-  {
-    saveConfiguration();
-  }
-  catch (std::exception& error)
-  {
-    Log::error() << "Unable to save window configuration: " << _name << ": " << error.what();
-    Abort("Unable to save window configuration");
-  }
-
   cleanup();
 }
 
@@ -78,17 +68,18 @@ void BaseWindow::onClose() noexcept
 void BaseWindow::close() noexcept
 {
   if (isClosed()) return;
-  onClose();
 
   try
   {
     saveConfiguration();
   }
-  catch(std::exception& error)
+  catch (std::exception& error)
   {
     Log::error() << "Unable to save window configuration: " << _name << ": " << error.what();
     Abort("Unable to save window configuration");
   }
+
+  onClose();
 
   glfwDestroyWindow(_handle);
   _handle = nullptr;
@@ -189,15 +180,18 @@ void BaseWindow::saveConfiguration() const
   if(_name.empty()) return;
 
   WindowConfiguration configuration{};
+  fillConfiguration(configuration);
+  GUILib::instance().addConfiguration(_name, configuration);
+}
 
+void BaseWindow::fillConfiguration(WindowConfiguration& configuration) const
+{
   configuration.xPos = _position.x;
   configuration.yPos = _position.y;
   configuration.width = _storedSize.x;
   configuration.height = _storedSize.y;
   configuration.isMinimized = _isMinimized;
   configuration.isMaximized = _isMaximized;
-
-  GUILib::instance().addConfiguration(_name, configuration);
 }
 
 void BaseWindow::loadConfiguration()
@@ -209,13 +203,18 @@ void BaseWindow::loadConfiguration()
                                     GUILib::instance().getConfiguration(_name);
   if(configuration == nullptr) return;
 
+  applyConfiguration(*configuration);
+}
+
+void BaseWindow::applyConfiguration(const WindowConfiguration& configuration)
+{
   // Размер
-  glm::uvec2 newSize(configuration->width, configuration->height);
+  glm::uvec2 newSize(configuration.width, configuration.height);
   newSize = glm::clamp(newSize, glm::uvec2(0), glm::uvec2(16535));
   resize(newSize);
 
   // Позиция
-  glm::ivec2 newPosition(configuration->xPos, configuration->yPos);
+  glm::ivec2 newPosition(configuration.xPos, configuration.yPos);
   // Обойдем все мониторы и проверим, что окно пересекается хотябы с одним
   bool isPositionCorrect = false;
   int monitorsCount = 0;
@@ -242,11 +241,11 @@ void BaseWindow::loadConfiguration()
   if(isPositionCorrect) move(newPosition);
 
   // Минимизация и максимизация
-  if(configuration->isMinimized)
+  if(configuration.isMinimized)
   {
     if(!_isMinimized) minimize();
   }
-  else if(configuration->isMaximized)
+  else if(configuration.isMaximized)
   {
     if(!_isMaximized) maximize();
   }

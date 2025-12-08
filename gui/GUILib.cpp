@@ -87,6 +87,8 @@ void GUILib::loadConfiguration(const fs::path& file) noexcept
               propertiesNode["isMaximized"].as<bool>(configuration.isMaximized);
         configuration.isMinimized =
               propertiesNode["isMinimized"].as<bool>(configuration.isMinimized);
+        configuration.imguiConfig =
+                              propertiesNode["imguiConfig"].as<std::string>("");
 
         _configurationMap[windowName] = configuration;
       }
@@ -128,6 +130,8 @@ void GUILib::saveConfiguration(const fs::path& file) const noexcept
       out << YAML::Value << windowProps.isMaximized;
       out << YAML::Key << "isMinimized";
       out << YAML::Value << windowProps.isMinimized;
+      out << YAML::Key << "imguiConfig";
+      out << YAML::Value << windowProps.imguiConfig;
 
       out << YAML::EndMap;
     }
