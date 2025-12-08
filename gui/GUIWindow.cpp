@@ -1,4 +1,6 @@
-﻿#include <backends/imgui_impl_glfw.h>
+﻿#include <filesystem>
+
+#include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 
 #include <gui/GUIWindow.h>
@@ -8,6 +10,10 @@
 #include <vkr/VKRLib.h>
 
 using namespace mt;
+
+// Место, куда будем писать конфиги imgui
+std::string imguiIni = (const char*)
+            (std::filesystem::current_path() / "imgui.ini").u8string().c_str();
 
 //  Стэк контекстов ImGUI. Нужен для корректного возврата к предыдущему
 //  контексту, если потребовалось переключиться на контекст какого-либо окна
@@ -52,6 +58,7 @@ GUIWindow::GUIWindow(Device& device, const char* name) :
 
   ImGuiIO& imGuiIO = ImGui::GetIO();
   imGuiIO.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+  imGuiIO.IniFilename = imguiIni.c_str();
 
   ImGui::StyleColorsDark();
 
