@@ -1,6 +1,7 @@
 ﻿#include <exception>
 
 #include <gui/GUILib.h>
+#include <resourceManagement/FileWatcher.h>
 #include <util/util.h>
 #include <vkr/VKRLib.h>
 
@@ -17,6 +18,7 @@ int main(int argc, char* argv[])
                   VK_API_VERSION_1_3,
                   true,
                   true);
+    FileWatcher fileWatcher;
     GUILib guiLib;
 
     std::unique_ptr<Device> device = guiLib.createDevice(
@@ -27,6 +29,7 @@ int main(int argc, char* argv[])
 
     while (!guiLib.shouldBeClosed())
     {
+      fileWatcher.update();
       guiLib.updateWindows();
       guiLib.drawWindows();
     }

@@ -43,6 +43,7 @@ find_path(DDSIMAGE_PATH
 
 add_subdirectory(ddsSupport)
 add_subdirectory(gui)
+add_subdirectory(resourceManagement)
 add_subdirectory(technique)
 add_subdirectory(util)
 add_subdirectory(vkr)
@@ -53,4 +54,4 @@ add_subdirectory(examples/2_0_technique_manual)
 add_subdirectory(examples/2_1_technique_load)
 add_subdirectory(examples/3_0_imgui)
 add_subdirectory(examples/4_0_dds_load)
-add_subdirectory(examples/5_0_files_watcher)
+add_subdirectory(examples/5_0_file_watcher)
