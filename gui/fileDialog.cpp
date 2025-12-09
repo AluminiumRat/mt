@@ -81,14 +81,16 @@ std::filesystem::path mt::openFileDialog( BaseWindow* ownerWindow,
   dlgInfo.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
   dlgInfo.lpstrFilter = filterString.data();
 
-  if(GetOpenFileNameW(&dlgInfo))
-  {
-    return filenameBuffer;
-  }
-  else
-  {
-    return "";
-  }
+  //  GetOpenFileNameW меняет рабочую папку приложения, поэтому сохраним
+  //  текущую, чтобы потом восстановить
+  fs::path workingDirectory = fs::current_path();
+
+  bool fileSelected = GetOpenFileNameW(&dlgInfo);
+
+  fs::current_path(workingDirectory);
+
+  if(fileSelected) return filenameBuffer;
+  else return "";
 }
 
 #else
