@@ -34,10 +34,6 @@ namespace mt
     const RefCounter* _resource;
   };
 
-  // Концепт потомка от RefCounter
-  template <typename Resource>
-  concept RefCounterChild = std::is_base_of<RefCounter, Resource>::value;
-
   // Концепт рандомного умного указателя. Определяем по наличию метода get
   template <typename CheckedClass>
   concept SmartRef = requires(CheckedClass object)
@@ -46,20 +42,20 @@ namespace mt
   };
 
   // Умный указатель на неконстантный объект
-  template <RefCounterChild Resource>
+  template <typename Resource>
   class Ref : public RefCounterReference
   {
   public:
     inline Ref() noexcept;
     inline explicit Ref(Resource* resource) noexcept;
-    template <RefCounterChild OtherResourceType>
+    template <typename OtherResourceType>
     inline Ref(const Ref<OtherResourceType>& other) noexcept;
-    template <RefCounterChild OtherResourceType>
+    template <typename OtherResourceType>
     inline Ref(Ref<OtherResourceType>&& other) noexcept;
     inline Ref& operator = (Resource* resource) noexcept;
-    template <RefCounterChild OtherResourceType>
+    template <typename OtherResourceType>
     inline Ref& operator = (const Ref<OtherResourceType>& other) noexcept;
-    template <RefCounterChild OtherResourceType>
+    template <typename OtherResourceType>
     inline Ref& operator = (Ref<OtherResourceType>&& other) noexcept;
     ~Ref() = default;
 
@@ -68,49 +64,49 @@ namespace mt
     inline Resource* operator->() const noexcept;
   };
   // Сравнение с nullptr
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline bool operator == (const Ref<Resource>& x, nullptr_t y);
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline bool operator != (const Ref<Resource>& x, nullptr_t y);
   // Сравнение с сырым указателем
-  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  template <typename Resource, typename OtherResource>
   inline bool operator == (const Ref<Resource>& x, const OtherResource* y);
-  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  template <typename Resource, typename OtherResource>
   inline bool operator != (const Ref<Resource>& x, const OtherResource* y);
-  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  template <typename Resource, typename OtherResource>
   inline bool operator == (const Resource* x, const Ref<OtherResource>& y);
-  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  template <typename Resource, typename OtherResource>
   inline bool operator != (const Resource* x, const Ref<OtherResource>& y);
   // Сравнение с другим умным указателем
-  template <RefCounterChild Resource, SmartRef OtherPointer>
+  template <typename Resource, SmartRef OtherPointer>
   inline bool operator == (const Ref<Resource>& x, const OtherPointer& y);
-  template <RefCounterChild Resource, SmartRef OtherPointer>
+  template <typename Resource, SmartRef OtherPointer>
   inline bool operator != (const Ref<Resource>& x, const OtherPointer& y);
 
   // Умный указатель на константный объект
-  template <RefCounterChild Resource>
+  template <typename Resource>
   class ConstRef : public RefCounterReference
   {
   public:
     inline ConstRef() noexcept;
     inline explicit ConstRef(const Resource* resource) noexcept;
-    template <RefCounterChild OtherResourceType>
+    template <typename OtherResourceType>
     inline ConstRef(const ConstRef<OtherResourceType>& other) noexcept;
-    template <RefCounterChild OtherResourceType>
+    template <typename OtherResourceType>
     inline ConstRef(const Ref<OtherResourceType>& other) noexcept;
-    template <RefCounterChild OtherResourceType>
+    template <typename OtherResourceType>
     inline ConstRef(ConstRef<OtherResourceType>&& other) noexcept;
-    template <RefCounterChild OtherResourceType>
+    template <typename OtherResourceType>
     inline ConstRef(Ref<OtherResourceType>&& other) noexcept;
     inline ConstRef& operator = (const Resource* resource) noexcept;
-    template <RefCounterChild OtherResourceType>
+    template <typename OtherResourceType>
     inline ConstRef& operator = (
                             const ConstRef<OtherResourceType>& other) noexcept;
-    template <RefCounterChild OtherResourceType>
+    template <typename OtherResourceType>
     inline ConstRef& operator = (const Ref<OtherResourceType>& other) noexcept;
-    template <RefCounterChild OtherResourceType>
+    template <typename OtherResourceType>
     inline ConstRef& operator = (ConstRef<OtherResourceType>&& other) noexcept;
-    template <RefCounterChild OtherResourceType>
+    template <typename OtherResourceType>
     inline ConstRef& operator = (Ref<OtherResourceType>&& other) noexcept;
     ~ConstRef() = default;
 
@@ -119,23 +115,23 @@ namespace mt
     inline const Resource* operator->() const noexcept;
   };
   // Сравнение с nullptr
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline bool operator == (const ConstRef<Resource>& x, nullptr_t y);
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline bool operator != (const ConstRef<Resource>& x, nullptr_t y);
   // Сравнение с сырым указателем
-  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  template <typename Resource, typename OtherResource>
   inline bool operator == (const ConstRef<Resource>& x, const OtherResource* y);
-  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  template <typename Resource, typename OtherResource>
   inline bool operator != (const ConstRef<Resource>& x, const OtherResource* y);
-  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  template <typename Resource, typename OtherResource>
   inline bool operator == (const Resource* x, const ConstRef<OtherResource>& y);
-  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  template <typename Resource, typename OtherResource>
   inline bool operator != (const Resource* x, const ConstRef<OtherResource>& y);
   // Сравнение с другим умным указателем
-  template <RefCounterChild Resource, SmartRef OtherPointer>
+  template <typename Resource, SmartRef OtherPointer>
   inline bool operator == (const ConstRef<Resource>& x, const OtherPointer& y);
-  template <RefCounterChild Resource, SmartRef OtherPointer>
+  template <typename Resource, SmartRef OtherPointer>
   inline bool operator != (const ConstRef<Resource>& x, const OtherPointer& y);
 
   //--------------------------------------------------------------------------
@@ -227,42 +223,42 @@ namespace mt
     return _resource;
   }
 
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline Ref<Resource>::Ref() noexcept
   {
   }
 
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline Ref<Resource>::Ref(Resource* resource) noexcept :
     RefCounterReference(resource)
   {
   }
 
-  template <RefCounterChild Resource>
-  template <RefCounterChild OtherResourceType>
+  template <typename Resource>
+  template <typename OtherResourceType>
   inline Ref<Resource>::Ref(const Ref<OtherResourceType>& other) noexcept :
     RefCounterReference(other)
   {
     static_assert(std::is_base_of<Resource, OtherResourceType>::value, "Type cast error");
   }
 
-  template <RefCounterChild Resource>
-  template <RefCounterChild OtherResourceType>
+  template <typename Resource>
+  template <typename OtherResourceType>
   inline Ref<Resource>::Ref(Ref<OtherResourceType>&& other) noexcept :
     RefCounterReference(std::move(other))
   {
     static_assert(std::is_base_of<Resource, OtherResourceType>::value, "Type cast error");
   }
 
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline Ref<Resource>& Ref<Resource>::operator = (Resource* resource) noexcept
   {
     RefCounterReference::operator=(resource);
     return *this;
   }
 
-  template <RefCounterChild Resource>
-  template <RefCounterChild OtherResourceType>
+  template <typename Resource>
+  template <typename OtherResourceType>
   inline Ref<Resource>& Ref<Resource>::operator = (
                                   const Ref<OtherResourceType>& other) noexcept
   {
@@ -271,8 +267,8 @@ namespace mt
     return *this;
   }
 
-  template <RefCounterChild Resource>
-  template <RefCounterChild OtherResourceType>
+  template <typename Resource>
+  template <typename OtherResourceType>
   inline Ref<Resource>& Ref<Resource>::operator = (
                                        Ref<OtherResourceType>&& other) noexcept
   {
@@ -281,85 +277,85 @@ namespace mt
     return *this;
   }
 
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline Resource* Ref<Resource>::get() const noexcept
   {
     return static_cast<Resource*>(const_cast<RefCounter*>(resource()));
   }
 
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline Resource* Ref<Resource>::operator->() const noexcept
   {
     return static_cast<Resource*>(const_cast<RefCounter*>(resource()));
   }
 
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline Resource& Ref<Resource>::operator*() const noexcept
   {
     return *static_cast<Resource*>(const_cast<RefCounter*>(resource()));
   }
 
-  template <RefCounterChild Resource, SmartRef OtherPointer>
+  template <typename Resource, SmartRef OtherPointer>
   inline bool operator == (const Ref<Resource>& x, const OtherPointer& y)
   {
     return x.get() == y.get();
   }
 
-  template <RefCounterChild Resource, SmartRef OtherPointer>
+  template <typename Resource, SmartRef OtherPointer>
   inline bool operator != (const Ref<Resource>& x, const OtherPointer& y)
   {
     return x.get() != y.get();
   }
 
-  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  template <typename Resource, typename OtherResource>
   inline bool operator == (const Ref<Resource>& x, const OtherResource* y)
   {
     return x.get() == y;
   }
 
-  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  template <typename Resource, typename OtherResource>
   inline bool operator != (const Ref<Resource>& x, const OtherResource* y)
   {
     return x.get() != y;
   }
 
-  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  template <typename Resource, typename OtherResource>
   inline bool operator == (const Resource* x, const Ref<OtherResource>& y)
   {
     return x == y.get();
   }
 
-  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  template <typename Resource, typename OtherResource>
   inline bool operator != (const Resource* x, const Ref<OtherResource>& y)
   {
     return x != y.get();
   }
 
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline bool operator == (const Ref<Resource>& x, nullptr_t y)
   {
     return x.get() == y;
   }
 
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline bool operator != (const Ref<Resource>& x, nullptr_t y)
   {
     return x.get() != y;
   }
 
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline ConstRef<Resource>::ConstRef() noexcept
   {
   }
 
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline ConstRef<Resource>::ConstRef(const Resource* resource) noexcept :
     RefCounterReference(resource)
   {
   }
 
-  template <RefCounterChild Resource>
-  template <RefCounterChild OtherResourceType>
+  template <typename Resource>
+  template <typename OtherResourceType>
   inline ConstRef<Resource>::ConstRef(
                             const ConstRef<OtherResourceType>& other) noexcept :
     RefCounterReference(other)
@@ -367,8 +363,8 @@ namespace mt
     static_assert(std::is_base_of<Resource, OtherResourceType>::value, "Type cast error");
   }
 
-  template <RefCounterChild Resource>
-  template <RefCounterChild OtherResourceType>
+  template <typename Resource>
+  template <typename OtherResourceType>
   inline ConstRef<Resource>::ConstRef(
                                 const Ref<OtherResourceType>& other) noexcept :
     RefCounterReference(other)
@@ -376,8 +372,8 @@ namespace mt
     static_assert(std::is_base_of<Resource, OtherResourceType>::value, "Type cast error");
   }
 
-  template <RefCounterChild Resource>
-  template <RefCounterChild OtherResourceType>
+  template <typename Resource>
+  template <typename OtherResourceType>
   inline ConstRef<Resource>::ConstRef(
                                 ConstRef<OtherResourceType>&& other) noexcept :
     RefCounterReference(std::move(other))
@@ -385,15 +381,15 @@ namespace mt
     static_assert(std::is_base_of<Resource, OtherResourceType>::value, "Type cast error");
   }
 
-  template <RefCounterChild Resource>
-  template <RefCounterChild OtherResourceType>
+  template <typename Resource>
+  template <typename OtherResourceType>
   inline ConstRef<Resource>::ConstRef(Ref<OtherResourceType>&& other) noexcept :
     RefCounterReference(std::move(other))
   {
     static_assert(std::is_base_of<Resource, OtherResourceType>::value, "Type cast error");
   }
 
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline ConstRef<Resource>& ConstRef<Resource>::operator = (
                                               const Resource* resource) noexcept
   {
@@ -401,8 +397,8 @@ namespace mt
     return *this;
   }
 
-  template <RefCounterChild Resource>
-  template <RefCounterChild OtherResourceType>
+  template <typename Resource>
+  template <typename OtherResourceType>
   inline ConstRef<Resource>& ConstRef<Resource>::operator = (
                             const ConstRef<OtherResourceType>& other) noexcept
   {
@@ -411,8 +407,8 @@ namespace mt
     return *this;
   }
 
-  template <RefCounterChild Resource>
-  template <RefCounterChild OtherResourceType>
+  template <typename Resource>
+  template <typename OtherResourceType>
   inline ConstRef<Resource>& ConstRef<Resource>::operator = (
                                   const Ref<OtherResourceType>& other) noexcept
   {
@@ -421,8 +417,8 @@ namespace mt
     return *this;
   }
 
-  template <RefCounterChild Resource>
-  template <RefCounterChild OtherResourceType>
+  template <typename Resource>
+  template <typename OtherResourceType>
   inline ConstRef<Resource>& ConstRef<Resource>::operator = (
                                    ConstRef<OtherResourceType>&& other) noexcept
   {
@@ -431,8 +427,8 @@ namespace mt
     return *this;
   }
 
-  template <RefCounterChild Resource>
-  template <RefCounterChild OtherResourceType>
+  template <typename Resource>
+  template <typename OtherResourceType>
   inline ConstRef<Resource>& ConstRef<Resource>::operator = (
                                         Ref<OtherResourceType>&& other) noexcept
   {
@@ -441,68 +437,68 @@ namespace mt
     return *this;
   }
 
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline const Resource* ConstRef<Resource>::get() const noexcept
   {
     return static_cast<const Resource*>(resource());
   }
 
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline const Resource* ConstRef<Resource>::operator->() const noexcept
   {
     return static_cast<const Resource*>(resource());
   }
 
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline const Resource& ConstRef<Resource>::operator*() const noexcept
   {
     return *static_cast<const Resource*>(resource());
   }
 
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline bool operator == (const ConstRef<Resource>& x, nullptr_t y)
   {
     return x.get() == y;
   }
 
-  template <RefCounterChild Resource>
+  template <typename Resource>
   inline bool operator != (const ConstRef<Resource>& x, nullptr_t y)
   {
     return x.get() != y;
   }
 
-  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  template <typename Resource, typename OtherResource>
   inline bool operator == (const ConstRef<Resource>& x, const OtherResource* y)
   {
     return x.get() == y;
   }
 
-  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  template <typename Resource, typename OtherResource>
   inline bool operator != (const ConstRef<Resource>& x, const OtherResource* y)
   {
     return x.get() != y;
   }
 
-  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  template <typename Resource, typename OtherResource>
   inline bool operator == (const Resource* x, const ConstRef<OtherResource>& y)
   {
     return x == y.get();
   }
 
-  template <RefCounterChild Resource, RefCounterChild OtherResource>
+  template <typename Resource, typename OtherResource>
   inline bool operator != (const Resource* x, const ConstRef<OtherResource>& y)
   {
     return x != y.get();
   }
 
   // Сравнение с другим умным указателем
-  template <RefCounterChild Resource, SmartRef OtherPointer>
+  template <typename Resource, SmartRef OtherPointer>
   inline bool operator == (const ConstRef<Resource>& x, const OtherPointer& y)
   {
     return x.get() == y.get();
   }
 
-  template <RefCounterChild Resource, SmartRef OtherPointer>
+  template <typename Resource, SmartRef OtherPointer>
   inline bool operator != (const ConstRef<Resource>& x, const OtherPointer& y)
   {
     return x.get() != y.get();
