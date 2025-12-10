@@ -15,6 +15,27 @@ AsyncTaskQueue::AsyncTaskQueue(
 {
 }
 
+AsyncTaskQueue::~AsyncTaskQueue() noexcept
+{
+  // Раздаем всем запущенным таскам команду на аборт
+  std::vector<AsyncTask*> tasksToWait;
+  {
+    std::lock_guard lock(_mutex);
+    for(const std::unique_ptr<AsyncTask>& task : _inProgress)
+    {
+      task->notifyAbort();
+      tasksToWait.push_back(task.get());
+    }
+  }
+
+  // Ждем когда таски закончат выполнение
+  for(AsyncTask* task : tasksToWait)
+  {
+    MT_ASSERT(task->future().valid());
+    task->future().wait();
+  }
+}
+
 void AsyncTaskQueue::reportStage( AsyncTask& task,
                                   const char* stageName) noexcept
 {

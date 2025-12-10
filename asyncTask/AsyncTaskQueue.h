@@ -17,6 +17,7 @@ namespace mt
   //    вызова методов класса AsyncTask
   class AsyncTaskQueue
   {
+  public:
     //  Класс который позволяет остановить исполнение и дождаться окончания
     //    работы асинхронной задачи.
     //  В оснеовном необходим для того чтобы не оставлять работающих AsyncTask-ов
@@ -82,7 +83,7 @@ namespace mt
     AsyncTaskQueue(const std::function<void(const Event&)> eventCallback);
     AsyncTaskQueue(const AsyncTaskQueue&) = delete;
     AsyncTaskQueue& operator = (const AsyncTaskQueue&) = delete;
-    virtual ~AsyncTaskQueue() noexcept = default;
+    virtual ~AsyncTaskQueue() noexcept;
 
     //  Добавляем таску в очередь и забываем про неё
     void addTask(std::unique_ptr<AsyncTask> task);
