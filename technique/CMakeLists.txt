@@ -13,13 +13,13 @@ include_directories(..
 set(SOURCES
     "../third_party/spirv_reflect/spirv_reflect.c"
     "PassConfigurator.cpp"
+    "ResourceBinding.cpp"
     "Selection.cpp"
     "ShaderCompilator.cpp"
     "Technique.cpp"
     "TechniqueConfigurator.cpp"
     "TechniqueLoader.cpp"
     "TechniquePass.cpp"
-    "TechniqueResource.cpp"
     "TechniqueUniformBlock.cpp"
     "UniformVariable.cpp"
     )

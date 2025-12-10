@@ -9,9 +9,9 @@ TestWindow::TestWindow(Device& device) :
   _technique(new Technique(device, "Test technique")),
   _pass(_technique->getOrCreatePass("RenderPass")),
   _colorSelector(_technique->getOrCreateSelection("colorSelector")),
-  _vertexBuffer(_technique->getOrCreateResource("vertices")),
-  _texture(_technique->getOrCreateResource("colorTexture")),
-  _sampler(_technique->getOrCreateResource("samplerState")),
+  _vertexBuffer(_technique->getOrCreateResourceBinding("vertices")),
+  _texture(_technique->getOrCreateResourceBinding("colorTexture")),
+  _sampler(_technique->getOrCreateResourceBinding("samplerState")),
   _color(_technique->getOrCreateUniform("colorData.color"))
 {
   //  Настраивать и пересобирать конфигурацию можно и до и после настройки

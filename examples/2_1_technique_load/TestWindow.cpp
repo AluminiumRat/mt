@@ -10,8 +10,8 @@ TestWindow::TestWindow(Device& device) :
   _technique(new Technique(device, "Test technique")),
   _pass(_technique->getOrCreatePass("RenderPass")),
   _colorSelector(_technique->getOrCreateSelection("colorSelector")),
-  _vertexBuffer(_technique->getOrCreateResource("vertices")),
-  _texture(_technique->getOrCreateResource("colorTexture")),
+  _vertexBuffer(_technique->getOrCreateResourceBinding("vertices")),
+  _texture(_technique->getOrCreateResourceBinding("colorTexture")),
   _color(_technique->getOrCreateUniform("colorData.color"))
 {
   _makeConfiguration();

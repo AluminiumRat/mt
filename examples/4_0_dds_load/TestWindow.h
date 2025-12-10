@@ -29,7 +29,7 @@ namespace mt
   private:
     Ref<Technique> _technique;
     TechniquePass& _pass;
-    TechniqueResource& _vertexBuffer;
-    TechniqueResource& _texture;
+    ResourceBinding& _vertexBuffer;
+    ResourceBinding& _texture;
   };
 }

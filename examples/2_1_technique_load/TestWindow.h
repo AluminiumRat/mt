@@ -33,8 +33,8 @@ namespace mt
 
     Selection& _colorSelector;
 
-    TechniqueResource& _vertexBuffer;
-    TechniqueResource& _texture;
+    ResourceBinding& _vertexBuffer;
+    ResourceBinding& _texture;
 
     UniformVariable& _color;
   };

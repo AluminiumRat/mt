@@ -1,4 +1,4 @@
-﻿#include <technique/TechniqueResource.h>
+﻿#include <technique/ResourceBinding.h>
 #include <technique/Technique.h>
 #include <technique/TechniqueVolatileContext.h>
 #include <util/Assert.h>
@@ -7,8 +7,7 @@
 
 using namespace mt;
 
-TechniqueResource::TechniqueResource(
-                                  const char* name,
+ResourceBinding::ResourceBinding( const char* name,
                                   const Technique& technique,
                                   size_t& revisionCounter,
                                   const TechniqueConfiguration* configuration) :
@@ -20,7 +19,7 @@ TechniqueResource::TechniqueResource(
   _bindToConfiguration(configuration);
 }
 
-void TechniqueResource::_bindToConfiguration(
+void ResourceBinding::_bindToConfiguration(
                                     const TechniqueConfiguration* configuration)
 {
   //  Просто ищем описание ресурсф в конфигурации и убеждаемся, что оно нам
@@ -48,8 +47,8 @@ void TechniqueResource::_bindToConfiguration(
   }
 }
 
-void TechniqueResource::setBuffer(TechniqueVolatileContext& context,
-                                  const DataBuffer& buffer) const
+void ResourceBinding::setBuffer(TechniqueVolatileContext& context,
+                                const DataBuffer& buffer) const
 {
   if(_description == nullptr) return;
   if(_description->set != DescriptorSetType::VOLATILE)
@@ -65,8 +64,8 @@ void TechniqueResource::setBuffer(TechniqueVolatileContext& context,
                                       _buffer->size());
 }
 
-void TechniqueResource::setImage( TechniqueVolatileContext& context,
-                                  const ImageView& image) const
+void ResourceBinding::setImage( TechniqueVolatileContext& context,
+                                const ImageView& image) const
 {
   if(_description == nullptr) return;
   if(_description->set != DescriptorSetType::VOLATILE)
@@ -86,7 +85,7 @@ void TechniqueResource::setImage( TechniqueVolatileContext& context,
                                       layout);
 }
 
-void TechniqueResource::setImages(
+void ResourceBinding::setImages(
                             TechniqueVolatileContext& context,
                             std::span<const ConstRef<ImageView>> images) const
 {
@@ -124,8 +123,8 @@ void TechniqueResource::setImages(
   }
 }
 
-void TechniqueResource::setSampler( TechniqueVolatileContext& context,
-                                    const Sampler& sampler) const
+void ResourceBinding::setSampler( TechniqueVolatileContext& context,
+                                  const Sampler& sampler) const
 {
   if(_description == nullptr) return;
   if(_description->set != DescriptorSetType::VOLATILE)
@@ -137,7 +136,7 @@ void TechniqueResource::setSampler( TechniqueVolatileContext& context,
 }
 
 
-void TechniqueResourceImpl::bindToDescriptorSet(DescriptorSet& set) const
+void ResourceBindingImpl::bindToDescriptorSet(DescriptorSet& set) const
 {
   MT_ASSERT(_description != nullptr);
 
@@ -164,13 +163,13 @@ void TechniqueResourceImpl::bindToDescriptorSet(DescriptorSet& set) const
   }
 }
 
-void TechniqueResourceImpl::_bindSampler(DescriptorSet& set) const
+void ResourceBindingImpl::_bindSampler(DescriptorSet& set) const
 {
   if (_sampler == nullptr) return;
   set.attachSampler(*_sampler, _description->bindingIndex);
 }
 
-void TechniqueResourceImpl::_bindBuffer(DescriptorSet& set) const
+void ResourceBindingImpl::_bindBuffer(DescriptorSet& set) const
 {
     if(_buffer == nullptr) return;
     set.attachBuffer( *_buffer,
@@ -180,7 +179,7 @@ void TechniqueResourceImpl::_bindBuffer(DescriptorSet& set) const
                       _buffer->size());
 }
 
-void TechniqueResourceImpl::_bindImage(DescriptorSet& set) const
+void ResourceBindingImpl::_bindImage(DescriptorSet& set) const
 {
   if (_images.empty()) return;
 

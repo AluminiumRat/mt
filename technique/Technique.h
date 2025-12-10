@@ -4,11 +4,11 @@
 #include <string>
 #include <vector>
 
+#include <technique/ResourceBinding.h>
 #include <technique/Selection.h>
 #include <technique/TechniqueConfiguration.h>
 #include <technique/TechniqueConfigurator.h>
 #include <technique/TechniquePass.h>
-#include <technique/TechniqueResource.h>
 #include <technique/TechniqueUniformBlock.h>
 #include <technique/TechniqueVolatileContext.h>
 #include <technique/UniformVariable.h>
@@ -66,7 +66,7 @@ namespace mt
     inline TechniqueConfigurator& configurator() const noexcept;
 
     //  Волатильный контекст позволяет донастроить технику перед отрисовкой
-    //    через константные методы классов Slection, TechniqueResource и
+    //    через константные методы классов Slection, ResourceBinding и
     //    UniformVariable
     TechniqueVolatileContext createVolatileContext(
                                               CommandProducer& producer) const;
@@ -84,7 +84,7 @@ namespace mt
     void unbindGraphic(CommandProducerGraphic& producer) const noexcept;
 
     Selection& getOrCreateSelection(const char* selectionName);
-    TechniqueResource& getOrCreateResource(const char* resourceName);
+    ResourceBinding& getOrCreateResourceBinding(const char* resourceName);
     UniformVariable& getOrCreateUniform(const char* uniformFullName);
     TechniquePass& getOrCreatePass(const char* passName);
 
@@ -121,7 +121,7 @@ namespace mt
     std::vector<std::unique_ptr<SelectionImpl>> _selections;
     size_t _lastProcessedSelectionsRevision;
 
-    std::vector<std::unique_ptr<TechniqueResourceImpl>> _resources;
+    std::vector<std::unique_ptr<ResourceBindingImpl>> _resources;
     size_t _resourcesRevision;
 
     using UniformBlocks = std::vector<std::unique_ptr<TechniqueUniformBlock>>;

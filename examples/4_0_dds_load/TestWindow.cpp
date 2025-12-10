@@ -14,8 +14,8 @@ TestWindow::TestWindow(Device& device) :
   RenderWindow(device, "Test window"),
   _technique(new Technique(device, "Test technique")),
   _pass(_technique->getOrCreatePass("RenderPass")),
-  _vertexBuffer(_technique->getOrCreateResource("vertices")),
-  _texture(_technique->getOrCreateResource("colorTexture"))
+  _vertexBuffer(_technique->getOrCreateResourceBinding("vertices")),
+  _texture(_technique->getOrCreateResourceBinding("colorTexture"))
 {
   _makeConfiguration();
   _createVertexBuffer();

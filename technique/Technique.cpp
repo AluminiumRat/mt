@@ -53,7 +53,7 @@ void Technique::updateConfiguration()
 
   //  Чистим ресурсы с дефолтными значениями, на случай, если они не прописаны в
   //  новой конфигурации
-  for (std::unique_ptr<TechniqueResourceImpl>& resource : _resources)
+  for (std::unique_ptr<ResourceBindingImpl>& resource : _resources)
   {
     if(resource->isDefault()) resource->clear();
   }
@@ -66,9 +66,10 @@ void Technique::updateConfiguration()
       for(const TechniqueConfiguration::DefaultSampler& sampler :
                                             newConfiguration->defaultSamplers)
       {
-        TechniqueResourceImpl& samplerResource =
-                      static_cast<TechniqueResourceImpl&>(
-                            getOrCreateResource(sampler.resourceName.c_str()));
+        ResourceBindingImpl& samplerResource =
+                      static_cast<ResourceBindingImpl&>(
+                                    getOrCreateResourceBinding(
+                                                  sampler.resourceName.c_str()));
         if(samplerResource.isDefault())
         {
           samplerResource.setSamplerAsDefault(sampler.defaultSampler.get());
@@ -82,7 +83,7 @@ void Technique::updateConfiguration()
       selection->setConfiguration(newConfiguration.get());
     }
 
-    for (std::unique_ptr<TechniqueResourceImpl>& resource : _resources)
+    for (std::unique_ptr<ResourceBindingImpl>& resource : _resources)
     {
       resource->setConfiguration(newConfiguration.get());
     }
@@ -195,7 +196,7 @@ void Technique::_bindResources( DescriptorSet& descriptorSet,
                                 DescriptorSetType setType,
                                 CommandProducerTransfer& commandProducer) const
 {
-  for(const std::unique_ptr<TechniqueResourceImpl>& resource : _resources)
+  for(const std::unique_ptr<ResourceBindingImpl>& resource : _resources)
   {
     if( resource->description() != nullptr &&
         resource->description()->set == setType)
@@ -323,7 +324,7 @@ TechniqueVolatileContext Technique::createVolatileContext(
   //  Биндим установленные ресурсы
   if(context.descriptorSet != nullptr)
   {
-    for (const std::unique_ptr<TechniqueResourceImpl>& resource : _resources)
+    for (const std::unique_ptr<ResourceBindingImpl>& resource : _resources)
     {
       if (resource->description() != nullptr &&
           resource->description()->set == DescriptorSetType::VOLATILE)
@@ -370,13 +371,13 @@ Selection& Technique::getOrCreateSelection(const char* selectionName)
   return *_selections.back();
 }
 
-TechniqueResource& Technique::getOrCreateResource(const char* resourceName)
+ResourceBinding& Technique::getOrCreateResourceBinding(const char* resourceName)
 {
-  for(std::unique_ptr<TechniqueResourceImpl>& resource : _resources)
+  for(std::unique_ptr<ResourceBindingImpl>& resource : _resources)
   {
     if(resource->name() == resourceName) return *resource;
   }
-  _resources.push_back(std::make_unique<TechniqueResourceImpl>(
+  _resources.push_back(std::make_unique<ResourceBindingImpl>(
                                                         resourceName,
                                                         *this,
                                                         _resourcesRevision,
