@@ -11,6 +11,7 @@ include_directories(..
                     ${IMGUI_PATH})
 
 set(SOURCES
+    "AsyncTaskGui.cpp"
     "BaseWindow.cpp"
     "fileDialog.cpp"
     "GUILib.cpp"

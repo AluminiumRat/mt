@@ -118,7 +118,7 @@ namespace mt
                     EventType eventType,
                     const char* description,
                     uint8_t percent) noexcept;
-    void _propagateEvent(const Event& theEvent);
+    void _propagateEvent(const Event& theEvent) noexcept;
     void _startTasks() noexcept;
     void _finishAsyncPart(AsyncTask& task) noexcept;
     void _invalidateHandle(AsyncTask& task) noexcept;
@@ -134,11 +134,10 @@ namespace mt
     // Таски которые закончили асинхронную часть, но ещё не выполнили синхронную
     TaskQueue _finished;
 
-    //  Таска с режимом EXCLUSIVE_MODE находится в асинхронной части,
-    //  нельзя запускать другие таски на выполнение
+    //  Флаг, который говорит, что таска с режимом EXCLUSIVE_MODE находится в
+    //  асинхронной части, нельзя запускать другие таски на выполнение
     bool _exclusiveMode;
 
-    //  Список хэндлов, чтобы сообщать им о том, что таска удалена
     using Handles = std::vector<TaskHandle*>;
     Handles _handles;
 
@@ -146,7 +145,11 @@ namespace mt
     Events _events;
     std::function<void(const Event&)> _eventCallback;
 
-    mutable std::recursive_mutex _mutex;
+    mutable std::mutex _accessMutex;
+
+    //  Этот мьютекс не дает удалять таски, пока они используются. Нужно для
+    //  потокобезопасного abort
+    std::mutex _taskDeleteMutex;
   };
 
   inline AsyncTaskQueue::TaskHandle::TaskHandle(

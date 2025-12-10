@@ -20,7 +20,7 @@ AsyncTaskQueue::~AsyncTaskQueue() noexcept
   // Раздаем всем запущенным таскам команду на аборт
   std::vector<AsyncTask*> tasksToWait;
   {
-    std::lock_guard lock(_mutex);
+    std::lock_guard lock(_accessMutex);
     for(const std::unique_ptr<AsyncTask>& task : _inProgress)
     {
       task->notifyAbort();
@@ -39,26 +39,20 @@ AsyncTaskQueue::~AsyncTaskQueue() noexcept
 void AsyncTaskQueue::reportStage( AsyncTask& task,
                                   const char* stageName) noexcept
 {
-  if(!_eventCallback) return;
-
-  std::lock_guard lock(_mutex);
+  std::lock_guard lock(_accessMutex);
   _addEvent(&task, STAGE_STARTED_EVENT, stageName, 0);
 }
 
 void AsyncTaskQueue::reportPercent( AsyncTask& task, uint8_t percent) noexcept
 {
-  if (!_eventCallback) return;
-
-  std::lock_guard lock(_mutex);
+  std::lock_guard lock(_accessMutex);
   _addEvent(&task, PERCENTS_DONE_EVENT, "", percent);
 }
 
 void AsyncTaskQueue::reportWarning( AsyncTask& task,
                                     const char* message) noexcept
 {
-  if (!_eventCallback) return;
-
-  std::lock_guard lock(_mutex);
+  std::lock_guard lock(_accessMutex);
   _addEvent(&task, WARNING_EVENT, message, 0);
 }
 
@@ -67,6 +61,7 @@ void AsyncTaskQueue::_addEvent( AsyncTask* task,
                                 const char* description,
                                 uint8_t percent) noexcept
 {
+  if (!_eventCallback) return;
   try
   {
     _events.emplace_back(Event{ .task = task,
@@ -83,9 +78,9 @@ void AsyncTaskQueue::_addEvent( AsyncTask* task,
 void AsyncTaskQueue::addTask(std::unique_ptr<AsyncTask> task)
 {
   MT_ASSERT(task != nullptr);
-    AsyncTask* taskPtr = task.get();
+  AsyncTask* taskPtr = task.get();
 
-  std::lock_guard lock(_mutex);
+  std::lock_guard lock(_accessMutex);
 
   _waitQueue.push(std::move(task));
   _addEvent(taskPtr, TASK_ADDED_EVENT, "", 0);
@@ -100,7 +95,7 @@ std::unique_ptr<AsyncTaskQueue::TaskHandle>
   MT_ASSERT(task != nullptr);
   AsyncTask* taskPtr = task.get();
 
-  std::lock_guard lock(_mutex);
+  std::lock_guard lock(_accessMutex);
   std::unique_ptr<TaskHandle> handle(new TaskHandle(*this, *task));
   _handles.push_back(handle.get());
   try
@@ -170,7 +165,7 @@ void AsyncTaskQueue::_finishAsyncPart(AsyncTask& task) noexcept
 {
   try
   {
-    std::lock_guard lock(_mutex);
+    std::lock_guard lock(_accessMutex);
 
     if (task.executionMode() == AsyncTask::EXCLUSIVE_MODE)
     {
@@ -204,7 +199,7 @@ void AsyncTaskQueue::abortTask(TaskHandle& handle) noexcept
 {
   try
   {
-    std::lock_guard lock(_mutex);
+    std::lock_guard lock(_taskDeleteMutex);
 
     AsyncTask* task = handle.task();
     if(task == nullptr) return;
@@ -225,7 +220,7 @@ void AsyncTaskQueue::abortTask(TaskHandle& handle) noexcept
 
 void AsyncTaskQueue::unregisterHandle(TaskHandle& handle) noexcept
 {
-  std::lock_guard lock(_mutex);
+  std::lock_guard lock(_accessMutex);
 
   Handles::iterator iHandle = std::find(_handles.begin(),
                                         _handles.end(),
@@ -247,14 +242,17 @@ void AsyncTaskQueue::_invalidateHandle(AsyncTask& task) noexcept
 
 void AsyncTaskQueue::update()
 {
-  for(const Event& theEvent : _events) _propagateEvent(theEvent);
-  _events.clear();
+  {
+    std::lock_guard lock(_accessMutex);
+    for(const Event& theEvent : _events) _propagateEvent(theEvent);
+    _events.clear();
+  }
 
   while(true)
   {
     std::unique_ptr<AsyncTask> task;
     {
-      std::lock_guard lock(_mutex);
+      std::lock_guard lock(_accessMutex);
 
       if(_finished.empty()) break;
 
@@ -266,6 +264,7 @@ void AsyncTaskQueue::update()
 
     if(!task->shouldBeAborted())
     {
+      // Выполняем синхронную часть таски
       MT_ASSERT(task->future().valid())
       try
       {
@@ -282,14 +281,20 @@ void AsyncTaskQueue::update()
         task->restoreState();
       }
     }
+
+    // Сообщаем, что таска завершила работу и сейчас будет удалена
     if (_eventCallback) _propagateEvent(Event{.task = task.get(),
                                               .type = TASK_FINISHED_EVENT,
                                               .description = "",
                                               .percent = 0 });
+
+    // Удаляем таску
+    std::lock_guard lock(_taskDeleteMutex);
+    task.reset();
   }
 }
 
-void AsyncTaskQueue::_propagateEvent(const Event& theEvent)
+void AsyncTaskQueue::_propagateEvent(const Event& theEvent) noexcept
 {
   if(!_eventCallback) return;
 
