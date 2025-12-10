@@ -135,6 +135,42 @@ void ResourceBinding::setSampler( TechniqueVolatileContext& context,
   context.descriptorSet->attachSampler(sampler, _description->bindingIndex);
 }
 
+void ResourceBinding::setResource(const TechniqueResource* theResource)
+{
+  _defaultValue = false;
+  if(resource() == theResource) return;
+  clear();
+  attach(theResource);
+  if(theResource != nullptr) onResourceUpdated();
+}
+
+void ResourceBinding::onResourceUpdated()
+{
+  MT_ASSERT(resource() != nullptr);
+
+  _buffer.reset();
+  _images.clear();
+  _sampler.reset();
+
+  if(resource()->buffer() != nullptr)
+  {
+    _buffer = ConstRef(resource()->buffer());
+  }
+  else if(resource()->image() != nullptr)
+  {
+    _images.push_back(ConstRef(resource()->image()));
+  }
+  else if(resource()->sampler() != nullptr)
+  {
+    _sampler = ConstRef(resource()->sampler());
+  }
+
+  if( _description != nullptr &&
+      _description->set == DescriptorSetType::STATIC)
+  {
+    _revisionCounter++;
+  }
+}
 
 void ResourceBindingImpl::bindToDescriptorSet(DescriptorSet& set) const
 {

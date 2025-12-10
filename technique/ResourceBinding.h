@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <technique/TechniqueConfiguration.h>
+#include <technique/TechniqueResource.h>
 #include <util/Assert.h>
 #include <util/Ref.h>
 #include <vkr/image/ImageView.h>
@@ -18,12 +19,14 @@ namespace mt
   class TechniqueVolatileContext;
 
   //  Компонент класса Technique
-  //  Буферы, текстуры, сэмплеры.
+  //  Способ подключить буферы, текстуры и сэмплеры.
   //  Объекты, которые подключается к пайплайну через дескриптеры и дескриптер
   //    сеты. Обычно используются как источник данных или место для результатов
   //    вычислений.
+  //  Позволяет подключать как статические источники данных (DataBuffer,
+  //    ImageView и Sampler), так и динамические (TechniqueResource)
   //  Публичный интерфейс для использования снаружи Technique
-  class ResourceBinding
+  class ResourceBinding : public TechniqueResource::Observer
   {
   public:
     //  resvisionCounter - внешний счетчик ревизий. Позволяет отследить момент,
@@ -43,6 +46,7 @@ namespace mt
     inline const DataBuffer* buffer() const noexcept;
     inline const ImageView* image(size_t arrayIndex = 0) const noexcept;
     inline const Sampler* sampler() const noexcept;
+    inline const TechniqueResource* resource() const noexcept;
 
     //  Установить буфер, сохранив указатель на него в сам ResourceBinding
     //  Ссылка сохраняется в технике между циклами рендера
@@ -92,8 +96,15 @@ namespace mt
     inline void setSampler( TechniqueVolatileContext& context,
                             const ConstRef<Sampler>& sampler) const;
 
+    void setResource(const TechniqueResource* theResource);
+    inline void setResource(const Ref<TechniqueResource>& theResource);
+    inline void setResource(const ConstRef<TechniqueResource>& theResource);
+
     // Сбросить все подключенные ресурсы
     inline void clear() noexcept;
+
+  protected:
+    virtual void onResourceUpdated() override;
 
   protected:
     void _bindToConfiguration(const TechniqueConfiguration* configuration);
@@ -146,6 +157,7 @@ namespace mt
     _buffer.reset();
     _images.clear();
     _sampler.reset();
+    detach();
 
     if( _description != nullptr &&
         _description->set == DescriptorSetType::STATIC)
@@ -208,8 +220,13 @@ namespace mt
 
     if(image == _images[arrayIndex]) return;
 
-    _buffer.reset();
-    _sampler.reset();
+    if(resource() != nullptr) clear();
+    else
+    {
+      _buffer.reset();
+      _sampler.reset();
+    }
+
     if( _description != nullptr &&
         _description->set == DescriptorSetType::STATIC)
     {
@@ -291,6 +308,11 @@ namespace mt
     return _sampler.get();
   }
 
+  inline const TechniqueResource* ResourceBinding::resource() const noexcept
+  {
+    return Observer::resource();
+  }
+
   inline void ResourceBinding::setSampler(const Sampler* sampler)
   {
     _defaultValue = false;
@@ -322,6 +344,18 @@ namespace mt
   {
     MT_ASSERT(sampler != nullptr);
     setSampler(context, *sampler);
+  }
+
+  inline void ResourceBinding::setResource(
+                                      const Ref<TechniqueResource>& theResource)
+  {
+    setResource(theResource.get());
+  }
+
+  inline void ResourceBinding::setResource(
+                                const ConstRef<TechniqueResource>& theResource)
+  {
+    setResource(theResource.get());
   }
 
   inline ResourceBindingImpl::ResourceBindingImpl(

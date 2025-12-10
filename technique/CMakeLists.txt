@@ -20,6 +20,7 @@ set(SOURCES
     "TechniqueConfigurator.cpp"
     "TechniqueLoader.cpp"
     "TechniquePass.cpp"
+    "TechniqueResource.cpp"
     "TechniqueUniformBlock.cpp"
     "UniformVariable.cpp"
     )
