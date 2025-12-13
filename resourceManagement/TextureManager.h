@@ -119,14 +119,16 @@ namespace mt
     class LoadTextureTask;
 
   private:
+    //  Обработа событий от FileWatcher
+    virtual void onFileChanged( const std::filesystem::path& filePatch,
+                                EventType eventType) override;
+
     TechniqueResource* _getExistingResource(
                                           const std::filesystem::path& filePath,
                                           CommandQueueTransfer& ownerQueue,
                                           bool useDefaultTexture) const;
 
-    //  Обработа событий от FileWatcher
-    virtual void onFileChanged( const std::filesystem::path& filePatch,
-                                EventType eventType) override;
+    void _addFileWatching(const std::filesystem::path& filePath) noexcept;
 
     //  Вызывается из LoadTextureTask
     void _updateTexture(const std::filesystem::path& filePath,

@@ -245,22 +245,25 @@ ConstRef<TechniqueResource> TextureManager::loadImmediately(
     newRecord.withDefault->setImage(image.get());
   }
 
-  //  Включаем слежение за файлом
-  _fileWatcher.addWatching(normalizedPath, *this);
-
   resource = useDefaultTexture ? newRecord.withDefault.get() :
                                  newRecord.noDefault.get();
+  _resourcesMap[{normalizedPath, & ownerQueue}] = std::move(newRecord);
 
-  try
-  {
-    _resourcesMap[{normalizedPath, & ownerQueue}] = std::move(newRecord);
-  }
-  catch (...)
-  {
-    _fileWatcher.removeWatching(normalizedPath, *this);
-  }
+  _addFileWatching(normalizedPath);
 
   return ConstRef(resource);
+}
+
+void TextureManager::_addFileWatching(const fs::path& filePath) noexcept
+{
+  try
+  {
+    _fileWatcher.addWatching(filePath, *this);
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << "TextureManager: unable to add file for watching: " << filePath << " : " << error.what();
+  }
 }
 
 ConstRef<TechniqueResource> TextureManager::sheduleLoading(
@@ -294,15 +297,9 @@ ConstRef<TechniqueResource> TextureManager::sheduleLoading(
 
   resource = useDefaultTexture ?  newRecord.withDefault.get() :
                                   newRecord.noDefault.get();
+  _resourcesMap[{normalizedPath, & ownerQueue}] = std::move(newRecord);
 
-  try
-  {
-    _resourcesMap[{normalizedPath, & ownerQueue}] = std::move(newRecord);
-  }
-  catch(...)
-  {
-    _fileWatcher.removeWatching(normalizedPath, *this);
-  }
+  _addFileWatching(normalizedPath);
 
   return ConstRef(resource);
 }

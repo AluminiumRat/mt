@@ -54,7 +54,7 @@ void TestWindow::_createVertexBuffer()
 
 void TestWindow::_createTexture()
 {
-  ConstRef<TechniqueResource> texture = _textureManager.sheduleLoading(
+  ConstRef<TechniqueResource> texture = _textureManager.loadImmediately(
                                                       "examples/image.dds",
                                                       *device().graphicQueue(),
                                                       false);
