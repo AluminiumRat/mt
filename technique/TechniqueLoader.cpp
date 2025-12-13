@@ -70,7 +70,7 @@ namespace mt
 
   YAML::Node readFile(const fs::path& file)
   {
-    ContentLoader& loader = ContentLoader::getContentLoader();
+    ContentLoader& loader = ContentLoader::getLoader();
     std::string fileText = loader.loadText(file);
     if(fileText.empty()) throw std::runtime_error(std::string((const char*)file.u8string().c_str()) + " : file is empty");
     YAML::Node config = YAML::Load(fileText);

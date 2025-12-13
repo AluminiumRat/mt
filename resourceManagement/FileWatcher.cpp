@@ -2,6 +2,7 @@
 #include <stdexcept>
 
 #include <resourceManagement/FileWatcher.h>
+#include <util/ContentLoader.h>
 #include <util/Log.h>
 
 namespace fs = std::filesystem;
@@ -49,7 +50,7 @@ public:
 
   void update(EventQueue& events)
   {
-    if(!fs::exists(filePath))
+    if(!ContentLoader::getLoader().exists(filePath))
     {
       if(exists)
       {
@@ -59,7 +60,8 @@ public:
     }
     else
     {
-      Filetime lastWriteTime = fs::last_write_time(filePath);
+      Filetime lastWriteTime =
+                            ContentLoader::getLoader().lastWriteTime(filePath);
       if (!exists)
       {
         addEvents(events, FileObserver::FILE_APPEARANCE);
@@ -141,13 +143,20 @@ void FileWatcher::_addToFileTable(FileObserver& observer,
     newRecord->filePath = filePath;
 
     std::error_code errCode;
-    newRecord->exists = fs::exists(filePath, errCode);
-    if(newRecord->exists && !errCode)
+    try
     {
-      newRecord->modificationTime = fs::last_write_time(newRecord->filePath,
-                                                        errCode);
+      newRecord->exists = ContentLoader::getLoader().exists(filePath);
+      if (newRecord->exists)
+      {
+        newRecord->modificationTime =
+                  ContentLoader::getLoader().lastWriteTime(newRecord->filePath);
+      }
     }
-    newRecord->exists &= !errCode;
+    catch(...)
+    {
+      newRecord->exists = false;
+    }
+
     newRecord->observers.push_back(&observer);
     _files.push_back(std::move(newRecord));
   }

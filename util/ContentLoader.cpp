@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 #include <util/Assert.h>
 #include <util/ContentLoader.h>
@@ -14,44 +15,35 @@ using namespace mt;
 
 static std::unique_ptr<ContentLoader> contentLoader(new DefaultContentLoader);
 
-void ContentLoader::setContentLoader(std::unique_ptr<ContentLoader> newLoader)
+void ContentLoader::setLoader(std::unique_ptr<ContentLoader> newLoader)
 {
   MT_ASSERT(newLoader != nullptr);
   contentLoader = std::move(newLoader);
 }
 
-ContentLoader& ContentLoader::getContentLoader() noexcept
+ContentLoader& ContentLoader::getLoader() noexcept
 {
   return *contentLoader;
 }
 
-static std::ifstream openFile(const fs::path& file)
+static std::ifstream openFile(const fs::path& file,
+                              const std::vector<fs::path>& searchPatches)
 {
-  // Для начала ищем в текущей папке
-  std::ifstream fileStream(file, std::ios::ate | std::ios::binary);
-  if (!fileStream.is_open())
+  std::ifstream fileStream;
+  if(file.is_absolute())
   {
-    // В подкаталоге shaders
-    fileStream.open(fs::path("content") / file,
-                    std::ios::ate | std::ios::binary);
+    //  Путь абсолютный, пытаемся открыть как есть
+    fileStream.open(file, std::ios::ate | std::ios::binary);
   }
-  if (!fileStream.is_open())
+  else
   {
-    // Парсим переменную окружения и ищем по путям в ней
-    const char* patchesEnv = std::getenv("MT_CONTENT_DIRS");
-    if(patchesEnv != nullptr)
+    //  Перебираем пути, где может лежать файл, и пытаемся открыть
+    for(const fs::path& path : searchPatches)
     {
-      std::istringstream envStream(patchesEnv);
-      std::string path;
-      while(std::getline(envStream, path, ';'))
-      {
-        fileStream.open(fs::path(path) / file,
-                        std::ios::ate | std::ios::binary);
-        if (fileStream.is_open()) break;
-      }
+      fileStream.open(path / file, std::ios::ate | std::ios::binary);
+      if(fileStream.is_open()) break;
     }
   }
-
   if (!fileStream.is_open())
   {
     throw std::runtime_error(std::string("Unable to open file: ") + (const char*)file.u8string().c_str());
@@ -60,9 +52,27 @@ static std::ifstream openFile(const fs::path& file)
   return fileStream;
 }
 
+DefaultContentLoader::DefaultContentLoader()
+{
+  _searchPatches.push_back(fs::current_path());
+  _searchPatches.push_back(fs::current_path() / "content");
+
+  // Парсим переменную окружения и ищем по путям в ней
+  const char* patchesEnv = std::getenv("MT_CONTENT_DIRS");
+  if(patchesEnv != nullptr)
+  {
+    std::istringstream envStream(patchesEnv);
+    std::string path;
+    while(std::getline(envStream, path, ';'))
+    {
+      if(!path.empty()) _searchPatches.push_back(path);
+    }
+  }
+}
+
 std::vector<char> DefaultContentLoader::loadData(const fs::path& file)
 {
-  std::ifstream fileStream = openFile(file);
+  std::ifstream fileStream = openFile(file, _searchPatches);
 
   // Определяем размер данных
   size_t dataSize = (size_t)fileStream.tellg();
@@ -79,7 +89,7 @@ std::vector<char> DefaultContentLoader::loadData(const fs::path& file)
 
 std::string DefaultContentLoader::loadText(const fs::path& file)
 {
-  std::ifstream fileStream = openFile(file);
+  std::ifstream fileStream = openFile(file, _searchPatches);
 
   // Определяем размер данных
   size_t dataSize = (size_t)fileStream.tellg();
@@ -92,4 +102,29 @@ std::string DefaultContentLoader::loadText(const fs::path& file)
   fileStream.read((char*)(result.data()), dataSize);
 
   return result;
+}
+
+bool DefaultContentLoader::exists(const fs::path& file)
+{
+  if(file.is_absolute()) return fs::exists(file);
+
+  for (const fs::path& path : _searchPatches)
+  {
+    if(fs::exists(path / file)) return true;
+  }
+
+  return false;
+}
+
+fs::file_time_type DefaultContentLoader::lastWriteTime(const fs::path& file)
+{
+  if(file.is_absolute()) return fs::last_write_time(file);
+
+  for (const fs::path& path : _searchPatches)
+  {
+    fs::path fullFilePath = path / file;
+    if (fs::exists(fullFilePath)) return fs::last_write_time(fullFilePath);
+  }
+
+  throw std::runtime_error(std::string("DefaultContentLoader::lastWriteTime: file " + std::string((const char*)file.u8string().c_str())) + " doesn't exist");
 }

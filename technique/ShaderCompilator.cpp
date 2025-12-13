@@ -48,7 +48,7 @@ shaderc_include_result* ShaderIncluder::GetInclude(
     try
     {
       std::filesystem::path filePatch((const char8_t*)requested_source);
-      shaderText = ContentLoader::getContentLoader().loadText(filePatch);
+      shaderText = ContentLoader::getLoader().loadText(filePatch);
       if (shaderText.empty()) throw std::runtime_error(std::string((const char*)filePatch.u8string().c_str()) + " : file is empty");
     }
     catch (std::exception& error)
@@ -140,7 +140,7 @@ std::vector<char> ShaderCompilator::compile(const std::filesystem::path& file,
                                             std::span<const Define> defines)
 {
   std::string shaderFilename = (const char*)file.u8string().c_str();
-  std::string shaderText = ContentLoader::getContentLoader().loadText(file);
+  std::string shaderText = ContentLoader::getLoader().loadText(file);
   if (shaderText.empty()) throw std::runtime_error(shaderFilename + " : file is empty");
 
   // Настраиваем макросы

@@ -119,7 +119,7 @@ Ref<Image> mt::loadDDS( const fs::path& file,
 {
   if(transferQueue == nullptr) transferQueue = &device.primaryQueue();
 
-  ContentLoader& loader = ContentLoader::getContentLoader();
+  ContentLoader& loader = ContentLoader::getLoader();
   std::vector<char> fileData = loader.loadData(file);
 
   std::string filename = (const char*)file.u8string().c_str();
