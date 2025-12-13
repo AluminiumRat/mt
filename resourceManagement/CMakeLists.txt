@@ -8,7 +8,8 @@ include_directories(..
                     ${VKMEMALLOC_PATH})
 
 set(SOURCES
-    "FileWatcher.cpp")
+    "FileWatcher.cpp"
+    "TextureManager.cpp")
 
 add_library(resourceManagement
             ${SOURCES})

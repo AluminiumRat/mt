@@ -16,6 +16,8 @@ namespace mt
     RefCounter(const RefCounter&) = delete;
     RefCounter& operator = (const RefCounter&) = delete;
 
+    inline int counterValue() const noexcept;
+
   protected:
     // Уничтожить объект может только указатель. Деструкторы наследников
     // также необходимо помещать в protected секцию
@@ -36,6 +38,11 @@ namespace mt
   inline RefCounter::RefCounter() noexcept :
     _counter(0)
   {
+  }
+
+  inline int RefCounter::counterValue() const noexcept
+  {
+    return _counter;
   }
 
   inline void RefCounter::_incrementCounter() const noexcept
