@@ -54,10 +54,17 @@ void TestWindow::_createVertexBuffer()
 
 void TestWindow::_createTexture()
 {
+  //  Здесь можно выбрать, как именно загружать текстуру
+
+  /*ConstRef<TechniqueResource> texture = _textureManager.sheduleLoading(
+                                                      "examples/image.dds",
+                                                      *device().graphicQueue(),
+                                                      true);*/
+
   ConstRef<TechniqueResource> texture = _textureManager.loadImmediately(
                                                       "examples/image.dds",
                                                       *device().graphicQueue(),
-                                                      false);
+                                                      true);
   _texture.setResource(texture);
 }
 
