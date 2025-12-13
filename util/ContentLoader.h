@@ -18,6 +18,8 @@ namespace mt
     virtual ~ContentLoader() noexcept = default;
     //  Этот метод должен быть потокобезопасным
     virtual std::vector<char> loadData(const std::filesystem::path& file) = 0;
+    //  Этот метод должен быть потокобезопасным
+    virtual std::string loadText(const std::filesystem::path& file) = 0;
 
     //  Установить загрузчик данных
     //  По умолчанию установлен DefaultContentLoader
@@ -36,5 +38,6 @@ namespace mt
   public:
     virtual std::vector<char> loadData(
                                     const std::filesystem::path& file) override;
+    virtual std::string loadText(const std::filesystem::path& file) override;
   };
 }

@@ -76,3 +76,20 @@ std::vector<char> DefaultContentLoader::loadData(const fs::path& file)
 
   return result;
 }
+
+std::string DefaultContentLoader::loadText(const fs::path& file)
+{
+  std::ifstream fileStream = openFile(file);
+
+  // Определяем размер данных
+  size_t dataSize = (size_t)fileStream.tellg();
+  if (dataSize == 0) return std::string();
+
+  // Считываем данные
+  std::string result;
+  result.resize(dataSize);
+  fileStream.seekg(0);
+  fileStream.read((char*)(result.data()), dataSize);
+
+  return result;
+}

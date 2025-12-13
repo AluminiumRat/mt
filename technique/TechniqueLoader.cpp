@@ -5,7 +5,7 @@
 
 #include <technique/TechniqueConfigurator.h>
 #include <technique/TechniqueLoader.h>
-#include <util/ShaderLoader.h>
+#include <util/ContentLoader.h>
 #include <util/vkMeta.h>
 #include <vkr/image/ImageFormatFeatures.h>
 
@@ -70,8 +70,9 @@ namespace mt
 
   YAML::Node readFile(const fs::path& file)
   {
-    ShaderLoader& textLoader = ShaderLoader::getShaderLoader();
-    std::string fileText = textLoader.loadText(file);
+    ContentLoader& loader = ContentLoader::getContentLoader();
+    std::string fileText = loader.loadText(file);
+    if(fileText.empty()) throw std::runtime_error(std::string((const char*)file.u8string().c_str()) + " : file is empty");
     YAML::Node config = YAML::Load(fileText);
     return config;
   }

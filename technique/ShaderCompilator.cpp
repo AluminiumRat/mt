@@ -5,7 +5,7 @@
 
 #include <technique/ShaderCompilator.h>
 #include <util/Abort.h>
-#include <util/ShaderLoader.h>
+#include <util/ContentLoader.h>
 
 using namespace mt;
 
@@ -48,7 +48,8 @@ shaderc_include_result* ShaderIncluder::GetInclude(
     try
     {
       std::filesystem::path filePatch((const char8_t*)requested_source);
-      shaderText = ShaderLoader::getShaderLoader().loadText(filePatch);
+      shaderText = ContentLoader::getContentLoader().loadText(filePatch);
+      if (shaderText.empty()) throw std::runtime_error(std::string((const char*)filePatch.u8string().c_str()) + " : file is empty");
     }
     catch (std::exception& error)
     {
@@ -134,13 +135,13 @@ static shaderc_shader_kind getShaderKind(VkShaderStageFlagBits shaderStage)
   }
 }
 
-std::vector<uint32_t> ShaderCompilator::compile(
-                                              const std::filesystem::path& file,
-                                              VkShaderStageFlagBits shaderStage,
-                                              std::span<const Define> defines)
+std::vector<char> ShaderCompilator::compile(const std::filesystem::path& file,
+                                            VkShaderStageFlagBits shaderStage,
+                                            std::span<const Define> defines)
 {
   std::string shaderFilename = (const char*)file.u8string().c_str();
-  std::string shaderText = ShaderLoader::getShaderLoader().loadText(file);
+  std::string shaderText = ContentLoader::getContentLoader().loadText(file);
+  if (shaderText.empty()) throw std::runtime_error(shaderFilename + " : file is empty");
 
   // Настраиваем макросы
   shaderc::CompileOptions options;
@@ -175,6 +176,6 @@ std::vector<uint32_t> ShaderCompilator::compile(
   {
     throw std::runtime_error(std::string("Shader compilation error. File: ") + shaderFilename.c_str() + "\n" + compilationResult.GetErrorMessage());
   }
-  return std::vector<uint32_t>( compilationResult.cbegin(),
-                                compilationResult.cend());
+  return std::vector<char>( (const char*)compilationResult.cbegin(),
+                            (const char*)compilationResult.cend());
 }

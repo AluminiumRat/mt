@@ -190,7 +190,7 @@ void PassConfigurator::_processShader(const ShaderInfo& shaderRecord,
   }
 
   // Получаем spirv код
-  std::vector<uint32_t> spirData = ShaderCompilator::compile(
+  std::vector<char> spirData = ShaderCompilator::compile(
                                                         shaderRecord.file,
                                                         shaderRecord.stage,
                                                         context.currentDefines);

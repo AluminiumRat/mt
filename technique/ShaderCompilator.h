@@ -18,8 +18,8 @@ namespace mt
       const char* value;
     };
 
-    static std::vector<uint32_t> compile( const std::filesystem::path& file,
-                                          VkShaderStageFlagBits shaderStage,
-                                          std::span<const Define> defines);
+    static std::vector<char> compile( const std::filesystem::path& file,
+                                      VkShaderStageFlagBits shaderStage,
+                                      std::span<const Define> defines);
   };
 }

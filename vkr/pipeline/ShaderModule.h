@@ -16,7 +16,7 @@ namespace mt
   public:
     // Создать шейдер из данных SPIR-V в памяти
     ShaderModule( Device& device,
-                  std::span<const uint32_t> spvData,
+                  std::span<const char> spvData,
                   const char* debugName);
     // Загрузить шейдер в формате SPIR-V из файла
     ShaderModule(Device& device, const char* spvFilename);
@@ -28,7 +28,7 @@ namespace mt
     inline const std::string& debugName() const noexcept;
 
   private:
-    void _createHandle(std::span<const uint32_t> spvData);
+    void _createHandle(std::span<const char> spvData);
     void _cleanup() noexcept;
 
   private:
