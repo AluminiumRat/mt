@@ -194,10 +194,65 @@ TechniqueResource* TextureManager::_getExistingResource(
 {
   ResourcesMap::const_iterator iResource =
                                   _resourcesMap.find({ filePath, &ownerQueue });
-  if(iResource == _resourcesMap.end()) return nullptr;
+  if(iResource == _resourcesMap.end())
+  {
+    return nullptr;
+  }
 
-  if(useDefaultTexture) return iResource->second.withDefault.get();
-  else return iResource->second.noDefault.get();
+  ResourceRecord& resourceRecord = *iResource->second;
+
+  //  Если ресурс был создан с помощью sheduleLoading и к нему не присоединен
+  //  image, то, возможно, сейчас ресурс загружается через асинхронную таску
+  //  Нам не подходит этот ресурс, так как loadImmediately требует загрузить
+  //  текстуру прямо сейчас.
+  if( resourceRecord.noDefault->image() == nullptr &&
+      resourceRecord.waitable)
+  {
+    return  nullptr;
+  }
+
+  if(useDefaultTexture) return resourceRecord.withDefault.get();
+  else return resourceRecord.noDefault.get();
+}
+
+TextureManager::ResourceRecord&
+                      TextureManager::_createNewRecord(
+                                                const fs::path& filePath,
+                                                CommandQueueTransfer& ownerQueue,
+                                                const ImageView* image)
+{
+  std::unique_ptr<ResourceRecord> newRecord(new ResourceRecord);
+  ResourceRecord* recordPtr = newRecord.get();
+  newRecord->filePath = filePath;
+  newRecord->commandQueue = &ownerQueue;
+  newRecord->waitable = false;
+  newRecord->withDefault = Ref(new TechniqueResource);
+  newRecord->noDefault = Ref(new TechniqueResource);
+
+  if (image != nullptr)
+  {
+    newRecord->withDefault->setImage(image);
+    newRecord->noDefault->setImage(image);
+  }
+  else
+  {
+    // Текстура не загрузилась - используем вместо неё дефлотную
+    ConstRef<ImageView> defaultImage = createDefaultImage(ownerQueue);
+    newRecord->withDefault->setImage(defaultImage.get());
+  }
+
+  _resources.push_back(std::move(newRecord));
+  try
+  {
+    _resourcesMap[{filePath, &ownerQueue}] = recordPtr;
+  }
+  catch(...)
+  {
+    _resources.pop_back();
+    throw;
+  }
+
+  return *recordPtr;
 }
 
 ConstRef<TechniqueResource> TextureManager::loadImmediately(
@@ -221,37 +276,22 @@ ConstRef<TechniqueResource> TextureManager::loadImmediately(
   Ref<ImageView> image = loadFromDDS(normalizedPath, ownerQueue);
 
   //  Повторная проверка, может кто-то ещё успел загрузить ресурс пока мы читали
-  //  dds
+  //  image
   std::lock_guard lock(_accessMutex);
   TechniqueResource* resource = _getExistingResource( normalizedPath,
                                                       ownerQueue,
                                                       useDefaultTexture);
   if(resource != nullptr) return ConstRef(resource);
 
-  //  Убедились, что ресурса точно нет в мапе, создадим новый
-  ResourceRecord newRecord;
-  newRecord.withDefault = Ref(new TechniqueResource);
-  newRecord.noDefault = Ref(new TechniqueResource);
-
-  if (image != nullptr)
-  {
-    newRecord.withDefault->setImage(image.get());
-    newRecord.noDefault->setImage(image.get());
-  }
-  else
-  {
-    // Текстура не загрузилась - используем вместо неё дефлотную
-    image = createDefaultImage(ownerQueue);
-    newRecord.withDefault->setImage(image.get());
-  }
-
-  resource = useDefaultTexture ? newRecord.withDefault.get() :
-                                 newRecord.noDefault.get();
-  _resourcesMap[{normalizedPath, & ownerQueue}] = std::move(newRecord);
+  //  Нет подходящего ресурса в мапе. Создадим новый
+  ResourceRecord& newRecord = _createNewRecord( normalizedPath,
+                                                ownerQueue,
+                                                image.get());
 
   _addFileWatching(normalizedPath);
 
-  return ConstRef(resource);
+  if(useDefaultTexture) return ConstRef(newRecord.withDefault.get());
+  return ConstRef(newRecord.noDefault.get());
 }
 
 void TextureManager::_addFileWatching(const fs::path& filePath) noexcept
@@ -273,35 +313,48 @@ ConstRef<TechniqueResource> TextureManager::sheduleLoading(
 {
   fs::path normalizedPath = filePath.lexically_normal();
 
-  //  Проверка, не загружен ли уже ресурс
   std::lock_guard lock(_accessMutex);
-  const TechniqueResource* resource = _getExistingResource(
-                                                          normalizedPath,
-                                                          ownerQueue,
-                                                          useDefaultTexture);
-  if(resource != nullptr) return ConstRef(resource);
 
-  //  Если ресурс ещё не был загружен ранее, то создаем новую запись в таблице
+  //  Проверка, не создан ли уже ресурс
+  ResourcesMap::const_iterator iResource =
+                                  _resourcesMap.find({ filePath, &ownerQueue });
+  if(iResource != _resourcesMap.end())
+  {
+    if(useDefaultTexture) return ConstRef(iResource->second->withDefault.get());
+    return ConstRef(iResource->second->noDefault.get());
+  }
+
+  //  Если ресурс ещё не был создан, то создаем новую запись в таблице
   //  ресурсов и отправляем задачу на загрузку
-  ResourceRecord newRecord;
-  newRecord.noDefault = Ref(new TechniqueResource);
-  newRecord.withDefault = Ref(new TechniqueResource);
-  newRecord.withDefault->setImage(createDefaultImage(ownerQueue).get());
+  std::unique_ptr<ResourceRecord> newRecord(new ResourceRecord);
+  ResourceRecord* recordPtr = newRecord.get();
+  newRecord->filePath = normalizedPath;
+  newRecord->commandQueue = &ownerQueue;
+  newRecord->waitable = true;
+  newRecord->noDefault = Ref(new TechniqueResource);
+  newRecord->withDefault = Ref(new TechniqueResource);
+  newRecord->withDefault->setImage(createDefaultImage(ownerQueue).get());
 
   std::unique_ptr<LoadTextureTask> loadTask(new LoadTextureTask(normalizedPath,
                                                                 ownerQueue,
                                                                 *this));
-  newRecord.loadingHandle = _loadingQueue.addManagedTask(std::move(loadTask));
+  newRecord->loadingHandle = _loadingQueue.addManagedTask(std::move(loadTask));
 
-  _fileWatcher.addWatching(normalizedPath, *this);
-
-  resource = useDefaultTexture ?  newRecord.withDefault.get() :
-                                  newRecord.noDefault.get();
-  _resourcesMap[{normalizedPath, & ownerQueue}] = std::move(newRecord);
+  _resources.push_back(std::move(newRecord));
+  try
+  {
+    _resourcesMap[{filePath, & ownerQueue}] = recordPtr;
+  }
+  catch (...)
+  {
+    _resources.pop_back();
+    throw;
+  }
 
   _addFileWatching(normalizedPath);
 
-  return ConstRef(resource);
+  if (useDefaultTexture) return ConstRef(recordPtr->withDefault.get());
+  return ConstRef(recordPtr->noDefault.get());
 }
 
 void TextureManager::onFileChanged( const fs::path& filePatch,
@@ -313,19 +366,19 @@ void TextureManager::onFileChanged( const fs::path& filePatch,
 
   //  Если файл изменился или вновь появился, то запускаем его перезагрузку
   //  в фоновом режиме
-  for(ResourcesMap::iterator iResource = _resourcesMap.begin();
-      iResource != _resourcesMap.end();
+  for(ResourcesList::iterator iResource = _resources.begin();
+      iResource != _resources.end();
       iResource++)
   {
-    const ResourcesKey& key = iResource->first;
-    if(key.filePath == filePatch)
+    ResourceRecord& resource = **iResource;
+    if(resource.filePath == filePatch)
     {
-      ResourceRecord& record = iResource->second;
       std::unique_ptr<LoadTextureTask> loadTask(new LoadTextureTask(
-                                                              filePatch,
-                                                              *key.commandQueue,
-                                                              *this));
-      record.loadingHandle = _loadingQueue.addManagedTask(std::move(loadTask));
+                                                        filePatch,
+                                                        *resource.commandQueue,
+                                                        *this));
+      resource.loadingHandle =
+                              _loadingQueue.addManagedTask(std::move(loadTask));
     }
   }
 }
@@ -336,23 +389,49 @@ void TextureManager::_updateTexture(const fs::path& filePath,
 {
   std::lock_guard lock(_accessMutex);
 
-  ResourcesMap::iterator iResource =
-                                    _resourcesMap.find({filePath, &ownerQueue});
-  MT_ASSERT(iResource != _resourcesMap.end());
-  iResource->second.withDefault->setImage(&imageView);
-  iResource->second.noDefault->setImage(&imageView);
+  for(std::unique_ptr<ResourceRecord>& resource : _resources)
+  {
+    if( resource->filePath == filePath &&
+        resource->commandQueue == &ownerQueue)
+    {
+      resource->withDefault->setImage(&imageView);
+      resource->noDefault->setImage(&imageView);
+    }
+  }
 }
 
 int TextureManager::_getRecordsCount(const fs::path& filePath) const noexcept
 {
   int count = 0;
-  for(ResourcesMap::const_iterator iResource = _resourcesMap.begin();
-      iResource != _resourcesMap.end();
-      iResource++)
+  for (const std::unique_ptr<ResourceRecord>& resource : _resources)
   {
-    if(iResource->first.filePath == filePath) count++;
+    if(resource->filePath == filePath) count++;
   }
   return count;
+}
+
+void TextureManager::_removeFromMap(ResourceRecord& record) noexcept
+{
+  //  Проверяем, а есть ли вообще эта запись в мапе
+  ResourcesMap::iterator iMap =
+                    _resourcesMap.find({record.filePath, record.commandQueue});
+  if(iMap == _resourcesMap.end() || iMap->second != &record) return;
+
+  // Ищем, можно ли чем-то заменить ресурс в мапе
+  ResourceRecord* anotherRecord = nullptr;
+  for (const std::unique_ptr<ResourceRecord>& resource : _resources)
+  {
+    if (resource->filePath == record.filePath &&
+        resource->commandQueue == record.commandQueue &&
+        resource.get() != &record)
+    {
+      iMap->second = resource.get();
+      return;
+    }
+  }
+
+  // Заместить нечем, просто удаляем из мапы
+  _resourcesMap.erase(iMap);
 }
 
 void TextureManager::removeUnused() noexcept
@@ -360,22 +439,22 @@ void TextureManager::removeUnused() noexcept
   std::lock_guard lock(_accessMutex);
 
   //  Ищем ресурсы, на которые нет внешних ссылок
-  ResourcesMap::iterator iResource = _resourcesMap.begin();
-  while(iResource != _resourcesMap.end())
+  ResourcesList::iterator iResource = _resources.begin();
+  while (iResource != _resources.end())
   {
-    const ResourcesKey& key = iResource->first;
-    ResourceRecord& record = iResource->second;
-
-    if( record.withDefault->counterValue() == 1 &&
+    ResourceRecord& record = **iResource;
+    if (record.withDefault->counterValue() == 1 &&
         record.noDefault->counterValue() == 1)
     {
       //  Ищем другие ресурсы, ссылающиеся на тот же файл, чтобы понять, надо ли
       //  прекращать слежение за файлом
-      if(_getRecordsCount(key.filePath) == 1)
+      if (_getRecordsCount(record.filePath) == 1)
       {
-        _fileWatcher.removeWatching(key.filePath, *this);
+        _fileWatcher.removeWatching(record.filePath, *this);
       }
-      iResource = _resourcesMap.erase(iResource);
+
+      _removeFromMap(record);
+      iResource = _resources.erase(iResource);
     }
     else iResource++;
   }
