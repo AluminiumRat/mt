@@ -78,22 +78,16 @@ namespace mt
     // Информация о текстуре, хранимой в менеджере
     struct ResourceRecord
     {
-      std::filesystem::path filePath;
-      CommandQueueTransfer* commandQueue;
+      //  Ресурсы, которые возвращаются через sheduleLoading
+      Ref<TechniqueResource> waitableWithDefault; // С дефолтной текстурой
+      Ref<TechniqueResource> waitableNoDefault;   // Без дефолтной текстуры
 
-      //  Оба ресурса используют общий imageView после того как текстура удачно
-      //    загружена с диска, здесь нет дублирования.
-      //  Ресурс, для которого попросили использовать дефолтную текстуру
-      Ref<TechniqueResource> withDefault;
-      //  Ресурс без использования дефолтной текстуры
-      Ref<TechniqueResource> noDefault;
+      //  Ресурсы, которые возвращаются через loadImmediately
+      Ref<TechniqueResource>immediatellyWithDefault;  // С дефолтной текстурой
+      Ref<TechniqueResource> immediatellyNoDefault;   // Без дефолтной текстуры
 
       //  Асинхронная таска на загрузку текстуры с диска
       std::unique_ptr<AsyncTaskQueue::TaskHandle> loadingHandle;
-
-      //  Флаг, который сигнализирует о том, что ресурс был создан с помощью
-      //  sheduleLoading
-      bool waitable;
 
       ResourceRecord() noexcept = default;
       ResourceRecord(const ResourceRecord&) = delete;
@@ -102,7 +96,6 @@ namespace mt
       ResourceRecord& operator = (ResourceRecord&&) noexcept = default;
       ~ResourceRecord() noexcept = default;
     };
-    using ResourcesList = std::vector<std::unique_ptr<ResourceRecord>>;
 
     //  Ключ для мапы ресурсов
     struct ResourcesKey
@@ -126,31 +119,34 @@ namespace mt
     //  записей, подходящих для ResourcesKey, то мапа указывает на тот,
     //  который был создан с помощью loadImmediately
     using ResourcesMap = std::unordered_map<ResourcesKey,
-                                            ResourceRecord*,
+                                            ResourceRecord,
                                             KeyHash>;
 
     //  Асинхронная таска для загрузки текстуры в отдельном потоке
-    class LoadTextureTask;
+    class LoadingTask;
 
   private:
     //  Обработа событий от FileWatcher
-    virtual void onFileChanged( const std::filesystem::path& filePatch,
+    virtual void onFileChanged( const std::filesystem::path& filePath,
                                 EventType eventType) override;
 
     //  Найти подходящий ресурс для loadImmediately
-    TechniqueResource* _getExistingResource(
-                                          const std::filesystem::path& filePath,
-                                          CommandQueueTransfer& ownerQueue,
-                                          bool useDefaultTexture) const;
+    ResourceRecord* _getExistingResource( const std::filesystem::path& filePath,
+                                          CommandQueueTransfer& ownerQueue);
 
     //  Создать новый ресурс для для loadImmediately
     ResourceRecord& _createNewRecord( const std::filesystem::path& filePath,
                                       CommandQueueTransfer& ownerQueue,
                                       const ImageView* image);
 
+    //  Добавить в запись record ресурсы для loadImmediately
+    void _createImmediatelyResources( ResourceRecord& record,
+                                      const ImageView* image,
+                                      CommandQueueTransfer& ownerQueue) const;
+
     void _addFileWatching(const std::filesystem::path& filePath) noexcept;
 
-    //  Обновить текстуру для всех подходящийх ресурсов.
+    //  Обновить текстуру для подходящего ресурса.
     //  Вызывается из LoadTextureTask
     void _updateTexture(const std::filesystem::path& filePath,
                         CommandQueueTransfer& ownerQueue,
@@ -158,14 +154,12 @@ namespace mt
 
     //  Посчитать, сколько ресурсов ссылается на файл
     int _getRecordsCount(const std::filesystem::path& filePath) const noexcept;
-    void _removeFromMap(ResourceRecord& record) noexcept;
 
   private:
     FileWatcher& _fileWatcher;
     AsyncTaskQueue& _loadingQueue;
 
-    ResourcesList _resources;
-    ResourcesMap _resourcesMap;
+    ResourcesMap _resources;
 
     mutable std::mutex _accessMutex;
   };

@@ -33,7 +33,7 @@ namespace mt
     };
 
   public:
-    virtual void onFileChanged( const std::filesystem::path& filePatch,
+    virtual void onFileChanged( const std::filesystem::path& filePath,
                                 EventType eventType) = 0;
   };
 
