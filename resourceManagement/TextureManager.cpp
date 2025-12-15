@@ -45,25 +45,6 @@ static VkImageViewType getViewType(const Image& image, const fs::path& filePath)
   }
 }
 
-static Ref<ImageView> loadFromDDS(const fs::path& filePath, 
-                                  CommandQueueTransfer& ownerQueue)
-{
-  try
-  {
-    Ref<Image> loadedImage = loadDDS( filePath,
-                                      ownerQueue.device(),
-                                      &ownerQueue);
-    return Ref(new ImageView( *loadedImage,
-                              ImageSlice(*loadedImage),
-                              getViewType(*loadedImage, filePath)));
-  }
-  catch(std::exception& error)
-  {
-    Log::error() << "TextureManager: unable to load: " << filePath << " : " << error.what();
-    return Ref<ImageView>();
-  }
-}
-
 class TextureManager::LoadTextureTask : public AsyncTask
 {
 public:
@@ -213,6 +194,25 @@ TechniqueResource* TextureManager::_getExistingResource(
 
   if(useDefaultTexture) return resourceRecord.withDefault.get();
   else return resourceRecord.noDefault.get();
+}
+
+static Ref<ImageView> loadFromDDS(const fs::path& filePath, 
+                                  CommandQueueTransfer& ownerQueue)
+{
+  try
+  {
+    Ref<Image> loadedImage = loadDDS( filePath,
+                                      ownerQueue.device(),
+                                      &ownerQueue);
+    return Ref(new ImageView( *loadedImage,
+                              ImageSlice(*loadedImage),
+                              getViewType(*loadedImage, filePath)));
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << "TextureManager: unable to load: " << filePath << " : " << error.what();
+    return Ref<ImageView>();
+  }
 }
 
 TextureManager::ResourceRecord&

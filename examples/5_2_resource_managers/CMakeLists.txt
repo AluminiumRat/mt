@@ -1,6 +1,6 @@
 ﻿cmake_minimum_required (VERSION 3.10)
 
-project (texture_manager_example)
+project (resource_managers_example)
 
 include_directories(.
                     ../..
@@ -8,11 +8,11 @@ include_directories(.
                     ${Vulkan_INCLUDE_DIRS}
                     ${VKMEMALLOC_PATH})
 
-add_executable (texture_manager_example
+add_executable (resource_managers_example
                 "main.cpp"
                 "TestWindow.cpp")
 
-target_link_libraries(texture_manager_example
+target_link_libraries(resource_managers_example
                       ${Vulkan_LIBRARIES}
                       ${Shaderc_LIBRARIES}
                       ${GLFW_PATH}/lib-vc2022/glfw3.lib

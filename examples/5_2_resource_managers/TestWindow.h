@@ -2,6 +2,7 @@
 
 #include <asyncTask/AsyncTaskQueue.h>
 #include <gui/RenderWindow.h>
+#include <resourceManagement/BufferResourceManager.h>
 #include <resourceManagement/FileWatcher.h>
 #include <resourceManagement/TextureManager.h>
 #include <technique/Technique.h>
@@ -34,6 +35,7 @@ namespace mt
     AsyncTaskQueue _asyncQueue;
     FileWatcher _fileWatcher;
     TextureManager _textureManager;
+    BufferResourceManager _bufferManager;
 
     Ref<Technique> _technique;
     TechniquePass& _pass;

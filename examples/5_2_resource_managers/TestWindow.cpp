@@ -1,4 +1,6 @@
-﻿#include <memory>
+﻿#include <fstream>
+#include <memory>
+
 #include <vulkan/vulkan.h>
 
 #include <ddsSupport/ddsSupport.h>
@@ -14,6 +16,7 @@ TestWindow::TestWindow(Device& device) :
   RenderWindow(device, "Test window"),
   _asyncQueue(nullptr),
   _textureManager(_fileWatcher, _asyncQueue),
+  _bufferManager(_fileWatcher, _asyncQueue),
   _technique(new Technique(device, "Test technique")),
   _pass(_technique->getOrCreatePass("RenderPass")),
   _vertexBuffer(_technique->getOrCreateResourceBinding("vertices")),
@@ -33,23 +36,45 @@ void TestWindow::_makeConfiguration()
 
 void TestWindow::_createVertexBuffer()
 {
-  struct Vertex
-  {
-    alignas(16) glm::vec3 position;
-  };
-  Vertex vertices[4] =  { {.position = {-0.5f, -0.5f, 0.0f}},
-                          {.position = {-0.5f, 0.5f, 0.0f}},
-                          {.position = {0.5f, -0.5f, 0.0f}},
-                          {.position = {0.5f, 0.5f, 0.0f}}};
-  Ref<DataBuffer> buffer(new DataBuffer(device(),
-                                        sizeof(vertices),
-                                        DataBuffer::STORAGE_BUFFER,
-                                        "Vertex buffer"));
-  device().graphicQueue()->uploadToBuffer(*buffer,
-                                          0,
+  // Можно закоментить, чтобы создать буфер вречную и сохранить его в файл
+  #define LOAD_VERTEX_BUFFER_FROM_FILE
+
+  #ifndef LOAD_VERTEX_BUFFER_FROM_FILE
+    struct Vertex
+    {
+      alignas(16) glm::vec3 position;
+    };
+    Vertex vertices[4] =  { {.position = {-0.5f, -0.5f, 0.0f}},
+                            {.position = {-0.5f, 0.5f, 0.0f}},
+                            {.position = {0.5f, -0.5f, 0.0f}},
+                            {.position = {0.5f, 0.5f, 0.0f}}};
+
+    std::ofstream fileStraem("square2.bin", std::ios::binary);
+    if (!fileStraem.is_open()) throw std::runtime_error("Unable to write to square.bin");
+    fileStraem.write((const char*)vertices, sizeof(vertices));
+
+    Ref<DataBuffer> buffer(new DataBuffer(device(),
                                           sizeof(vertices),
-                                          vertices);
-  _vertexBuffer.setBuffer(buffer);
+                                          DataBuffer::STORAGE_BUFFER,
+                                          "Vertex buffer"));
+    device().graphicQueue()->uploadToBuffer(*buffer,
+                                            0,
+                                            sizeof(vertices),
+                                            vertices);
+    _vertexBuffer.setBuffer(buffer);
+  #else
+    ConstRef<TechniqueResource> vertexBufferResource =
+                                    _bufferManager.loadImmediately(
+                                                    "examples/square.bin",
+                                                    *device().graphicQueue());
+
+    /*ConstRef<TechniqueResource> vertexBufferResource =
+                                    _bufferManager.sheduleLoading(
+                                                    "examples/square.bin",
+                                                    *device().graphicQueue());*/
+
+    _vertexBuffer.setResource(vertexBufferResource);
+  #endif
 }
 
 void TestWindow::_createTexture()

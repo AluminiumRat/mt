@@ -7,8 +7,8 @@
 #include <asyncTask/AsyncTaskQueue.h>
 #include <resourceManagement/FileWatcher.h>
 #include <technique/TechniqueResource.h>
-#include <vkr/image/ImageView.h>
 #include <util/Ref.h>
+#include <vkr/image/ImageView.h>
 
 namespace mt
 {
@@ -48,9 +48,9 @@ namespace mt
     //    и копирование данных из него.
     //  Потокобезопасный метод.
     ConstRef<TechniqueResource> loadImmediately(
-                                      const std::filesystem::path& filePath,
-                                      CommandQueueTransfer& ownerQueue,
-                                      bool useDefaultTexture);
+                                          const std::filesystem::path& filePath,
+                                          CommandQueueTransfer& ownerQueue,
+                                          bool useDefaultTexture);
 
     //  Асинхронная загрузка текстуры через отдельный поток.
     //  Если текстура уже была загружена ранее, то возвращает её немедленно,

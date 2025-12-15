@@ -8,6 +8,7 @@ include_directories(..
                     ${VKMEMALLOC_PATH})
 
 set(SOURCES
+    "BufferResourceManager.cpp"
     "FileWatcher.cpp"
     "TextureManager.cpp")
 
