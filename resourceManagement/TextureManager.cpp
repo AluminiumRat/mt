@@ -322,8 +322,8 @@ ConstRef<TechniqueResource> TextureManager::sheduleLoading(
   {
     MT_ASSERT(iResource->second.waitableWithDefault != nullptr);
     MT_ASSERT(iResource->second.waitableNoDefault != nullptr);
-    return useDefaultTexture ?  iResource->second.immediatellyWithDefault :
-                                iResource->second.immediatellyNoDefault;
+    return useDefaultTexture ?  iResource->second.waitableWithDefault :
+                                iResource->second.waitableNoDefault;
   }
 
   //  Если ресурс ещё не был создан, то создаем новую запись в таблице
