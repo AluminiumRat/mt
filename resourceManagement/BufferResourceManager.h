@@ -24,10 +24,11 @@ namespace mt
   class BufferResourceManager : private FileObserver
   {
   public:
-    BufferResourceManager(FileWatcher& fileWatcher, AsyncTaskQueue& loadingQueue);
+    BufferResourceManager(FileWatcher& fileWatcher,
+                          AsyncTaskQueue& loadingQueue);
     BufferResourceManager(const BufferResourceManager&) = delete;
     BufferResourceManager& operator = (const BufferResourceManager&) = delete;
-    ~BufferResourceManager() noexcept;
+    virtual ~BufferResourceManager() noexcept;
 
     //  Попытаться загрузить данные немедленно. Может вернуть пустой ресурс
     //    если не удается загрузить данные (нет файла, например).
@@ -93,7 +94,6 @@ namespace mt
                 std::hash<CommandQueueTransfer*>()(key.commandQueue);
       }
     };
-    //  Мапа для ускорения поиска ресурсов.
     using ResourcesMap = std::unordered_map<ResourcesKey,
                                             ResourceRecord,
                                             KeyHash>;

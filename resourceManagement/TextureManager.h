@@ -31,7 +31,7 @@ namespace mt
     TextureManager( FileWatcher& fileWatcher, AsyncTaskQueue& loadingQueue);
     TextureManager(const TextureManager&) = delete;
     TextureManager& operator = (const TextureManager&) = delete;
-    ~TextureManager() noexcept;
+    virtual ~TextureManager() noexcept;
 
     //  Попытаться загрузить текстуру немедленно. Может вернуть пустой ресурс
     //    или ресурс с дефолтной текстурой, если не удается загрузить текстуру
@@ -114,10 +114,6 @@ namespace mt
                 std::hash<CommandQueueTransfer*>()(key.commandQueue);
       }
     };
-    //  Мапа для ускорения поиска ресурсов. Ссылается на записи, которые
-    //  хранятся в ResourcesList. Если в ResourcesList хранится несколько
-    //  записей, подходящих для ResourcesKey, то мапа указывает на тот,
-    //  который был создан с помощью loadImmediately
     using ResourcesMap = std::unordered_map<ResourcesKey,
                                             ResourceRecord,
                                             KeyHash>;
