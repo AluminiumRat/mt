@@ -192,9 +192,10 @@ ConstRef<TechniqueResource> BufferResourceManager::sheduleLoading(
 
   //  Проверка, не создан ли уже ресурс
   ResourcesMap::const_iterator iResource =
-                                    _resources.find({ filePath, &ownerQueue });
+                              _resources.find({ normalizedPath, &ownerQueue });
   if(iResource != _resources.end())
   {
+    MT_ASSERT(iResource->second.waitableResource != nullptr);
     return iResource->second.waitableResource;
   }
 
@@ -208,11 +209,11 @@ ConstRef<TechniqueResource> BufferResourceManager::sheduleLoading(
                                                         *this));
   newRecord.loadingHandle = _loadingQueue.addManagedTask(std::move(loadTask));
 
-  _resources[{filePath, & ownerQueue}] = std::move(newRecord);
+  _resources[{normalizedPath, & ownerQueue}] = std::move(newRecord);
 
   _addFileWatching(normalizedPath);
 
-  return _resources[{filePath, & ownerQueue}].waitableResource;
+  return _resources[{normalizedPath, & ownerQueue}].waitableResource;
 }
 
 void BufferResourceManager::onFileChanged(const fs::path& filePath,
@@ -248,24 +249,19 @@ void BufferResourceManager::_updateResource(const fs::path& filePath,
 {
   std::lock_guard lock(_accessMutex);
 
-  for(ResourcesMap::iterator iResource = _resources.begin();
-      iResource != _resources.end();
-      iResource++)
-  {
-    const ResourcesKey& key = iResource->first;
-    if(key.filePath == filePath)
-    {
-      ResourceRecord& resource = iResource->second;
-      MT_ASSERT(resource.waitableResource != nullptr)
-      resource.waitableResource->setBuffer(&buffer);
+  ResourcesMap::iterator iResource = _resources.find({filePath, &ownerQueue});
+  MT_ASSERT(iResource != _resources.end());
 
-      if(resource.immediatellyResource == nullptr)
-      {
-        resource.immediatellyResource = Ref(new TechniqueResource);
-      }
-      resource.immediatellyResource->setBuffer(&buffer);
-    }
+  ResourceRecord& resource = iResource->second;
+
+  MT_ASSERT(resource.waitableResource != nullptr);
+  resource.waitableResource->setBuffer(&buffer);
+
+  if (resource.immediatellyResource == nullptr)
+  {
+    resource.immediatellyResource = Ref(new TechniqueResource);
   }
+  resource.immediatellyResource->setBuffer(&buffer);
 }
 
 int BufferResourceManager::_getRecordsCount(
@@ -291,7 +287,7 @@ void BufferResourceManager::removeUnused() noexcept
   {
     const ResourcesKey& key = iResource->first;
     ResourceRecord& resource = iResource->second;
-    MT_ASSERT(resource.waitableResource != nullptr)
+    MT_ASSERT(resource.waitableResource != nullptr);
 
     if( resource.waitableResource->counterValue() == 1 &&
         (resource.immediatellyResource == nullptr ||
