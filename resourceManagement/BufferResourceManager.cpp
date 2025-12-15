@@ -207,6 +207,7 @@ ConstRef<TechniqueResource> BufferResourceManager::sheduleLoading(
   std::unique_ptr<LoadingTask> loadTask(new LoadingTask(normalizedPath,
                                                         ownerQueue,
                                                         *this));
+  if(newRecord.loadingHandle != nullptr) newRecord.loadingHandle->abortTask();
   newRecord.loadingHandle = _loadingQueue.addManagedTask(std::move(loadTask));
 
   _resources[{normalizedPath, & ownerQueue}] = std::move(newRecord);
@@ -237,6 +238,7 @@ void BufferResourceManager::onFileChanged(const fs::path& filePath,
                                                               filePath,
                                                               *key.commandQueue,
                                                               *this));
+      if(resource.loadingHandle != nullptr) resource.loadingHandle->abortTask();
       resource.loadingHandle =
                           _loadingQueue.addManagedTask(std::move(loadingTask));
     }
