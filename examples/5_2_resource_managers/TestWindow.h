@@ -4,6 +4,7 @@
 #include <gui/RenderWindow.h>
 #include <resourceManagement/BufferResourceManager.h>
 #include <resourceManagement/FileWatcher.h>
+#include <resourceManagement/TechniqueManager.h>
 #include <resourceManagement/TextureManager.h>
 #include <technique/Technique.h>
 #include <util/Ref.h>
@@ -27,7 +28,6 @@ namespace mt
                                     FrameBuffer& frameBuffer) override;
 
   private:
-    void _makeConfiguration();
     void _createVertexBuffer();
     void _createTexture();
 
@@ -36,8 +36,8 @@ namespace mt
     FileWatcher _fileWatcher;
     TextureManager _textureManager;
     BufferResourceManager _bufferManager;
+    TechniqueManager _techniqueManager;
 
-    Ref<TechniqueConfigurator> _configurator;
     Ref<Technique> _technique;
     TechniquePass& _pass;
     ResourceBinding& _vertexBuffer;

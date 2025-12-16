@@ -10,7 +10,8 @@ include_directories(..
 set(SOURCES
     "BufferResourceManager.cpp"
     "FileWatcher.cpp"
-    "TextureManager.cpp")
+    "TextureManager.cpp"
+    "TechniqueManager.cpp")
 
 add_library(resourceManagement
             ${SOURCES})

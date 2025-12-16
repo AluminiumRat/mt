@@ -14,24 +14,19 @@ using namespace mt;
 
 TestWindow::TestWindow(Device& device) :
   RenderWindow(device, "Test window"),
-  _configurator(new TechniqueConfigurator(device, "Test technique")),
-  _technique(new Technique(*_configurator)),
   _asyncQueue(nullptr),
   _textureManager(_fileWatcher, _asyncQueue),
   _bufferManager(_fileWatcher, _asyncQueue),
+  _techniqueManager(_fileWatcher, _asyncQueue),
+  _technique(_techniqueManager.loadImmediately(
+                                            "examples/dds_load/technique.tch",
+                                            device)),
   _pass(_technique->getOrCreatePass("RenderPass")),
   _vertexBuffer(_technique->getOrCreateResourceBinding("vertices")),
   _texture(_technique->getOrCreateResourceBinding("colorTexture"))
 {
-  _makeConfiguration();
   _createVertexBuffer();
   _createTexture();
-}
-
-void TestWindow::_makeConfiguration()
-{
-  loadConfigurator(*_configurator, "examples/dds_load/technique.tch");
-  _configurator->rebuildConfiguration();
 }
 
 void TestWindow::_createVertexBuffer()
