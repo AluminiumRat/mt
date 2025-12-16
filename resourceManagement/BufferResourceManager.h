@@ -49,7 +49,7 @@ namespace mt
     //  После загрузки ресурсом владеет ownerQueue.
     //  Буфер будет создан как DataBuffer::STORAGE_BUFFER
     //  Потокобезопасный метод.
-    ConstRef<TechniqueResource> sheduleLoading(
+    ConstRef<TechniqueResource> scheduleLoading(
                                       const std::filesystem::path& filePath,
                                       CommandQueueTransfer& ownerQueue);
 
@@ -61,7 +61,7 @@ namespace mt
     // Информация о буфере, который хранитсф в менеджере
     struct ResourceRecord
     {
-      //  Ресурс, который возвращается через sheduleLoading
+      //  Ресурс, который возвращается через scheduleLoading
       Ref<TechniqueResource> waitableResource;
       //  Ресурс, который возвращается через loadImmediately
       Ref<TechniqueResource> immediatellyResource;

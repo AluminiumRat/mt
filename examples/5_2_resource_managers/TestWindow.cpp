@@ -69,7 +69,7 @@ void TestWindow::_createVertexBuffer()
                                                     *device().graphicQueue());
 
     /*ConstRef<TechniqueResource> vertexBufferResource =
-                                    _bufferManager.sheduleLoading(
+                                    _bufferManager.scheduleLoading(
                                                     "examples/square.bin",
                                                     *device().graphicQueue());*/
 
@@ -81,7 +81,7 @@ void TestWindow::_createTexture()
 {
   //  Здесь можно выбрать, как именно загружать текстуру
 
-  /*ConstRef<TechniqueResource> texture = _textureManager.sheduleLoading(
+  /*ConstRef<TechniqueResource> texture = _textureManager.scheduleLoading(
                                                       "examples/image.dds",
                                                       *device().graphicQueue(),
                                                       true);*/

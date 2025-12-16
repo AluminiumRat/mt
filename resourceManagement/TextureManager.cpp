@@ -306,7 +306,7 @@ void TextureManager::_addFileWatching(const fs::path& filePath) noexcept
   }
 }
 
-ConstRef<TechniqueResource> TextureManager::sheduleLoading(
+ConstRef<TechniqueResource> TextureManager::scheduleLoading(
                                           const std::filesystem::path& filePath,
                                           CommandQueueTransfer& ownerQueue,
                                           bool useDefaultTexture)

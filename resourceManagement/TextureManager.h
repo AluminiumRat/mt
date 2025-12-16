@@ -65,7 +65,7 @@ namespace mt
     //    ownerQueue. Image гарантированно поддерживает сэмплирование в шейдерах
     //    и копирование данных из него.
     //  Потокобезопасный метод.
-    ConstRef<TechniqueResource> sheduleLoading(
+    ConstRef<TechniqueResource> scheduleLoading(
                                       const std::filesystem::path& filePath,
                                       CommandQueueTransfer& ownerQueue,
                                       bool useDefaultTexture);
@@ -78,7 +78,7 @@ namespace mt
     // Информация о текстуре, хранимой в менеджере
     struct ResourceRecord
     {
-      //  Ресурсы, которые возвращаются через sheduleLoading
+      //  Ресурсы, которые возвращаются через scheduleLoading
       Ref<TechniqueResource> waitableWithDefault; // С дефолтной текстурой
       Ref<TechniqueResource> waitableNoDefault;   // Без дефолтной текстуры
 

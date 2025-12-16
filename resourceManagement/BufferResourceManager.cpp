@@ -182,7 +182,7 @@ void BufferResourceManager::_addFileWatching(const fs::path& filePath) noexcept
   }
 }
 
-ConstRef<TechniqueResource> BufferResourceManager::sheduleLoading(
+ConstRef<TechniqueResource> BufferResourceManager::scheduleLoading(
                                           const std::filesystem::path& filePath,
                                           CommandQueueTransfer& ownerQueue)
 {
