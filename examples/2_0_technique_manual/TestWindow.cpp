@@ -6,7 +6,8 @@ using namespace mt;
 
 TestWindow::TestWindow(Device& device) :
   RenderWindow(device, "Test window"),
-  _technique(new Technique(device, "Test technique")),
+  _configurator(new TechniqueConfigurator(device, "Test technique")),
+  _technique(new Technique(*_configurator)),
   _pass(_technique->getOrCreatePass("RenderPass")),
   _colorSelector(_technique->getOrCreateSelection("colorSelector")),
   _vertexBuffer(_technique->getOrCreateResourceBinding("vertices")),
@@ -54,15 +55,14 @@ void TestWindow::_makeConfiguration()
   pass->setSelections(passSelections);
   pass->setShaders(shaders);
 
-  TechniqueConfigurator& configurator = _technique->configurator();
-  configurator.addPass(std::move(pass));
+  _configurator->addPass(std::move(pass));
 
   TechniqueConfigurator::SelectionDefine selections[] =
-    { { .name = "colorSelector",
-        .valueVariants = {"0", "1"}}};
-  configurator.setSelections(selections);
+                                              { { .name = "colorSelector",
+                                                  .valueVariants = {"0", "1"}}};
+  _configurator->setSelections(selections);
 
-  configurator.rebuildConfiguration();
+  _configurator->rebuildConfiguration();
 }
 
 void TestWindow::_createVertexBuffer()

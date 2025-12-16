@@ -7,7 +7,8 @@ using namespace mt;
 
 TestWindow::TestWindow(Device& device) :
   RenderWindow(device, "Test window"),
-  _technique(new Technique(device, "Test technique")),
+  _configurator(new TechniqueConfigurator(device, "Test technique")),
+  _technique(new Technique(*_configurator)),
   _pass(_technique->getOrCreatePass("RenderPass")),
   _colorSelector(_technique->getOrCreateSelection("colorSelector")),
   _vertexBuffer(_technique->getOrCreateResourceBinding("vertices")),
@@ -21,16 +22,14 @@ TestWindow::TestWindow(Device& device) :
 
 void TestWindow::_makeConfiguration()
 {
-  TechniqueConfigurator& configurator = _technique->configurator();
-
   //  Техника, описанная одним файлом. Внутри описаны все настройки со
   //  всеми значениями
-  loadConfigurator(configurator, "examples/technique/technique.tch");
+  loadConfigurator(*_configurator, "examples/technique/technique.tch");
 
   //  Техника, использующая ссылки на библиотечные настройки
-  //loadConfigurator(configurator, "examples/technique/techniqueWithRefs.tch");
+  //loadConfigurator(*_configurator, "examples/technique/techniqueWithRefs.tch");
 
-  configurator.rebuildConfiguration();
+  _configurator->rebuildConfiguration();
 }
 
 void TestWindow::_createVertexBuffer()

@@ -27,6 +27,7 @@ namespace mt
     void _createTexture();
 
   private:
+    Ref<TechniqueConfigurator> _configurator;
     Ref<Technique> _technique;
     TechniquePass& _pass;
     ResourceBinding& _vertexBuffer;

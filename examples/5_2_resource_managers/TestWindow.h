@@ -37,6 +37,7 @@ namespace mt
     TextureManager _textureManager;
     BufferResourceManager _bufferManager;
 
+    Ref<TechniqueConfigurator> _configurator;
     Ref<Technique> _technique;
     TechniquePass& _pass;
     ResourceBinding& _vertexBuffer;

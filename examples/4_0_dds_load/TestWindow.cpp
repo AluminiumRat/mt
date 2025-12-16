@@ -12,7 +12,8 @@ using namespace mt;
 
 TestWindow::TestWindow(Device& device) :
   RenderWindow(device, "Test window"),
-  _technique(new Technique(device, "Test technique")),
+  _configurator(new TechniqueConfigurator(device, "Test technique")),
+  _technique(new Technique(*_configurator)),
   _pass(_technique->getOrCreatePass("RenderPass")),
   _vertexBuffer(_technique->getOrCreateResourceBinding("vertices")),
   _texture(_technique->getOrCreateResourceBinding("colorTexture"))
@@ -24,9 +25,8 @@ TestWindow::TestWindow(Device& device) :
 
 void TestWindow::_makeConfiguration()
 {
-  TechniqueConfigurator& configurator = _technique->configurator();
-  loadConfigurator(configurator, "examples/dds_load/technique.tch");
-  configurator.rebuildConfiguration();
+  loadConfigurator(*_configurator, "examples/dds_load/technique.tch");
+  _configurator->rebuildConfiguration();
 }
 
 void TestWindow::_createVertexBuffer()

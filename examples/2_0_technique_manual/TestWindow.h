@@ -29,6 +29,7 @@ namespace mt
     void _drawVolatileContext(CommandProducerGraphic& commandProducer) const;
 
   private:
+    Ref<TechniqueConfigurator> _configurator;
     Ref<Technique> _technique;
 
     TechniquePass& _pass;

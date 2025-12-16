@@ -54,7 +54,7 @@ namespace mt
     };
 
   public:
-    Technique(Device& device, const char* debugName);
+    explicit Technique(TechniqueConfigurator& configurator);
     Technique(const Technique&) = delete;
     Technique& operator = (const Technique&) = delete;
   protected:
@@ -62,8 +62,6 @@ namespace mt
   public:
 
     inline Device& device() const noexcept;
-
-    inline TechniqueConfigurator& configurator() const noexcept;
 
     //  Волатильный контекст позволяет донастроить технику перед отрисовкой
     //    через константные методы классов Slection, ResourceBinding и
@@ -201,11 +199,6 @@ namespace mt
   inline Device& Technique::device() const noexcept
   {
     return _device;
-  }
-
-  inline TechniqueConfigurator& Technique::configurator() const noexcept
-  {
-    return *_configurator;
   }
 
   inline const std::string& Technique::debugName() const noexcept

@@ -11,13 +11,10 @@
 
 using namespace mt;
 
-Technique::Technique( Device& device,
-                      const char* debugName) :
-  _device(device),
-  _debugName(debugName),
-  _configurator(new TechniqueConfigurator(
-                                      device,
-                                      (_debugName + "Configurator").c_str())),
+Technique::Technique(TechniqueConfigurator& configurator) :
+  _device(configurator.device()),
+  _debugName(configurator.debugName()),
+  _configurator(&configurator),
   _volatileSetDescription(nullptr),
   _staticSetDescription(nullptr),
   _lastProcessedSelectionsRevision(0),
@@ -25,6 +22,7 @@ Technique::Technique( Device& device,
   _lastProcessedResourcesRevision(0)
 {
   _configurator->addObserver(*this);
+  updateConfiguration();
 }
 
 Technique::~Technique() noexcept
@@ -36,6 +34,7 @@ void Technique::updateConfiguration()
 {
   ConstRef<TechniqueConfiguration> newConfiguration =
                                                 _configurator->configuration();
+  if(newConfiguration == nullptr) return;
 
   // Пересоздаем юниформ блоки
   UniformBlocks newUniformBlocks;
