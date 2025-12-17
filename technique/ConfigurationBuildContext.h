@@ -1,6 +1,8 @@
 ﻿#pragma once
 
+#include <filesystem>
 #include <memory>
+#include <unordered_set>
 #include <vector>
 
 #include <vulkan/vulkan.hpp>
@@ -48,5 +50,9 @@ namespace mt
     //  Текущий обрабатываемый вариант пайплайна
     uint32_t currentVariantIndex = 0;
     std::vector<ShaderCompilator::Define> currentDefines;
+
+    //  Сюда складываются все используемые файлы
+    //  Может быть nullptr
+    std::unordered_set<std::filesystem::path>* usedFiles = nullptr;
   };
 }

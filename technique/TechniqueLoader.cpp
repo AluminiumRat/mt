@@ -40,36 +40,54 @@ namespace mt
   };
 
   //  Загрузить настройки техники из отдельной YAML ноды
-  static void loadConfigurator(TechniqueConfigurator& target, YAML::Node node);
+  static void loadConfigurator( TechniqueConfigurator& target,
+                                YAML::Node node,
+                                std::unordered_set<fs::path>* usedFiles);
   // Загрузить список селекшенов для отдельного прохода
   static void loadSelectionsList(YAML::Node passNode, PassConfigurator& target);
   //  Загрузить список селекшенов конфигурации
   static TechniqueConfigurator::Selections loadSelections(
                                                       YAML::Node selectionsNode);
   //  Загрузить один отдельный проход
-  static void loadPass(YAML::Node passNode, PassConfigurator& target);
+  static void loadPass( YAML::Node passNode,
+                        PassConfigurator& target,
+                        std::unordered_set<fs::path>* usedFiles);
   static void loadShaders(YAML::Node passNode, PassConfigurator& target);
   static void updateFrameBufferFormat(YAML::Node frameBufferNode,
                                       FrameBufferDescription& target,
-                                      const std::string& passName);
+                                      const std::string& passName,
+                                      std::unordered_set<fs::path>* usedFiles);
   static void loadGraphicSettings(YAML::Node settingsNode,
-                                  PassConfigurator& target);
-  static void updateStencilOp(YAML::Node opNode, VkStencilOpState& target);
-  static void loadBlending(YAML::Node blendingNode, PassConfigurator& target);
+                                  PassConfigurator& target,
+                                  std::unordered_set<fs::path>* usedFiles);
+  static void updateStencilOp(YAML::Node opNode,
+                              VkStencilOpState& target,
+                              std::unordered_set<fs::path>* usedFiles);
+  static void loadBlending( YAML::Node blendingNode,
+                            PassConfigurator& target,
+                            std::unordered_set<fs::path>* usedFiles);
   static void loadBlending( YAML::Node blendingNode,
                             PassConfigurator& target,
                             uint32_t attachmentIndex);
   static VkBlendFactor getBlendFactor(YAML::Node settings, const char* name);
   static VkBlendOp getBlendOp(YAML::Node settings, const char* name);
   static void loadDefaultSamplers(YAML::Node techniqueNode,
-                                  TechniqueConfigurator& target);
+                                  TechniqueConfigurator& target,
+                                  std::unordered_set<fs::path>* usedFiles);
   //  Загрузить настройки сэмплера
   static void updateSamplerSettings(YAML::Node samplerNode,
-                                    SamplerSettings& target);
+                                    SamplerSettings& target,
+                                    std::unordered_set<fs::path>* usedFiles);
   static std::vector<fs::path> getInheritanceSources(YAML::Node optionsNode);
 
-  YAML::Node readFile(const fs::path& file)
+  YAML::Node readFile(const fs::path& file,
+                      std::unordered_set<fs::path>* usedFiles)
   {
+    if(usedFiles != nullptr)
+    {
+      usedFiles->insert(file.lexically_normal());
+    }
+
     ContentLoader& loader = ContentLoader::getLoader();
     std::string fileText = loader.loadText(file);
     if(fileText.empty()) throw std::runtime_error(std::string((const char*)file.u8string().c_str()) + " : file is empty");
@@ -79,9 +97,16 @@ namespace mt
 
   void loadConfigurator(TechniqueConfigurator& target, const fs::path& file)
   {
+    loadConfigurator(target, file, nullptr);
+  }
+
+  void loadConfigurator(TechniqueConfigurator& target,
+                        const fs::path& file,
+                        std::unordered_set<fs::path>* usedFiles)
+  {
     try
     {
-      loadConfigurator(target, readFile(file));
+      loadConfigurator(target, readFile(file, usedFiles), usedFiles);
     }
     catch (const std::runtime_error& error)
     {
@@ -90,7 +115,9 @@ namespace mt
     }
   }
 
-  static void loadConfigurator(TechniqueConfigurator& target, YAML::Node node)
+  static void loadConfigurator( TechniqueConfigurator& target,
+                                YAML::Node node,
+                                std::unordered_set<fs::path>* usedFiles)
   {
     target.clear();
     try
@@ -111,11 +138,11 @@ namespace mt
         std::string passName = iPass->first.as<std::string>();
         std::unique_ptr<PassConfigurator> newPass(
                                       new PassConfigurator(passName.c_str()));
-        loadPass(iPass->second, *newPass);
+        loadPass(iPass->second, *newPass, usedFiles);
         target.addPass(std::move(newPass));
       }
 
-      loadDefaultSamplers(node, target);
+      loadDefaultSamplers(node, target, usedFiles);
     }
     catch(...)
     {
@@ -153,7 +180,9 @@ namespace mt
     return selections;
   }
 
-  static void loadPass(YAML::Node passNode, PassConfigurator& target)
+  static void loadPass( YAML::Node passNode,
+                        PassConfigurator& target,
+                        std::unordered_set<fs::path>* usedFiles)
   {
     if(!passNode.IsMap()) throw std::runtime_error(target.name() + ": unable to parse pass configuration");
 
@@ -168,7 +197,8 @@ namespace mt
       FrameBufferDescription frameBufferDescription;
       updateFrameBufferFormat(passNode["frameBuffer"],
                               frameBufferDescription,
-                              target.name());
+                              target.name(),
+                              usedFiles);
       if(frameBufferDescription.colorTargets.empty()) throw std::runtime_error(target.name() + ": unable to find 'color' targets in 'frameBuffer' description");
       FrameBufferFormat fbFormat( frameBufferDescription.colorTargets,
                                   frameBufferDescription.depthTarget,
@@ -176,7 +206,7 @@ namespace mt
       target.setFrameBufferFormat(&fbFormat);
 
       // Настройки фиксированных стадий пайплайна
-      loadGraphicSettings(passNode["graphicSettings"], target);
+      loadGraphicSettings(passNode["graphicSettings"], target, usedFiles);
     }
   }
 
@@ -216,7 +246,8 @@ namespace mt
   // Загрузить настройки фрэйм буфера и объединить их с тем, что есть в target
   static void updateFrameBufferFormat(YAML::Node frameBufferNode,
                                       FrameBufferDescription& target,
-                                      const std::string& passName)
+                                      const std::string& passName,
+                                      std::unordered_set<fs::path>* usedFiles)
   {
     if (!frameBufferNode.IsMap())  throw std::runtime_error(passName + ": unable to parse 'frameBuffer' description");
 
@@ -226,8 +257,8 @@ namespace mt
     {
       try
       {
-        YAML::Node config = readFile(file);
-        updateFrameBufferFormat(config, target, passName);
+        YAML::Node config = readFile(file, usedFiles);
+        updateFrameBufferFormat(config, target, passName, usedFiles);
       }
       catch(std::runtime_error error)
       {
@@ -272,7 +303,8 @@ namespace mt
   }
 
   static void loadGraphicSettings(YAML::Node settingsNode,
-                                  PassConfigurator& target)
+                                  PassConfigurator& target,
+                                  std::unordered_set<fs::path>* usedFiles)
   {
     if (!settingsNode.IsMap()) return;
 
@@ -282,8 +314,8 @@ namespace mt
     {
       try
       {
-        YAML::Node config = readFile(file);
-        loadGraphicSettings(config, target);
+        YAML::Node config = readFile(file, usedFiles);
+        loadGraphicSettings(config, target, usedFiles);
       }
       catch (std::runtime_error error)
       {
@@ -396,18 +428,22 @@ namespace mt
     if (settingsNode["frontStencilOp"].IsMap())
     {
       VkStencilOpState stencilSettings;
-      updateStencilOp(settingsNode["frontStencilOp"], stencilSettings);
+      updateStencilOp(settingsNode["frontStencilOp"],
+                      stencilSettings,
+                      usedFiles);
       target.setFrontStencilOp(stencilSettings);
     }
 
     if (settingsNode["backStencilOp"].IsMap())
     {
       VkStencilOpState stencilSettings;
-      updateStencilOp(settingsNode["backStencilOp"], stencilSettings);
+      updateStencilOp(settingsNode["backStencilOp"],
+                      stencilSettings,
+                      usedFiles);
       target.setBackStencilOp(stencilSettings);
     }
 
-    loadBlending(settingsNode["blending"], target);
+    loadBlending(settingsNode["blending"], target, usedFiles);
 
     // Логические операции
     YAML::Node logicOp = settingsNode["blendLogicOp"];
@@ -432,7 +468,9 @@ namespace mt
     }
   }
 
-  static void updateStencilOp(YAML::Node opNode, VkStencilOpState& target)
+  static void updateStencilOp(YAML::Node opNode,
+                              VkStencilOpState& target,
+                              std::unordered_set<fs::path>* usedFiles)
   {
     if(!opNode.IsMap()) return;
 
@@ -442,8 +480,8 @@ namespace mt
     {
       try
       {
-        YAML::Node config = readFile(file);
-        updateStencilOp(config, target);
+        YAML::Node config = readFile(file, usedFiles);
+        updateStencilOp(config, target, usedFiles);
       }
       catch (std::runtime_error error)
       {
@@ -494,7 +532,9 @@ namespace mt
     }
   }
 
-  static void loadBlending(YAML::Node blendingNode, PassConfigurator& target)
+  static void loadBlending( YAML::Node blendingNode,
+                            PassConfigurator& target,
+                            std::unordered_set<fs::path>* usedFiles)
   {
     // Для начала прогружаем унаследованные настройки
     std::vector<fs::path> parents = getInheritanceSources(blendingNode);
@@ -502,8 +542,8 @@ namespace mt
     {
       try
       {
-        YAML::Node config = readFile(file);
-        loadBlending(config, target);
+        YAML::Node config = readFile(file, usedFiles);
+        loadBlending(config, target, usedFiles);
       }
       catch (std::runtime_error error)
       {
@@ -614,7 +654,8 @@ namespace mt
   }
 
   static void loadDefaultSamplers(YAML::Node techniqueNode,
-                                  TechniqueConfigurator& target)
+                                  TechniqueConfigurator& target,
+                                  std::unordered_set<fs::path>* usedFiles)
   {
     YAML::Node listNode = techniqueNode["defaultSamplers"];
     if(!listNode.IsMap()) return;
@@ -629,7 +670,7 @@ namespace mt
       sampler.resourceName = iSampler->first.as<std::string>("");
 
       SamplerSettings samplerSettings;
-      updateSamplerSettings(iSampler->second, samplerSettings);
+      updateSamplerSettings(iSampler->second, samplerSettings, usedFiles);
 
       sampler.defaultSampler =
                       ConstRef(new Sampler(
@@ -656,7 +697,8 @@ namespace mt
   }
 
   static void updateSamplerSettings(YAML::Node samplerNode,
-                                    SamplerSettings& target)
+                                    SamplerSettings& target,
+                                    std::unordered_set<fs::path>* usedFiles)
   {
     // Для начала прогружаем унаследованные настройки
     std::vector<fs::path> parents = getInheritanceSources(samplerNode);
@@ -664,8 +706,8 @@ namespace mt
     {
       try
       {
-        YAML::Node config = readFile(file);
-        updateSamplerSettings(config, target);
+        YAML::Node config = readFile(file, usedFiles);
+        updateSamplerSettings(config, target, usedFiles);
       }
       catch (std::runtime_error error)
       {

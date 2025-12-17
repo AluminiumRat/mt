@@ -7,6 +7,8 @@
 #include <util/Abort.h>
 #include <util/ContentLoader.h>
 
+namespace fs = std::filesystem;
+
 using namespace mt;
 
 shaderc::Compiler compiler;
@@ -16,6 +18,7 @@ std::mutex compilerMutex;
 class ShaderIncluder : public shaderc::CompileOptions::IncluderInterface
 {
 public:
+  explicit ShaderIncluder(std::unordered_set<fs::path>* usedFiles);
   virtual shaderc_include_result* GetInclude( const char* requested_source,
                                               shaderc_include_type type,
                                               const char* requesting_source,
@@ -32,7 +35,13 @@ private:
 private:
   using Includes = std::vector<std::unique_ptr<IncludeInfo>>;
   Includes _includes;
+  std::unordered_set<std::filesystem::path>* _usedFiles;
 };
+
+ShaderIncluder::ShaderIncluder(std::unordered_set<fs::path>* usedFiles) :
+  _usedFiles(usedFiles)
+{
+}
 
 shaderc_include_result* ShaderIncluder::GetInclude(
                                                   const char* requested_source,
@@ -42,14 +51,17 @@ shaderc_include_result* ShaderIncluder::GetInclude(
 {
   try
   {
+    fs::path filePath((const char8_t*)requested_source);
+    filePath = filePath.lexically_normal();
+    if(_usedFiles != nullptr) _usedFiles->insert(filePath);
+
     // Загружаем текст шейдера
     std::string shaderText;
     std::string errorString;
     try
     {
-      std::filesystem::path filePatch((const char8_t*)requested_source);
-      shaderText = ContentLoader::getLoader().loadText(filePatch);
-      if (shaderText.empty()) throw std::runtime_error(std::string((const char*)filePatch.u8string().c_str()) + " : file is empty");
+      shaderText = ContentLoader::getLoader().loadText(filePath);
+      if (shaderText.empty()) throw std::runtime_error(std::string(requested_source) + " : file is empty");
     }
     catch (std::exception& error)
     {
@@ -135,10 +147,14 @@ static shaderc_shader_kind getShaderKind(VkShaderStageFlagBits shaderStage)
   }
 }
 
-std::vector<char> ShaderCompilator::compile(const std::filesystem::path& file,
-                                            VkShaderStageFlagBits shaderStage,
-                                            std::span<const Define> defines)
+std::vector<char> ShaderCompilator::compile(
+                                        const fs::path& file,
+                                        VkShaderStageFlagBits shaderStage,
+                                        std::span<const Define> defines,
+                                        std::unordered_set<fs::path>* usedFiles)
 {
+  if(usedFiles != nullptr) usedFiles->insert(file.lexically_normal());
+
   std::string shaderFilename = (const char*)file.u8string().c_str();
   std::string shaderText = ContentLoader::getLoader().loadText(file);
   if (shaderText.empty()) throw std::runtime_error(shaderFilename + " : file is empty");
@@ -158,7 +174,7 @@ std::vector<char> ShaderCompilator::compile(const std::filesystem::path& file,
   {
     options.AddMacroDefinition(define.name, define.value);
   }
-  options.SetIncluder(std::make_unique<ShaderIncluder>());
+  options.SetIncluder(std::make_unique<ShaderIncluder>(usedFiles));
 
   //  Собираем SPIR-V код
   shaderc::SpvCompilationResult compilationResult;

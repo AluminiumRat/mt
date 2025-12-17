@@ -69,8 +69,52 @@ void TechniqueManager::TechniqueResource::rebuildConfiguration()
 void TechniqueManager::TechniqueResource::_rebuild()
 {
   _processed = true;
-  loadConfigurator(*_configurator, _filePath);
-  _configurator->rebuildOnlyConfiguration();
+
+  std::unordered_set<fs::path> usedFiles;
+  try
+  {
+    loadConfigurator(*_configurator, _filePath, &usedFiles);
+    _configurator->rebuildOnlyConfiguration(&usedFiles);
+  }
+  catch(...)
+  {
+    _updateFileWatching(std::move(usedFiles));
+    throw;
+  }
+  _updateFileWatching(std::move(usedFiles));
+}
+
+void TechniqueManager::TechniqueResource::_updateFileWatching(
+                                std::unordered_set<fs::path>&& newList) noexcept
+{
+  try
+  {
+    //  Добавляем файлы, которых раньше не было
+    for(const fs::path& newFile: newList)
+    {
+      if(_watchedFiles.count(newFile) == 0)
+      {
+        _manager._fileWatcher.addWatching(newFile, *this);
+      }
+    }
+
+    //  Убираем файлы, которые были, но пропали из техники
+    for(const fs::path& oldFile : _watchedFiles)
+    {
+      if(newList.count(oldFile) == 0)
+      {
+        _manager._fileWatcher.removeWatching(oldFile, *this);
+      }
+    }
+
+    _watchedFiles.swap(newList);
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << "TechniqueManager: unable to update files watching: " << _filePath << " : " << error.what();
+    _watchedFiles.clear();
+    _manager._fileWatcher.removeObserver(*this);
+  }
 }
 
 Ref<Technique> TechniqueManager::TechniqueResource::createTechnique(

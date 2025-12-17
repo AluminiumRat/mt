@@ -7,6 +7,8 @@
 #include <util/Assert.h>
 #include <util/Log.h>
 
+namespace fs = std::filesystem;
+
 using namespace mt;
 
 TechniqueConfigurator::TechniqueConfigurator( Device& device,
@@ -33,13 +35,15 @@ void TechniqueConfigurator::propogateConfiguration() noexcept
   }
 }
 
-void TechniqueConfigurator::rebuildConfiguration()
+void TechniqueConfigurator::rebuildConfiguration(
+                                        std::unordered_set<fs::path>* usedFiles)
 {
-  rebuildOnlyConfiguration();
+  rebuildOnlyConfiguration(usedFiles);
   propogateConfiguration();
 }
 
-void TechniqueConfigurator::rebuildOnlyConfiguration()
+void TechniqueConfigurator::rebuildOnlyConfiguration(
+                                        std::unordered_set<fs::path>* usedFiles)
 {
   ConfigurationBuildContext context{};
   context.configuratorName = _debugName;
@@ -47,6 +51,7 @@ void TechniqueConfigurator::rebuildOnlyConfiguration()
   context.configuration = Ref(new TechniqueConfiguration);
   context.configuration->volatileUniformBuffersSize = 0;
   context.configuration->defaultSamplers = _defaultSamplers;
+  context.usedFiles = usedFiles;
 
   _createSelections(context);
   _createPasses(context);

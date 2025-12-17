@@ -193,7 +193,8 @@ void PassConfigurator::_processShader(const ShaderInfo& shaderRecord,
   std::vector<char> spirData = ShaderCompilator::compile(
                                                         shaderRecord.file,
                                                         shaderRecord.stage,
-                                                        context.currentDefines);
+                                                        context.currentDefines,
+                                                        context.usedFiles);
 
   // Парсим spirv код
   spv_reflect::ShaderModule reflection( spirData.size() * sizeof(spirData[0]),

@@ -4,6 +4,7 @@
 #include <memory>
 #include <mutex>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <asyncTask/AsyncTaskQueue.h>
 #include <resourceManagement/FileWatcher.h>
@@ -82,6 +83,9 @@ namespace mt
       virtual void onFileChanged( const std::filesystem::path& filePath,
                                   EventType eventType) override;
       void _rebuild();
+      //  Обновить слежение за файлами, из которых собрана техника
+      void _updateFileWatching(
+                  std::unordered_set<std::filesystem::path>&& newList) noexcept;
 
     private:
       TechniqueManager& _manager;
@@ -89,10 +93,15 @@ namespace mt
       std::filesystem::path _filePath;
 
       Ref<TechniqueConfigurator> _configurator;
+
       //  Флаг, говорящий о том, что уже была попытка загрузить конфигурацию
       bool _processed;
-      //  Защищает _configurator и _processed. _loadingHandle защищается через
-      //  TechniqueManager::_accessMutex
+
+      //  Список файлов, за изменениями в которых ведется наблюдение
+      std::unordered_set<std::filesystem::path> _watchedFiles;
+
+      //  Защищает _configurator, _processed и _watchedFiles. _loadingHandle
+      //  защищается через TechniqueManager::_accessMutex
       mutable std::mutex _configuratorMutex;
 
       std::unique_ptr<AsyncTaskQueue::TaskHandle> _loadingHandle;
