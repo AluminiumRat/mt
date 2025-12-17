@@ -46,6 +46,9 @@ namespace mt
     inline const DataBuffer* buffer() const noexcept;
     inline const ImageView* image(size_t arrayIndex = 0) const noexcept;
     inline const Sampler* sampler() const noexcept;
+    //  К ресурсу не прибинжен ни image, ни буффер, ни сэмплер
+    inline bool empty() const noexcept;
+
     inline const TechniqueResource* resource() const noexcept;
 
     //  Установить буфер, сохранив указатель на него в сам ResourceBinding
@@ -64,10 +67,9 @@ namespace mt
     //  Установить Image или массив Image-ей, сохранив указатель на них в сам
     //    ResourceBinding
     //  Ссылка сохраняется в технике между циклами рендера
-    inline void setImage(const ImageView* image, size_t arrayIndex = 0);
-    inline void setImage(const Ref<ImageView>& image, size_t arrayIndex = 0);
-    inline void setImage( const ConstRef<ImageView>& image,
-                          size_t arrayIndex = 0);
+    inline void setImage(const ImageView* image);
+    inline void setImage(const Ref<ImageView>& image);
+    inline void setImage( const ConstRef<ImageView>& image);
     inline void setImages(std::span<const ImageView*> images);
     inline void setImages(std::span<const Ref<ImageView>> images);
     inline void setImages(std::span<const ConstRef<ImageView>> images);
@@ -119,6 +121,10 @@ namespace mt
     std::vector<ConstRef<ImageView>> _images;
     ConstRef<Sampler> _sampler;
 
+    //  К ресурсу не прибинжен ни image, ни буффер, ни сэмплер
+    bool _empty;
+
+    //  Текущий image, буффер или сэмплер является значением по умолчанию
     bool _defaultValue;
   };
 
@@ -159,6 +165,8 @@ namespace mt
     _sampler.reset();
     detach();
 
+    _empty = true;
+
     if( _description != nullptr &&
         _description->set == DescriptorSetType::STATIC)
     {
@@ -177,6 +185,7 @@ namespace mt
     if(buffer == _buffer) return;
     clear();
     _buffer = ConstRef(buffer);
+    if(_buffer != nullptr) _empty = false;
   }
 
   inline void ResourceBinding::setBuffer(const Ref<DataBuffer>& buffer)
@@ -211,41 +220,21 @@ namespace mt
     return _images[arrayIndex].get();
   }
 
-  inline void ResourceBinding::setImage(const ImageView* image,
-                                        size_t arrayIndex)
+  inline void ResourceBinding::setImage(const ImageView* image)
   {
-    _defaultValue = false;
-
-    if(_images.size() <= arrayIndex) _images.resize(arrayIndex + 1);
-
-    if(image == _images[arrayIndex]) return;
-
-    if(resource() != nullptr) clear();
-    else
-    {
-      _buffer.reset();
-      _sampler.reset();
-    }
-
-    if( _description != nullptr &&
-        _description->set == DescriptorSetType::STATIC)
-    {
-      _revisionCounter++;
-    }
-
-    _images[arrayIndex] = ConstRef(image);
+    if(_images.size() == 1 && image == _images[0]) return;
+    if(image == nullptr) clear();
+    else setImages(std::span(&image, 1));
   }
 
-  inline void ResourceBinding::setImage(const Ref<ImageView>& image,
-                                        size_t arrayIndex)
+  inline void ResourceBinding::setImage(const Ref<ImageView>& image)
   {
-    setImage(image.get(), arrayIndex);
+    setImage(image.get());
   }
 
-  inline void ResourceBinding::setImage(const ConstRef<ImageView>& image,
-                                        size_t arrayIndex)
+  inline void ResourceBinding::setImage(const ConstRef<ImageView>& image)
   {
-    setImage(image.get(), arrayIndex);
+    setImage(image.get());
   }
 
   inline void ResourceBinding::setImages(std::span<const ImageView*> images)
@@ -259,6 +248,7 @@ namespace mt
     }
     clear();
     _images = std::vector<ConstRef<ImageView>>(images.begin(), images.end());
+    if(!_images.empty()) _empty = false;
   }
 
   inline void ResourceBinding::setImages(
@@ -273,6 +263,7 @@ namespace mt
     }
     clear();
     _images = std::vector<ConstRef<ImageView>>(images.begin(), images.end());
+    if(!_images.empty()) _empty = false;
   }
 
   inline void ResourceBinding::setImages(
@@ -287,6 +278,7 @@ namespace mt
     }
     clear();
     _images = std::vector(images.begin(), images.end());
+    if(!_images.empty()) _empty = false;
   }
 
   inline void ResourceBinding::setImage(TechniqueVolatileContext& context,
@@ -308,17 +300,13 @@ namespace mt
     return _sampler.get();
   }
 
-  inline const TechniqueResource* ResourceBinding::resource() const noexcept
-  {
-    return Observer::resource();
-  }
-
   inline void ResourceBinding::setSampler(const Sampler* sampler)
   {
     _defaultValue = false;
     if(sampler == _sampler) return;
     clear();
     _sampler = ConstRef(sampler);
+    if(_sampler != nullptr) _empty = false;
   }
 
   inline void ResourceBinding::setSampler(const Ref<Sampler>& sampler)
@@ -344,6 +332,16 @@ namespace mt
   {
     MT_ASSERT(sampler != nullptr);
     setSampler(context, *sampler);
+  }
+
+  inline bool ResourceBinding::empty() const noexcept
+  {
+    return _empty;
+  }
+
+  inline const TechniqueResource* ResourceBinding::resource() const noexcept
+  {
+    return Observer::resource();
   }
 
   inline void ResourceBinding::setResource(
@@ -390,5 +388,6 @@ namespace mt
     if (sampler == _sampler) return;
     clear();
     _sampler = ConstRef(sampler);
+    if(_sampler != nullptr) _empty = false;
   }
 }

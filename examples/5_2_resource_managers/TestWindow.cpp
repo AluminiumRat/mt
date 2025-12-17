@@ -18,7 +18,7 @@ TestWindow::TestWindow(Device& device) :
   _textureManager(_fileWatcher, _asyncQueue),
   _bufferManager(_fileWatcher, _asyncQueue),
   _techniqueManager(_fileWatcher, _asyncQueue),
-  _technique(_techniqueManager.loadImmediately(
+  _technique(_techniqueManager.scheduleLoading(
                                             "examples/dds_load/technique.tch",
                                             device)),
   _pass(_technique->getOrCreatePass("RenderPass")),
@@ -58,15 +58,15 @@ void TestWindow::_createVertexBuffer()
                                             vertices);
     _vertexBuffer.setBuffer(buffer);
   #else
-    ConstRef<TechniqueResource> vertexBufferResource =
+    /*ConstRef<TechniqueResource> vertexBufferResource =
                                     _bufferManager.loadImmediately(
                                                     "examples/square.bin",
-                                                    *device().graphicQueue());
+                                                    *device().graphicQueue());*/
 
-    /*ConstRef<TechniqueResource> vertexBufferResource =
+    ConstRef<TechniqueResource> vertexBufferResource =
                                     _bufferManager.scheduleLoading(
                                                     "examples/square.bin",
-                                                    *device().graphicQueue());*/
+                                                    *device().graphicQueue());
 
     _vertexBuffer.setResource(vertexBufferResource);
   #endif
@@ -76,15 +76,15 @@ void TestWindow::_createTexture()
 {
   //  Здесь можно выбрать, как именно загружать текстуру
 
-  /*ConstRef<TechniqueResource> texture = _textureManager.scheduleLoading(
-                                                      "examples/image.dds",
-                                                      *device().graphicQueue(),
-                                                      true);*/
-
-  ConstRef<TechniqueResource> texture = _textureManager.loadImmediately(
+  ConstRef<TechniqueResource> texture = _textureManager.scheduleLoading(
                                                       "examples/image.dds",
                                                       *device().graphicQueue(),
                                                       true);
+
+  /*ConstRef<TechniqueResource> texture = _textureManager.loadImmediately(
+                                                      "examples/image.dds",
+                                                      *device().graphicQueue(),
+                                                      true);*/
   _texture.setResource(texture);
 }
 
@@ -100,11 +100,14 @@ void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,
 {
   CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
 
-  Technique::Bind bind(*_technique, _pass, commandProducer);
-  if (bind.isValid())
+  if(_technique->isReady())
   {
-    commandProducer.draw(4);
-    bind.release();
+    Technique::Bind bind(*_technique, _pass, commandProducer);
+    if (bind.isValid())
+    {
+      commandProducer.draw(4);
+      bind.release();
+    }
   }
 
   renderPass.endPass();

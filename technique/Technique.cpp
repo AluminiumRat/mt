@@ -19,6 +19,7 @@ Technique::Technique(TechniqueConfigurator& configurator) :
   _staticSetDescription(nullptr),
   _lastProcessedSelectionsRevision(0),
   _resourcesRevision(0),
+  _staticSetComplete(true),
   _lastProcessedResourcesRevision(0)
 {
   _configurator->addObserver(*this);
@@ -129,6 +130,39 @@ void Technique::updateConfiguration()
   _configuration = ConstRef(newConfiguration);
 }
 
+bool Technique::isReady(const TechniqueVolatileContext* volatileContext) const
+{
+  if(_configuration == nullptr) return false;
+
+  // Проверка ресурсов в статик сете
+  {
+    std::lock_guard lock(_staticSetMutex);
+    if (_lastProcessedResourcesRevision == _resourcesRevision)
+    {
+      //  Если ревизии совпадают, то мы можем доверять _staticSetComplete
+      if(!_staticSetComplete) return false;
+    }
+    else
+    {
+      //  Ревизии не совпадают, статик сет ещё не собран, доверять
+      //  _staticSetComplete нельзя
+      if(!_checkSetReady(DescriptorSetType::STATIC)) return false;
+    }
+  }
+
+  // Проверка волатильных ресурсов
+  if(volatileContext == nullptr)
+  {
+    //  Волатильный контекст не используется, поэтому просто посчитаем,
+    //    сколько подключено непустых ресурсов
+    return _checkSetReady(DescriptorSetType::VOLATILE);
+  }
+  //  Используется волатильный контекст. Узнаем количество прибинженных ресурсов
+  //  из него
+  return volatileContext->resourcesBinded >=
+              _configuration->resourcesCount[(int)DescriptorSetType::VOLATILE];
+}
+
 bool Technique::bindGraphic(
                           CommandProducerGraphic& producer,
                           const TechniquePass& pass,
@@ -166,9 +200,13 @@ bool Technique::bindGraphic(
 
 void Technique::_updateStaticSet(CommandProducerTransfer& commandProducer) const
 {
-  if (_staticSetDescription == nullptr) return;
-
   std::lock_guard lock(_staticSetMutex);
+
+  if (_staticSetDescription == nullptr)
+  {
+    _staticSetComplete = true;
+    return;
+  }
 
   // Если ревизия ресурсов изменилась, значит в статик сете поменялся
   // кто-то из ресурсов. Надо пересоздавать статик сет
@@ -188,7 +226,37 @@ void Technique::_updateStaticSet(CommandProducerTransfer& commandProducer) const
                             DescriptorPool::STATIC_POOL));
     _staticSet = _staticPool->allocateSet(*_staticSetDescription->layout);
     _bindResources(*_staticSet, DescriptorSetType::STATIC, commandProducer);
+    _staticSetComplete = _checkSetReady(DescriptorSetType::STATIC);
   }
+}
+
+bool Technique::_checkSetReady(DescriptorSetType setType) const noexcept
+{
+  if(_configuration == 0) return false;
+
+  //  Подсчитываем, сколько всего у нас есть непустых ресурсов, которые биндятся
+  //  к этому сэту
+  int resourcesCount = 0;
+  for(const std::unique_ptr<ResourceBindingImpl>& resource : _resources)
+  {
+    const TechniqueConfiguration::Resource* description =
+                                                        resource->description();
+    if( description != nullptr &&
+        description->set == setType &&
+        !resource->empty())
+    {
+      resourcesCount++;
+    }
+  }
+
+  //  То же самое для юниформ блоков
+  for (const std::unique_ptr<TechniqueUniformBlock>& uniformBlock :
+                                                                _uniformBlocks)
+  {
+    if(uniformBlock->description().set == setType) resourcesCount++;
+  }
+
+  return resourcesCount == _configuration->resourcesCount[(int)setType];
 }
 
 void Technique::_bindResources( DescriptorSet& descriptorSet,
@@ -326,9 +394,11 @@ TechniqueVolatileContext Technique::createVolatileContext(
     for (const std::unique_ptr<ResourceBindingImpl>& resource : _resources)
     {
       if (resource->description() != nullptr &&
+          !resource->empty() &&
           resource->description()->set == DescriptorSetType::VOLATILE)
       {
         resource->bindToDescriptorSet(*context.descriptorSet);
+        context.resourcesBinded++;
       }
     }
   }
@@ -336,9 +406,13 @@ TechniqueVolatileContext Technique::createVolatileContext(
   //  Копируем данные униформ буферов
   for(const std::unique_ptr<TechniqueUniformBlock>& block : _uniformBlocks)
   {
-    void* dstData = (char*)context.uniformData +
+    if(block->description().set == DescriptorSetType::VOLATILE)
+    {
+      void* dstData = (char*)context.uniformData +
                                     block->description().volatileContextOffset;
-    block->copyDataTo(dstData);
+      block->copyDataTo(dstData);
+      context.resourcesBinded++;
+    }
   }
 
   return context;

@@ -142,6 +142,8 @@ namespace mt
     //  По пропарсенным данным из рефлексии создаем лэйауты для
     //  дескриптер сетов и пайплайнов
     void _createLayouts(ConfigurationBuildContext& context) const;
+    //  Пересчитать, сколько ресурсов в каком сете лежит
+    void _recountResources(ConfigurationBuildContext& context) const;
     //  Финальная стадия построения конфигурации - создаем все варианты
     //  пайплайнов
     void _createPipelines(ConfigurationBuildContext& context) const;

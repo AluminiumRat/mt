@@ -69,6 +69,13 @@ namespace mt
     TechniqueVolatileContext createVolatileContext(
                                               CommandProducer& producer) const;
 
+    //  Проверка, готова ли техника к использованию.
+    //  Проверяем, что конфигурация была успешно собрана и подключена к
+    //    технике, а так же к технике подключены все необходимые ресурсы.
+    //  Ресурсы из COMMON сета не проверяются на наличие
+    bool isReady(
+              const TechniqueVolatileContext* volatileContext = nullptr) const;
+
     //  Подключить пайплайн и все необходимые ресурсы к продюсеро
     //  Возвращает false, если по какой-то причине подключить технику не
     //    получается. В этом случае причина отказа пишется в лог в виде
@@ -94,6 +101,7 @@ namespace mt
 
   private:
     void _updateStaticSet(CommandProducerTransfer& commandProducer) const;
+    bool _checkSetReady(DescriptorSetType setType) const noexcept;
     void _bindResources(DescriptorSet& descriptorSet,
                         DescriptorSetType setType,
                         CommandProducerTransfer& commandProducer) const;
@@ -134,6 +142,8 @@ namespace mt
     //  мьютекс на спинлоке
     mutable Ref<DescriptorPool> _staticPool;
     mutable Ref<DescriptorSet> _staticSet;
+    //  В статик сете присутствуют все необходимые ресурсы
+    mutable bool _staticSetComplete;
     mutable size_t _lastProcessedResourcesRevision;
     mutable SpinLock _staticSetMutex;
   };

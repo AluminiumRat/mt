@@ -124,6 +124,7 @@ namespace mt
                                   //  то здесь будет его размер. Иначе 1;
     };
     std::vector<Resource> resources;
+    uint32_t resourcesCount[maxDescriptorSetIndex + 1];
 
     // Дефолтные сэмплеры. Настраиваются через конфигурацию (файл техники)
     struct DefaultSampler

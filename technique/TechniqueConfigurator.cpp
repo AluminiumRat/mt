@@ -56,6 +56,7 @@ void TechniqueConfigurator::rebuildOnlyConfiguration(
   _createSelections(context);
   _createPasses(context);
   _createLayouts(context);
+  _recountResources(context);
   _createPipelines(context);
 
   {
@@ -154,6 +155,22 @@ void TechniqueConfigurator::_createLayouts(
   }
   context.configuration->pipelineLayout =
                             ConstRef(new PipelineLayout( _device, setLayouts));
+}
+
+void TechniqueConfigurator::_recountResources(
+                                      ConfigurationBuildContext& context) const
+{
+  for (uint32_t setIndex = 0; setIndex <= maxDescriptorSetIndex; setIndex++)
+  {
+    context.configuration->resourcesCount[setIndex] = 0;
+  }
+
+  for(TechniqueConfiguration::Resource& resource :
+                                              context.configuration->resources)
+  {
+    uint32_t setIndex = uint32_t(resource.set);
+    context.configuration->resourcesCount[setIndex]++;
+  }
 }
 
 void TechniqueConfigurator::_createPipelines(

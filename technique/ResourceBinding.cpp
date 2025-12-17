@@ -14,6 +14,7 @@ ResourceBinding::ResourceBinding( const char* name,
   _name(name),
   _technique(technique),
   _revisionCounter(revisionCounter),
+  _empty(true),
   _defaultValue(true)
 {
   _bindToConfiguration(configuration);
@@ -62,6 +63,7 @@ void ResourceBinding::setBuffer(TechniqueVolatileContext& context,
                                       _description->type,
                                       0,
                                       _buffer->size());
+  if(empty()) context.resourcesBinded++;
 }
 
 void ResourceBinding::setImage( TechniqueVolatileContext& context,
@@ -83,6 +85,7 @@ void ResourceBinding::setImage( TechniqueVolatileContext& context,
                                       _description->pipelineStages,
                                       _description->writeAccess,
                                       layout);
+  if(empty()) context.resourcesBinded++;
 }
 
 void ResourceBinding::setImages(
@@ -121,6 +124,7 @@ void ResourceBinding::setImages(
                                         _description->writeAccess,
                                         layout);
   }
+  if(empty()) context.resourcesBinded++;
 }
 
 void ResourceBinding::setSampler( TechniqueVolatileContext& context,
@@ -133,6 +137,7 @@ void ResourceBinding::setSampler( TechniqueVolatileContext& context,
     return;
   }
   context.descriptorSet->attachSampler(sampler, _description->bindingIndex);
+  if(empty()) context.resourcesBinded++;
 }
 
 void ResourceBinding::setResource(const TechniqueResource* theResource)
@@ -151,18 +156,22 @@ void ResourceBinding::onResourceUpdated()
   _buffer.reset();
   _images.clear();
   _sampler.reset();
+  _empty = true;
 
   if(resource()->buffer() != nullptr)
   {
     _buffer = ConstRef(resource()->buffer());
+    _empty = false;
   }
   else if(resource()->image() != nullptr)
   {
     _images.push_back(ConstRef(resource()->image()));
+    _empty = false;
   }
   else if(resource()->sampler() != nullptr)
   {
     _sampler = ConstRef(resource()->sampler());
+    _empty = false;
   }
 
   if( _description != nullptr &&

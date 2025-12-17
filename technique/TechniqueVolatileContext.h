@@ -22,6 +22,9 @@ namespace mt
     Ref<DescriptorSet> descriptorSet; //  Дескриптер-сет для волатильных
                                       //  ресурсов
 
+    uint32_t resourcesBinded;         //  Сколько ресурсов было прибинжено
+                                      //  к волатильному дескриптер сету
+
   public:
     inline TechniqueVolatileContext(  CommandProducer& producer,
                                       const DescriptorSetLayout* setLayout,
@@ -51,7 +54,8 @@ namespace mt
     _producer(nullptr),
     selectionsValues(nullptr),
     uniformData(nullptr),
-    descriptorSet(nullptr)
+    descriptorSet(nullptr),
+    resourcesBinded(0)
   {
     if(setLayout != nullptr)
     {
