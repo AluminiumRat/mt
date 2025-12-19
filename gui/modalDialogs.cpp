@@ -1,5 +1,8 @@
-﻿#include <gui/modalDialogs.h>
+﻿#include <stdexcept>
+
+#include <gui/modalDialogs.h>
 #include <util/Abort.h>
+#include <util/Log.h>
 
 namespace fs = std::filesystem;
 
@@ -24,7 +27,7 @@ std::wstring utf8ToUtf16(const char* utf8String)
   return utf16String;
 }
 
-static HWND getHWND(mt::BaseWindow* window)
+static HWND getHWND(mt::BaseWindow* window) noexcept
 {
   return window == nullptr ? NULL : (HWND)window->platformDescriptor();
 }
@@ -84,87 +87,120 @@ static std::vector<WCHAR> buildFiltersString(const mt::FileFilters& filters)
 
 fs::path mt::openFileDialog(BaseWindow* ownerWindow,
                             const FileFilters& filters,
-                            const fs::path& initialDir)
+                            const fs::path& initialDir) noexcept
 {
-  std::vector<WCHAR> filterString = buildFiltersString(filters);
+  try
+  {
+    std::vector<WCHAR> filterString = buildFiltersString(filters);
 
-  WCHAR filenameBuffer[2048] = {0};
+    WCHAR filenameBuffer[2048] = {0};
 
-  OPENFILENAMEW dlgInfo{};
-  dlgInfo.lStructSize = sizeof(dlgInfo);
-  dlgInfo.lpstrFile = filenameBuffer;
-  dlgInfo.nMaxFile = sizeof(filenameBuffer) / sizeof(filenameBuffer[0]);
-  dlgInfo.hwndOwner = getHWND(ownerWindow);
-  dlgInfo.lpstrInitialDir = initialDir.c_str();
-  dlgInfo.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-  dlgInfo.lpstrFilter = filterString.data();
+    OPENFILENAMEW dlgInfo{};
+    dlgInfo.lStructSize = sizeof(dlgInfo);
+    dlgInfo.lpstrFile = filenameBuffer;
+    dlgInfo.nMaxFile = sizeof(filenameBuffer) / sizeof(filenameBuffer[0]);
+    dlgInfo.hwndOwner = getHWND(ownerWindow);
+    dlgInfo.lpstrInitialDir = initialDir.c_str();
+    dlgInfo.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+    dlgInfo.lpstrFilter = filterString.data();
 
-  //  GetOpenFileNameW меняет рабочую папку приложения, поэтому сохраним
-  //  текущую, чтобы потом восстановить
-  fs::path workingDirectory = fs::current_path();
+    //  GetOpenFileNameW меняет рабочую папку приложения, поэтому сохраним
+    //  текущую, чтобы потом восстановить
+    fs::path workingDirectory = fs::current_path();
 
-  bool fileSelected = GetOpenFileNameW(&dlgInfo);
+    bool fileSelected = GetOpenFileNameW(&dlgInfo);
 
-  fs::current_path(workingDirectory);
+    fs::current_path(workingDirectory);
 
-  if(fileSelected) return filenameBuffer;
-  else return "";
+    if(fileSelected) return filenameBuffer;
+    else return "";
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << "openFileDialog: " << error.what();
+    return "";
+  }
 }
 
 fs::path mt::saveFileDialog(BaseWindow* ownerWindow,
                             const FileFilters& filters,
-                            const fs::path& initialDir)
+                            const fs::path& initialDir) noexcept
 {
-  std::vector<WCHAR> filterString = buildFiltersString(filters);
+  try
+  {
+    std::vector<WCHAR> filterString = buildFiltersString(filters);
 
-  WCHAR filenameBuffer[2048] = {0};
+    WCHAR filenameBuffer[2048] = {0};
 
-  OPENFILENAMEW dlgInfo{};
-  dlgInfo.lStructSize = sizeof(dlgInfo);
-  dlgInfo.lpstrFile = filenameBuffer;
-  dlgInfo.nMaxFile = sizeof(filenameBuffer) / sizeof(filenameBuffer[0]);
-  dlgInfo.hwndOwner = getHWND(ownerWindow);
-  dlgInfo.lpstrInitialDir = initialDir.c_str();
-  dlgInfo.lpstrFilter = filterString.data();
+    OPENFILENAMEW dlgInfo{};
+    dlgInfo.lStructSize = sizeof(dlgInfo);
+    dlgInfo.lpstrFile = filenameBuffer;
+    dlgInfo.nMaxFile = sizeof(filenameBuffer) / sizeof(filenameBuffer[0]);
+    dlgInfo.hwndOwner = getHWND(ownerWindow);
+    dlgInfo.lpstrInitialDir = initialDir.c_str();
+    dlgInfo.lpstrFilter = filterString.data();
 
-  //  GetSaveFileNameW меняет рабочую папку приложения, поэтому сохраним
-  //  текущую, чтобы потом восстановить
-  fs::path workingDirectory = fs::current_path();
+    //  GetSaveFileNameW меняет рабочую папку приложения, поэтому сохраним
+    //  текущую, чтобы потом восстановить
+    fs::path workingDirectory = fs::current_path();
 
-  bool fileSelected = GetSaveFileNameW(&dlgInfo);
+    bool fileSelected = GetSaveFileNameW(&dlgInfo);
 
-  fs::current_path(workingDirectory);
+    fs::current_path(workingDirectory);
 
-  if(fileSelected) return filenameBuffer;
-  else return "";
+    if(fileSelected) return filenameBuffer;
+    else return "";
+  }
+  catch (std::exception& error)
+  {
+    Log::error() << "saveFileDialog: " << error.what();
+    return "";
+  }
+}
+
+void mt::errorDialog( BaseWindow* ownerWindow,
+                      const char* caption,
+                      const char* message) noexcept
+{
+  try
+  {
+    MessageBoxW( getHWND(ownerWindow),
+                              utf8ToUtf16(message).c_str(),
+                              utf8ToUtf16(caption).c_str(),
+                              MB_ICONERROR | MB_OK);
+  }
+  catch (std::exception& error)
+  {
+    Log::error() << "yesNoQuestionDialog: " << error.what();
+  }
 }
 
 bool mt::yesNoQuestionDialog( BaseWindow* ownerWindow,
                               const char* caption,
                               const char* question,
-                              bool defaultValue)
+                              bool defaultValue) noexcept
 {
-  int answer = MessageBoxW( getHWND(ownerWindow),
-                            utf8ToUtf16(question).c_str(),
-                            utf8ToUtf16(caption).c_str(),
-                            MB_ICONQUESTION |
-                              MB_YESNO |
-                              (defaultValue? MB_DEFBUTTON1 : MB_DEFBUTTON2));
-
-  return answer == IDYES;
+  try
+  {
+    int answer = MessageBoxW( getHWND(ownerWindow),
+                              utf8ToUtf16(question).c_str(),
+                              utf8ToUtf16(caption).c_str(),
+                              MB_ICONQUESTION |
+                                MB_YESNO |
+                                (defaultValue? MB_DEFBUTTON1 : MB_DEFBUTTON2));
+    return answer == IDYES;
+  }
+  catch (std::exception& error)
+  {
+    Log::error() << "yesNoQuestionDialog: " << error.what();
+    return defaultValue;
+  }
 }
 
 #else
-fs::path mt::openFileDialog(BaseWindow* ownerWindow,
-                            const FileFilters& filters,
-                            const fs::path& initialDir)
-{
-  Abort("Not implemented");
-}
-
-fs::path mt::saveFileDialog(BaseWindow* ownerWindow,
-                            const FileFilters& filters,
-                            const fs::path& initialDir)
+void mt::errorDialog( BaseWindow* ownerWindow,
+                      const char* caption,
+                      const char* message) noexcept
 {
   Abort("Not implemented");
 }
@@ -172,7 +208,21 @@ fs::path mt::saveFileDialog(BaseWindow* ownerWindow,
 bool mt::yesNoQuestionDialog( BaseWindow* ownerWindow,
                               const char* caption,
                               const char* question,
-                              bool defaultValue)
+                              bool defaultValue)  noexcept
+{
+  Abort("Not implemented");
+}
+
+fs::path mt::openFileDialog(BaseWindow* ownerWindow,
+                            const FileFilters& filters,
+                            const fs::path& initialDir)  noexcept
+{
+  Abort("Not implemented");
+}
+
+fs::path mt::saveFileDialog(BaseWindow* ownerWindow,
+                            const FileFilters& filters,
+                            const fs::path& initialDir)  noexcept
 {
   Abort("Not implemented");
 }
