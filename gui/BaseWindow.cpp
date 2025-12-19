@@ -99,6 +99,12 @@ void BaseWindow::draw()
 {
 }
 
+void BaseWindow::setWindowTitle(const char* title) noexcept
+{
+  if (isClosed()) return;
+  glfwSetWindowTitle(_handle, title);
+}
+
 void BaseWindow::move(glm::ivec2 newPosition) noexcept
 {
   if (isClosed()) return;

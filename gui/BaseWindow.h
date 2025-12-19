@@ -32,6 +32,8 @@ namespace mt
 
     inline const std::string& name() const noexcept;
 
+    void setWindowTitle(const char* title) noexcept;
+
     //  Координаты левого верхнего угла окна (вместе с рамками)
     inline glm::ivec2 position() const noexcept;
     //  Переместить окно. newPosition - координаты левого верхнего угла окна

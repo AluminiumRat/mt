@@ -1,6 +1,10 @@
 ﻿#pragma once
 
+#include <memory>
+
 #include <gui/GUIWindow.h>
+
+#include <Project.h>
 
 class MainWindow : public mt::GUIWindow
 {
@@ -17,9 +21,13 @@ protected:
 
 private:
   void _processMainMenu();
-  void _newProject();
-  void _loadProject();
-  void _saveIfNeeded();
-  void _saveProject();
-  void _saveProjectAs();
+  void _newProject() noexcept;
+  void _loadProject() noexcept;
+  void _saveIfNeeded() noexcept;
+  void _saveProject() noexcept;
+  void _saveProjectAs() noexcept;
+  void _updateTitle();
+
+private:
+  std::unique_ptr<Project> _project;
 };

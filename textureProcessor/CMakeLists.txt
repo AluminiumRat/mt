@@ -12,7 +12,8 @@ include_directories(.
 add_executable (textureProcessor
                 "Application.cpp"
                 "main.cpp"
-                "MainWindow.cpp")
+                "MainWindow.cpp"
+                "Project.cpp")
 
 target_link_libraries(textureProcessor
                       ${Vulkan_LIBRARIES}
