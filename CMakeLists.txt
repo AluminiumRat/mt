@@ -58,3 +58,5 @@ add_subdirectory(examples/4_0_dds_load)
 add_subdirectory(examples/5_0_file_watcher)
 add_subdirectory(examples/5_1_async_tasks)
 add_subdirectory(examples/5_2_resource_managers)
+
+add_subdirectory(textureProcessor)
