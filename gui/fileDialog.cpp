@@ -62,9 +62,9 @@ static std::vector<WCHAR> buildFiltersString(const mt::FileFilters& filters)
   return filtersString;
 }
 
-std::filesystem::path mt::openFileDialog( BaseWindow* ownerWindow,
-                                          const FileFilters& filters,
-                                          const fs::path& initialDir)
+fs::path mt::openFileDialog(BaseWindow* ownerWindow,
+                            const FileFilters& filters,
+                            const fs::path& initialDir)
 {
   std::vector<WCHAR> filterString = buildFiltersString(filters);
 
@@ -93,8 +93,47 @@ std::filesystem::path mt::openFileDialog( BaseWindow* ownerWindow,
   else return "";
 }
 
+fs::path mt::saveFileDialog(BaseWindow* ownerWindow,
+                            const FileFilters& filters,
+                            const fs::path& initialDir)
+{
+  std::vector<WCHAR> filterString = buildFiltersString(filters);
+
+  WCHAR filenameBuffer[2048] = {0};
+
+  OPENFILENAMEW dlgInfo{};
+  dlgInfo.lStructSize = sizeof(dlgInfo);
+  dlgInfo.lpstrFile = filenameBuffer;
+  dlgInfo.nMaxFile = sizeof(filenameBuffer) / sizeof(filenameBuffer[0]);
+  dlgInfo.hwndOwner = ownerWindow == nullptr ?
+                        NULL :
+                        (HWND)ownerWindow->platformDescriptor();
+  dlgInfo.lpstrInitialDir = initialDir.c_str();
+  dlgInfo.lpstrFilter = filterString.data();
+
+  //  GetSaveFileNameW меняет рабочую папку приложения, поэтому сохраним
+  //  текущую, чтобы потом восстановить
+  fs::path workingDirectory = fs::current_path();
+
+  bool fileSelected = GetSaveFileNameW(&dlgInfo);
+
+  fs::current_path(workingDirectory);
+
+  if(fileSelected) return filenameBuffer;
+  else return "";
+}
+
 #else
-std::filesystem::path mt::openFileDialog() noexcept
+fs::path mt::openFileDialog(BaseWindow* ownerWindow,
+                            const FileFilters& filters,
+                            const fs::path& initialDir)
+{
+  Abort("Not implemented");
+}
+
+fs::path mt::saveFileDialog(BaseWindow* ownerWindow,
+                            const FileFilters& filters,
+                            const fs::path& initialDir)
 {
   Abort("Not implemented");
 }

@@ -23,4 +23,9 @@ namespace mt
                                       BaseWindow* ownerWindow,
                                       const FileFilters& filters,
                                       const std::filesystem::path& initialDir);
+
+  std::filesystem::path saveFileDialog(
+                                      BaseWindow* ownerWindow,
+                                      const FileFilters& filters,
+                                      const std::filesystem::path& initialDir);
 }
