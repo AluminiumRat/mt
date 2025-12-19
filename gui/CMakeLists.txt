@@ -13,9 +13,9 @@ include_directories(..
 set(SOURCES
     "AsyncTaskGui.cpp"
     "BaseWindow.cpp"
-    "fileDialog.cpp"
     "GUILib.cpp"
     "GUIWindow.cpp"
+    "modalDialogs.cpp"
     "RenderWindow.cpp"
     ${IMGUI_PATH}"/imgui.cpp"
     ${IMGUI_PATH}"/imgui_draw.cpp"

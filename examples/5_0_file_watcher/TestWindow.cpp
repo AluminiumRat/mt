@@ -1,7 +1,7 @@
 ﻿#include <algorithm>
 #include <imgui.h>
 
-#include <gui/fileDialog.h>
+#include <gui/modalDialogs.h>
 
 #include <TestWindow.h>
 

@@ -28,4 +28,14 @@ namespace mt
                                       BaseWindow* ownerWindow,
                                       const FileFilters& filters,
                                       const std::filesystem::path& initialDir);
+
+  //  Диалог с вопросом, на который пользователь может ответить только
+  //    "Да" и "Нет"
+  //  Параметр question в UTF8
+  //  defaultValue задает, на какой кнопке будет фокус
+  //  Возвращает ответ пользователя: true - "Да", false - "Нет"
+  bool yesNoQuestionDialog( BaseWindow* ownerWindow,
+                            const char* caption,
+                            const char* question,
+                            bool defaultValue);
 }

@@ -1,13 +1,33 @@
-﻿#include <gui/fileDialog.h>
+﻿#include <gui/modalDialogs.h>
 #include <util/Abort.h>
 
 namespace fs = std::filesystem;
 
 #ifdef WIN32
 
-#include <codecvt>
-
 #include <windows.h>
+
+std::wstring utf8ToUtf16(const char* utf8String)
+{
+  int size = MultiByteToWideChar(CP_UTF8, 0, utf8String, -1, nullptr, 0);
+  if(size == 0) return L"";
+
+  std::wstring utf16String;
+  utf16String.resize(size - 1);
+
+  MultiByteToWideChar(CP_UTF8,
+                      0,
+                      utf8String,
+                      -1,
+                      utf16String.data(),
+                      size);
+  return utf16String;
+}
+
+static HWND getHWND(mt::BaseWindow* window)
+{
+  return window == nullptr ? NULL : (HWND)window->platformDescriptor();
+}
 
 //  Из списка UTF-8 строк фильтров сформировать UTF-16 единую строку-фильтр
 //    Используется как аргумент для вызова файловых диалогов
@@ -74,9 +94,7 @@ fs::path mt::openFileDialog(BaseWindow* ownerWindow,
   dlgInfo.lStructSize = sizeof(dlgInfo);
   dlgInfo.lpstrFile = filenameBuffer;
   dlgInfo.nMaxFile = sizeof(filenameBuffer) / sizeof(filenameBuffer[0]);
-  dlgInfo.hwndOwner = ownerWindow == nullptr ?
-                        NULL :
-                        (HWND)ownerWindow->platformDescriptor();
+  dlgInfo.hwndOwner = getHWND(ownerWindow);
   dlgInfo.lpstrInitialDir = initialDir.c_str();
   dlgInfo.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
   dlgInfo.lpstrFilter = filterString.data();
@@ -105,9 +123,7 @@ fs::path mt::saveFileDialog(BaseWindow* ownerWindow,
   dlgInfo.lStructSize = sizeof(dlgInfo);
   dlgInfo.lpstrFile = filenameBuffer;
   dlgInfo.nMaxFile = sizeof(filenameBuffer) / sizeof(filenameBuffer[0]);
-  dlgInfo.hwndOwner = ownerWindow == nullptr ?
-                        NULL :
-                        (HWND)ownerWindow->platformDescriptor();
+  dlgInfo.hwndOwner = getHWND(ownerWindow);
   dlgInfo.lpstrInitialDir = initialDir.c_str();
   dlgInfo.lpstrFilter = filterString.data();
 
@@ -121,6 +137,21 @@ fs::path mt::saveFileDialog(BaseWindow* ownerWindow,
 
   if(fileSelected) return filenameBuffer;
   else return "";
+}
+
+bool mt::yesNoQuestionDialog( BaseWindow* ownerWindow,
+                              const char* caption,
+                              const char* question,
+                              bool defaultValue)
+{
+  int answer = MessageBoxW( getHWND(ownerWindow),
+                            utf8ToUtf16(question).c_str(),
+                            utf8ToUtf16(caption).c_str(),
+                            MB_ICONQUESTION |
+                              MB_YESNO |
+                              (defaultValue? MB_DEFBUTTON1 : MB_DEFBUTTON2));
+
+  return answer == IDYES;
 }
 
 #else
@@ -137,4 +168,13 @@ fs::path mt::saveFileDialog(BaseWindow* ownerWindow,
 {
   Abort("Not implemented");
 }
+
+bool mt::yesNoQuestionDialog( BaseWindow* ownerWindow,
+                              const char* caption,
+                              const char* question,
+                              bool defaultValue)
+{
+  Abort("Not implemented");
+}
+
 #endif
