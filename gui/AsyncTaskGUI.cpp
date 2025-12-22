@@ -69,6 +69,16 @@ void AsyncTaskGUI::addEvent(const AsyncTaskQueue::Event& theEvent)
     break;
   }
 
+  case AsyncTaskQueue::INFO_EVENT:
+  {
+    _messages.emplace_back();
+    _messages.back().type = INFO_MESSAGE;
+    _messages.back().taskName = theEvent.task->name();
+    _messages.back().message = theEvent.description;
+    if(_messages.size() > maxMessagesInQueue) _messages.pop_front();
+    break;
+  }
+
   case AsyncTaskQueue::WARNING_EVENT:
   {
     _messages.emplace_back();
@@ -134,6 +144,7 @@ void AsyncTaskGUI::_makeMessagesWindow()
   ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
   ImGui::Begin("Messages", &_showMessagesWindow);
+  if(!_showMessagesWindow) _messages.clear();
 
   for(Messages::reverse_iterator iMessage = _messages.rbegin();
       iMessage != _messages.rend();
@@ -141,7 +152,13 @@ void AsyncTaskGUI::_makeMessagesWindow()
   {
     const Message& message = *iMessage;
     ImGui::SeparatorText(message.taskName.c_str());
-    if(message.type == WARNING_MESSAGE)
+    if(message.type == INFO_MESSAGE)
+    {
+      ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(50, 255, 50, 255));
+      ImGui::Text("INFO: ");
+      ImGui::PopStyleColor();
+    }
+    else if(message.type == WARNING_MESSAGE)
     {
       ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 50, 255));
       ImGui::Text("WARNING: ");

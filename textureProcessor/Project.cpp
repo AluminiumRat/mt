@@ -54,6 +54,7 @@ public:
   {
     _configurator.propogateConfiguration();
     _addFilesToWatching();
+    reportInfo("Build succeeded");
   }
 
   virtual void restorePart() noexcept override

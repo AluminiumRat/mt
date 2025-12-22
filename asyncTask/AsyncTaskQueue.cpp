@@ -49,6 +49,12 @@ void AsyncTaskQueue::reportPercent( AsyncTask& task, uint8_t percent) noexcept
   _addEvent(&task, PERCENTS_DONE_EVENT, "", percent);
 }
 
+void AsyncTaskQueue::reportInfo(AsyncTask& task, const char* message) noexcept
+{
+  std::lock_guard lock(_accessMutex);
+  _addEvent(&task, INFO_EVENT, message, 0);
+}
+
 void AsyncTaskQueue::reportWarning( AsyncTask& task,
                                     const char* message) noexcept
 {
@@ -243,6 +249,7 @@ void AsyncTaskQueue::_invalidateHandle(AsyncTask& task) noexcept
 void AsyncTaskQueue::update()
 {
   {
+    //  Перед началом синхронной части раздадим накопленные сообщения
     std::lock_guard lock(_accessMutex);
     for(const Event& theEvent : _events) _propagateEvent(theEvent);
     _events.clear();
@@ -252,6 +259,7 @@ void AsyncTaskQueue::update()
   {
     std::unique_ptr<AsyncTask> task;
     {
+      // Вытаскиваем очередную таску из очереди потокобезопасным способом
       std::lock_guard lock(_accessMutex);
 
       if(_finished.empty()) break;
@@ -280,6 +288,14 @@ void AsyncTaskQueue::update()
                                                   .percent = 0});
         task->restoreState();
       }
+    }
+
+    {
+      //  Если таска генерировала сообщения в синхронной части, то их надо
+      //  распространить до удаления таски
+      std::lock_guard lock(_accessMutex);
+      for (const Event& theEvent : _events) _propagateEvent(theEvent);
+      _events.clear();
     }
 
     // Сообщаем, что таска завершила работу и сейчас будет удалена

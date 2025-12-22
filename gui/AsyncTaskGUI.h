@@ -37,6 +37,7 @@ namespace mt
 
     enum MessageType
     {
+      INFO_MESSAGE,
       WARNING_MESSAGE,
       ERROR_MESSAGE
     };

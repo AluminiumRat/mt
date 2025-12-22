@@ -59,6 +59,12 @@ void AsyncTask::reportPercent(uint8_t percent) noexcept
   _queue->reportPercent(*this, percent);
 }
 
+void AsyncTask::reportInfo(const char* message) noexcept
+{
+  if (_queue == nullptr) return;
+  _queue->reportInfo(*this, message);
+}
+
 void AsyncTask::reportWarning(const char* message) noexcept
 {
   if(_queue == nullptr) return;

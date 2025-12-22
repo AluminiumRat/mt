@@ -56,6 +56,7 @@ namespace mt
       TASK_ADDED_EVENT,
       STAGE_STARTED_EVENT,
       PERCENTS_DONE_EVENT,
+      INFO_EVENT,
       WARNING_EVENT,
       ERROR_EVENT,
       TASK_FINISHED_EVENT
@@ -67,7 +68,8 @@ namespace mt
       EventType type;
       std::string description;  //  Для STAGE_STARTED_EVENT здесь название
                                 //    стадии
-                                //  Для WARNING_EVENT и ERROR_EVENT - текст
+                                //  Для INFO_EVENT, WARNING_EVENT и
+                                //    ERROR_EVENT - текст сообщения,
                                 //    предупреждения или ошибки
                                 //  Для других событий - пустая строка
 
@@ -107,7 +109,8 @@ namespace mt
     friend class AsyncTask;
     void reportStage( AsyncTask& task, const char* stageName) noexcept;
     void reportPercent(AsyncTask& task, uint8_t percent) noexcept;
-    void reportWarning( AsyncTask& task, const char* message) noexcept;
+    void reportInfo(AsyncTask& task, const char* message) noexcept;
+    void reportWarning(AsyncTask& task, const char* message) noexcept;
 
   private:
     //  Вызывается из TaskHandle
