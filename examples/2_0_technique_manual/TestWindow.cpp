@@ -53,7 +53,6 @@ void TestWindow::_makeConfiguration()
   pass->setShaders(shaders);
   std::string passSelections[] = {"colorSelector"};
   pass->setSelections(passSelections);
-  pass->setShaders(shaders);
 
   _configurator->addPass(std::move(pass));
 

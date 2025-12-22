@@ -4,6 +4,8 @@
 
 #include <glm/glm.hpp>
 
+#include <asyncTask/AsyncTaskQueue.h>
+#include <resourceManagement/FileWatcher.h>
 #include <technique/Technique.h>
 #include <util/Ref.h>
 
@@ -12,19 +14,28 @@ namespace mt
   class BaseWindow;
 }
 
-class Project
+class Project : mt::FileObserver
 {
 public:
   Project(const std::filesystem::path& file,
           const mt::BaseWindow& parentWindow);
   Project(const Project&) = delete;
   Project& operator = (const Project&) = delete;
-  virtual ~Project() noexcept = default;
+  virtual ~Project() noexcept;
 
   inline const std::filesystem::path& projectFile() const;
 
   void save(const std::filesystem::path& file);
   void guiPass();
+
+  void rebuildTechnique();
+
+protected:
+  virtual void onFileChanged( const std::filesystem::path& filePath,
+                              EventType eventType) override;
+
+private:
+  class RebuildTechniqueTask;
 
 private:
   void _load();
@@ -47,6 +58,8 @@ private:
 
   mt::Ref<mt::TechniqueConfigurator> _configurator;
   mt::Ref<mt::Technique> _technique;
+
+  std::unique_ptr<mt::AsyncTaskQueue::TaskHandle> _rebuildTaskHandle;
 };
 
 inline const std::filesystem::path& Project::projectFile() const

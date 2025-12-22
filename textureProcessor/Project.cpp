@@ -5,12 +5,86 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include <asyncTask/AsyncTask.h>
 #include <gui/modalDialogs.h>
 #include <util/Assert.h>
 #include <vkr/image/ImageFormatFeatures.h>
 
 #include <Application.h>
 #include <Project.h>
+
+class Project::RebuildTechniqueTask : public mt::AsyncTask
+{
+public:
+  RebuildTechniqueTask( Project& project,
+                        mt::TechniqueConfigurator& configurator,
+                        const std::filesystem::path& shaderFile) :
+    AsyncTask("Compile shader", EXCLUSIVE_MODE, EXPLICIT),
+    _project(project),
+    _configurator(configurator),
+    _shaderFile(shaderFile)
+  {
+  }
+
+  virtual void asyncPart() override
+  {
+    _configurator.clear();
+
+    mt::PassConfigurator::ShaderInfo shaders[2] =
+                                { { .stage = VK_SHADER_STAGE_VERTEX_BIT,
+                                    .file = "textureProcessor/fsQuad.vert"},
+                                  { .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+                                    .file = _shaderFile}};
+
+    VkFormat colorAttachments[1] = { VK_FORMAT_R32G32B32A32_SFLOAT };
+    mt::FrameBufferFormat fbFormat( colorAttachments,
+                                    VK_FORMAT_UNDEFINED,
+                                    VK_SAMPLE_COUNT_1_BIT);
+    std::unique_ptr<mt::PassConfigurator> pass(
+                                              new mt::PassConfigurator("Pass"));
+    pass->setFrameBufferFormat(&fbFormat);
+    pass->setShaders(shaders);
+
+    _configurator.addPass(std::move(pass));
+
+    _configurator.rebuildConfiguration(&_usedFiles);
+  }
+
+  virtual void finalizePart() override
+  {
+    _configurator.propogateConfiguration();
+    _addFilesToWatching();
+  }
+
+  virtual void restorePart() noexcept override
+  {
+    _addFilesToWatching();
+  }
+
+private:
+  void _addFilesToWatching() noexcept
+  {
+    Application::instance().fileWatcher().removeObserver(_project);
+
+    try
+    {
+      for(const std::filesystem::path& file : _usedFiles)
+      {
+        Application::instance().fileWatcher().addWatching(file, _project);
+      }
+    }
+    catch(std::exception& error)
+    {
+      mt::Log::error() << error.what();
+    }
+  }
+
+private:
+  Project& _project;
+  mt::TechniqueConfigurator& _configurator;
+  std::filesystem::path _shaderFile;
+  std::unordered_set<std::filesystem::path> _usedFiles;
+};
 
 //  Перевести pathToSave в формат, пригодный для сохранения в файле проекта
 //  Если pathToSave - это абсолютный путь и pathToSave лежит в projectFolder
@@ -80,7 +154,11 @@ Project::Project( const std::filesystem::path& file,
                                         "Make texture technique")),
   _technique(new mt::Technique(*_configurator))
 {
-  if(!_projectFile.empty()) _load();
+  if(!_projectFile.empty())
+  {
+    _load();
+    rebuildTechnique();
+  }
 }
 
 void Project::_load()
@@ -126,6 +204,11 @@ void Project::_load()
   _arraySize = glm::clamp(_arraySize, 1, 16536);
 }
 
+Project::~Project() noexcept
+{
+  Application::instance().fileWatcher().removeObserver(*this);
+}
+
 void Project::save(const std::filesystem::path& file)
 {
   std::filesystem::path projectFolder = _projectFile.parent_path();
@@ -166,6 +249,23 @@ void Project::save(const std::filesystem::path& file)
   fileStream.write(out.c_str(), out.size());
 
   _projectFile = file;
+}
+
+void Project::rebuildTechnique()
+{
+  if(_rebuildTaskHandle != nullptr) _rebuildTaskHandle->abortTask();
+  std::unique_ptr<mt::AsyncTask> loadingTask(
+                                      new RebuildTechniqueTask( *this,
+                                                                *_configurator,
+                                                                _shaderFile));
+  _rebuildTaskHandle = Application::instance().asyncQueue().addManagedTask(
+                                                        std::move(loadingTask));
+}
+
+void Project::onFileChanged(const std::filesystem::path& filePath,
+                            EventType eventType)
+{
+  if(eventType != FILE_DISAPPEARANCE) rebuildTechnique();
 }
 
 bool fileSelectionLine( const char* controlId,
@@ -244,6 +344,7 @@ void Project::_selectShader() noexcept
     if(!file.empty())
     {
       _shaderFile = file;
+      rebuildTechnique();
     }
   }
   catch (std::exception& error)
