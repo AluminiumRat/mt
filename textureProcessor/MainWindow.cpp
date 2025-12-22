@@ -35,20 +35,28 @@ void MainWindow::_processMainMenu()
   if(ImGui::BeginMenu("File"))
   {
     if (ImGui::MenuItem("New")) _newProject();
-    if (ImGui::MenuItem("Open")) _loadProject();
+    if (ImGui::MenuItem("Open", "Ctrl+O")) _loadProject();
 
     // Если проекта нет, то "Save" и "Save as" должны быть неактивными
     if (_project == nullptr)
     {
       ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
     }
-    if (ImGui::MenuItem("Save")) _saveProject();
+    if (ImGui::MenuItem("Save", "Ctrl+S")) _saveProject();
     if (_project == nullptr) ImGui::PopStyleColor();
 
     ImGui::EndMenu();
   }
 
   ImGui::EndMainMenuBar();
+
+  //  Обработке шорткатов
+  ImGuiIO& io = ImGui::GetIO();
+  if(io.KeyCtrl)
+  {
+    if(ImGui::IsKeyPressed(ImGuiKey_O, false)) _loadProject();
+    if(ImGui::IsKeyPressed(ImGuiKey_S, false)) _saveProject();
+  }
 }
 
 void MainWindow::_newProject() noexcept
