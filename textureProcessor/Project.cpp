@@ -13,12 +13,14 @@
 #include <Application.h>
 #include <Project.h>
 
+namespace fs = std::filesystem;
+
 class Project::RebuildTechniqueTask : public mt::AsyncTask
 {
 public:
   RebuildTechniqueTask( Project& project,
                         mt::TechniqueConfigurator& configurator,
-                        const std::filesystem::path& shaderFile) :
+                        const fs::path& shaderFile) :
     AsyncTask("Compile shader", EXCLUSIVE_MODE, EXPLICIT),
     _project(project),
     _configurator(configurator),
@@ -69,7 +71,7 @@ private:
 
     try
     {
-      for(const std::filesystem::path& file : _usedFiles)
+      for(const fs::path& file : _usedFiles)
       {
         Application::instance().fileWatcher().addWatching(file, _project);
       }
@@ -83,24 +85,23 @@ private:
 private:
   Project& _project;
   mt::TechniqueConfigurator& _configurator;
-  std::filesystem::path _shaderFile;
-  std::unordered_set<std::filesystem::path> _usedFiles;
+  fs::path _shaderFile;
+  std::unordered_set<fs::path> _usedFiles;
 };
 
 //  Перевести pathToSave в формат, пригодный для сохранения в файле проекта
 //  Если pathToSave - это абсолютный путь и pathToSave лежит в projectFolder
 //    или её подпапке, то возвращает путь относительно projectFolder, иначе
 //    возвращает исходный pathToSave
-std::filesystem::path makeStoredPath(
-                                    const std::filesystem::path& pathToSave,
-                                    const std::filesystem::path& projectFolder)
+fs::path makeStoredPath(const fs::path& pathToSave,
+                        const fs::path& projectFolder)
 {
   if(pathToSave.empty()) return pathToSave;
   if (!pathToSave.is_absolute()) return pathToSave;
   MT_ASSERT(projectFolder.is_absolute());
 
-  std::filesystem::path normalizedPath = pathToSave.lexically_normal();
-  std::filesystem::path projectFolderNorm = projectFolder.lexically_normal();
+  fs::path normalizedPath = pathToSave.lexically_normal();
+  fs::path projectFolderNorm = projectFolder.lexically_normal();
 
   auto [mismatchInFile, mismatchInFolder] =
                                         std::mismatch(normalizedPath.begin(),
@@ -111,8 +112,8 @@ std::filesystem::path makeStoredPath(
   if(mismatchInFolder != projectFolderNorm.end()) return pathToSave;
 
   //  Восстанавливаем относительный путь от точки расхождения
-  std::filesystem::path storedPath;
-  for(std::filesystem::path::const_iterator iPath = mismatchInFile;
+  fs::path storedPath;
+  for(fs::path::const_iterator iPath = mismatchInFile;
       iPath != normalizedPath.end();
       iPath++)
   {
@@ -121,15 +122,14 @@ std::filesystem::path makeStoredPath(
   return storedPath;
 }
 
-std::string pathToUtf8(const std::filesystem::path& path)
+std::string pathToUtf8(const fs::path& path)
 {
   return (const char*)path.u8string().c_str();
 }
 
 //  Восстановить путь для файла из сохраненного в файле проекта
-std::filesystem::path restoreAbsolutePath(
-                                    const std::filesystem::path& storedPath,
-                                    const std::filesystem::path& projectFolder)
+fs::path restoreAbsolutePath( const fs::path& storedPath,
+                              const fs::path& projectFolder)
 {
   if (storedPath.empty()) return storedPath;
   if (storedPath.is_absolute()) return storedPath;
@@ -137,12 +137,12 @@ std::filesystem::path restoreAbsolutePath(
   return projectFolder / storedPath;
 }
 
-std::filesystem::path utf8ToPath(const std::string& filename)
+fs::path utf8ToPath(const std::string& filename)
 {
-  return std::filesystem::path((char8_t*)filename.c_str());
+  return fs::path((char8_t*)filename.c_str());
 }
 
-Project::Project( const std::filesystem::path& file,
+Project::Project( const fs::path& file,
                   const mt::BaseWindow& parentWindow) :
   _projectFile(file),
   _parentWindow(parentWindow),
@@ -164,7 +164,7 @@ Project::Project( const std::filesystem::path& file,
 
 void Project::_load()
 {
-  std::filesystem::path projectFolder = _projectFile.parent_path();
+  fs::path projectFolder = _projectFile.parent_path();
 
   std::ifstream fileStream(_projectFile, std::ios::binary);
   if (!fileStream) throw std::runtime_error(std::string("file not found: ") + (const char*)_projectFile.u8string().c_str());
@@ -210,9 +210,9 @@ Project::~Project() noexcept
   Application::instance().fileWatcher().removeObserver(*this);
 }
 
-void Project::save(const std::filesystem::path& file)
+void Project::save(const fs::path& file)
 {
-  std::filesystem::path projectFolder = _projectFile.parent_path();
+  fs::path projectFolder = file.parent_path();
 
   // Создаем YAML разметку
   YAML::Emitter out;
@@ -263,14 +263,14 @@ void Project::rebuildTechnique()
                                                         std::move(loadingTask));
 }
 
-void Project::onFileChanged(const std::filesystem::path& filePath,
+void Project::onFileChanged(const fs::path&,
                             EventType eventType)
 {
   if(eventType != FILE_DISAPPEARANCE) rebuildTechnique();
 }
 
 bool fileSelectionLine( const char* controlId,
-                        const std::filesystem::path& filePath) noexcept
+                        const fs::path& filePath) noexcept
 {
   ImGui::PushID(controlId);
   bool pressed =  ImGui::SmallButton("...");
@@ -337,7 +337,7 @@ void Project::_selectShader() noexcept
 {
   try
   {
-    std::filesystem::path file =
+    fs::path file =
         mt::openFileDialog( &_parentWindow,
                     mt::FileFilters{{ .expression = "*.frag",
                                       .description = "Fragment shader(*.frag)"}},
@@ -407,7 +407,7 @@ void Project::_selectOutputFile() noexcept
 {
   try
   {
-    std::filesystem::path file =
+    fs::path file =
         mt::saveFileDialog( &_parentWindow,
                     mt::FileFilters{{ .expression = "*.dds",
                                       .description = "DDS image(*.dds)"}},

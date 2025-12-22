@@ -43,7 +43,6 @@ void MainWindow::_processMainMenu()
       ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
     }
     if (ImGui::MenuItem("Save")) _saveProject();
-    if (ImGui::MenuItem("Save as...")) _saveProjectAs();
     if (_project == nullptr) ImGui::PopStyleColor();
 
     ImGui::EndMenu();
