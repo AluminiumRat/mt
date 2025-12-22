@@ -27,7 +27,7 @@ std::wstring utf8ToUtf16(const char* utf8String)
   return utf16String;
 }
 
-static HWND getHWND(mt::BaseWindow* window) noexcept
+static HWND getHWND(const mt::BaseWindow* window) noexcept
 {
   return window == nullptr ? NULL : (HWND)window->platformDescriptor();
 }
@@ -85,7 +85,7 @@ static std::vector<WCHAR> buildFiltersString(const mt::FileFilters& filters)
   return filtersString;
 }
 
-fs::path mt::openFileDialog(BaseWindow* ownerWindow,
+fs::path mt::openFileDialog(const BaseWindow* ownerWindow,
                             const FileFilters& filters,
                             const fs::path& initialDir) noexcept
 {
@@ -122,7 +122,7 @@ fs::path mt::openFileDialog(BaseWindow* ownerWindow,
   }
 }
 
-fs::path mt::saveFileDialog(BaseWindow* ownerWindow,
+fs::path mt::saveFileDialog(const BaseWindow* ownerWindow,
                             const FileFilters& filters,
                             const fs::path& initialDir) noexcept
 {
@@ -158,7 +158,7 @@ fs::path mt::saveFileDialog(BaseWindow* ownerWindow,
   }
 }
 
-void mt::errorDialog( BaseWindow* ownerWindow,
+void mt::errorDialog( const BaseWindow* ownerWindow,
                       const char* caption,
                       const char* message) noexcept
 {
@@ -175,7 +175,7 @@ void mt::errorDialog( BaseWindow* ownerWindow,
   }
 }
 
-bool mt::yesNoQuestionDialog( BaseWindow* ownerWindow,
+bool mt::yesNoQuestionDialog( const BaseWindow* ownerWindow,
                               const char* caption,
                               const char* question,
                               bool defaultValue) noexcept
@@ -198,14 +198,14 @@ bool mt::yesNoQuestionDialog( BaseWindow* ownerWindow,
 }
 
 #else
-void mt::errorDialog( BaseWindow* ownerWindow,
+void mt::errorDialog( const BaseWindow* ownerWindow,
                       const char* caption,
                       const char* message) noexcept
 {
   Abort("Not implemented");
 }
 
-bool mt::yesNoQuestionDialog( BaseWindow* ownerWindow,
+bool mt::yesNoQuestionDialog( const BaseWindow* ownerWindow,
                               const char* caption,
                               const char* question,
                               bool defaultValue)  noexcept
@@ -213,14 +213,14 @@ bool mt::yesNoQuestionDialog( BaseWindow* ownerWindow,
   Abort("Not implemented");
 }
 
-fs::path mt::openFileDialog(BaseWindow* ownerWindow,
+fs::path mt::openFileDialog(const BaseWindow* ownerWindow,
                             const FileFilters& filters,
                             const fs::path& initialDir)  noexcept
 {
   Abort("Not implemented");
 }
 
-fs::path mt::saveFileDialog(BaseWindow* ownerWindow,
+fs::path mt::saveFileDialog(const BaseWindow* ownerWindow,
                             const FileFilters& filters,
                             const fs::path& initialDir)  noexcept
 {

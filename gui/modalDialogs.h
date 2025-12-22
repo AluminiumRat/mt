@@ -11,7 +11,7 @@ namespace mt
   class BaseWindow;
 
   //  Сообщение об ошибке
-  void errorDialog( BaseWindow* ownerWindow,
+  void errorDialog( const BaseWindow* ownerWindow,
                     const char* caption,
                     const char* message) noexcept;
 
@@ -20,7 +20,7 @@ namespace mt
   //  Параметр question в UTF8
   //  defaultValue задает, на какой кнопке будет фокус
   //  Возвращает ответ пользователя: true - "Да", false - "Нет"
-  bool yesNoQuestionDialog( BaseWindow* ownerWindow,
+  bool yesNoQuestionDialog( const BaseWindow* ownerWindow,
                             const char* caption,
                             const char* question,
                             bool defaultValue)  noexcept;
@@ -38,7 +38,7 @@ namespace mt
   //  Если возвращает пустой path, значит пользователь нажал отмену, либо
   //    произошла ошибка
   std::filesystem::path openFileDialog(
-                              BaseWindow* ownerWindow,
+                              const BaseWindow* ownerWindow,
                               const FileFilters& filters,
                               const std::filesystem::path& initialDir) noexcept;
 
@@ -46,7 +46,7 @@ namespace mt
   //  Если возвращает пустой path, значит пользователь нажал отмену, либо
   //    произошла ошибка
   std::filesystem::path saveFileDialog(
-                              BaseWindow* ownerWindow,
+                              const BaseWindow* ownerWindow,
                               const FileFilters& filters,
                               const std::filesystem::path& initialDir) noexcept;
 }

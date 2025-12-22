@@ -7,6 +7,7 @@ include_directories(.
                     ${GLM_PATH}
                     ${Vulkan_INCLUDE_DIRS}
                     ${VKMEMALLOC_PATH}
+                    ${YamlCPP_INCLUDE_DIRS}
                     ${IMGUI_PATH})
 
 add_executable (textureProcessor
@@ -27,3 +28,5 @@ target_link_libraries(textureProcessor
                       resourceManagement
                       technique
                       gui)
+
+target_compile_definitions(textureProcessor PRIVATE YAML_CPP_STATIC_DEFINE)

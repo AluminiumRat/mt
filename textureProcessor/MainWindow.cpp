@@ -23,6 +23,7 @@ void MainWindow::guiImplementation()
   mt::GUIWindow::guiImplementation();
 
   _processMainMenu();
+  if(_project != nullptr) _project->guiPass();
 
   Application::instance().asyncTaskGui().makeImGUI();
 }
@@ -56,7 +57,7 @@ void MainWindow::_newProject() noexcept
   try
   {
     _saveIfNeeded();
-    _project.reset(new Project(""));
+    _project.reset(new Project("", *this));
     _updateTitle();
   }
   catch(std::exception& error)
@@ -79,7 +80,7 @@ void MainWindow::_loadProject() noexcept
                             "");
     if(!file.empty())
     {
-      _project.reset(new Project(file));
+      _project.reset(new Project(file, *this));
       _updateTitle();
     }
   }
