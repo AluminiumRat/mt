@@ -13,8 +13,12 @@
 
 #include <Application.h>
 
+// Сколько кадров будет показываться окно сохранения
+#define SAVE_WINDOW_FRAME_COUNT 5
+
 MainWindow::MainWindow() :
-  GUIWindow(Application::instance().primaryDevice(), "Texture processor")
+  GUIWindow(Application::instance().primaryDevice(), "Texture processor"),
+  _saveWindowStage(0)
 {
 }
 
@@ -24,6 +28,20 @@ void MainWindow::guiImplementation()
 
   _processMainMenu();
   if(_project != nullptr) _project->guiPass();
+
+  // Если было сохранение, то на 1 кадр покажем окно сохранения
+  if(_saveWindowStage != 0)
+  {
+    _saveWindowStage--;
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(150, 70));
+    if(ImGui::Begin("Save"))
+    {
+      ImGui::ProgressBar(0.5f);
+      ImGui::End();
+    }
+  }
 
   Application::instance().asyncTaskGui().makeImGUI();
 }
@@ -37,7 +55,7 @@ void MainWindow::_processMainMenu()
     if (ImGui::MenuItem("New")) _newProject();
     if (ImGui::MenuItem("Open", "Ctrl+O")) _loadProject();
 
-    // Если проекта нет, то "Save" и "Save as" должны быть неактивными
+    // Если проекта нет, то "Save" не должен быть активным
     if (_project == nullptr)
     {
       ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
@@ -120,6 +138,7 @@ void MainWindow::_saveProject() noexcept
   try
   {
     _project->save(_project->projectFile());
+    _saveWindowStage = SAVE_WINDOW_FRAME_COUNT;
   }
   catch (std::exception& error)
   {
@@ -144,6 +163,7 @@ void MainWindow::_saveProjectAs() noexcept
       if (!file.has_extension()) file.replace_extension("tpr");
       _project->save(file);
       _updateTitle();
+      _saveWindowStage = SAVE_WINDOW_FRAME_COUNT;
     }
   }
   catch (std::exception& error)
