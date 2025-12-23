@@ -6,6 +6,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include <asyncTask/AsyncTask.h>
+#include <gui/GUIWindow.h>
 #include <gui/IMGuiWidgets.h>
 #include <gui/modalDialogs.h>
 #include <util/Assert.h>
@@ -91,10 +92,8 @@ private:
   std::unordered_set<fs::path> _usedFiles;
 };
 
-Project::Project( const fs::path& file,
-                  const mt::BaseWindow& parentWindow) :
+Project::Project( const fs::path& file) :
   _projectFile(file),
-  _parentWindow(parentWindow),
   _imageFormat(VK_FORMAT_B8G8R8A8_SRGB),
   _outputSize(256, 256),
   _mipsCount(1),
@@ -105,7 +104,6 @@ Project::Project( const fs::path& file,
   _technique(new mt::Technique(*_configurator)),
   _propsWidget( *_technique,
                 TechniquePropsWidgetCommon{
-                        &parentWindow,
                         &Application::instance().textureManager(),
                         &Application::instance().bufferManager(),
                         Application::instance().primaryDevice().graphicQueue()})
@@ -249,10 +247,10 @@ void Project::_selectShader() noexcept
   {
     fs::path file =
         mt::openFileDialog(
-                    &_parentWindow,
-                    mt::FileFilters{{ .expression = "*.frag",
-                                      .description = "Fragment shader(*.frag)"}},
-                    "");
+                  mt::GUIWindow::currentWindow(),
+                  mt::FileFilters{{ .expression = "*.frag",
+                                    .description = "Fragment shader(*.frag)"}},
+                  "");
     if(!file.empty())
     {
       _shaderFile = file;
@@ -262,7 +260,7 @@ void Project::_selectShader() noexcept
   catch (std::exception& error)
   {
     mt::Log::error() << error.what();
-    mt::errorDialog(&_parentWindow, "Error", "Unable to open shader file");
+    mt::errorDialog(mt::GUIWindow::currentWindow(), "Error", "Unable to open shader file");
   }
 }
 
@@ -331,7 +329,7 @@ void Project::_selectOutputFile() noexcept
   {
     fs::path file =
         mt::saveFileDialog(
-                          &_parentWindow,
+                          mt::GUIWindow::currentWindow(),
                           mt::FileFilters{{ .expression = "*.dds",
                                             .description = "DDS image(*.dds)"}},
                           "");

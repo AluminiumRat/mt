@@ -11,16 +11,10 @@
 
 #include <TechniquePropsWidget.h>
 
-namespace mt
-{
-  class BaseWindow;
-}
-
 class Project : mt::FileObserver
 {
 public:
-  Project(const std::filesystem::path& file,
-          const mt::BaseWindow& parentWindow);
+  explicit Project(const std::filesystem::path& file);
   Project(const Project&) = delete;
   Project& operator = (const Project&) = delete;
   virtual ~Project() noexcept;
@@ -47,8 +41,6 @@ private:
 
 private:
   std::filesystem::path _projectFile;
-
-  const mt::BaseWindow& _parentWindow;
 
   std::filesystem::path _shaderFile;
 

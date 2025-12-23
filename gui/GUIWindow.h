@@ -21,6 +21,12 @@ namespace mt
 
     virtual void update() override;
 
+    //  Окно, для которого в текущий момент производится заполнение ImGUI. То
+    //    есть вызван метод guiImplementation. Если ни одно из окон не находится
+    //    внутри guiImplementation, то возвращает nullptr
+    //  Используется для создания модальных диалогов.
+    inline static const GUIWindow* currentWindow() noexcept;
+
   protected:
     //  Здесь должне находится сам код, генерирующий виджеты для текущего кадра
     //  Переопределите и заполните этот метод в потомках
@@ -35,9 +41,19 @@ namespace mt
                             WindowConfiguration& configuration) const override;
 
   private:
+    class ImguiContextSetter;
+
+  private:
     void _clean() noexcept;
 
   private:
+    static const GUIWindow* _currentWindow;
+
     ImGuiContext* _imguiContext;
   };
+
+  inline const GUIWindow* GUIWindow::currentWindow() noexcept
+  {
+    return _currentWindow;
+  }
 }

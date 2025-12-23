@@ -3,45 +3,51 @@
 
 #include <gui/GUIWindow.h>
 #include <gui/WindowConfiguration.h>
+#include <util/Abort.h>
 #include <util/Assert.h>
+#include <util/Log.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/Device.h>
 #include <vkr/VKRLib.h>
 
 using namespace mt;
 
+const GUIWindow* GUIWindow::_currentWindow = nullptr;
+
 //  Стэк контекстов ImGUI. Нужен для корректного возврата к предыдущему
 //  контексту, если потребовалось переключиться на контекст какого-либо окна
-static std::vector<ImGuiContext*> contextStack;
+struct ImGuiContextInfo
+{
+  ImGuiContext* context;
+  const GUIWindow* window;
+};
+static std::vector<ImGuiContextInfo> contextStack;
 
-class ImguiContextSetter
+class GUIWindow::ImguiContextSetter
 {
 public:
-  ImguiContextSetter(ImGuiContext& context):
-    _imguiContext(nullptr)
+  ImguiContextSetter(ImGuiContext& context, const GUIWindow& window)
   {
-    contextStack.push_back(&context);
+    contextStack.push_back(ImGuiContextInfo{&context, &window});
     ImGui::SetCurrentContext(&context);
-    _imguiContext = &context;
+    GUIWindow::_currentWindow = &window;
   }
 
   ~ImguiContextSetter()
   {
-    if(_imguiContext == nullptr) return;
-
     MT_ASSERT(!contextStack.empty());
     contextStack.pop_back();
 
     ImGuiContext* previousContext = nullptr;
+    const GUIWindow* previousWindow = nullptr;
     if(!contextStack.empty())
     {
-      previousContext = contextStack.back();
+      previousContext = contextStack.back().context;
+      previousWindow = contextStack.back().window;
     }
     ImGui::SetCurrentContext(previousContext);
+    GUIWindow::_currentWindow = previousWindow;
   }
-
-private:
-  ImGuiContext* _imguiContext;
 };
 
 GUIWindow::GUIWindow(Device& device, const char* name) :
@@ -49,7 +55,7 @@ GUIWindow::GUIWindow(Device& device, const char* name) :
   _imguiContext(nullptr)
 {
   _imguiContext = ImGui::CreateContext();
-  ImguiContextSetter setter(*_imguiContext);
+  ImguiContextSetter setter(*_imguiContext, *this);
 
   ImGuiIO& imGuiIO = ImGui::GetIO();
   imGuiIO.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -95,17 +101,25 @@ GUIWindow::~GUIWindow() noexcept
 
 void GUIWindow::_clean() noexcept
 {
-  if (_imguiContext != nullptr)
+  try
   {
-    device().presentationQueue()->waitIdle();
+    if (_imguiContext != nullptr)
+    {
+      device().presentationQueue()->waitIdle();
 
-    ImguiContextSetter setter(*_imguiContext);
-    ImGui_ImplGlfw_Shutdown();
-    ImGui_ImplVulkan_Shutdown();
+      ImguiContextSetter setter(*_imguiContext, *this);
+      ImGui_ImplGlfw_Shutdown();
+      ImGui_ImplVulkan_Shutdown();
 
-    ImGui::DestroyContext(_imguiContext);
+      ImGui::DestroyContext(_imguiContext);
 
-    _imguiContext = nullptr;
+      _imguiContext = nullptr;
+    }
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << "GUIWindow::_clean" << error.what();
+    Abort(error.what());
   }
 }
 
@@ -120,7 +134,7 @@ void GUIWindow::update()
   RenderWindow::update();
   if(!isVisible()) return;
 
-  ImguiContextSetter setter(*_imguiContext);
+  ImguiContextSetter setter(*_imguiContext, *this);
 
   ImGui_ImplVulkan_NewFrame();
   ImGui_ImplGlfw_NewFrame();
@@ -136,7 +150,7 @@ void GUIWindow::guiImplementation()
 void GUIWindow::drawImplementation( CommandProducerGraphic& commandProducer,
                                     FrameBuffer& frameBuffer)
 {
-  ImguiContextSetter setter(*_imguiContext);
+  ImguiContextSetter setter(*_imguiContext, *this);
 
   ImGui::Render();
   ImDrawData* draw_data = ImGui::GetDrawData();
@@ -155,7 +169,7 @@ void GUIWindow::applyConfiguration(const WindowConfiguration& configuration)
 
   if(!configuration.imguiConfig.empty())
   {
-    ImguiContextSetter setter(*_imguiContext);
+    ImguiContextSetter setter(*_imguiContext, *this);
     ImGui::LoadIniSettingsFromMemory( configuration.imguiConfig.c_str(),
                                       configuration.imguiConfig.size());
   }
@@ -165,7 +179,7 @@ void GUIWindow::fillConfiguration(WindowConfiguration& configuration) const
 {
   RenderWindow::fillConfiguration(configuration);
 
-  ImguiContextSetter setter(*_imguiContext);
+  ImguiContextSetter setter(*_imguiContext, *this);
   configuration.imguiConfig = ImGui::SaveIniSettingsToMemory();
   ImGuiIO& imGuiIO = ImGui::GetIO();
   imGuiIO.WantSaveIniSettings = false;

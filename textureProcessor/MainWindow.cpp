@@ -82,7 +82,7 @@ void MainWindow::_newProject() noexcept
   try
   {
     _saveIfNeeded();
-    _project.reset(new Project("", *this));
+    _project.reset(new Project(""));
     _updateTitle();
   }
   catch(std::exception& error)
@@ -105,7 +105,7 @@ void MainWindow::_loadProject() noexcept
                             "");
     if(!file.empty())
     {
-      _project.reset(new Project(file, *this));
+      _project.reset(new Project(file));
       _updateTitle();
     }
   }

@@ -1,5 +1,6 @@
 ﻿#include <imgui.h>
 
+#include <gui/GUIWindow.h>
 #include <gui/IMGuiWidgets.h>
 #include <gui/modalDialogs.h>
 #include <resourceManagement/BufferResourceManager.h>
@@ -276,7 +277,7 @@ void TechniquePropertyWidget::_makeTextureGUI()
     {
       fs::path file =
               mt::openFileDialog(
-                          _commonData.ownerWindow,
+                          mt::GUIWindow::currentWindow(),
                           mt::FileFilters{{ .expression = "*.dds",
                                             .description = "DDS image(*.dds)"}},
                           "");
@@ -289,7 +290,7 @@ void TechniquePropertyWidget::_makeTextureGUI()
     catch (std::exception& error)
     {
       mt::Log::error() << error.what();
-      mt::errorDialog(_commonData.ownerWindow, "Error", "Unable to open texture file");
+      mt::errorDialog(mt::GUIWindow::currentWindow(), "Error", "Unable to open texture file");
     }
   }
 }
@@ -302,10 +303,10 @@ void TechniquePropertyWidget::_makeBufferGUI()
     {
       fs::path file =
               mt::openFileDialog(
-                          _commonData.ownerWindow,
-                          mt::FileFilters{{ .expression = "*.bin",
-                                            .description = "Binary files(*.bin)"}},
-                          "");
+                      mt::GUIWindow::currentWindow(),
+                      mt::FileFilters{{ .expression = "*.bin",
+                                        .description = "Binary files(*.bin)"}},
+                      "");
       if(!file.empty())
       {
         _resourcePath = file;
@@ -315,7 +316,7 @@ void TechniquePropertyWidget::_makeBufferGUI()
     catch (std::exception& error)
     {
       mt::Log::error() << error.what();
-      mt::errorDialog(_commonData.ownerWindow, "Error", "Unable to open file");
+      mt::errorDialog(mt::GUIWindow::currentWindow(), "Error", "Unable to open file");
     }
   }
 }

@@ -10,7 +10,6 @@ namespace mt
 
 struct TechniquePropsWidgetCommon
 {
-  const mt::BaseWindow* ownerWindow;
   mt::TextureManager* textureManager;
   mt::BufferResourceManager* bufferManager;
   mt::CommandQueueTransfer* resourceOwnerQueue;
