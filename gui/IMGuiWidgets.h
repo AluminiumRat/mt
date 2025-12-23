@@ -35,8 +35,16 @@ namespace mt
     ImGui::PushID(controlId);
     bool pressed =  ImGui::SmallButton("...");
     ImGui::SameLine();
-    ImGui::Text(mt::pathToUtf8(filePath.filename()).c_str());
-    ImGui::SetItemTooltip(mt::pathToUtf8(filePath).c_str());
+    if(!filePath.empty())
+    {
+      ImGui::Text(mt::pathToUtf8(filePath.filename()).c_str());
+      ImGui::SetItemTooltip(mt::pathToUtf8(filePath).c_str());
+    }
+    else
+    {
+      ImGui::Text("none");
+      ImGui::SetItemTooltip("Click ... to select a file");
+    }
     ImGui::PopID();
     return pressed;
   }

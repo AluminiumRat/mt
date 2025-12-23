@@ -1,14 +1,24 @@
-﻿#include <TechniquePropertyWidget.h>
+﻿#include <imgui.h>
 
-#include <imgui.h>
+#include <gui/IMGuiWidgets.h>
+#include <gui/modalDialogs.h>
+#include <resourceManagement/BufferResourceManager.h>
+#include <resourceManagement/TextureManager.h>
+#include <util/Log.h>
+
+#include <TechniquePropertyWidget.h>
+
+namespace fs = std::filesystem;
 
 TechniquePropertyWidget::TechniquePropertyWidget(
-                                                mt::Technique& technique,
-                                                const std::string& fullName,
-                                                const std::string& shortName) :
+                                mt::Technique& technique,
+                                const std::string& fullName,
+                                const std::string& shortName,
+                                const TechniquePropsWidgetCommon& commonData) :
   _technique(technique),
   _fullName(fullName),
   _shortName(shortName),
+  _commonData(commonData),
   _active(false),
   _unsupportedType(false),
   _uniform(nullptr),
@@ -131,6 +141,36 @@ void TechniquePropertyWidget::_updateUniformValue()
 
 void TechniquePropertyWidget::_updateResource()
 {
+  MT_ASSERT(_resourceBinding != nullptr);
+
+  _resourceBinding->clear();
+
+  if(_resourcePath.empty()) return;
+
+  if(_resourceType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
+  {
+    mt::ConstRef<mt::TechniqueResource> resource =
+            _commonData.textureManager->scheduleLoading(
+                                                _resourcePath,
+                                                *_commonData.resourceOwnerQueue,
+                                                false);
+    _resourceBinding->setResource(resource);
+  }
+  else if(_resourceType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
+  {
+    mt::ConstRef<mt::TechniqueResource> resource =
+            _commonData.bufferManager->scheduleLoading(
+                                              _resourcePath,
+                                              *_commonData.resourceOwnerQueue);
+    _resourceBinding->setResource(resource);
+  }
+  else if(_resourceType == VK_DESCRIPTOR_TYPE_SAMPLER)
+  {
+  }
+  else
+  {
+    mt::Log::error() << "TechniquePropertyWidget::unsupported resource type";
+  }
 }
 
 void TechniquePropertyWidget::makeGUI()
@@ -149,7 +189,7 @@ void TechniquePropertyWidget::makeGUI()
 
   if(_resourceBinding != nullptr)
   {
-    ImGui::Text("Resource");
+    _makeResourceGUI();
     return;
   }
 
@@ -208,4 +248,79 @@ void TechniquePropertyWidget::_makeUniformGUI()
     }
   }
   else ImGui::Text("Unsupported type");
+}
+
+void TechniquePropertyWidget::_makeResourceGUI()
+{
+  switch(_resourceType)
+  {
+  case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+    _makeTextureGUI();
+    break;
+  case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+    _makeBufferGUI();
+    break;
+  case VK_DESCRIPTOR_TYPE_SAMPLER:
+    _makeSamplerGUI();
+    break;
+  default:
+    ImGui::Text("Unsupported type");
+  }
+}
+
+void TechniquePropertyWidget::_makeTextureGUI()
+{
+  if(mt::fileSelectionLine(_fullName.c_str(), _resourcePath))
+  {
+    try
+    {
+      fs::path file =
+              mt::openFileDialog(
+                          _commonData.ownerWindow,
+                          mt::FileFilters{{ .expression = "*.dds",
+                                            .description = "DDS image(*.dds)"}},
+                          "");
+      if(!file.empty())
+      {
+        _resourcePath = file;
+        _updateResource();
+      }
+    }
+    catch (std::exception& error)
+    {
+      mt::Log::error() << error.what();
+      mt::errorDialog(_commonData.ownerWindow, "Error", "Unable to open texture file");
+    }
+  }
+}
+
+void TechniquePropertyWidget::_makeBufferGUI()
+{
+  if(mt::fileSelectionLine(_fullName.c_str(), _resourcePath))
+  {
+    try
+    {
+      fs::path file =
+              mt::openFileDialog(
+                          _commonData.ownerWindow,
+                          mt::FileFilters{{ .expression = "*.bin",
+                                            .description = "Binary files(*.bin)"}},
+                          "");
+      if(!file.empty())
+      {
+        _resourcePath = file;
+        _updateResource();
+      }
+    }
+    catch (std::exception& error)
+    {
+      mt::Log::error() << error.what();
+      mt::errorDialog(_commonData.ownerWindow, "Error", "Unable to open file");
+    }
+  }
+}
+
+void TechniquePropertyWidget::_makeSamplerGUI()
+{
+  ImGui::Text("Sampler");
 }

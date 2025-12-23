@@ -4,6 +4,7 @@
 #include <memory>
 
 #include <TechniquePropertyWidget.h>
+#include <TechniquePropsWidgetCommon.h>
 
 namespace mt
 {
@@ -13,7 +14,8 @@ namespace mt
 class TechniquePropsWidget
 {
 public:
-  explicit TechniquePropsWidget(mt::Technique& technique);
+  explicit TechniquePropsWidget(mt::Technique& technique,
+                                const TechniquePropsWidgetCommon& commonData);
   TechniquePropsWidget(const TechniquePropsWidget&) = delete;
   TechniquePropsWidget& operator = (const TechniquePropsWidget&) = delete;
   virtual ~TechniquePropsWidget() = default;
@@ -29,6 +31,8 @@ private:
 private:
   mt::Technique& _technique;
   size_t _lastConfigurationRevision;
+
+  TechniquePropsWidgetCommon _commonData;
 
   using Subwidgets =
                 std::map<std::string, std::unique_ptr<TechniquePropertyWidget>>;

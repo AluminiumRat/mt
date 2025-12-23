@@ -4,9 +4,12 @@
 
 #include <TechniquePropsWidget.h>
 
-TechniquePropsWidget::TechniquePropsWidget(mt::Technique& technique) :
+TechniquePropsWidget::TechniquePropsWidget(
+                                mt::Technique& technique,
+                                const TechniquePropsWidgetCommon& commonData) :
   _technique(technique),
-  _lastConfigurationRevision(0)
+  _lastConfigurationRevision(0),
+  _commonData(commonData)
 {
   _updateFromTechnique();
 }
@@ -55,7 +58,10 @@ void TechniquePropsWidget::_addSubwidget( const std::string& fullName,
   if(iWidget != _subwidgets.end()) return;
 
   std::unique_ptr<TechniquePropertyWidget> newWidget(
-                  new TechniquePropertyWidget(_technique, fullName, shortName));
+                                      new TechniquePropertyWidget(_technique,
+                                                                  fullName,
+                                                                  shortName,
+                                                                  _commonData));
   _subwidgets[fullName] = std::move(newWidget);
 }
 

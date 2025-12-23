@@ -10,12 +10,15 @@
 #include <technique/TechniqueResource.h>
 #include <technique/UniformVariable.h>
 
+#include <TechniquePropsWidgetCommon.h>
+
 class TechniquePropertyWidget
 {
 public:
   TechniquePropertyWidget(mt::Technique& technique,
                           const std::string& fullName,
-                          const std::string& shortName);
+                          const std::string& shortName,
+                          const TechniquePropsWidgetCommon& commonData);
   TechniquePropertyWidget(const TechniquePropertyWidget&) = delete;
   TechniquePropertyWidget& operator = (const TechniquePropertyWidget&) = delete;
   ~TechniquePropertyWidget() noexcept = default;
@@ -36,11 +39,18 @@ private:
   void _updateUniformValue();
   void _updateResource();
   void _makeUniformGUI();
+  void _makeResourceGUI();
+  void _makeTextureGUI();
+  void _makeBufferGUI();
+  void _makeSamplerGUI();
 
 private:
   mt::Technique& _technique;
   std::string _fullName;
   std::string _shortName;
+
+  const TechniquePropsWidgetCommon& _commonData;
+
   bool _active;
   bool _unsupportedType;
 

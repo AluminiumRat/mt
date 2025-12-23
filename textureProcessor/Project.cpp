@@ -103,7 +103,12 @@ Project::Project( const fs::path& file,
                                         Application::instance().primaryDevice(),
                                         "Make texture technique")),
   _technique(new mt::Technique(*_configurator)),
-  _propsWidget(*_technique)
+  _propsWidget( *_technique,
+                TechniquePropsWidgetCommon{
+                        &parentWindow,
+                        &Application::instance().textureManager(),
+                        &Application::instance().bufferManager(),
+                        Application::instance().primaryDevice().graphicQueue()})
 {
   if(!_projectFile.empty())
   {
@@ -243,7 +248,8 @@ void Project::_selectShader() noexcept
   try
   {
     fs::path file =
-        mt::openFileDialog( &_parentWindow,
+        mt::openFileDialog(
+                    &_parentWindow,
                     mt::FileFilters{{ .expression = "*.frag",
                                       .description = "Fragment shader(*.frag)"}},
                     "");
@@ -324,10 +330,11 @@ void Project::_selectOutputFile() noexcept
   try
   {
     fs::path file =
-        mt::saveFileDialog( &_parentWindow,
-                    mt::FileFilters{{ .expression = "*.dds",
-                                      .description = "DDS image(*.dds)"}},
-                    "");
+        mt::saveFileDialog(
+                          &_parentWindow,
+                          mt::FileFilters{{ .expression = "*.dds",
+                                            .description = "DDS image(*.dds)"}},
+                          "");
     if(!file.empty())
     {
       if (!file.has_extension()) file.replace_extension("dds");
