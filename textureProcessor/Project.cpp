@@ -6,8 +6,10 @@
 #include <yaml-cpp/yaml.h>
 
 #include <asyncTask/AsyncTask.h>
+#include <gui/IMGuiWidgets.h>
 #include <gui/modalDialogs.h>
 #include <util/Assert.h>
+#include <util/fileSystemHelpers.h>
 #include <vkr/image/ImageFormatFeatures.h>
 
 #include <Application.h>
@@ -89,59 +91,6 @@ private:
   std::unordered_set<fs::path> _usedFiles;
 };
 
-//  Перевести pathToSave в формат, пригодный для сохранения в файле проекта
-//  Если pathToSave - это абсолютный путь и pathToSave лежит в projectFolder
-//    или её подпапке, то возвращает путь относительно projectFolder, иначе
-//    возвращает исходный pathToSave
-fs::path makeStoredPath(const fs::path& pathToSave,
-                        const fs::path& projectFolder)
-{
-  if(pathToSave.empty()) return pathToSave;
-  if (!pathToSave.is_absolute()) return pathToSave;
-  MT_ASSERT(projectFolder.is_absolute());
-
-  fs::path normalizedPath = pathToSave.lexically_normal();
-  fs::path projectFolderNorm = projectFolder.lexically_normal();
-
-  auto [mismatchInFile, mismatchInFolder] =
-                                        std::mismatch(normalizedPath.begin(),
-                                                      normalizedPath.end(),
-                                                      projectFolderNorm.begin(),
-                                                      projectFolderNorm.end());
-  //  Проверяем, а лежит ли файл в указанной папке
-  if(mismatchInFolder != projectFolderNorm.end()) return pathToSave;
-
-  //  Восстанавливаем относительный путь от точки расхождения
-  fs::path storedPath;
-  for(fs::path::const_iterator iPath = mismatchInFile;
-      iPath != normalizedPath.end();
-      iPath++)
-  {
-    storedPath = storedPath  / *iPath;
-  }
-  return storedPath;
-}
-
-std::string pathToUtf8(const fs::path& path)
-{
-  return (const char*)path.u8string().c_str();
-}
-
-//  Восстановить путь для файла из сохраненного в файле проекта
-fs::path restoreAbsolutePath( const fs::path& storedPath,
-                              const fs::path& projectFolder)
-{
-  if (storedPath.empty()) return storedPath;
-  if (storedPath.is_absolute()) return storedPath;
-  MT_ASSERT(projectFolder.is_absolute());
-  return projectFolder / storedPath;
-}
-
-fs::path utf8ToPath(const std::string& filename)
-{
-  return fs::path((char8_t*)filename.c_str());
-}
-
 Project::Project( const fs::path& file,
                   const mt::BaseWindow& parentWindow) :
   _projectFile(file),
@@ -175,14 +124,14 @@ void Project::_load()
 
   {
     std::string shaderFilename = rootNode["shader"].as<std::string>("");
-    _shaderFile = utf8ToPath(shaderFilename);
-    _shaderFile = restoreAbsolutePath(_shaderFile, projectFolder);
+    _shaderFile = mt::utf8ToPath(shaderFilename);
+    _shaderFile = mt::restoreAbsolutePath(_shaderFile, projectFolder);
   }
 
   {
     std::string outputFilename = rootNode["output"].as<std::string>("");
-    _outputFile = utf8ToPath(outputFilename);
-    _outputFile = restoreAbsolutePath(_outputFile, projectFolder);
+    _outputFile = mt::utf8ToPath(outputFilename);
+    _outputFile = mt::restoreAbsolutePath(_outputFile, projectFolder);
   }
 
   {
@@ -219,10 +168,12 @@ void Project::save(const fs::path& file)
   YAML::Emitter out;
   out << YAML::BeginMap;
   out << YAML::Key << "shader";
-  out << YAML::Value << pathToUtf8(makeStoredPath(_shaderFile, projectFolder));
+  out << YAML::Value << mt::pathToUtf8(mt::makeStoredPath(_shaderFile,
+                                                          projectFolder));
 
   out << YAML::Key << "output";
-  out << YAML::Value << pathToUtf8(makeStoredPath(_outputFile, projectFolder));
+  out << YAML::Value << mt::pathToUtf8(mt::makeStoredPath(_outputFile,
+                                                          projectFolder));
 
   const mt::ImageFormatFeatures& formatDescription =
                                             mt::getFormatFeatures(_imageFormat);
@@ -270,18 +221,6 @@ void Project::onFileChanged(const fs::path&,
   if(eventType != FILE_DISAPPEARANCE) rebuildTechnique();
 }
 
-bool fileSelectionLine( const char* controlId,
-                        const fs::path& filePath) noexcept
-{
-  ImGui::PushID(controlId);
-  bool pressed =  ImGui::SmallButton("...");
-  ImGui::SameLine();
-  ImGui::Text(pathToUtf8(filePath.filename()).c_str());
-  ImGui::SetItemTooltip(pathToUtf8(filePath).c_str());
-  ImGui::PopID();
-  return pressed;
-}
-
 VkFormat formatSelectionLine(VkFormat currentFormat)
 {
   struct FormatRecord
@@ -326,7 +265,7 @@ void Project::guiPass()
 
   ImGui::Text("Shader:");
   ImGui::SameLine();
-  if(fileSelectionLine("Shader:", _shaderFile)) _selectShader();
+  if(mt::fileSelectionLine("Shader:", _shaderFile)) _selectShader();
 
   ImGui::SeparatorText("Output");
   _guiOutputProps();
@@ -373,7 +312,7 @@ void Project::_guiOutputProps() noexcept
   ImGui::TableSetColumnIndex(0);
   ImGui::Text("File:");
   ImGui::TableSetColumnIndex(1);
-  if (fileSelectionLine("File:", _outputFile)) _selectOutputFile();
+  if (mt::fileSelectionLine("File:", _outputFile)) _selectOutputFile();
 
   ImGui::TableNextRow();
   ImGui::TableSetColumnIndex(0);
