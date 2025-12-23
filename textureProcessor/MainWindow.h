@@ -18,6 +18,7 @@ protected:
   virtual void guiImplementation() override;
   virtual void drawImplementation(mt::CommandProducerGraphic& commandProducer,
                                   mt::FrameBuffer& frameBuffer) override;
+  virtual bool canClose() noexcept override;
 
 private:
   void _processMainMenu();

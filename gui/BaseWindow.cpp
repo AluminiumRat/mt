@@ -61,6 +61,11 @@ void BaseWindow::cleanup() noexcept
   GUILib::instance().unregisterWindow(*this);
 }
 
+bool BaseWindow::canClose() noexcept
+{
+  return true;
+}
+
 void BaseWindow::onClose() noexcept
 {
 }
@@ -68,6 +73,12 @@ void BaseWindow::onClose() noexcept
 void BaseWindow::close() noexcept
 {
   if (isClosed()) return;
+
+  if(!canClose())
+  {
+    glfwSetWindowShouldClose(_handle, 0);
+    return;
+  }
 
   try
   {

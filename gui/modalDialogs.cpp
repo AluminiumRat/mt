@@ -197,6 +197,29 @@ bool mt::yesNoQuestionDialog( const BaseWindow* ownerWindow,
   }
 }
 
+mt::QuestionButton mt::yesNoCancelDialog( const BaseWindow* ownerWindow,
+                                          const char* caption,
+                                          const char* question)  noexcept
+{
+  try
+  {
+    int answer = MessageBoxW( getHWND(ownerWindow),
+                              utf8ToUtf16(question).c_str(),
+                              utf8ToUtf16(caption).c_str(),
+                              MB_ICONQUESTION |
+                                MB_YESNOCANCEL |
+                                MB_DEFBUTTON3);
+    if(answer == IDYES) return YES_BUTTON;
+    if(answer == IDNO) return NO_BUTTON;
+    return CANCEL_BUTTON;
+  }
+  catch (std::exception& error)
+  {
+    Log::error() << "yesNoQuestionDialog: " << error.what();
+    return CANCEL_BUTTON;
+  }
+}
+
 #else
 void mt::errorDialog( const BaseWindow* ownerWindow,
                       const char* caption,
@@ -209,6 +232,13 @@ bool mt::yesNoQuestionDialog( const BaseWindow* ownerWindow,
                               const char* caption,
                               const char* question,
                               bool defaultValue)  noexcept
+{
+  Abort("Not implemented");
+}
+
+mt::QuestionButton mt::yesNoCancelDialog( const BaseWindow* ownerWindow,
+                                          const char* caption,
+                                          const char* question)  noexcept
 {
   Abort("Not implemented");
 }

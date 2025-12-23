@@ -25,6 +25,19 @@ namespace mt
                             const char* question,
                             bool defaultValue)  noexcept;
 
+  //  Диалог с вопросом, на который пользователь может ответить только
+  //    "Да" ,"Нет" или "отменить"
+  //  Параметр question в UTF8
+  enum QuestionButton
+  {
+    YES_BUTTON,
+    NO_BUTTON,
+    CANCEL_BUTTON
+  };
+  QuestionButton yesNoCancelDialog( const BaseWindow* ownerWindow,
+                                    const char* caption,
+                                    const char* question)  noexcept;
+
   // Фильтр для выбора типа файла в диаоге
   struct FileFilter
   {

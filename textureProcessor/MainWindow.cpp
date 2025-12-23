@@ -1,4 +1,5 @@
-﻿#include <fstream>
+﻿#include <stdexcept>
+#include <fstream>
 #include <memory>
 
 #include <vulkan/vulkan.h>
@@ -6,6 +7,7 @@
 #include <ddsSupport/ddsSupport.h>
 #include <gui/modalDialogs.h>
 #include <technique/TechniqueLoader.h>
+#include <util/Log.h>
 #include <vkr/image/ImageFormatFeatures.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/Device.h>
@@ -192,4 +194,24 @@ void MainWindow::drawImplementation(mt::CommandProducerGraphic& commandProducer,
   renderPass.endPass();
 
   GUIWindow::drawImplementation(commandProducer, frameBuffer);
+}
+
+bool MainWindow::canClose() noexcept
+{
+  try
+  {
+    if(_project == nullptr) return true;
+    mt::QuestionButton button = yesNoCancelDialog(
+                                                this,
+                                                "Exit",
+                                                "Do you want to save project?");
+    if(button == mt::YES_BUTTON) _saveProject();
+    if(button == mt::CANCEL_BUTTON) return false;
+    return true;
+  }
+  catch(std::exception& error)
+  {
+    mt::Log::error() << error.what();
+  }
+  return true;
 }
