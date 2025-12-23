@@ -221,44 +221,6 @@ void Project::onFileChanged(const fs::path&,
   if(eventType != FILE_DISAPPEARANCE) rebuildTechnique();
 }
 
-VkFormat formatSelectionLine(VkFormat currentFormat)
-{
-  struct FormatRecord
-  {
-    const char* name;
-    VkFormat format;
-  };
-  static FormatRecord formats[] = {
-                      {"B8G8R8A8_SRGB",VK_FORMAT_B8G8R8A8_SRGB},
-                      {"R32G32B32A32_SFLOAT", VK_FORMAT_R32G32B32A32_SFLOAT}};
-
-  //  Ищем надпись для превью
-  const char* previewText = "none";
-  for(const FormatRecord& formatRecord : formats)
-  {
-    if(currentFormat == formatRecord.format)
-    {
-      previewText = formatRecord.name;
-      break;
-    }
-  }
-
-  //  Собственно, сам комбо бокс
-  if(ImGui::BeginCombo( "##format", previewText, 0))
-  {
-    for(const FormatRecord& formatRecord : formats)
-    {
-      if(ImGui::Selectable( formatRecord.name,
-                            currentFormat == formatRecord.format))
-      {
-        currentFormat = formatRecord.format;
-      }
-    }
-    ImGui::EndCombo();
-  }
-  return currentFormat;
-}
-
 void Project::guiPass()
 {
   if(!ImGui::Begin("Project")) return;
@@ -296,6 +258,17 @@ void Project::_selectShader() noexcept
     mt::Log::error() << error.what();
     mt::errorDialog(&_parentWindow, "Error", "Unable to open shader file");
   }
+}
+
+VkFormat formatSelectionLine(VkFormat currentFormat)
+{
+  static const mt::Bimap<VkFormat> formats{
+    "Output formats",
+    {
+      {VK_FORMAT_B8G8R8A8_SRGB, "B8G8R8A8_SRGB"},
+      {VK_FORMAT_R32G32B32A32_SFLOAT, "R32G32B32A32_SFLOAT"}
+    }};
+  return mt::enumSelectionCombo("##format", currentFormat, formats);
 }
 
 void Project::_guiOutputProps() noexcept

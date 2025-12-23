@@ -13,6 +13,10 @@ namespace mt
   class Bimap
   {
   public:
+    using const_iterator =
+                      std::unordered_map<std::string, EnumType>::const_iterator;
+
+  public:
     inline Bimap(
           const char* debugName,
           std::initializer_list<std::pair<EnumType, const char*>> init);
@@ -25,6 +29,10 @@ namespace mt
 
     inline EnumType operator [](const std::string& name) const;
     inline const std::string& operator [](EnumType value) const;
+
+    inline size_t size() const noexcept;
+    inline const_iterator begin() const noexcept;
+    inline const_iterator end() const noexcept;
 
   private:
     std::unordered_map<EnumType, std::string> _toString;
@@ -62,5 +70,23 @@ namespace mt
     auto i = _toString.find(value);
     if (i == _toString.end()) throw std::runtime_error(_debugName + ": unknown value: " + std::to_string((int)value));
     return i->second;
+  }
+
+  template <typename EnumType>
+  inline size_t Bimap<EnumType>::size() const noexcept
+  {
+    return _toEnum.size();
+  }
+
+  template <typename EnumType>
+  inline Bimap<EnumType>::const_iterator Bimap<EnumType>::begin() const noexcept
+  {
+    return _toEnum.begin();
+  }
+
+  template <typename EnumType>
+  inline Bimap<EnumType>::const_iterator Bimap<EnumType>::end() const noexcept
+  {
+    return _toEnum.end();
   }
 }
