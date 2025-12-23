@@ -95,6 +95,9 @@ namespace mt
 
     inline const std::string& debugName() const noexcept;
 
+    inline const TechniqueConfigurator& configurator() const noexcept;
+    inline const TechniqueConfiguration* configuration() const noexcept;
+
   private:
     friend class TechniqueConfigurator;
     void updateConfiguration();
@@ -214,5 +217,15 @@ namespace mt
   inline const std::string& Technique::debugName() const noexcept
   {
     return _debugName;
+  }
+
+  inline const TechniqueConfigurator& Technique::configurator() const noexcept
+  {
+    return *_configurator;
+  }
+
+  inline const TechniqueConfiguration* Technique::configuration() const noexcept
+  {
+    return _configuration.get();
   }
 }

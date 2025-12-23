@@ -14,7 +14,9 @@ add_executable (textureProcessor
                 "Application.cpp"
                 "main.cpp"
                 "MainWindow.cpp"
-                "Project.cpp")
+                "Project.cpp"
+                "TechniquePropertyWidget.cpp"
+                "TechniquePropsWidget.cpp")
 
 target_link_libraries(textureProcessor
                       ${Vulkan_LIBRARIES}

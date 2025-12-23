@@ -154,6 +154,7 @@ namespace mt
     std::string _debugName;
 
     Ref<TechniqueConfiguration> _configuration;
+    size_t _configurationRevision;
     mutable SpinLock _configurationMutex;
 
     Passes _passes;

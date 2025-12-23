@@ -9,6 +9,8 @@
 #include <technique/Technique.h>
 #include <util/Ref.h>
 
+#include <TechniquePropsWidget.h>
+
 namespace mt
 {
   class BaseWindow;
@@ -58,6 +60,8 @@ private:
 
   mt::Ref<mt::TechniqueConfigurator> _configurator;
   mt::Ref<mt::Technique> _technique;
+
+  TechniquePropsWidget _propsWidget;
 
   std::unique_ptr<mt::AsyncTaskQueue::TaskHandle> _rebuildTaskHandle;
 };

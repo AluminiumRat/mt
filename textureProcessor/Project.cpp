@@ -153,7 +153,8 @@ Project::Project( const fs::path& file,
   _configurator(new mt::TechniqueConfigurator(
                                         Application::instance().primaryDevice(),
                                         "Make texture technique")),
-  _technique(new mt::Technique(*_configurator))
+  _technique(new mt::Technique(*_configurator)),
+  _propsWidget(*_technique)
 {
   if(!_projectFile.empty())
   {
@@ -329,6 +330,9 @@ void Project::guiPass()
 
   ImGui::SeparatorText("Output");
   _guiOutputProps();
+
+  ImGui::SeparatorText("Shader properties");
+  _propsWidget.makeGUI();
 
   ImGui::End();
 }

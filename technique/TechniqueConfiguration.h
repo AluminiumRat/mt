@@ -57,7 +57,6 @@ namespace mt
     //    для vec4 - FLOAT_TYPE
     enum BaseScalarType
     {
-      BOOL_TYPE,
       INT_TYPE,
       FLOAT_TYPE,
       UNKNOWN_TYPE    //  Базовый тип не найден (например для массива структур)
@@ -134,5 +133,8 @@ namespace mt
     };
     using Samplers = std::vector<DefaultSampler>;
     Samplers defaultSamplers;
+
+    //  Уникальный номер конфигурации в рамках одного конфигуратора.
+    size_t revision = 0;
   };
 }

@@ -14,7 +14,8 @@ using namespace mt;
 TechniqueConfigurator::TechniqueConfigurator( Device& device,
                                               const char* debugName) :
   _device(device),
-  _debugName(debugName)
+  _debugName(debugName),
+  _configurationRevision(0)
 {
 }
 
@@ -61,6 +62,7 @@ void TechniqueConfigurator::rebuildOnlyConfiguration(
 
   {
     std::lock_guard lock(_configurationMutex);
+    context.configuration->revision = ++_configurationRevision;
     _configuration = context.configuration;
   }
 }

@@ -454,11 +454,7 @@ void PassConfigurator::_parseUniformBlockMember(
   newUniform.size = sourceMember.size;
 
   // Определяем базовый тип
-  if(type->type_flags & SPV_REFLECT_TYPE_FLAG_BOOL)
-  {
-    newUniform.baseType = TechniqueConfiguration::BOOL_TYPE;
-  }
-  else if (type->type_flags & SPV_REFLECT_TYPE_FLAG_INT)
+  if (type->type_flags & SPV_REFLECT_TYPE_FLAG_INT)
   {
     newUniform.baseType = TechniqueConfiguration::INT_TYPE;
   }
