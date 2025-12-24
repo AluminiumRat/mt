@@ -20,24 +20,6 @@ namespace mt
     VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
   };
 
-  struct SamplerSettings
-  {
-    VkFilter magFilter = VK_FILTER_NEAREST;
-    VkFilter minFilter = VK_FILTER_NEAREST;
-    VkSamplerMipmapMode mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-    VkSamplerAddressMode addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    VkSamplerAddressMode addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    VkSamplerAddressMode addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    float mipLodBias = 0;
-    bool anisotropyEnable = false;
-    float maxAnisotropy = 1;
-    bool compareEnable = false;
-    VkCompareOp compareOp = VK_COMPARE_OP_NEVER;
-    float minLod = 0;
-    float maxLod = VK_LOD_CLAMP_NONE;
-    VkBorderColor borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
-    bool unnormalizedCoordinates = false;
-  };
 
   //  Загрузить настройки техники из отдельной YAML ноды
   static void loadConfigurator( TechniqueConfigurator& target,
@@ -74,10 +56,14 @@ namespace mt
   static void loadDefaultSamplers(YAML::Node techniqueNode,
                                   TechniqueConfigurator& target,
                                   std::unordered_set<fs::path>* usedFiles);
-  //  Загрузить настройки сэмплера
+  //  Загрузить настройки сэмплера, полная версия с наследованием
   static void updateSamplerSettings(YAML::Node samplerNode,
-                                    SamplerSettings& target,
+                                    SamplerDescription& target,
                                     std::unordered_set<fs::path>* usedFiles);
+  //  Загрузить настройки сэмплера без ссылок на внешние файлы и наследования
+  //  свойств
+  void loadSamplerDescription(YAML::Node samplerNode,
+                              SamplerDescription& target);
   static std::vector<fs::path> getInheritanceSources(YAML::Node optionsNode);
 
   YAML::Node readFile(const fs::path& file,
@@ -669,27 +655,11 @@ namespace mt
       TechniqueConfiguration::DefaultSampler sampler;
       sampler.resourceName = iSampler->first.as<std::string>("");
 
-      SamplerSettings samplerSettings;
-      updateSamplerSettings(iSampler->second, samplerSettings, usedFiles);
+      SamplerDescription samplerDescription;
+      updateSamplerSettings(iSampler->second, samplerDescription, usedFiles);
 
-      sampler.defaultSampler =
-                      ConstRef(new Sampler(
-                                      target.device(),
-                                      samplerSettings.magFilter,
-                                      samplerSettings.minFilter,
-                                      samplerSettings.mipmapMode,
-                                      samplerSettings.addressModeU,
-                                      samplerSettings.addressModeV,
-                                      samplerSettings.addressModeW,
-                                      samplerSettings.mipLodBias,
-                                      samplerSettings.anisotropyEnable,
-                                      samplerSettings.maxAnisotropy,
-                                      samplerSettings.compareEnable,
-                                      samplerSettings.compareOp,
-                                      samplerSettings.minLod,
-                                      samplerSettings.maxLod,
-                                      samplerSettings.borderColor,
-                                      samplerSettings.unnormalizedCoordinates));
+      sampler.defaultSampler = ConstRef(new Sampler(target.device(),
+                                                    samplerDescription));
       samplers.push_back(sampler);
     }
 
@@ -697,7 +667,7 @@ namespace mt
   }
 
   static void updateSamplerSettings(YAML::Node samplerNode,
-                                    SamplerSettings& target,
+                                    SamplerDescription& target,
                                     std::unordered_set<fs::path>* usedFiles)
   {
     // Для начала прогружаем унаследованные настройки
@@ -717,6 +687,13 @@ namespace mt
     }
 
     // Дальше грузим собственные настройки
+    loadSamplerDescription(samplerNode, target);
+  }
+
+  //  Загрузить настройки сэмплера без ссылок на внешние файлы и наследования
+  //  свойств
+  void loadSamplerDescription(YAML::Node samplerNode, SamplerDescription& target)
+  {
     if(samplerNode["magFilter"].IsScalar())
     {
       std::string valueStr =
@@ -807,6 +784,13 @@ namespace mt
       target.unnormalizedCoordinates =
                         samplerNode["unnormalizedCoordinates"].as<bool>(false);
     }
+  }
+
+  SamplerDescription loadSamplerDescription(const YAML::Node& samplerNode)
+  {
+    SamplerDescription result;
+    loadSamplerDescription(samplerNode, result);
+    return result;
   }
 
   //  Обрабатывает строки вида:

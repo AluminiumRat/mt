@@ -107,7 +107,8 @@ Project::Project( const fs::path& file) :
                 TechniquePropsWidgetCommon{
                         &Application::instance().textureManager(),
                         &Application::instance().bufferManager(),
-                        Application::instance().primaryDevice().graphicQueue()})
+                        Application::instance().primaryDevice().graphicQueue(),
+                        &_projectFile})
 {
   if(!_projectFile.empty())
   {
@@ -157,6 +158,9 @@ void Project::_load()
 
   _arraySize = rootNode["outputArraySize"].as<int32_t>(_arraySize);
   _arraySize = glm::clamp(_arraySize, 1, 16536);
+
+  YAML::Node shaderPropsNode = rootNode["shaderProps"];
+  _propsWidget.load(shaderPropsNode);
 }
 
 Project::~Project() noexcept
@@ -194,6 +198,10 @@ void Project::save(const fs::path& file)
 
   out << YAML::Key << "outputArraySize";
   out << YAML::Value << _arraySize;
+
+  out << YAML::Key << "shaderProps";
+  out << YAML::Value;
+  _propsWidget.save(out);
 
   out << YAML::EndMap;
 

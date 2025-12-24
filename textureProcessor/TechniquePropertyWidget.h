@@ -14,6 +14,13 @@
 
 #include <TechniquePropsWidgetCommon.h>
 
+namespace YAML
+{
+  class Emitter;
+  class Node;
+};
+
+
 class TechniquePropertyWidget
 {
 public:
@@ -32,6 +39,12 @@ public:
 
   void makeGUI();
   void updateFromTechnique();
+
+  void save(YAML::Emitter& target) const;
+
+  static std::string readFullName(const YAML::Node& source);
+  static std::string readShortName(const YAML::Node& source);
+  void load(const YAML::Node& source);
 
 private:
   enum SamplerMode
@@ -61,6 +74,12 @@ private:
   void _makeSamplerGUI();
   void _samplerModeGUI();
   void _customSamplerGUI();
+  void _saveUniform(YAML::Emitter& target) const;
+  void _saveResource(YAML::Emitter& target) const;
+  void _saveSampler(YAML::Emitter& target) const;
+  void _readUniform(const YAML::Node& source);
+  void _readResource(const YAML::Node& source);
+  void _readSampler(const YAML::Node& source);
 
 private:
   mt::Technique& _technique;

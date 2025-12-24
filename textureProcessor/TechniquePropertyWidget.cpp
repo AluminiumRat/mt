@@ -1,11 +1,15 @@
 ﻿#include <imgui.h>
 
+#include <yaml-cpp/yaml.h>
+
 #include <gui/GUIWindow.h>
 #include <gui/ImGuiPropertyGrid.h>
 #include <gui/ImGuiWidgets.h>
 #include <gui/modalDialogs.h>
+#include <technique/TechniqueLoader.h>
 #include <resourceManagement/BufferResourceManager.h>
 #include <resourceManagement/TextureManager.h>
+#include <util/fileSystemHelpers.h>
 #include <util/Log.h>
 #include <util/vkMeta.h>
 
@@ -124,7 +128,7 @@ const mt::TechniqueConfiguration::Resource*
 
 void TechniquePropertyWidget::_updateUniformValue()
 {
-  MT_ASSERT(_uniform != nullptr);
+  if(_uniform == nullptr) return;
 
   if (_scalarType == mt::TechniqueConfiguration::INT_TYPE)
   {
@@ -144,7 +148,7 @@ void TechniquePropertyWidget::_updateUniformValue()
 
 void TechniquePropertyWidget::_updateResource()
 {
-  MT_ASSERT(_resourceBinding != nullptr);
+  if(_resourceBinding == nullptr) return;
 
   _resourceBinding->clear();
 
@@ -465,4 +469,206 @@ void TechniquePropertyWidget::_customSamplerGUI()
   update |= ImGui::Checkbox("##UCoord", &description.unnormalizedCoordinates);
 
   if(update) _updateResource();
+}
+
+void TechniquePropertyWidget::save(YAML::Emitter& target) const
+{
+  target << YAML::BeginMap;
+
+  target << YAML::Key << "fullName";
+  target << YAML::Value << _fullName;
+
+  target << YAML::Key << "shortName";
+  target << YAML::Value << _shortName;
+
+  target << YAML::Key << "type";
+  if(_uniform != nullptr)
+  {
+    target << YAML::Value << "uniform";
+    _saveUniform(target);
+  }
+  else if ( _resourceBinding != nullptr &&
+            _resourceType == VK_DESCRIPTOR_TYPE_SAMPLER)
+  {
+    target << YAML::Value << "sampler";
+    _saveSampler(target);
+  }
+  else if(_resourceBinding != nullptr)
+  {
+    target << YAML::Value << "resource";
+    _saveResource(target);
+  }
+  else
+  {
+    target << YAML::Value << "unknown";
+  }
+
+  target << YAML::EndMap;
+}
+
+void TechniquePropertyWidget::_saveUniform(YAML::Emitter& target) const
+{
+  if(_scalarType == mt::TechniqueConfiguration::FLOAT_TYPE)
+  {
+    target << YAML::Key << "float";
+    std::vector<float> valueSequence( &_floatValue[0],
+                                      &_floatValue[0] + _vectorSize);
+    target << YAML::Value << YAML::Flow << valueSequence;
+  }
+  else
+  {
+    target << YAML::Key << "int";
+    std::vector<int> valueSequence( &_intValue[0], &_intValue[0] + _vectorSize);
+    target << YAML::Value << YAML::Flow << valueSequence;
+  }
+}
+
+void TechniquePropertyWidget::_saveResource(YAML::Emitter& target) const
+{
+  fs::path projectFolder = _commonData.projectFile->parent_path();
+  target << YAML::Key << "file";
+  target << YAML::Value << mt::pathToUtf8(mt::makeStoredPath( _resourcePath,
+                                                              projectFolder));
+}
+
+void TechniquePropertyWidget::_saveSampler(YAML::Emitter& target) const
+{
+  if(_samplerValue == nullptr) return;
+
+  target << YAML::Key << "default";
+  target << YAML::Value << (_samplerValue->mode == DEFAULT_SAMPLER_MODE);
+
+  if(_samplerValue->mode == DEFAULT_SAMPLER_MODE) return;
+
+  const mt::SamplerDescription& description = _samplerValue->description;
+
+  target << YAML::Key << "magFilter";
+  target << YAML::Value << mt::filterMap[description.magFilter];
+
+  target << YAML::Key << "minFilter";
+  target << YAML::Value << mt::filterMap[description.minFilter];
+
+  target << YAML::Key << "mipmapMode";
+  target << YAML::Value << mt::mipmapModeMap[description.mipmapMode];
+
+  target << YAML::Key << "addressModeU";
+  target << YAML::Value << mt::addressModeMap[description.addressModeU];
+
+  target << YAML::Key << "addressModeV";
+  target << YAML::Value << mt::addressModeMap[description.addressModeV];
+
+  target << YAML::Key << "addressModeW";
+  target << YAML::Value << mt::addressModeMap[description.addressModeW];
+
+  target << YAML::Key << "mipLodBias";
+  target << YAML::Value << description.mipLodBias;
+
+  target << YAML::Key << "anisotropyEnable";
+  target << YAML::Value << description.anisotropyEnable;
+
+  target << YAML::Key << "maxAnisotropy";
+  target << YAML::Value << description.maxAnisotropy;
+
+  target << YAML::Key << "compareEnable";
+  target << YAML::Value << description.compareEnable;
+
+  target << YAML::Key << "compareOp";
+  target << YAML::Value << mt::compareOpMap[description.compareOp];
+
+  target << YAML::Key << "minLod";
+  target << YAML::Value << description.minLod;
+
+  target << YAML::Key << "maxLod";
+  target << YAML::Value << description.maxLod;
+
+  target << YAML::Key << "borderColor";
+  target << YAML::Value << mt::borderColorMap[description.borderColor];
+
+  target << YAML::Key << "unnormalizedCoordinates";
+  target << YAML::Value << description.unnormalizedCoordinates;
+}
+
+std::string TechniquePropertyWidget::readFullName(const YAML::Node& source)
+{
+  return source["fullName"].as<std::string>("");
+}
+
+std::string TechniquePropertyWidget::readShortName(const YAML::Node& source)
+{
+  return source["shortName"].as<std::string>("");
+}
+
+void TechniquePropertyWidget::load(const YAML::Node& source)
+{
+  std::string type = source["type"].as<std::string>("no type");
+  if(type == "uniform")
+  {
+    _readUniform(source);
+    _updateUniformValue();
+  }
+  else if (type == "resource")
+  {
+    _readResource(source);
+    _updateResource();
+  }
+  else if (type == "sampler")
+  {
+    _readSampler(source);
+    _updateResource();
+  }
+  else throw std::runtime_error(_fullName + ": unknown property type: " + type);
+}
+
+void TechniquePropertyWidget::_readUniform(const YAML::Node& source)
+{
+  YAML::Node floatNode = source["float"];
+  if(floatNode.IsDefined() && floatNode.IsSequence())
+  {
+    int valueIndex = 0;
+    for(YAML::Node valueNode : floatNode)
+    {
+      _floatValue[valueIndex] = valueNode.as<float>(1.0f);
+      valueIndex++;
+      if(valueIndex == 4) break;
+    }
+  }
+
+  YAML::Node intNode = source["int"];
+  if(intNode.IsDefined() && intNode.IsSequence())
+  {
+    int valueIndex = 0;
+    for(YAML::Node valueNode : intNode)
+    {
+      _intValue[valueIndex] = valueNode.as<int>(1);
+      valueIndex++;
+      if(valueIndex == 4) break;
+    }
+  }
+}
+
+void TechniquePropertyWidget::_readResource(const YAML::Node& source)
+{
+  YAML::Node fileNode = source["file"];
+  if(!fileNode.IsDefined()) return;
+
+  std::string filename = fileNode.as<std::string>("");
+
+  _resourcePath = mt::utf8ToPath(filename);
+  fs::path projectFolder = _commonData.projectFile->parent_path();
+  _resourcePath = mt::restoreAbsolutePath(_resourcePath, projectFolder);
+}
+
+void TechniquePropertyWidget::_readSampler(const YAML::Node& source)
+{
+  SamplerValue& samplerValue = getSamplerValue();
+
+  bool isDefault = source["default"].as<bool>(true);
+  if(isDefault)
+  {
+    samplerValue.mode = DEFAULT_SAMPLER_MODE;
+    return;
+  }
+
+  samplerValue.mode = CUSTOM_SAMPLER_MODE;
+  samplerValue.description = mt::loadSamplerDescription(source);
 }

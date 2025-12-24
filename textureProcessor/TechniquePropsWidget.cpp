@@ -2,6 +2,8 @@
 
 #include <imgui.h>
 
+#include <yaml-cpp/yaml.h>
+
 #include <gui/ImGuiPropertyGrid.h>
 
 #include <TechniquePropsWidget.h>
@@ -88,5 +90,47 @@ void TechniquePropsWidget::makeGUI()
     techniquePropsGrid.addRow(widget->shortName().c_str(),
                               widget->fullName().c_str());
     widget->makeGUI();
+  }
+}
+
+void TechniquePropsWidget::save(YAML::Emitter& target) const
+{
+  target << YAML::BeginSeq;
+
+  for ( Subwidgets::const_iterator iWidget = _subwidgets.begin();
+        iWidget != _subwidgets.end();
+        iWidget++)
+  {
+    const TechniquePropertyWidget* widget = iWidget->second.get();
+    if(widget->active()) widget->save(target);
+  }
+
+  target << YAML::EndSeq;
+}
+
+void TechniquePropsWidget::load(const YAML::Node& source)
+{
+  if(!source.IsDefined() || !source.IsSequence()) return;
+
+  //  Грузим настройки техники
+  for(YAML::Node propertyNode : source)
+  {
+    //  Нам нужно полное и короткое имя, прежде чем мы сможем найти или создать
+    //  настройку
+    std::string fullPropertyName =
+                            TechniquePropertyWidget::readFullName(propertyNode);
+    if(fullPropertyName.empty()) continue;
+
+    std::string shortPropertyName =
+                          TechniquePropertyWidget::readShortName(propertyNode);
+    if (shortPropertyName.empty()) shortPropertyName = fullPropertyName;
+
+    //  Если настройки ещё нет, то добавим её
+    _addSubwidget(fullPropertyName, shortPropertyName);
+
+    //  Найдем и загрузим настройку
+    Subwidgets::iterator iProperty = _subwidgets.find(fullPropertyName);
+    MT_ASSERT(iProperty != _subwidgets.end());
+    iProperty->second->load(propertyNode);
   }
 }

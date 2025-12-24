@@ -114,7 +114,9 @@ void MainWindow::_loadProject() noexcept
   catch (std::exception& error)
   {
     mt::Log::error() << error.what();
-    mt::errorDialog(this, "Open", "Unable to open project");
+    std::string errorString = "Unable to open project: \n";
+    errorString += error.what();
+    mt::errorDialog(this, "Open", errorString.c_str());
   }
 }
 

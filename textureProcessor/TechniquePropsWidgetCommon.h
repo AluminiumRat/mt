@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <filesystem>
+
 namespace mt
 {
   class BaseWindow;
@@ -13,4 +15,5 @@ struct TechniquePropsWidgetCommon
   mt::TextureManager* textureManager;
   mt::BufferResourceManager* bufferManager;
   mt::CommandQueueTransfer* resourceOwnerQueue;
+  std::filesystem::path* projectFile;
 };

@@ -64,7 +64,7 @@ void GUILib::loadConfiguration(const fs::path& file) noexcept
     std::ifstream fileStream(file, std::ios::binary);
     if(!fileStream) throw std::runtime_error(std::string("config file not found: ") + (const char*)file.u8string().c_str());
     YAML::Node configNode = YAML::Load(fileStream);
-    if(!configNode.IsMap()) throw std::runtime_error(std::string("wrong config file format: ") + (const char*)file.u8string().c_str());
+    if(!configNode.IsDefined() || !configNode.IsMap()) throw std::runtime_error(std::string("wrong config file format: ") + (const char*)file.u8string().c_str());
 
     _configurationMap.clear();
 

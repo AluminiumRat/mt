@@ -6,6 +6,12 @@
 #include <TechniquePropertyWidget.h>
 #include <TechniquePropsWidgetCommon.h>
 
+namespace YAML
+{
+  class Emitter;
+  class Node;
+};
+
 namespace mt
 {
   class Technique;
@@ -23,6 +29,9 @@ public:
   inline mt::Technique& technique() const noexcept;
 
   void makeGUI();
+
+  void save(YAML::Emitter& target) const;
+  void load(const YAML::Node& source);
 
 private:
   void _updateFromTechnique();

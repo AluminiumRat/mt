@@ -7,6 +7,11 @@
 #include <util/Ref.h>
 #include <vkr/Sampler.h>
 
+namespace YAML
+{
+  class Node;
+}
+
 namespace mt
 {
   class Device;
@@ -30,4 +35,8 @@ namespace mt
   void loadConfigurator(TechniqueConfigurator& target,
                         const std::filesystem::path& file,
                         std::unordered_set<std::filesystem::path>* usedFiles);
+
+  //  Загрузить настройки сэмплера
+  //  Без ссылок на внешние файлы и наследования свойств
+  SamplerDescription loadSamplerDescription(const YAML::Node& samplerNode);
 }
