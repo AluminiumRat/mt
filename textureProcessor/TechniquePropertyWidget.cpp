@@ -1,11 +1,13 @@
 ﻿#include <imgui.h>
 
 #include <gui/GUIWindow.h>
-#include <gui/IMGuiWidgets.h>
+#include <gui/ImGuiPropertyGrid.h>
+#include <gui/ImGuiWidgets.h>
 #include <gui/modalDialogs.h>
 #include <resourceManagement/BufferResourceManager.h>
 #include <resourceManagement/TextureManager.h>
 #include <util/Log.h>
+#include <util/vkMeta.h>
 
 #include <TechniquePropertyWidget.h>
 
@@ -146,10 +148,9 @@ void TechniquePropertyWidget::_updateResource()
 
   _resourceBinding->clear();
 
-  if(_resourcePath.empty()) return;
-
   if(_resourceType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
   {
+    if(_resourcePath.empty()) return;
     mt::ConstRef<mt::TechniqueResource> resource =
             _commonData.textureManager->scheduleLoading(
                                                 _resourcePath,
@@ -159,6 +160,7 @@ void TechniquePropertyWidget::_updateResource()
   }
   else if(_resourceType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
   {
+    if(_resourcePath.empty()) return;
     mt::ConstRef<mt::TechniqueResource> resource =
             _commonData.bufferManager->scheduleLoading(
                                               _resourcePath,
@@ -167,10 +169,49 @@ void TechniquePropertyWidget::_updateResource()
   }
   else if(_resourceType == VK_DESCRIPTOR_TYPE_SAMPLER)
   {
+    _updateSampler();
   }
   else
   {
     mt::Log::error() << "TechniquePropertyWidget::unsupported resource type";
+  }
+}
+
+void TechniquePropertyWidget::_updateSampler()
+{
+  SamplerValue& samplerValue = getSamplerValue();
+
+  mt::Device& device = _technique.device();
+
+  if(samplerValue.mode == CUSTOM_SAMPLER_MODE)
+  {
+    // Кастомный сэмплер
+    mt::Ref<mt::Sampler> newSampler(
+                            new mt::Sampler(device, samplerValue.description));
+    _resourceBinding->setSampler(newSampler);
+  }
+  else
+  {
+    // Дефолтный сэмплер
+    // Сначала ищем дефолтный сэмплер в конфигурации
+    const mt::TechniqueConfiguration* configuration =
+                                                    _technique.configuration();
+    if(configuration != nullptr)
+    {
+      for(const mt::TechniqueConfiguration::DefaultSampler& sampler :
+                                                 configuration->defaultSamplers)
+      {
+        if(sampler.resourceName == _fullName)
+        {
+          _resourceBinding->setSampler(sampler.defaultSampler);
+          return;
+        }
+      }
+    }
+
+    // Не нашли дефолтный сэмплер - создаем свой
+    mt::Ref<mt::Sampler> newSampler(new mt::Sampler(device));
+    _resourceBinding->setSampler(newSampler);
   }
 }
 
@@ -321,7 +362,107 @@ void TechniquePropertyWidget::_makeBufferGUI()
   }
 }
 
+TechniquePropertyWidget::SamplerValue&
+                                      TechniquePropertyWidget::getSamplerValue()
+{
+  if(_samplerValue != nullptr) return *_samplerValue;
+  _samplerValue.reset(new SamplerValue);
+  return *_samplerValue;
+}
+
 void TechniquePropertyWidget::_makeSamplerGUI()
 {
-  ImGui::Text("Sampler");
+  _samplerModeGUI();
+
+  SamplerValue& sampler = getSamplerValue();
+  if(sampler.mode == CUSTOM_SAMPLER_MODE) _customSamplerGUI();
+}
+
+void TechniquePropertyWidget::_samplerModeGUI()
+{
+  SamplerValue& sampler = getSamplerValue();
+
+  static const mt::Bimap<SamplerMode> modeMap{
+    "Sampler mode",
+    {
+      {DEFAULT_SAMPLER_MODE, "Default"},
+      {CUSTOM_SAMPLER_MODE, "Custom"}
+    }};
+  if(mt::enumSelectionCombo("##samplerMode", sampler.mode, modeMap))
+  {
+    _updateResource();
+  }
+}
+
+void TechniquePropertyWidget::_customSamplerGUI()
+{
+  SamplerValue& sampler = getSamplerValue();
+  mt::SamplerDescription& description = sampler.description;
+
+  bool update = false;
+
+  mt::ImGuiPropertyGrid samplerGrid("##samplerProps");
+  samplerGrid.addRow("Min filter:");
+  update |= mt::enumSelectionCombo( "##Minfilter",
+                                    description.minFilter,
+                                    mt::filterMap);
+
+  samplerGrid.addRow("Mag filter:");
+  update |= mt::enumSelectionCombo( "##Magfilter",
+                                    description.magFilter,
+                                    mt::filterMap);
+
+  samplerGrid.addRow("Mipmap mode:");
+  update |= mt::enumSelectionCombo( "##MipmapMode",
+                                    description.mipmapMode,
+                                    mt::mipmapModeMap);
+
+  samplerGrid.addRow("Min LOD:");
+  update |= ImGui::InputFloat("##MinLod", &description.minLod);
+
+  samplerGrid.addRow("Max LOD:");
+  update |= ImGui::InputFloat("##MaxLod", &description.maxLod);
+
+  samplerGrid.addRow("LOD bias:");
+  update |= ImGui::InputFloat("##LODBias", &description.mipLodBias);
+
+  samplerGrid.addRow("Anisotropy:");
+  update |= ImGui::Checkbox("##AnisotropyEnable",
+    &description.anisotropyEnable);
+
+  samplerGrid.addRow("Max anisotropy:");
+  update |= ImGui::InputFloat("##MaxAnisotropy", &description.maxAnisotropy);
+
+  samplerGrid.addRow("Address U:");
+  update |= mt::enumSelectionCombo( "##AddressModeU",
+                                    description.addressModeU,
+                                    mt::addressModeMap);
+
+  samplerGrid.addRow("Address V:");
+  update |= mt::enumSelectionCombo( "##AddressModeV",
+                                    description.addressModeV,
+                                    mt::addressModeMap);
+
+  samplerGrid.addRow("Address W:");
+  update |= mt::enumSelectionCombo( "##AddressModeW",
+                                    description.addressModeW,
+                                    mt::addressModeMap);
+
+  samplerGrid.addRow("Compare enable:");
+  update |= ImGui::Checkbox("##CompareEnable", &description.compareEnable);
+
+  samplerGrid.addRow("Compare op:");
+  update |= mt::enumSelectionCombo( "##CompareOp",
+                                    description.compareOp,
+                                    mt::compareOpMap);
+
+  samplerGrid.addRow("Border:");
+  update |= mt::enumSelectionCombo( "##Border",
+                                    description.borderColor,
+                                    mt::borderColorMap);
+
+  samplerGrid.addRow("UCoord:", "Unnormalized coordinates");
+  update |= ImGui::Checkbox("##UCoord", &description.unnormalizedCoordinates);
+
+  if(update) _updateResource();
 }

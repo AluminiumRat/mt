@@ -2,6 +2,8 @@
 
 #include <imgui.h>
 
+#include <gui/ImGuiPropertyGrid.h>
+
 #include <TechniquePropsWidget.h>
 
 TechniquePropsWidget::TechniquePropsWidget(
@@ -74,13 +76,7 @@ void TechniquePropsWidget::makeGUI()
     _updateFromTechnique();
   }
 
-  if(!ImGui::BeginTable("##techniqueProps", 2, 0)) return;
-  ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed);
-  ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
-
-  ImGui::TableNextRow();
-  ImGui::TableSetColumnIndex(1);
-  ImGui::PushItemWidth(-FLT_MIN);
+  mt::ImGuiPropertyGrid techniquePropsGrid("##techniqueProps");
 
   for(Subwidgets::iterator iWidget = _subwidgets.begin();
       iWidget != _subwidgets.end();
@@ -89,14 +85,8 @@ void TechniquePropsWidget::makeGUI()
     TechniquePropertyWidget* widget = iWidget->second.get();
     if(!widget->active()) continue;
 
-    ImGui::TableNextRow();
-    ImGui::TableSetColumnIndex(0);
-    ImGui::Text(widget->shortName().c_str());
-    ImGui::SetItemTooltip(widget->fullName().c_str());
-
-    ImGui::TableSetColumnIndex(1);
+    techniquePropsGrid.addRow(widget->shortName().c_str(),
+                              widget->fullName().c_str());
     widget->makeGUI();
   }
-
-  ImGui::EndTable();
 }

@@ -20,12 +20,14 @@ namespace mt
                         const std::filesystem::path& currentFilePath) noexcept;
 
   //  Виджет - комбобокс для выбора значения enum-а
+  //  value - значение, которое котролируется виджетом
   //  map - бимапа для конвертации значения в строку и обратно
   //  label - лэйбл и imgui ID для контрола
+  //  Возвращает true, если значение value было изменено, иначе false
   template<typename EnumType>
-  inline EnumType enumSelectionCombo( const char* label,
-                                      EnumType currentValue,
-                                      const Bimap<EnumType>& map);
+  inline bool enumSelectionCombo( const char* label,
+                                  EnumType& value,
+                                  const Bimap<EnumType>& map);
 
   //-------------------------------------------------------------------------
   //  Реализации функций
@@ -50,12 +52,13 @@ namespace mt
   }
 
   template<typename EnumType>
-  inline EnumType enumSelectionCombo<EnumType>( const char* label,
-                                                EnumType currentValue,
-                                                const Bimap<EnumType>& map)
+  inline bool enumSelectionCombo<EnumType>( const char* label,
+                                            EnumType& value,
+                                            const Bimap<EnumType>& map)
   {
-    //  Ищем надпись для превью
-    const std::string& previewText = map[currentValue];
+    const std::string& previewText = map[value];
+
+    EnumType newValue = value;
     if (ImGui::BeginCombo(label, previewText.c_str(), 0))
     {
       for(typename Bimap<EnumType>::const_iterator iValue = map.begin();
@@ -63,13 +66,19 @@ namespace mt
           iValue++)
       {
         if(ImGui::Selectable( iValue->first.c_str(),
-                              currentValue == iValue->second))
+                              value == iValue->second))
         {
-          currentValue = iValue->second;
+          newValue = iValue->second;
         }
       }
       ImGui::EndCombo();
     }
-    return currentValue;
+
+    if(value != newValue)
+    {
+      value = newValue;
+      return true;
+    }
+    return false;
   }
 }

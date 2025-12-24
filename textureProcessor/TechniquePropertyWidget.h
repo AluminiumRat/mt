@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <memory>
 #include <string>
 #include <filesystem>
 
@@ -9,6 +10,7 @@
 #include <technique/Technique.h>
 #include <technique/TechniqueResource.h>
 #include <technique/UniformVariable.h>
+#include <vkr/Sampler.h>
 
 #include <TechniquePropsWidgetCommon.h>
 
@@ -32,17 +34,33 @@ public:
   void updateFromTechnique();
 
 private:
+  enum SamplerMode
+  {
+    DEFAULT_SAMPLER_MODE,
+    CUSTOM_SAMPLER_MODE
+  };
+  struct SamplerValue
+  {
+    SamplerMode mode = DEFAULT_SAMPLER_MODE;
+    mt::SamplerDescription description;
+  };
+
+private:
   const mt::TechniqueConfiguration::UniformVariable*
                                       _getUniformDescription() const noexcept;
   const mt::TechniqueConfiguration::Resource*
                                       _getResourceDescription() const noexcept;
   void _updateUniformValue();
   void _updateResource();
+  void _updateSampler();
   void _makeUniformGUI();
   void _makeResourceGUI();
   void _makeTextureGUI();
   void _makeBufferGUI();
+  SamplerValue& getSamplerValue();
   void _makeSamplerGUI();
+  void _samplerModeGUI();
+  void _customSamplerGUI();
 
 private:
   mt::Technique& _technique;
@@ -63,6 +81,8 @@ private:
   mt::ResourceBinding* _resourceBinding;
   VkDescriptorType _resourceType;
   std::filesystem::path _resourcePath;
+
+  std::unique_ptr<SamplerValue> _samplerValue;
 };
 
 inline bool TechniquePropertyWidget::active() const noexcept

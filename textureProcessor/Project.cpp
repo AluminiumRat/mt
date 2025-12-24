@@ -7,7 +7,8 @@
 
 #include <asyncTask/AsyncTask.h>
 #include <gui/GUIWindow.h>
-#include <gui/IMGuiWidgets.h>
+#include <gui/ImGuiPropertyGrid.h>
+#include <gui/ImGuiWidgets.h>
 #include <gui/modalDialogs.h>
 #include <util/Assert.h>
 #include <util/fileSystemHelpers.h>
@@ -264,63 +265,39 @@ void Project::_selectShader() noexcept
   }
 }
 
-VkFormat formatSelectionLine(VkFormat currentFormat)
+void formatSelectionLine(VkFormat &format)
 {
-  static const mt::Bimap<VkFormat> formats{
+  static const mt::Bimap<VkFormat> formatsMap{
     "Output formats",
     {
       {VK_FORMAT_B8G8R8A8_SRGB, "B8G8R8A8_SRGB"},
       {VK_FORMAT_R32G32B32A32_SFLOAT, "R32G32B32A32_SFLOAT"}
     }};
-  return mt::enumSelectionCombo("##format", currentFormat, formats);
+  mt::enumSelectionCombo("##format", format, formatsMap);
 }
 
 void Project::_guiOutputProps() noexcept
 {
-  if(!ImGui::BeginTable("##outputProps", 2, 0)) return;
-  ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed);
-  ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+  mt::ImGuiPropertyGrid outputPropsGrid("##outputProps");
+  outputPropsGrid.addRow("File:");
+  if(mt::fileSelectionLine("File:", _outputFile)) _selectOutputFile();
 
-  ImGui::TableNextRow();
-  ImGui::TableSetColumnIndex(1);
-  ImGui::PushItemWidth(-FLT_MIN);
+  outputPropsGrid.addRow("Format:");
+  formatSelectionLine(_imageFormat);
 
-  ImGui::TableNextRow();
-  ImGui::TableSetColumnIndex(0);
-  ImGui::Text("File:");
-  ImGui::TableSetColumnIndex(1);
-  if (mt::fileSelectionLine("File:", _outputFile)) _selectOutputFile();
-
-  ImGui::TableNextRow();
-  ImGui::TableSetColumnIndex(0);
-  ImGui::Text("Format:");
-  ImGui::TableSetColumnIndex(1);
-  _imageFormat = formatSelectionLine(_imageFormat);
-
-  ImGui::TableNextRow();
-  ImGui::TableSetColumnIndex(0);
-  ImGui::Text("Size:");
-  ImGui::TableSetColumnIndex(1);
+  outputPropsGrid.addRow("Size:");
   int sizeValues[] = { _outputSize.x, _outputSize.y };
   ImGui::InputInt2("##size", sizeValues, 0);
   _outputSize = glm::ivec2(sizeValues[0], sizeValues[1]);
   _outputSize = glm::clamp(_outputSize, 1, 16536);
 
-  ImGui::TableNextRow();
-  ImGui::TableSetColumnIndex(0);
-  ImGui::Text("Mips:");
-  ImGui::TableSetColumnIndex(1);
+  outputPropsGrid.addRow("Mips:");
   ImGui::InputInt("##mips", &_mipsCount, 0);
   _mipsCount = glm::clamp(_mipsCount, 1, 1024);
 
-  ImGui::TableNextRow();
-  ImGui::TableSetColumnIndex(0);
-  ImGui::Text("Array size:");
-  ImGui::TableSetColumnIndex(1);
+  outputPropsGrid.addRow("Array size:");
   ImGui::InputInt("##arraySize", &_arraySize, 0);
   _arraySize = glm::clamp(_arraySize, 1, 16536);
-
-  ImGui::EndTable();
 }
 
 void Project::_selectOutputFile() noexcept
