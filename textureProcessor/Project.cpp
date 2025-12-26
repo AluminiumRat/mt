@@ -104,8 +104,8 @@ Project::Project( const fs::path& file) :
                                         Application::instance().primaryDevice(),
                                         "Make texture technique")),
   _technique(new mt::Technique(*_configurator)),
-  _propsWidget( *_technique,
-                TechniquePropsWidgetCommon{
+  _propsGrid( *_technique,
+                mt::TechniquePropertyGridCommon{
                         &Application::instance().textureManager(),
                         &Application::instance().bufferManager(),
                         Application::instance().primaryDevice().graphicQueue(),
@@ -161,7 +161,7 @@ void Project::_load()
   _arraySize = glm::clamp(_arraySize, 1, 16536);
 
   YAML::Node shaderPropsNode = rootNode["shaderProps"];
-  _propsWidget.load(shaderPropsNode);
+  _propsGrid.load(shaderPropsNode);
 }
 
 Project::~Project() noexcept
@@ -202,7 +202,7 @@ void Project::save(const fs::path& file)
 
   out << YAML::Key << "shaderProps";
   out << YAML::Value;
-  _propsWidget.save(out);
+  _propsGrid.save(out);
 
   out << YAML::EndMap;
 
@@ -246,7 +246,7 @@ void Project::guiPass()
   _guiOutputProps();
 
   ImGui::SeparatorText("Shader properties");
-  _propsWidget.makeGUI();
+  _propsGrid.makeGUI();
 }
 
 void Project::_selectShader() noexcept

@@ -7,9 +7,8 @@
 #include <asyncTask/AsyncTaskQueue.h>
 #include <resourceManagement/FileWatcher.h>
 #include <technique/Technique.h>
+#include <techniquePropertyGrid/TechniquePropertyGrid.h>
 #include <util/Ref.h>
-
-#include <TechniquePropsWidget.h>
 
 class Project : mt::FileObserver
 {
@@ -53,7 +52,7 @@ private:
   mt::Ref<mt::TechniqueConfigurator> _configurator;
   mt::Ref<mt::Technique> _technique;
 
-  TechniquePropsWidget _propsWidget;
+  mt::TechniquePropertyGrid _propsGrid;
 
   std::unique_ptr<mt::AsyncTaskQueue::TaskHandle> _rebuildTaskHandle;
 };

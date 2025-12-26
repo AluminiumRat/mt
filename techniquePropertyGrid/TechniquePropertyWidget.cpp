@@ -7,21 +7,22 @@
 #include <gui/ImGuiWidgets.h>
 #include <gui/modalDialogs.h>
 #include <technique/TechniqueLoader.h>
+#include <techniquePropertyGrid/TechniquePropertyWidget.h>
 #include <resourceManagement/BufferResourceManager.h>
 #include <resourceManagement/TextureManager.h>
 #include <util/fileSystemHelpers.h>
 #include <util/Log.h>
 #include <util/vkMeta.h>
 
-#include <TechniquePropertyWidget.h>
-
 namespace fs = std::filesystem;
 
+using namespace mt;
+
 TechniquePropertyWidget::TechniquePropertyWidget(
-                                mt::Technique& technique,
+                                Technique& technique,
                                 const std::string& fullName,
                                 const std::string& shortName,
-                                const TechniquePropsWidgetCommon& commonData) :
+                                const TechniquePropertyGridCommon& commonData) :
   _technique(technique),
   _fullName(fullName),
   _shortName(shortName),
@@ -45,14 +46,14 @@ void TechniquePropertyWidget::updateFromTechnique()
   _uniform = nullptr;
   _resourceBinding = nullptr;
 
-  const mt::TechniqueConfiguration::UniformVariable* uniformDescription =
+  const TechniqueConfiguration::UniformVariable* uniformDescription =
                                                       _getUniformDescription();
   if(uniformDescription != nullptr)
   {
     _scalarType = uniformDescription->baseType;
     _vectorSize = uniformDescription->vectorSize;
     if(_vectorSize == 0) _vectorSize = 1;
-    if( _scalarType == mt::TechniqueConfiguration::UNKNOWN_TYPE ||
+    if( _scalarType == TechniqueConfiguration::UNKNOWN_TYPE ||
         uniformDescription->isMatrix ||
         uniformDescription->isArray ||
         _vectorSize > 4)
@@ -65,7 +66,7 @@ void TechniquePropertyWidget::updateFromTechnique()
     return;
   }
 
-  const mt::TechniqueConfiguration::Resource* resourceDescription =
+  const TechniqueConfiguration::Resource* resourceDescription =
                                                       _getResourceDescription();
   if(resourceDescription != nullptr)
   {
@@ -90,17 +91,17 @@ void TechniquePropertyWidget::updateFromTechnique()
   }
 }
 
-const mt::TechniqueConfiguration::UniformVariable*
+const TechniqueConfiguration::UniformVariable*
                 TechniquePropertyWidget::_getUniformDescription() const noexcept
 {
-  const mt::TechniqueConfiguration* configuration = _technique.configuration();
+  const TechniqueConfiguration* configuration = _technique.configuration();
   if(configuration == nullptr) return nullptr;
 
-  for(const mt::TechniqueConfiguration::UniformBuffer& buffer :
+  for(const TechniqueConfiguration::UniformBuffer& buffer :
                                                   configuration->uniformBuffers)
   {
-    if(buffer.set == mt::DescriptorSetType::COMMON) continue;
-    for(const mt::TechniqueConfiguration::UniformVariable& variable :
+    if(buffer.set == DescriptorSetType::COMMON) continue;
+    for(const TechniqueConfiguration::UniformVariable& variable :
                                                               buffer.variables)
     {
       if(variable.fullName == _fullName) return &variable;
@@ -110,16 +111,16 @@ const mt::TechniqueConfiguration::UniformVariable*
   return nullptr;
 }
 
-const mt::TechniqueConfiguration::Resource*
+const TechniqueConfiguration::Resource*
               TechniquePropertyWidget::_getResourceDescription() const noexcept
 {
-  const mt::TechniqueConfiguration* configuration = _technique.configuration();
+  const TechniqueConfiguration* configuration = _technique.configuration();
   if (configuration == nullptr) return nullptr;
 
-  for (const mt::TechniqueConfiguration::Resource& resource :
+  for (const TechniqueConfiguration::Resource& resource :
                                                       configuration->resources)
   {
-    if(resource.set == mt::DescriptorSetType::COMMON) continue;
+    if(resource.set == DescriptorSetType::COMMON) continue;
     if(resource.name == _fullName) return &resource;
   }
 
@@ -130,16 +131,16 @@ void TechniquePropertyWidget::_updateUniformValue()
 {
   if(_uniform == nullptr) return;
 
-  if (_scalarType == mt::TechniqueConfiguration::INT_TYPE)
+  if (_scalarType == TechniqueConfiguration::INT_TYPE)
   {
-    mt::UniformVariable::ValueRef valueRef;
+    UniformVariable::ValueRef valueRef;
     valueRef.data = &_intValue;
     valueRef.dataSize = _vectorSize * sizeof(_intValue[0]);
     _uniform->setValue(valueRef);
   }
-  else if (_scalarType == mt::TechniqueConfiguration::FLOAT_TYPE)
+  else if (_scalarType == TechniqueConfiguration::FLOAT_TYPE)
   {
-    mt::UniformVariable::ValueRef valueRef;
+    UniformVariable::ValueRef valueRef;
     valueRef.data = &_floatValue;
     valueRef.dataSize = _vectorSize * sizeof(_floatValue[0]);
     _uniform->setValue(valueRef);
@@ -155,7 +156,7 @@ void TechniquePropertyWidget::_updateResource()
   if(_resourceType == VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
   {
     if(_resourcePath.empty()) return;
-    mt::ConstRef<mt::TechniqueResource> resource =
+    ConstRef<TechniqueResource> resource =
             _commonData.textureManager->scheduleLoading(
                                                 _resourcePath,
                                                 *_commonData.resourceOwnerQueue,
@@ -165,7 +166,7 @@ void TechniquePropertyWidget::_updateResource()
   else if(_resourceType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
   {
     if(_resourcePath.empty()) return;
-    mt::ConstRef<mt::TechniqueResource> resource =
+    ConstRef<TechniqueResource> resource =
             _commonData.bufferManager->scheduleLoading(
                                               _resourcePath,
                                               *_commonData.resourceOwnerQueue);
@@ -177,7 +178,7 @@ void TechniquePropertyWidget::_updateResource()
   }
   else
   {
-    mt::Log::error() << "TechniquePropertyWidget::unsupported resource type";
+    Log::error() << "TechniquePropertyWidget::unsupported resource type";
   }
 }
 
@@ -185,24 +186,22 @@ void TechniquePropertyWidget::_updateSampler()
 {
   SamplerValue& samplerValue = getSamplerValue();
 
-  mt::Device& device = _technique.device();
+  Device& device = _technique.device();
 
   if(samplerValue.mode == CUSTOM_SAMPLER_MODE)
   {
     // Кастомный сэмплер
-    mt::Ref<mt::Sampler> newSampler(
-                            new mt::Sampler(device, samplerValue.description));
+    Ref<Sampler> newSampler(new Sampler(device, samplerValue.description));
     _resourceBinding->setSampler(newSampler);
   }
   else
   {
     // Дефолтный сэмплер
     // Сначала ищем дефолтный сэмплер в конфигурации
-    const mt::TechniqueConfiguration* configuration =
-                                                    _technique.configuration();
+    const TechniqueConfiguration* configuration = _technique.configuration();
     if(configuration != nullptr)
     {
-      for(const mt::TechniqueConfiguration::DefaultSampler& sampler :
+      for(const TechniqueConfiguration::DefaultSampler& sampler :
                                                  configuration->defaultSamplers)
       {
         if(sampler.resourceName == _fullName)
@@ -214,7 +213,7 @@ void TechniquePropertyWidget::_updateSampler()
     }
 
     // Не нашли дефолтный сэмплер - создаем свой
-    mt::Ref<mt::Sampler> newSampler(new mt::Sampler(device));
+    Ref<Sampler> newSampler(new Sampler(device));
     _resourceBinding->setSampler(newSampler);
   }
 }
@@ -244,7 +243,7 @@ void TechniquePropertyWidget::makeGUI()
 
 void TechniquePropertyWidget::_makeUniformGUI()
 {
-  if(_scalarType == mt::TechniqueConfiguration::INT_TYPE)
+  if(_scalarType == TechniqueConfiguration::INT_TYPE)
   {
     int newValue[] = {_intValue[0], _intValue[1], _intValue[2], _intValue[3]};
     switch(_vectorSize)
@@ -269,7 +268,7 @@ void TechniquePropertyWidget::_makeUniformGUI()
       _updateUniformValue();
     }
   }
-  else if(_scalarType == mt::TechniqueConfiguration::FLOAT_TYPE)
+  else if(_scalarType == TechniqueConfiguration::FLOAT_TYPE)
   {
     glm::vec4 newValue = _floatValue;
     switch(_vectorSize)
@@ -316,15 +315,40 @@ void TechniquePropertyWidget::_makeResourceGUI()
 
 void TechniquePropertyWidget::_makeTextureGUI()
 {
-  if(mt::fileSelectionLine(_fullName.c_str(), _resourcePath))
+  if(fileSelectionLine(_fullName.c_str(), _resourcePath))
   {
     try
     {
       fs::path file =
-              mt::openFileDialog(
-                          mt::GUIWindow::currentWindow(),
-                          mt::FileFilters{{ .expression = "*.dds",
+              openFileDialog( GUIWindow::currentWindow(),
+                              FileFilters{{ .expression = "*.dds",
                                             .description = "DDS image(*.dds)"}},
+                              "");
+      if(!file.empty())
+      {
+        _resourcePath = file;
+        _updateResource();
+      }
+    }
+    catch (std::exception& error)
+    {
+      Log::error() << error.what();
+      errorDialog(GUIWindow::currentWindow(), "Error", "Unable to open texture file");
+    }
+  }
+}
+
+void TechniquePropertyWidget::_makeBufferGUI()
+{
+  if(fileSelectionLine(_fullName.c_str(), _resourcePath))
+  {
+    try
+    {
+      fs::path file =
+              openFileDialog(
+                          GUIWindow::currentWindow(),
+                          FileFilters{{ .expression = "*.bin",
+                                        .description = "Binary files(*.bin)"}},
                           "");
       if(!file.empty())
       {
@@ -334,34 +358,8 @@ void TechniquePropertyWidget::_makeTextureGUI()
     }
     catch (std::exception& error)
     {
-      mt::Log::error() << error.what();
-      mt::errorDialog(mt::GUIWindow::currentWindow(), "Error", "Unable to open texture file");
-    }
-  }
-}
-
-void TechniquePropertyWidget::_makeBufferGUI()
-{
-  if(mt::fileSelectionLine(_fullName.c_str(), _resourcePath))
-  {
-    try
-    {
-      fs::path file =
-              mt::openFileDialog(
-                      mt::GUIWindow::currentWindow(),
-                      mt::FileFilters{{ .expression = "*.bin",
-                                        .description = "Binary files(*.bin)"}},
-                      "");
-      if(!file.empty())
-      {
-        _resourcePath = file;
-        _updateResource();
-      }
-    }
-    catch (std::exception& error)
-    {
-      mt::Log::error() << error.what();
-      mt::errorDialog(mt::GUIWindow::currentWindow(), "Error", "Unable to open file");
+      Log::error() << error.what();
+      errorDialog(GUIWindow::currentWindow(), "Error", "Unable to open file");
     }
   }
 }
@@ -386,13 +384,13 @@ void TechniquePropertyWidget::_samplerModeGUI()
 {
   SamplerValue& sampler = getSamplerValue();
 
-  static const mt::Bimap<SamplerMode> modeMap{
+  static const Bimap<SamplerMode> modeMap{
     "Sampler mode",
     {
       {DEFAULT_SAMPLER_MODE, "Default"},
       {CUSTOM_SAMPLER_MODE, "Custom"}
     }};
-  if(mt::enumSelectionCombo("##samplerMode", sampler.mode, modeMap))
+  if(enumSelectionCombo("##samplerMode", sampler.mode, modeMap))
   {
     _updateResource();
   }
@@ -401,25 +399,25 @@ void TechniquePropertyWidget::_samplerModeGUI()
 void TechniquePropertyWidget::_customSamplerGUI()
 {
   SamplerValue& sampler = getSamplerValue();
-  mt::SamplerDescription& description = sampler.description;
+  SamplerDescription& description = sampler.description;
 
   bool update = false;
 
-  mt::ImGuiPropertyGrid samplerGrid("##samplerProps");
+  ImGuiPropertyGrid samplerGrid("##samplerProps");
   samplerGrid.addRow("Min filter:");
-  update |= mt::enumSelectionCombo( "##Minfilter",
-                                    description.minFilter,
-                                    mt::filterMap);
+  update |= enumSelectionCombo( "##Minfilter",
+                                description.minFilter,
+                                filterMap);
 
   samplerGrid.addRow("Mag filter:");
-  update |= mt::enumSelectionCombo( "##Magfilter",
-                                    description.magFilter,
-                                    mt::filterMap);
+  update |= enumSelectionCombo( "##Magfilter",
+                                description.magFilter,
+                                filterMap);
 
   samplerGrid.addRow("Mipmap mode:");
-  update |= mt::enumSelectionCombo( "##MipmapMode",
-                                    description.mipmapMode,
-                                    mt::mipmapModeMap);
+  update |= enumSelectionCombo( "##MipmapMode",
+                                description.mipmapMode,
+                                mipmapModeMap);
 
   samplerGrid.addRow("Min LOD:");
   update |= ImGui::InputFloat("##MinLod", &description.minLod);
@@ -438,32 +436,32 @@ void TechniquePropertyWidget::_customSamplerGUI()
   update |= ImGui::InputFloat("##MaxAnisotropy", &description.maxAnisotropy);
 
   samplerGrid.addRow("Address U:");
-  update |= mt::enumSelectionCombo( "##AddressModeU",
-                                    description.addressModeU,
-                                    mt::addressModeMap);
+  update |= enumSelectionCombo( "##AddressModeU",
+                                description.addressModeU,
+                                addressModeMap);
 
   samplerGrid.addRow("Address V:");
-  update |= mt::enumSelectionCombo( "##AddressModeV",
-                                    description.addressModeV,
-                                    mt::addressModeMap);
+  update |= enumSelectionCombo( "##AddressModeV",
+                                description.addressModeV,
+                                addressModeMap);
 
   samplerGrid.addRow("Address W:");
-  update |= mt::enumSelectionCombo( "##AddressModeW",
-                                    description.addressModeW,
-                                    mt::addressModeMap);
+  update |= enumSelectionCombo( "##AddressModeW",
+                                description.addressModeW,
+                                addressModeMap);
 
   samplerGrid.addRow("Compare enable:");
   update |= ImGui::Checkbox("##CompareEnable", &description.compareEnable);
 
   samplerGrid.addRow("Compare op:");
-  update |= mt::enumSelectionCombo( "##CompareOp",
-                                    description.compareOp,
-                                    mt::compareOpMap);
+  update |= enumSelectionCombo( "##CompareOp",
+                                description.compareOp,
+                                compareOpMap);
 
   samplerGrid.addRow("Border:");
-  update |= mt::enumSelectionCombo( "##Border",
-                                    description.borderColor,
-                                    mt::borderColorMap);
+  update |= enumSelectionCombo( "##Border",
+                                description.borderColor,
+                                borderColorMap);
 
   samplerGrid.addRow("UCoord:", "Unnormalized coordinates");
   update |= ImGui::Checkbox("##UCoord", &description.unnormalizedCoordinates);
@@ -508,7 +506,7 @@ void TechniquePropertyWidget::save(YAML::Emitter& target) const
 
 void TechniquePropertyWidget::_saveUniform(YAML::Emitter& target) const
 {
-  if(_scalarType == mt::TechniqueConfiguration::FLOAT_TYPE)
+  if(_scalarType == TechniqueConfiguration::FLOAT_TYPE)
   {
     target << YAML::Key << "float";
     std::vector<float> valueSequence( &_floatValue[0],
@@ -527,8 +525,8 @@ void TechniquePropertyWidget::_saveResource(YAML::Emitter& target) const
 {
   fs::path projectFolder = _commonData.projectFile->parent_path();
   target << YAML::Key << "file";
-  target << YAML::Value << mt::pathToUtf8(mt::makeStoredPath( _resourcePath,
-                                                              projectFolder));
+  target << YAML::Value << pathToUtf8(makeStoredPath( _resourcePath,
+                                                      projectFolder));
 }
 
 void TechniquePropertyWidget::_saveSampler(YAML::Emitter& target) const
@@ -540,25 +538,25 @@ void TechniquePropertyWidget::_saveSampler(YAML::Emitter& target) const
 
   if(_samplerValue->mode == DEFAULT_SAMPLER_MODE) return;
 
-  const mt::SamplerDescription& description = _samplerValue->description;
+  const SamplerDescription& description = _samplerValue->description;
 
   target << YAML::Key << "magFilter";
-  target << YAML::Value << mt::filterMap[description.magFilter];
+  target << YAML::Value << filterMap[description.magFilter];
 
   target << YAML::Key << "minFilter";
-  target << YAML::Value << mt::filterMap[description.minFilter];
+  target << YAML::Value << filterMap[description.minFilter];
 
   target << YAML::Key << "mipmapMode";
-  target << YAML::Value << mt::mipmapModeMap[description.mipmapMode];
+  target << YAML::Value << mipmapModeMap[description.mipmapMode];
 
   target << YAML::Key << "addressModeU";
-  target << YAML::Value << mt::addressModeMap[description.addressModeU];
+  target << YAML::Value << addressModeMap[description.addressModeU];
 
   target << YAML::Key << "addressModeV";
-  target << YAML::Value << mt::addressModeMap[description.addressModeV];
+  target << YAML::Value << addressModeMap[description.addressModeV];
 
   target << YAML::Key << "addressModeW";
-  target << YAML::Value << mt::addressModeMap[description.addressModeW];
+  target << YAML::Value << addressModeMap[description.addressModeW];
 
   target << YAML::Key << "mipLodBias";
   target << YAML::Value << description.mipLodBias;
@@ -573,7 +571,7 @@ void TechniquePropertyWidget::_saveSampler(YAML::Emitter& target) const
   target << YAML::Value << description.compareEnable;
 
   target << YAML::Key << "compareOp";
-  target << YAML::Value << mt::compareOpMap[description.compareOp];
+  target << YAML::Value << compareOpMap[description.compareOp];
 
   target << YAML::Key << "minLod";
   target << YAML::Value << description.minLod;
@@ -582,7 +580,7 @@ void TechniquePropertyWidget::_saveSampler(YAML::Emitter& target) const
   target << YAML::Value << description.maxLod;
 
   target << YAML::Key << "borderColor";
-  target << YAML::Value << mt::borderColorMap[description.borderColor];
+  target << YAML::Value << borderColorMap[description.borderColor];
 
   target << YAML::Key << "unnormalizedCoordinates";
   target << YAML::Value << description.unnormalizedCoordinates;
@@ -653,9 +651,9 @@ void TechniquePropertyWidget::_readResource(const YAML::Node& source)
 
   std::string filename = fileNode.as<std::string>("");
 
-  _resourcePath = mt::utf8ToPath(filename);
+  _resourcePath = utf8ToPath(filename);
   fs::path projectFolder = _commonData.projectFile->parent_path();
-  _resourcePath = mt::restoreAbsolutePath(_resourcePath, projectFolder);
+  _resourcePath = restoreAbsolutePath(_resourcePath, projectFolder);
 }
 
 void TechniquePropertyWidget::_readSampler(const YAML::Node& source)
@@ -670,5 +668,5 @@ void TechniquePropertyWidget::_readSampler(const YAML::Node& source)
   }
 
   samplerValue.mode = CUSTOM_SAMPLER_MODE;
-  samplerValue.description = mt::loadSamplerDescription(source);
+  samplerValue.description = loadSamplerDescription(source);
 }

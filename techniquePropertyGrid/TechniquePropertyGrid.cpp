@@ -5,12 +5,13 @@
 #include <yaml-cpp/yaml.h>
 
 #include <gui/ImGuiPropertyGrid.h>
+#include <techniquePropertyGrid/TechniquePropertyGrid.h>
 
-#include <TechniquePropsWidget.h>
+using namespace mt;
 
-TechniquePropsWidget::TechniquePropsWidget(
+TechniquePropertyGrid::TechniquePropertyGrid(
                                 mt::Technique& technique,
-                                const TechniquePropsWidgetCommon& commonData) :
+                                const TechniquePropertyGridCommon& commonData) :
   _technique(technique),
   _lastConfigurationRevision(0),
   _commonData(commonData)
@@ -18,7 +19,7 @@ TechniquePropsWidget::TechniquePropsWidget(
   _updateFromTechnique();
 }
 
-void TechniquePropsWidget::_updateFromTechnique()
+void TechniquePropertyGrid::_updateFromTechnique()
 {
   //  Обновляем все старые виджеты
   for(Subwidgets::iterator iWidget = _subwidgets.begin();
@@ -55,7 +56,7 @@ void TechniquePropsWidget::_updateFromTechnique()
   }
 }
 
-void TechniquePropsWidget::_addSubwidget( const std::string& fullName,
+void TechniquePropertyGrid::_addSubwidget(const std::string& fullName,
                                           const std::string& shortName)
 {
   Subwidgets::const_iterator iWidget = _subwidgets.find(fullName);
@@ -69,7 +70,7 @@ void TechniquePropsWidget::_addSubwidget( const std::string& fullName,
   _subwidgets[fullName] = std::move(newWidget);
 }
 
-void TechniquePropsWidget::makeGUI()
+void TechniquePropertyGrid::makeGUI()
 {
   const mt::TechniqueConfiguration* configuration = _technique.configuration();
   if( configuration == nullptr ||
@@ -93,7 +94,7 @@ void TechniquePropsWidget::makeGUI()
   }
 }
 
-void TechniquePropsWidget::save(YAML::Emitter& target) const
+void TechniquePropertyGrid::save(YAML::Emitter& target) const
 {
   target << YAML::BeginSeq;
 
@@ -108,7 +109,7 @@ void TechniquePropsWidget::save(YAML::Emitter& target) const
   target << YAML::EndSeq;
 }
 
-void TechniquePropsWidget::load(const YAML::Node& source)
+void TechniquePropertyGrid::load(const YAML::Node& source)
 {
   if(!source.IsDefined() || !source.IsSequence()) return;
 

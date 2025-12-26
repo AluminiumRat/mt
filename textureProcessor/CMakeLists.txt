@@ -14,9 +14,7 @@ add_executable (textureProcessor
                 "Application.cpp"
                 "main.cpp"
                 "MainWindow.cpp"
-                "Project.cpp"
-                "TechniquePropertyWidget.cpp"
-                "TechniquePropsWidget.cpp")
+                "Project.cpp")
 
 target_link_libraries(textureProcessor
                       ${Vulkan_LIBRARIES}
@@ -29,6 +27,7 @@ target_link_libraries(textureProcessor
                       vkr
                       resourceManagement
                       technique
+                      techniquePropertyGrid
                       gui)
 
 target_compile_definitions(textureProcessor PRIVATE YAML_CPP_STATIC_DEFINE)
