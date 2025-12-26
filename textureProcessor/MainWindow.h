@@ -22,11 +22,11 @@ protected:
 
 private:
   void _processMainMenu();
-  void _newProject() noexcept;
-  void _loadProject() noexcept;
-  void _saveIfNeeded() noexcept;
-  void _saveProject() noexcept;
-  void _saveProjectAs() noexcept;
+  void _newProject();
+  void _loadProject();
+  void _saveIfNeeded();
+  void _saveProject();
+  void _saveProjectAs();
   void _updateTitle();
 
 private:

@@ -1,6 +1,7 @@
 ﻿#include <algorithm>
 #include <imgui.h>
 
+#include <gui/ImGuiRAII.h>
 #include <gui/modalDialogs.h>
 
 #include <TestWindow.h>
@@ -21,52 +22,56 @@ TestWindow::~TestWindow() noexcept
 
 void TestWindow::guiImplementation()
 {
-  ImGui::BeginMainMenuBar();
-  if(ImGui::MenuItem("Add file")) _addFile();
-  ImGui::EndMainMenuBar();
-
-  static bool firstLaunch = true;
-
-  // Окно со списком контролируемых файлов
-  if(firstLaunch)
   {
-    ImGui::SetNextWindowPos(ImVec2(20, 40));
-    ImGui::SetNextWindowSize(ImVec2(300, 530));
+    // Главное меню
+    ImGuiMainMenuBar mainMenu;
+    if(mainMenu.created())
+    {
+      if (ImGui::MenuItem("Add file")) _addFile();
+    }
   }
+
+  _fileListWindow();
+  _logWindow();
+}
+
+void TestWindow::_fileListWindow()
+{
+  // Окно со списком контролируемых файлов
+  ImGui::SetNextWindowPos(ImVec2(20, 40), ImGuiCond_Appearing);
+  ImGui::SetNextWindowSize(ImVec2(300, 530), ImGuiCond_Appearing);
+  ImGuiWindow fileListWindow("File list");
+  if(!fileListWindow.visible()) return;
+
   std::string deletedFile;    //  На случай, если пользователь захочет удалить
                               //  файл из списка,
-  ImGui::Begin("File list");
   for(const std::string filename : _watchedFiles)
   {
     ImGui::Selectable(filename.c_str());
-    if (ImGui::BeginPopupContextItem())
+    ImGuiPopupContextItem popup;
+    if (popup.created())
     {
       if(ImGui::Button("Delete"))
       {
         deletedFile = filename;
         ImGui::CloseCurrentPopup();
       }
-      ImGui::EndPopup();
     }
   }
-  ImGui::End();
+  if (!deletedFile.empty()) _deleteFile(deletedFile);
+}
 
-  if(!deletedFile.empty()) _deleteFile(deletedFile);
+void TestWindow::_logWindow()
+{
+  ImGui::SetNextWindowPos(ImVec2(350, 40), ImGuiCond_Appearing);
+  ImGui::SetNextWindowSize(ImVec2(400, 530), ImGuiCond_Appearing);
+  ImGuiWindow logWindow("Log");
+  if(!logWindow.visible()) return;
 
-  // Окно лога
-  if (firstLaunch)
-  {
-    ImGui::SetNextWindowPos(ImVec2(350, 40));
-    ImGui::SetNextWindowSize(ImVec2(400, 530));
-  }
-  ImGui::Begin("Log");
   for (const std::string logString : _log)
   {
     ImGui::Text(logString.c_str());
   }
-  ImGui::End();
-
-  firstLaunch = false;
 }
 
 void TestWindow::_addToLog(const std::string& text)

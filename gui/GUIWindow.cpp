@@ -1,7 +1,10 @@
-﻿#include <backends/imgui_impl_glfw.h>
+﻿#include <stdexcept>
+
+#include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 
 #include <gui/GUIWindow.h>
+#include <gui/modalDialogs.h>
 #include <gui/WindowConfiguration.h>
 #include <util/Abort.h>
 #include <util/Assert.h>
@@ -140,7 +143,15 @@ void GUIWindow::update()
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
 
-  guiImplementation();
+  try
+  {
+    guiImplementation();
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << error.what();
+    errorDialog(this, "Error", error.what());
+  }
 }
 
 void GUIWindow::guiImplementation()

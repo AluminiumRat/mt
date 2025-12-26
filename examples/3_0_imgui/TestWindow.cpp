@@ -1,4 +1,8 @@
-﻿#include <imgui.h>
+﻿#include <stdexcept>
+
+#include <imgui.h>
+
+#include <gui/ImGuiRAII.h>
 
 #include <TestWindow.h>
 
@@ -11,7 +15,10 @@ TestWindow::TestWindow(Device& device, const char* name) :
 
 void TestWindow::guiImplementation()
 {
-  ImGui::Begin("Hello, world!");
-  ImGui::Text("This is some useful text.");
-  ImGui::End();
+  ImGuiWindow window("Hello, world!");
+  if(window.visible())
+  {
+    ImGui::Text("This is some useful text.");
+    if(ImGui::Button("Throw an exception")) throw std::runtime_error("Something is wrong!");
+  }
 }

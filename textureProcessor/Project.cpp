@@ -9,6 +9,7 @@
 #include <gui/GUIWindow.h>
 #include <gui/ImGuiPropertyGrid.h>
 #include <gui/ImGuiWidgets.h>
+#include <gui/ImGuiRAII.h>
 #include <gui/modalDialogs.h>
 #include <util/Assert.h>
 #include <util/fileSystemHelpers.h>
@@ -235,7 +236,7 @@ void Project::onFileChanged(const fs::path&,
 
 void Project::guiPass()
 {
-  if(!ImGui::Begin("Project")) return;
+  mt::ImGuiWindow window("Project");
 
   ImGui::Text("Shader:");
   ImGui::SameLine();
@@ -246,8 +247,6 @@ void Project::guiPass()
 
   ImGui::SeparatorText("Shader properties");
   _propsWidget.makeGUI();
-
-  ImGui::End();
 }
 
 void Project::_selectShader() noexcept
@@ -284,7 +283,7 @@ void formatSelectionLine(VkFormat &format)
   mt::enumSelectionCombo("##format", format, formatsMap);
 }
 
-void Project::_guiOutputProps() noexcept
+void Project::_guiOutputProps()
 {
   mt::ImGuiPropertyGrid outputPropsGrid("##outputProps");
   outputPropsGrid.addRow("File:");

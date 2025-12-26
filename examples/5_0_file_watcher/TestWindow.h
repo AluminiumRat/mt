@@ -25,6 +25,8 @@ namespace mt
     virtual void guiImplementation() override;
 
   private:
+    void _fileListWindow();
+    void _logWindow();
     void _addFile();
     void _deleteFile(const std::string& filename);
     void _addToLog(const std::string& text);

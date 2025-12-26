@@ -4,6 +4,7 @@
 
 #include <imgui.h>
 
+#include <gui/ImGuiRAII.h>
 #include <util/Bimap.h>
 #include <util/fileSystemHelpers.h>
 
@@ -34,7 +35,7 @@ namespace mt
   inline bool fileSelectionLine(const char* controlId,
                                 const std::filesystem::path& filePath) noexcept
   {
-    ImGui::PushID(controlId);
+    ImGuiPushID pushId(controlId);
     bool pressed =  ImGui::SmallButton("...");
     ImGui::SameLine();
     if(!filePath.empty())
@@ -47,7 +48,6 @@ namespace mt
       ImGui::Text("none");
       ImGui::SetItemTooltip("Click ... to select a file");
     }
-    ImGui::PopID();
     return pressed;
   }
 
@@ -59,7 +59,8 @@ namespace mt
     const std::string& previewText = map[value];
 
     EnumType newValue = value;
-    if (ImGui::BeginCombo(label, previewText.c_str(), 0))
+    ImGuiCombo combo(label, previewText.c_str(), 0);
+    if(combo.created())
     {
       for(typename Bimap<EnumType>::const_iterator iValue = map.begin();
           iValue != map.end();
@@ -71,7 +72,7 @@ namespace mt
           newValue = iValue->second;
         }
       }
-      ImGui::EndCombo();
+      combo.end();
     }
 
     if(value != newValue)

@@ -1,6 +1,7 @@
 ﻿#include <imgui.h>
 
 #include <gui/AsyncTaskGUI.h>
+#include <gui/ImGuiRAII.h>
 #include <util/Assert.h>
 
 using namespace mt;
@@ -117,8 +118,7 @@ void AsyncTaskGUI::_makeExplicitTasksWindow()
   ImVec2 center = ImGui::GetMainViewport()->GetCenter();
   ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-  ImGui::Begin("Progress");
-
+  ImGuiWindow progressWindow("Progress");
   for(const std::unique_ptr<TaskInfo>& taskInfo : _tasks)
   {
     if(taskInfo->task->visibility() != AsyncTask::EXPLICIT) continue;
@@ -132,8 +132,6 @@ void AsyncTaskGUI::_makeExplicitTasksWindow()
     }
     ImGui::ProgressBar((float)taskInfo->percentsDone / 100.0f);
   }
-
-  ImGui::End();
 }
 
 void AsyncTaskGUI::_makeMessagesWindow()
@@ -143,7 +141,7 @@ void AsyncTaskGUI::_makeMessagesWindow()
   ImVec2 center = ImGui::GetMainViewport()->GetCenter();
   ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-  ImGui::Begin("Messages", &_showMessagesWindow);
+  ImGuiWindow messagesWindow("Messages", &_showMessagesWindow);
   if(!_showMessagesWindow) _messages.clear();
 
   for(Messages::reverse_iterator iMessage = _messages.rbegin();
@@ -154,25 +152,21 @@ void AsyncTaskGUI::_makeMessagesWindow()
     ImGui::SeparatorText(message.taskName.c_str());
     if(message.type == INFO_MESSAGE)
     {
-      ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(50, 255, 50, 255));
+      ImGuiPushStyleColor pushColor(ImGuiCol_Text, IM_COL32(50, 255, 50, 255));
       ImGui::Text("INFO: ");
-      ImGui::PopStyleColor();
     }
     else if(message.type == WARNING_MESSAGE)
     {
-      ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 50, 255));
+      ImGuiPushStyleColor pushColor(ImGuiCol_Text,
+                                    IM_COL32(255, 255, 50, 255));
       ImGui::Text("WARNING: ");
-      ImGui::PopStyleColor();
     }
     else
     {
-      ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 50, 50, 255));
+      ImGuiPushStyleColor pushColor(ImGuiCol_Text, IM_COL32(255, 50, 50, 255));
       ImGui::Text("ERROR: ");
-      ImGui::PopStyleColor();
     }
     ImGui::SameLine();
     ImGui::Text(message.message.c_str());
   }
-
-  ImGui::End();
 }

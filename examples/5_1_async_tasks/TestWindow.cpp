@@ -2,6 +2,8 @@
 
 #include <imgui.h>
 
+#include <gui/ImGuiRAII.h>
+
 #include <TestWindow.h>
 
 using namespace mt;
@@ -90,7 +92,7 @@ void TestWindow::guiImplementation()
   static bool hidden = false;
 
   ImGui::SetNextWindowSize(ImVec2(0, 0));
-  ImGui::Begin("Control");
+  ImGuiWindow window("Control");
 
   ImGui::Checkbox("Stages", &makeStages);
   ImGui::Checkbox("Make error", &makeError);
@@ -134,8 +136,6 @@ void TestWindow::guiImplementation()
   }
 
   if (ImGui::Button("Abort")) _abortableHandles.clear();
-
-  ImGui::End();
 
   _asyncTaskGui.makeImGUI();
 }

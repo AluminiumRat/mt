@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 
 #include <ddsSupport/ddsSupport.h>
+#include <gui/ImGuiRAII.h>
 #include <gui/modalDialogs.h>
 #include <technique/TechniqueLoader.h>
 #include <util/Log.h>
@@ -31,18 +32,15 @@ void MainWindow::guiImplementation()
   _processMainMenu();
   if(_project != nullptr) _project->guiPass();
 
-  // Если было сохранение, то на 1 кадр покажем окно сохранения
+  // Если было сохранение, то на несколько кадров покажем окно сохранения
   if(_saveWindowStage != 0)
   {
     _saveWindowStage--;
     ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     ImGui::SetNextWindowSize(ImVec2(150, 70));
-    if(ImGui::Begin("Save"))
-    {
-      ImGui::ProgressBar(0.5f);
-      ImGui::End();
-    }
+    mt::ImGuiWindow saveWindow("Save");
+    ImGui::ProgressBar(0.5f);
   }
 
   Application::instance().asyncTaskGui().makeImGUI();
@@ -50,26 +48,6 @@ void MainWindow::guiImplementation()
 
 void MainWindow::_processMainMenu()
 {
-  if(!ImGui::BeginMainMenuBar()) return;
-
-  if(ImGui::BeginMenu("File"))
-  {
-    if (ImGui::MenuItem("New")) _newProject();
-    if (ImGui::MenuItem("Open", "Ctrl+O")) _loadProject();
-
-    // Если проекта нет, то "Save" не должен быть активным
-    if (_project == nullptr)
-    {
-      ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
-    }
-    if (ImGui::MenuItem("Save", "Ctrl+S")) _saveProject();
-    if (_project == nullptr) ImGui::PopStyleColor();
-
-    ImGui::EndMenu();
-  }
-
-  ImGui::EndMainMenuBar();
-
   //  Обработке шорткатов
   ImGuiIO& io = ImGui::GetIO();
   if(io.KeyCtrl)
@@ -77,50 +55,54 @@ void MainWindow::_processMainMenu()
     if(ImGui::IsKeyPressed(ImGuiKey_O, false)) _loadProject();
     if(ImGui::IsKeyPressed(ImGuiKey_S, false)) _saveProject();
   }
+
+  //  Собственно, само меню
+  mt::ImGuiMainMenuBar mainMenu;
+  if (!mainMenu.created()) return;
+
+  mt::ImGuiMenu fileMenu("File");
+  if(fileMenu.created())
+  {
+    if (ImGui::MenuItem("New")) _newProject();
+    if (ImGui::MenuItem("Open", "Ctrl+O")) _loadProject();
+
+    // Если проекта нет, то "Save" не должен быть активным
+    if (_project == nullptr)
+    {
+      mt::ImGuiPushStyleColor pushColor(ImGuiCol_Text,
+                                        ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
+      if (ImGui::MenuItem("Save", "Ctrl+S")) _saveProject();
+    }
+    else if (ImGui::MenuItem("Save", "Ctrl+S")) _saveProject();
+
+    fileMenu.end();
+  }
 }
 
-void MainWindow::_newProject() noexcept
+void MainWindow::_newProject()
 {
-  try
-  {
-    _saveIfNeeded();
-    _project.reset(new Project(""));
-    _updateTitle();
-  }
-  catch(std::exception& error)
-  {
-    mt::Log::error() << error.what();
-    mt::errorDialog(this, "New", "Unable to create new project");
-  }
+  _saveIfNeeded();
+  _project.reset(new Project(""));
+  _updateTitle();
 }
 
-void MainWindow::_loadProject() noexcept
+void MainWindow::_loadProject()
 {
   _saveIfNeeded();
 
-  try
-  {
-    std::filesystem::path file =
+  std::filesystem::path file =
         mt::openFileDialog( this,
                             mt::FileFilters{{ .expression = "*.tpr",
                                               .description = "Project(*.tpr)"}},
                             "");
-    if(!file.empty())
-    {
-      _project.reset(new Project(file));
-      _updateTitle();
-    }
-  }
-  catch (std::exception& error)
+  if(!file.empty())
   {
-    mt::Log::error() << error.what();
-    std::string errorString = "Unable to open project: \n";
-    errorString += error.what();
-    mt::errorDialog(this, "Open", errorString.c_str());
+    _project.reset(new Project(file));
+    _updateTitle();
   }
 }
 
-void MainWindow::_saveIfNeeded() noexcept
+void MainWindow::_saveIfNeeded()
 {
   if(_project == nullptr) return;
   bool needSave = yesNoQuestionDialog(this,
@@ -130,7 +112,7 @@ void MainWindow::_saveIfNeeded() noexcept
   if(needSave) _saveProject();
 }
 
-void MainWindow::_saveProject() noexcept
+void MainWindow::_saveProject()
 {
   if(_project == nullptr) return;
   if(_project->projectFile().empty())
@@ -139,41 +121,25 @@ void MainWindow::_saveProject() noexcept
     return;
   }
 
-  try
-  {
-    _project->save(_project->projectFile());
-    _saveWindowStage = SAVE_WINDOW_FRAME_COUNT;
-  }
-  catch (std::exception& error)
-  {
-    mt::Log::error() << error.what();
-    mt::errorDialog(this, "Save", "Unable to save project");
-  }
+  _project->save(_project->projectFile());
+  _saveWindowStage = SAVE_WINDOW_FRAME_COUNT;
 }
 
-void MainWindow::_saveProjectAs() noexcept
+void MainWindow::_saveProjectAs()
 {
   if (_project == nullptr) return;
 
-  try
+  std::filesystem::path file =
+      mt::saveFileDialog( this,
+                          mt::FileFilters{{ .expression = "*.tpr",
+                                            .description = "Project(*.tpr)"}},
+                          "");
+  if(!file.empty())
   {
-    std::filesystem::path file =
-        mt::saveFileDialog( this,
-                            mt::FileFilters{{ .expression = "*.tpr",
-                                              .description = "Project(*.tpr)"}},
-                            "");
-    if(!file.empty())
-    {
-      if (!file.has_extension()) file.replace_extension("tpr");
-      _project->save(file);
-      _updateTitle();
-      _saveWindowStage = SAVE_WINDOW_FRAME_COUNT;
-    }
-  }
-  catch (std::exception& error)
-  {
-    mt::Log::error() << error.what();
-    mt::errorDialog(this, "Save", "Unable to save project");
+    if (!file.has_extension()) file.replace_extension("tpr");
+    _project->save(file);
+    _updateTitle();
+    _saveWindowStage = SAVE_WINDOW_FRAME_COUNT;
   }
 }
 

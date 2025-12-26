@@ -36,7 +36,7 @@ private:
 private:
   void _load();
   void _selectShader() noexcept;
-  void _guiOutputProps() noexcept;
+  void _guiOutputProps();
   void _selectOutputFile() noexcept;
 
 private:
