@@ -29,6 +29,7 @@ TechniquePropertyWidget::TechniquePropertyWidget(
   _commonData(commonData),
   _active(false),
   _unsupportedType(false),
+  _hints(0),
   _uniform(nullptr),
   _vectorSize(1),
   _intValue(1),
@@ -43,6 +44,7 @@ void TechniquePropertyWidget::updateFromTechnique()
 {
   _active = false;
   _unsupportedType = false;
+  _hints = 0;
   _uniform = nullptr;
   _resourceBinding = nullptr;
 
@@ -50,6 +52,11 @@ void TechniquePropertyWidget::updateFromTechnique()
                                                       _getUniformDescription();
   if(uniformDescription != nullptr)
   {
+    if(uniformDescription->guiHints & TechniqueConfiguration::GUI_HINT_HIDDEN)
+    {
+      return;
+    }
+
     _scalarType = uniformDescription->baseType;
     _vectorSize = uniformDescription->vectorSize;
     if(_vectorSize == 0) _vectorSize = 1;
@@ -60,8 +67,10 @@ void TechniquePropertyWidget::updateFromTechnique()
     {
       _unsupportedType = true;
     }
+
     _uniform = &_technique.getOrCreateUniform(_fullName.c_str());
     _active = true;
+    _hints = uniformDescription->guiHints;
     _updateUniformValue();
     return;
   }
@@ -70,6 +79,11 @@ void TechniquePropertyWidget::updateFromTechnique()
                                                       _getResourceDescription();
   if(resourceDescription != nullptr)
   {
+    if(resourceDescription->guiHints & TechniqueConfiguration::GUI_HINT_HIDDEN)
+    {
+      return;
+    }
+
     _resourceType = resourceDescription->type;
     if( _resourceType != VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE &&
         _resourceType != VK_DESCRIPTOR_TYPE_SAMPLER &&
@@ -86,6 +100,7 @@ void TechniquePropertyWidget::updateFromTechnique()
     _resourceBinding =
                       &_technique.getOrCreateResourceBinding(_fullName.c_str());
     _active = true;
+    _hints = resourceDescription->guiHints;
     _updateResource();
     return;
   }
@@ -129,7 +144,7 @@ const TechniqueConfiguration::Resource*
 
 void TechniquePropertyWidget::_updateUniformValue()
 {
-  if(_uniform == nullptr) return;
+  if(_uniform == nullptr || _unsupportedType) return;
 
   if (_scalarType == TechniqueConfiguration::INT_TYPE)
   {
@@ -149,7 +164,7 @@ void TechniquePropertyWidget::_updateUniformValue()
 
 void TechniquePropertyWidget::_updateResource()
 {
-  if(_resourceBinding == nullptr) return;
+  if(_resourceBinding == nullptr || _unsupportedType) return;
 
   _resourceBinding->clear();
 

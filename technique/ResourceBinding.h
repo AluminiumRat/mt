@@ -105,6 +105,9 @@ namespace mt
     // Сбросить все подключенные ресурсы
     inline void clear() noexcept;
 
+    //  Битсет из элементов TechniqueConfiguration::GUIHints
+    inline uint32_t guiHints() const noexcept;
+
   protected:
     virtual void onResourceUpdated() override;
 
@@ -354,6 +357,12 @@ namespace mt
                                 const ConstRef<TechniqueResource>& theResource)
   {
     setResource(theResource.get());
+  }
+
+  inline uint32_t ResourceBinding::guiHints() const noexcept
+  {
+    if (_description != nullptr) return _description->guiHints;
+    return 0;
   }
 
   inline ResourceBindingImpl::ResourceBindingImpl(

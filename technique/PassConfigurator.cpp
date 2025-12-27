@@ -320,6 +320,7 @@ void PassConfigurator::_processBindings(
     {
       throw std::runtime_error(_name + ": " + shaderFilename + ": only images arrays are supported.");
     }
+    newResource.guiHints = 0;
 
     // Смотрим, возможно этот биндинг уже появлялся на других стадиях
     bool itIsNewResource = true;
@@ -452,6 +453,7 @@ void PassConfigurator::_parseUniformBlockMember(
   newUniform.fullName = fullName;
   newUniform.offsetInBuffer = blockOffset;
   newUniform.size = sourceMember.size;
+  newUniform.guiHints = 0;
 
   // Определяем базовый тип
   if (type->type_flags & SPV_REFLECT_TYPE_FLAG_INT)

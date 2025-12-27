@@ -25,6 +25,12 @@ namespace mt
   //    тем же способом, не пересобирая шейдеры для каждого набора данных).
   struct TechniqueConfiguration : public RefCounter
   {
+    // Подсказки для GUI системы, как отображать и настраивать элементы техники
+    enum GUIHints
+    {
+      GUI_HINT_HIDDEN = 1     // Вообще не обрабатывать параметр в GUI системе
+    };
+
     //  Дефайн в шейдере, который может принимать только ограниченное количество
     //  значений. Позволяет заранее скомпилировать все возможные вариации
     //  пайплайна и во время рендера просто выбирать нужный из списка.
@@ -87,6 +93,8 @@ namespace mt
                               //    параметр - это массив векторов или матриц
       uint32_t arraySize;
       uint32_t arrayStride;
+
+      uint32_t guiHints;      //  битсет из значений GUIHints
     };
 
     struct UniformBuffer
@@ -121,6 +129,8 @@ namespace mt
       bool writeAccess;
       uint32_t count;             //  Если в один бинд прибинжен массив
                                   //  то здесь будет его размер. Иначе 1;
+
+      uint32_t guiHints;          //  битсет из значений GUIHints
     };
     std::vector<Resource> resources;
     uint32_t resourcesCount[maxDescriptorSetIndex + 1];

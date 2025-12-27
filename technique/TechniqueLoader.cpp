@@ -56,6 +56,8 @@ namespace mt
   static void loadDefaultSamplers(YAML::Node techniqueNode,
                                   TechniqueConfigurator& target,
                                   std::unordered_set<fs::path>* usedFiles);
+  static void loadGUIHints(YAML::Node techniqueNode,
+                           TechniqueConfigurator& target);
   //  Загрузить настройки сэмплера, полная версия с наследованием
   static void updateSamplerSettings(YAML::Node samplerNode,
                                     SamplerDescription& target,
@@ -129,6 +131,7 @@ namespace mt
       }
 
       loadDefaultSamplers(node, target, usedFiles);
+      loadGUIHints(node, target);
     }
     catch(...)
     {
@@ -820,5 +823,37 @@ namespace mt
       }
     }
     return files;
+  }
+
+  void loadGUIHints(YAML::Node techniqueNode, TechniqueConfigurator& target)
+  {
+    YAML::Node listNode = techniqueNode["GUIHints"];
+    if(!listNode.IsMap()) return;
+
+    for(YAML::const_iterator iHint = listNode.begin();
+        iHint != listNode.end();
+        iHint++)
+    {
+      // Имя элемента
+      TechniqueConfigurator::GUIHint hint;
+      hint.elementName = iHint->first.as<std::string>("");
+      if(hint.elementName.empty()) continue;
+
+      // Грузим хинты, которые применяются к элементу
+      YAML::Node valuesNode = iHint->second;
+      if (valuesNode.IsSequence())
+      {
+        for (YAML::Node value : valuesNode)
+        {
+          std::string valueStr = value.as<std::string>("");
+          if(valueStr == "hidden")
+          {
+            hint.hints = hint.hints | TechniqueConfiguration::GUI_HINT_HIDDEN;
+          }
+        }
+      }
+
+      target.addGUIHint(hint);
+    }
   }
 }

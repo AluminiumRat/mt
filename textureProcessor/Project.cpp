@@ -58,6 +58,11 @@ public:
 
     _configurator.addPass(std::move(pass));
 
+    _configurator.addGUIHint({"intrinsic.mipLevel",
+                              mt::TechniqueConfiguration::GUI_HINT_HIDDEN});
+    _configurator.addGUIHint({"intrinsic.arrayIndex",
+                              mt::TechniqueConfiguration::GUI_HINT_HIDDEN});
+
     _configurator.rebuildConfiguration(&_usedFiles);
   }
 

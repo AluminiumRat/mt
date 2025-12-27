@@ -60,6 +60,9 @@ namespace mt
     //  Может вернуть data == nullptr, если значение ещё не было установлено
     inline ValueRef getValue() const noexcept;
 
+    //  Битсет из элементов TechniqueConfiguration::GUIHints
+    inline uint32_t guiHints() const noexcept;
+
   protected:
     void _bindToConfiguration(
             const TechniqueConfiguration* configuration,
@@ -165,6 +168,12 @@ namespace mt
     MT_ASSERT(_storage != nullptr);
     return ValueRef{.data = _storage->getData(_description->offsetInBuffer),
                     .dataSize = _description->size};
+  }
+
+  inline uint32_t UniformVariable::guiHints() const noexcept
+  {
+    if (_description != nullptr) return _description->guiHints;
+    return 0;
   }
 
   inline UniformVariableImpl::UniformVariableImpl(

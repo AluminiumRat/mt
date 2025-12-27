@@ -59,6 +59,7 @@ void TechniqueConfigurator::rebuildOnlyConfiguration(
   _createLayouts(context);
   _recountResources(context);
   _createPipelines(context);
+  _propagateGUIHints(context);
 
   {
     std::lock_guard lock(_configurationMutex);
@@ -183,5 +184,43 @@ void TechniqueConfigurator::_createPipelines(
     context.currentPassIndex = i;
     context.currentPass = &context.configuration->_passes[i];
     _passes[i]->createPipelines(context);
+  }
+}
+
+const TechniqueConfigurator::GUIHint*
+                  TechniqueConfigurator::_getGUIHint(
+                                  const std::string& elementName) const noexcept
+{
+  for(const GUIHint& hint : _guiHints)
+  {
+    if(hint.elementName == elementName)
+    {
+      return &hint;
+    }
+  }
+  return nullptr;
+}
+
+void TechniqueConfigurator::_propagateGUIHints(
+                                      ConfigurationBuildContext& context) const
+{
+  // Раздаем хинты uniform переменным
+  for(TechniqueConfiguration::UniformBuffer& uniformBuffer :
+                                          context.configuration->uniformBuffers)
+  {
+    for(TechniqueConfiguration::UniformVariable& variable :
+                                                        uniformBuffer.variables)
+    {
+      const GUIHint* hint = _getGUIHint(variable.fullName);
+      if(hint != nullptr) variable.guiHints = hint->hints;
+    }
+  }
+
+  // Раздаем хинты ресурсам
+  for(TechniqueConfiguration::Resource& resource :
+                                              context.configuration->resources)
+  {
+    const GUIHint* hint = _getGUIHint(resource.name);
+    if (hint != nullptr) resource.guiHints = hint->hints;
   }
 }

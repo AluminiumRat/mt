@@ -60,6 +60,17 @@ namespace mt
     using DefaultSampler = TechniqueConfiguration::DefaultSampler;
     using Samplers = TechniqueConfiguration::Samplers;
 
+    //  Хинты - это подсказки для GUI системы, как отображать элементы техники
+    struct GUIHint
+    {
+      //  Название элемента, к которому относится хинт.
+      //  Поддерживаются только uniform переменные и ресурсы
+      std::string elementName;
+      //  Битсет из элементов TechniqueConfiguration::GUIHints
+      uint32_t hints = 0;
+    };
+    using GUIHints = std::vector<GUIHint>;
+
   public:
     TechniqueConfigurator(Device& device, const char* debugName);
     TechniqueConfigurator(const TechniqueConfigurator&) = delete;
@@ -125,7 +136,10 @@ namespace mt
     inline const Samplers& defaultSamplers() const noexcept;
     inline void setDefaultSamplers(std::span<const DefaultSampler> newSamplers);
 
-    //  Удалить все проходы, селекшены и дефолтные сэмплеры
+    inline const GUIHints& guiHints() const noexcept;
+    inline void addGUIHint(const GUIHint& hint);
+
+    //  Удалить все проходы, селекшены, дефолтные сэмплеры и gui хинты
     inline void clear() noexcept;
 
   private:
@@ -144,9 +158,11 @@ namespace mt
     void _createLayouts(ConfigurationBuildContext& context) const;
     //  Пересчитать, сколько ресурсов в каком сете лежит
     void _recountResources(ConfigurationBuildContext& context) const;
-    //  Финальная стадия построения конфигурации - создаем все варианты
-    //  пайплайнов
+    //  Создаем все варианты пайплайнов
     void _createPipelines(ConfigurationBuildContext& context) const;
+    //  Раскидать хинты по элементам
+    void _propagateGUIHints(ConfigurationBuildContext& context) const;
+    const GUIHint* _getGUIHint(const std::string& elementName) const noexcept;
 
   private:
     Device& _device;
@@ -162,6 +178,8 @@ namespace mt
     Selections _selections;
 
     Samplers _defaultSamplers;
+
+    GUIHints _guiHints;
 
     using Observers = std::vector<Technique*>;
     Observers _observers;
@@ -251,10 +269,32 @@ namespace mt
     _defaultSamplers = std::move(newSamplersVector);
   }
 
+  inline const TechniqueConfigurator::GUIHints&
+                                TechniqueConfigurator::guiHints() const noexcept
+  {
+    return _guiHints;
+  }
+
+  inline void TechniqueConfigurator::addGUIHint(const GUIHint& hint)
+  {
+    //  Ищем, возможно для этого элемента уже устанавливались хинты
+    for(GUIHint& existHint : _guiHints)
+    {
+      if(existHint.elementName == hint.elementName)
+      {
+        existHint.hints = existHint.hints | hint.hints;
+        return;
+      }
+    }
+
+    _guiHints.push_back(hint);
+  }
+
   inline void TechniqueConfigurator::clear() noexcept
   {
     _passes.clear();
     _selections.clear();
     _defaultSamplers.clear();
+    _guiHints.clear();
   }
 }

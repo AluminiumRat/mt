@@ -92,6 +92,9 @@ namespace mt
     bool _active;
     bool _unsupportedType;
 
+    //битсет из TechniqueConfiguration::GUIHints
+    uint32_t _hints;
+
     UniformVariable* _uniform;
     TechniqueConfiguration::BaseScalarType _scalarType;
     uint32_t _vectorSize;
