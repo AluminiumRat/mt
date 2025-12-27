@@ -163,7 +163,7 @@ Ref<Image> mt::loadDDS( const fs::path& file,
   return image;
 }
 
-static std::vector<Ref<DataBuffer>> readMips(
+static std::vector<Ref<DataBuffer>> readSlices(
                                             const Image& srcImage,
                                             Device& device,
                                             CommandQueueTransfer& transferQueue)
@@ -177,34 +177,37 @@ static std::vector<Ref<DataBuffer>> readMips(
                                                   transferQueue.startCommands();
   // Скачиваем мипы
   std::vector<Ref<DataBuffer>> buffers;
-  for(uint32_t mipLevel = 0; mipLevel < srcImage.mipmapCount(); mipLevel++)
+  for(uint32_t arrayIndex = 0; arrayIndex < srcImage.arraySize(); arrayIndex++)
   {
-    glm::uvec3 mipExtent = srcImage.extent(mipLevel);
-    if(formatDesc.isCompressed)
+    for(uint32_t mipLevel = 0; mipLevel < srcImage.mipmapCount(); mipLevel++)
     {
-      mipExtent.x += (4 - mipExtent.x % 4) % 4;
-      mipExtent.y += (4 - mipExtent.y % 4) % 4;
-    }
-    size_t mipDataSize = mipExtent.x * mipExtent.y * mipExtent.z *
-                                    srcImage.arraySize() * formatDesc.texelSize;
-    mipDataSize = mipDataSize / 8 + (mipDataSize % 8 == 0 ? 0 : 1);
+      glm::uvec3 mipExtent = srcImage.extent(mipLevel);
+      if(formatDesc.isCompressed)
+      {
+        mipExtent.x += (4 - mipExtent.x % 4) % 4;
+        mipExtent.y += (4 - mipExtent.y % 4) % 4;
+      }
+      size_t mipDataSize = mipExtent.x * mipExtent.y * mipExtent.z *
+                                                          formatDesc.texelSize;
+      mipDataSize = (mipDataSize + 7) / 8;
 
-    Ref<DataBuffer> mipBuffer(new DataBuffer( device,
-                                              mipDataSize,
-                                              DataBuffer::DOWNLOADING_BUFFER,
-                                              "DDS downloading buffer"));
-    producer->copyFromImageToBuffer(srcImage,
-                                    VK_IMAGE_ASPECT_COLOR_BIT,
-                                    0,
-                                    srcImage.arraySize(),
-                                    mipLevel,
-                                    glm::uvec3(0),
-                                    srcImage.extent(mipLevel),
-                                    *mipBuffer,
-                                    0,
-                                    0,
-                                    0);
-    buffers.push_back(mipBuffer);
+      Ref<DataBuffer> mipBuffer(new DataBuffer( device,
+                                                mipDataSize,
+                                                DataBuffer::DOWNLOADING_BUFFER,
+                                                "DDS downloading buffer"));
+      producer->copyFromImageToBuffer(srcImage,
+                                      VK_IMAGE_ASPECT_COLOR_BIT,
+                                      arrayIndex,
+                                      1,
+                                      mipLevel,
+                                      glm::uvec3(0),
+                                      srcImage.extent(mipLevel),
+                                      *mipBuffer,
+                                      0,
+                                      0,
+                                      0);
+      buffers.push_back(mipBuffer);
+    }
   }
 
   transferQueue.submitCommands(std::move(producer));
@@ -359,10 +362,9 @@ void mt::saveToDDS( const Image& srcImage,
   if (transferQueue == nullptr) transferQueue = &device.primaryQueue();
   MT_ASSERT(&device == &transferQueue->device());
 
-  std::vector<Ref<DataBuffer>> mipBuffers = readMips( srcImage,
-                                                      device,
-                                                      *transferQueue);
-  MT_ASSERT(mipBuffers.size() == srcImage.mipmapCount())
+  std::vector<Ref<DataBuffer>> slicesBuffers = readSlices(srcImage,
+                                                          device,
+                                                          *transferQueue);
 
   VkFormat format = srcImage.format();
   const ImageFormatFeatures& formatDesc = getFormatFeatures(format);
@@ -399,7 +401,7 @@ void mt::saveToDDS( const Image& srcImage,
 
   fileStraem.write((const char*)&dx10Header, sizeof(dx10Header));
 
-  for(Ref<DataBuffer> buffer : mipBuffers)
+  for(Ref<DataBuffer> buffer : slicesBuffers)
   {
     DataBuffer::Mapper map(*buffer, DataBuffer::Mapper::GPU_TO_CPU);
     fileStraem.write((const char*)map.data(), buffer->size());
