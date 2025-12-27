@@ -26,11 +26,13 @@ class Project::RebuildTechniqueTask : public mt::AsyncTask
 public:
   RebuildTechniqueTask( Project& project,
                         mt::TechniqueConfigurator& configurator,
+                        VkFormat targetFormat,
                         const fs::path& shaderFile) :
     AsyncTask("Compile shader", EXCLUSIVE_MODE, EXPLICIT),
     _project(project),
     _configurator(configurator),
-    _shaderFile(shaderFile)
+    _shaderFile(shaderFile),
+    _targetFormat(targetFormat)
   {
   }
 
@@ -44,7 +46,7 @@ public:
                                   { .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
                                     .file = _shaderFile}};
 
-    VkFormat colorAttachments[1] = { VK_FORMAT_R32G32B32A32_SFLOAT };
+    VkFormat colorAttachments[1] = { _targetFormat };
     mt::FrameBufferFormat fbFormat( colorAttachments,
                                     VK_FORMAT_UNDEFINED,
                                     VK_SAMPLE_COUNT_1_BIT);
@@ -93,6 +95,7 @@ private:
   Project& _project;
   mt::TechniqueConfigurator& _configurator;
   fs::path _shaderFile;
+  VkFormat _targetFormat;
   std::unordered_set<fs::path> _usedFiles;
 };
 
@@ -225,6 +228,7 @@ void Project::rebuildTechnique()
   std::unique_ptr<mt::AsyncTask> rebuildTask(
                                       new RebuildTechniqueTask( *this,
                                                                 *_configurator,
+                                                                _imageFormat,
                                                                 _shaderFile));
   _rebuildTaskHandle = Application::instance().asyncQueue().addManagedTask(
                                                         std::move(rebuildTask));
@@ -290,7 +294,7 @@ void Project::_selectShader() noexcept
   }
 }
 
-void formatSelectionLine(VkFormat &format)
+bool formatSelectionLine(VkFormat &format)
 {
   static const mt::Bimap<VkFormat> formatsMap{
     "Output formats",
@@ -298,7 +302,7 @@ void formatSelectionLine(VkFormat &format)
       {VK_FORMAT_B8G8R8A8_SRGB, "B8G8R8A8_SRGB"},
       {VK_FORMAT_R32G32B32A32_SFLOAT, "R32G32B32A32_SFLOAT"}
     }};
-  mt::enumSelectionCombo("##format", format, formatsMap);
+  return mt::enumSelectionCombo("##format", format, formatsMap);
 }
 
 void Project::_guiOutputProps()
@@ -308,7 +312,7 @@ void Project::_guiOutputProps()
   if(mt::fileSelectionLine("File:", _outputFile)) _selectOutputFile();
 
   outputPropsGrid.addRow("Format:");
-  formatSelectionLine(_imageFormat);
+  if(formatSelectionLine(_imageFormat)) rebuildTechnique();
 
   outputPropsGrid.addRow("Size:");
   int sizeValues[] = { _outputSize.x, _outputSize.y };

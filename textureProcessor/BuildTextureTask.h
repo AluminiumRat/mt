@@ -45,14 +45,11 @@ private:
   //  Создаем копию переданной техники, чтобы избежать конфликтов
   //  в многопотоке
   void _copyTechnique(const mt::Technique& technique);
-  void _createImages();
+  void _createTargetImage();
   void _buildSlice(uint32_t mipIndex, uint32_t arrayIndex);
   void _adjustIntrinsic(uint32_t mipIndex, uint32_t arrayIndex);
   mt::Ref<mt::FrameBuffer> _createFrameBuffer(uint32_t mipIndex,
                                               uint32_t arrayIndex);
-  void _blitDataToSavedTexture( uint32_t mipIndex,
-                                uint32_t arrayIndex,
-                                mt::CommandProducerGraphic& producer);
   void _saveTexture();
 
 private:
@@ -66,12 +63,5 @@ private:
   //    как она может перенастраиваться в основном потоке
   mt::Ref<mt::Technique> _technique;
 
-  //  Промежуточная текстура в формате VK_FORMAT_R32G32B32A32_SFLOAT
-  //  В неё рендерим, используя настроенную технику, потом используем для
-  //    конвертации в конечный формат и для отрисовки во вьювер
   mt::Ref<mt::Image> _targetImage;
-
-  //  Текстура, переведенная в конечный формат, данные из неё попадут в
-  //  конечный файл
-  mt::Ref<mt::Image> _savedImage;
 };

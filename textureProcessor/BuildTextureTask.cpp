@@ -92,7 +92,7 @@ void BuildTextureTask::_copyTechnique(const mt::Technique& technique)
 
 void BuildTextureTask::asyncPart()
 {
-  _createImages();
+  _createTargetImage();
 
   reportStage("Build texture");
 
@@ -110,10 +110,9 @@ void BuildTextureTask::asyncPart()
 
   reportStage("Save texture");
   _saveTexture();
-  _savedImage.reset();
 }
 
-void BuildTextureTask::_createImages()
+void BuildTextureTask::_createTargetImage()
 {
   mt::Device& device = Application::instance().primaryDevice();
 
@@ -130,29 +129,13 @@ void BuildTextureTask::_createImages()
                                             VK_IMAGE_USAGE_SAMPLED_BIT |
                                             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                             imageFlags,
-                                            VK_FORMAT_R32G32B32A32_SFLOAT,
+                                            _textureFormat,
                                             glm::uvec3(_textureSize, 1),
                                             VK_SAMPLE_COUNT_1_BIT,
                                             _arraySize,
                                             _mipsCount,
                                             true,
                                             "Result texture"));
-  if(_textureFormat != VK_FORMAT_R32G32B32A32_SFLOAT)
-  {
-    _savedImage = mt::Ref<mt::Image>(new mt::Image(
-                                              device,
-                                              VK_IMAGE_TYPE_2D,
-                                              VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                                                VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                                              0,
-                                              _textureFormat,
-                                              glm::uvec3(_textureSize, 1),
-                                              VK_SAMPLE_COUNT_1_BIT,
-                                              _arraySize,
-                                              _mipsCount,
-                                              true,
-                                              "Result texture"));
-  }
 }
 
 void BuildTextureTask::_buildSlice(uint32_t mipIndex, uint32_t arrayIndex)
@@ -178,9 +161,6 @@ void BuildTextureTask::_buildSlice(uint32_t mipIndex, uint32_t arrayIndex)
     bind.release();
   }
   renderPass.endPass();
-
-  //  Перенесим отрендеренные данные в сохраняемую текстуру
-  _blitDataToSavedTexture(mipIndex, arrayIndex, *producer);
 
   queue->submitCommands(std::move(producer));
   queue->createSyncPoint().waitForReady();
@@ -218,27 +198,6 @@ mt::Ref<mt::FrameBuffer> BuildTextureTask::_createFrameBuffer(
   return mt::Ref(new mt::FrameBuffer(std::span(&colorAttachment, 1), nullptr));
 }
 
-void BuildTextureTask::_blitDataToSavedTexture(
-                                          uint32_t mipIndex,
-                                          uint32_t arrayIndex,
-                                          mt::CommandProducerGraphic& producer)
-{
-  if(_savedImage == nullptr) return;
-  producer.blitImage( *_targetImage,
-                      VK_IMAGE_ASPECT_COLOR_BIT,
-                      arrayIndex,
-                      mipIndex,
-                      glm::uvec3(0),
-                      _targetImage->extent(mipIndex),
-                      *_savedImage,
-                      VK_IMAGE_ASPECT_COLOR_BIT,
-                      arrayIndex,
-                      mipIndex,
-                      glm::uvec3(0),
-                      _savedImage->extent(mipIndex),
-                      VK_FILTER_NEAREST);
-}
-
 void BuildTextureTask::_saveTexture()
 {
   if(_outputFile.empty()) return;
@@ -246,9 +205,7 @@ void BuildTextureTask::_saveTexture()
   mt::Device& device = Application::instance().primaryDevice();
   mt::CommandQueueGraphic* queue = device.graphicQueue();
   MT_ASSERT(queue != nullptr)
-
-  if(_savedImage != nullptr) mt::saveToDDS(*_savedImage, _outputFile, queue);
-  else mt::saveToDDS(*_targetImage, _outputFile, queue);
+  mt::saveToDDS(*_targetImage, _outputFile, queue);
 }
 
 void BuildTextureTask::finalizePart()
