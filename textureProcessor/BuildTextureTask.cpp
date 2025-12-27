@@ -149,6 +149,13 @@ void BuildTextureTask::asyncPart()
 
 void BuildTextureTask::_buildSlice(uint32_t mipIndex, uint32_t arrayIndex)
 {
+  mt::UniformVariable& mipUniform =
+                          _technique->getOrCreateUniform("intrinsic.mipLevel");
+  mipUniform.setValue(mipIndex);
+  mt::UniformVariable& arrayIndexUniform =
+                        _technique->getOrCreateUniform("intrinsic.arrayIndex");
+  arrayIndexUniform.setValue(arrayIndex);
+
   mt::Ref<mt::ImageView> colorTarget(new mt::ImageView(
                                                 *_targetImage,
                                                 mt::ImageSlice(
