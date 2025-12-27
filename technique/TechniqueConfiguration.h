@@ -134,6 +134,9 @@ namespace mt
     using Samplers = std::vector<DefaultSampler>;
     Samplers defaultSamplers;
 
+    //  Устройство, для которого были созданы лэйауты и пайплайны
+    Device* device = nullptr;
+
     //  Уникальный номер конфигурации в рамках одного конфигуратора.
     size_t revision = 0;
   };

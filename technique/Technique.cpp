@@ -26,29 +26,49 @@ Technique::Technique(TechniqueConfigurator& configurator) :
   updateConfiguration();
 }
 
+Technique::Technique( const TechniqueConfiguration& configuration,
+                      const char* debugName) :
+  _device(*configuration.device),
+  _debugName(debugName),
+  _configurator(nullptr),
+  _volatileSetDescription(nullptr),
+  _staticSetDescription(nullptr),
+  _lastProcessedSelectionsRevision(0),
+  _resourcesRevision(0),
+  _staticSetComplete(true),
+  _lastProcessedResourcesRevision(0)
+{
+  MT_ASSERT(configuration.device != nullptr);
+  _setConfiguration(configuration);
+}
+
 Technique::~Technique() noexcept
 {
-  _configurator->removeObserver(*this);
+  if(_configurator != nullptr)
+  {
+    _configurator->removeObserver(*this);
+  }
 }
 
 void Technique::updateConfiguration()
 {
+  MT_ASSERT(_configurator != nullptr);
   ConstRef<TechniqueConfiguration> newConfiguration =
                                                 _configurator->configuration();
-  if(newConfiguration == nullptr) return;
+  if(newConfiguration != nullptr) _setConfiguration(*newConfiguration);
+}
 
+void Technique::_setConfiguration(const TechniqueConfiguration & configuration)
+{
   // Пересоздаем юниформ блоки
   UniformBlocks newUniformBlocks;
-  if(newConfiguration != nullptr)
+  for(const TechniqueConfiguration::UniformBuffer& description :
+                                                  configuration.uniformBuffers)
   {
-    for(const TechniqueConfiguration::UniformBuffer& description :
-                                            newConfiguration->uniformBuffers)
-    {
-      newUniformBlocks.emplace_back(
-                                new TechniqueUniformBlock(description,
-                                                          *this,
-                                                          _resourcesRevision));
-    }
+    newUniformBlocks.emplace_back(
+                              new TechniqueUniformBlock(description,
+                                                        *this,
+                                                        _resourcesRevision));
   }
 
   //  Чистим ресурсы с дефолтными значениями, на случай, если они не прописаны в
@@ -60,43 +80,39 @@ void Technique::updateConfiguration()
 
   try
   {
-    // Добавляем дефолтные сэмплеры
-    if(newConfiguration != nullptr)
+    for(const TechniqueConfiguration::DefaultSampler& sampler :
+                                                  configuration.defaultSamplers)
     {
-      for(const TechniqueConfiguration::DefaultSampler& sampler :
-                                            newConfiguration->defaultSamplers)
+      ResourceBindingImpl& samplerResource =
+                    static_cast<ResourceBindingImpl&>(
+                                  getOrCreateResourceBinding(
+                                                sampler.resourceName.c_str()));
+      if(samplerResource.isDefault())
       {
-        ResourceBindingImpl& samplerResource =
-                      static_cast<ResourceBindingImpl&>(
-                                    getOrCreateResourceBinding(
-                                                  sampler.resourceName.c_str()));
-        if(samplerResource.isDefault())
-        {
-          samplerResource.setSamplerAsDefault(sampler.defaultSampler.get());
-        }
+        samplerResource.setSamplerAsDefault(sampler.defaultSampler.get());
       }
     }
 
     // Биндим дочерние компоненты
     for (std::unique_ptr<SelectionImpl>& selection : _selections)
     {
-      selection->setConfiguration(newConfiguration.get());
+      selection->setConfiguration(&configuration);
     }
 
     for (std::unique_ptr<ResourceBindingImpl>& resource : _resources)
     {
-      resource->setConfiguration(newConfiguration.get());
+      resource->setConfiguration(&configuration);
     }
     _resourcesRevision++;
 
     for (std::unique_ptr<UniformVariableImpl>& uniform : _uniforms)
     {
-      uniform->setConfiguration(newConfiguration.get(), newUniformBlocks);
+      uniform->setConfiguration(&configuration, newUniformBlocks);
     }
 
     for (std::unique_ptr<TechniquePassImpl>& pass : _passes)
     {
-      pass->setConfiguration(newConfiguration.get());
+      pass->setConfiguration(&configuration);
     }
   }
   catch(std::exception& error)
@@ -109,25 +125,22 @@ void Technique::updateConfiguration()
   // Ищем описания дескриптер сетов
   _volatileSetDescription = nullptr;
   _staticSetDescription = nullptr;
-  if(newConfiguration != nullptr)
+  for(const TechniqueConfiguration::DescriptorSet& setDescription :
+                                                  configuration.descriptorSets)
   {
-    for(const TechniqueConfiguration::DescriptorSet& setDescription :
-                                            newConfiguration->descriptorSets)
+    switch(setDescription.type)
     {
-      switch(setDescription.type)
-      {
-      case DescriptorSetType::VOLATILE:
-        _volatileSetDescription = &setDescription;
-        break;
-      case DescriptorSetType::STATIC:
-        _staticSetDescription = &setDescription;
-        break;
-      }
+    case DescriptorSetType::VOLATILE:
+      _volatileSetDescription = &setDescription;
+      break;
+    case DescriptorSetType::STATIC:
+      _staticSetDescription = &setDescription;
+      break;
     }
   }
 
   _uniformBlocks = std::move(newUniformBlocks);
-  _configuration = ConstRef(newConfiguration);
+  _configuration = ConstRef(&configuration);
 }
 
 bool Technique::isReady(const TechniqueVolatileContext* volatileContext) const
@@ -444,6 +457,25 @@ Selection& Technique::getOrCreateSelection(const char* selectionName)
   return *_selections.back();
 }
 
+Selection* Technique::getSelection(const char* selectionName) noexcept
+{
+  for (std::unique_ptr<SelectionImpl>& selection : _selections)
+  {
+    if (selection->name() == selectionName) return selection.get();
+  }
+  return nullptr;
+}
+
+const Selection* Technique::getSelection(
+                                      const char* selectionName) const noexcept
+{
+  for (const std::unique_ptr<SelectionImpl>& selection : _selections)
+  {
+    if (selection->name() == selectionName) return selection.get();
+  }
+  return nullptr;
+}
+
 ResourceBinding& Technique::getOrCreateResourceBinding(const char* resourceName)
 {
   for(std::unique_ptr<ResourceBindingImpl>& resource : _resources)
@@ -457,6 +489,26 @@ ResourceBinding& Technique::getOrCreateResourceBinding(const char* resourceName)
                                                         _configuration.get()));
   _resourcesRevision++;
   return *_resources.back();
+}
+
+ResourceBinding* Technique::getResourceBinding(
+                                              const char* resourceName) noexcept
+{
+  for (std::unique_ptr<ResourceBindingImpl>& resource : _resources)
+  {
+    if (resource->name() == resourceName) return resource.get();
+  }
+  return nullptr;
+}
+
+const ResourceBinding* Technique::getResourceBinding(
+                                        const char* resourceName) const noexcept
+{
+  for (const std::unique_ptr<ResourceBindingImpl>& resource : _resources)
+  {
+    if (resource->name() == resourceName) return resource.get();
+  }
+  return nullptr;
 }
 
 UniformVariable& Technique::getOrCreateUniform(const char* uniformFullName)
@@ -473,6 +525,25 @@ UniformVariable& Technique::getOrCreateUniform(const char* uniformFullName)
   return *_uniforms.back();
 }
 
+UniformVariable* Technique::getUniform(const char* uniformFullName) noexcept
+{
+  for (std::unique_ptr<UniformVariableImpl>& unifrom : _uniforms)
+  {
+    if (unifrom->name() == uniformFullName) return unifrom.get();
+  }
+  return nullptr;
+}
+
+const UniformVariable* Technique::getUniform(
+                                    const char* uniformFullName) const noexcept
+{
+  for (const std::unique_ptr<UniformVariableImpl>& unifrom : _uniforms)
+  {
+    if (unifrom->name() == uniformFullName) return unifrom.get();
+  }
+  return nullptr;
+}
+
 TechniquePass& Technique::getOrCreatePass(const char* passName)
 {
   for(std::unique_ptr<TechniquePassImpl>& pass : _passes)
@@ -482,4 +553,22 @@ TechniquePass& Technique::getOrCreatePass(const char* passName)
   _passes.push_back(std::make_unique<TechniquePassImpl>(passName,
                                                         _configuration.get()));
   return *_passes.back();
+}
+
+TechniquePass* Technique::getPass(const char* passName) noexcept
+{
+  for (std::unique_ptr<TechniquePassImpl>& pass : _passes)
+  {
+    if (pass->name() == passName) return pass.get();
+  }
+  return nullptr;
+}
+
+const TechniquePass* Technique::getPass(const char* passName) const noexcept
+{
+  for (const std::unique_ptr<TechniquePassImpl>& pass : _passes)
+  {
+    if (pass->name() == passName) return pass.get();
+  }
+  return nullptr;
 }

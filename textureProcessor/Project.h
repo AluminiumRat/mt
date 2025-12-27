@@ -24,6 +24,7 @@ public:
   void guiPass();
 
   void rebuildTechnique();
+  void runTechnique();
 
 protected:
   virtual void onFileChanged( const std::filesystem::path& filePath,
@@ -55,6 +56,7 @@ private:
   mt::TechniquePropertyGrid _propsGrid;
 
   std::unique_ptr<mt::AsyncTaskQueue::TaskHandle> _rebuildTaskHandle;
+  std::unique_ptr<mt::AsyncTaskQueue::TaskHandle> _textureTaskHandle;
 };
 
 inline const std::filesystem::path& Project::projectFile() const

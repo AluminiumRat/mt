@@ -211,7 +211,7 @@ void PassConfigurator::_processShader(const ShaderInfo& shaderRecord,
   // Создаем шейдерный модуль
   std::unique_ptr<ShaderModule> newShaderModule(
                                     new ShaderModule(
-                                                *context.device,
+                                                *context.configuration->device,
                                                 spirData,
                                                 shaderFilename.c_str()));
   shaderSet.push_back(ShaderModuleInfo{ std::move(newShaderModule),

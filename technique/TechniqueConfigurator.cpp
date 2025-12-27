@@ -48,8 +48,8 @@ void TechniqueConfigurator::rebuildOnlyConfiguration(
 {
   ConfigurationBuildContext context{};
   context.configuratorName = _debugName;
-  context.device = &_device;
   context.configuration = Ref(new TechniqueConfiguration);
+  context.configuration->device = &_device;
   context.configuration->volatileUniformBuffersSize = 0;
   context.configuration->defaultSamplers = _defaultSamplers;
   context.usedFiles = usedFiles;

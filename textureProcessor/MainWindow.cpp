@@ -54,6 +54,7 @@ void MainWindow::_processMainMenu()
   {
     if(ImGui::IsKeyPressed(ImGuiKey_O, false)) _loadProject();
     if(ImGui::IsKeyPressed(ImGuiKey_S, false)) _saveProject();
+    if(ImGui::IsKeyPressed(ImGuiKey_R, false)) _runShader();
   }
 
   //  Собственно, само меню
@@ -76,6 +77,13 @@ void MainWindow::_processMainMenu()
     else if (ImGui::MenuItem("Save", "Ctrl+S")) _saveProject();
 
     fileMenu.end();
+  }
+
+  mt::ImGuiMenu buildMenu("Build");
+  if (buildMenu.created())
+  {
+    if(ImGui::MenuItem("Run shader", "Ctrl+R")) _runShader();
+    buildMenu.end();
   }
 }
 
@@ -152,6 +160,16 @@ void MainWindow::_updateTitle()
             (const char*)_project->projectFile().filename().u8string().c_str();
   }
   setWindowTitle(title.c_str());
+}
+
+void MainWindow::_runShader()
+{
+  if(_project == nullptr)
+  {
+    mt::errorDialog(this, "Error", "Project is not opened");
+    return;
+  }
+  _project->runTechnique();
 }
 
 void MainWindow::drawImplementation(mt::CommandProducerGraphic& commandProducer,

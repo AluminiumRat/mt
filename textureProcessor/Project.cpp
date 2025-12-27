@@ -16,6 +16,7 @@
 #include <vkr/image/ImageFormatFeatures.h>
 
 #include <Application.h>
+#include <BuildTextureTask.h>
 #include <Project.h>
 
 namespace fs = std::filesystem;
@@ -51,6 +52,7 @@ public:
                                               new mt::PassConfigurator("Pass"));
     pass->setFrameBufferFormat(&fbFormat);
     pass->setShaders(shaders);
+    pass->setTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
 
     _configurator.addPass(std::move(pass));
 
@@ -220,12 +222,40 @@ void Project::save(const fs::path& file)
 void Project::rebuildTechnique()
 {
   if(_rebuildTaskHandle != nullptr) _rebuildTaskHandle->abortTask();
-  std::unique_ptr<mt::AsyncTask> loadingTask(
+  std::unique_ptr<mt::AsyncTask> rebuildTask(
                                       new RebuildTechniqueTask( *this,
                                                                 *_configurator,
                                                                 _shaderFile));
   _rebuildTaskHandle = Application::instance().asyncQueue().addManagedTask(
-                                                        std::move(loadingTask));
+                                                        std::move(rebuildTask));
+}
+
+void Project::runTechnique()
+{
+  if(_technique->configuration() == nullptr)
+  {
+    mt::errorDialog(mt::GUIWindow::currentWindow(),
+                    "Error",
+                    "The shader wasn't compiled correct");
+    return;
+  }
+  if(!_technique->isReady())
+  {
+    mt::errorDialog(mt::GUIWindow::currentWindow(),
+                    "Error",
+                    "Not all resources are setted");
+    return;
+  }
+
+  if (_textureTaskHandle != nullptr) _textureTaskHandle->abortTask();
+  std::unique_ptr<mt::AsyncTask> newTask( new BuildTextureTask( *_technique,
+                                                                _outputFile,
+                                                                _imageFormat,
+                                                                _outputSize,
+                                                                _mipsCount,
+                                                                _arraySize));
+  _textureTaskHandle = Application::instance().asyncQueue().addManagedTask(
+                                                            std::move(newTask));
 }
 
 void Project::onFileChanged(const fs::path&,

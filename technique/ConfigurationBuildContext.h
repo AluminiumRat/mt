@@ -35,7 +35,6 @@ namespace mt
   //    взаимодействовать с этими данными.
   struct ConfigurationBuildContext
   {
-    Device* device = nullptr;
     std::string configuratorName;
 
     //  Конфигурация, которую мы создаем

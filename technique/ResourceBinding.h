@@ -216,7 +216,7 @@ namespace mt
   inline const ImageView* ResourceBinding::image(
                                               size_t arrayIndex) const noexcept
   {
-    if(_images.size() >= arrayIndex) return nullptr;
+    if(_images.size() <= arrayIndex) return nullptr;
     return _images[arrayIndex].get();
   }
 

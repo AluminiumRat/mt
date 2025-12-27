@@ -28,6 +28,7 @@ private:
   void _saveProject();
   void _saveProjectAs();
   void _updateTitle();
+  void _runShader();
 
 private:
   std::unique_ptr<Project> _project;

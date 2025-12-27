@@ -54,7 +54,19 @@ namespace mt
     };
 
   public:
+    //  Создать технику и привязать её к конфигуратору.
+    //  Техника будет автоматически обновляться каждый раз, когда конфигуратор
+    //    будет успешно собирать новую конфигурацию.
+    //  Дебажное имя берется из конфигуратора
     explicit Technique(TechniqueConfigurator& configurator);
+    //  Создать технику, не привязываясь к конфигуратору. Позволяет избежать
+    //    автообновлений и использовать технику в асинхронных тасках.
+    //  ВНИМАНИЕ! Для того чтобы использовать технику в асинхронных задачах
+    //    также необходимо проследить, что к ней не присоединен ни один ресурс
+    //    (ResourceBinding::setResource), так как ресурсы так же автоматически
+    //    обнавляют состояние техники
+    Technique(const TechniqueConfiguration& configuration,
+              const char* debugName);
     Technique(const Technique&) = delete;
     Technique& operator = (const Technique&) = delete;
   protected:
@@ -89,9 +101,22 @@ namespace mt
     void unbindGraphic(CommandProducerGraphic& producer) const noexcept;
 
     Selection& getOrCreateSelection(const char* selectionName);
+    Selection* getSelection(const char* selectionName) noexcept;
+    const Selection* getSelection(const char* selectionName) const noexcept;
+
     ResourceBinding& getOrCreateResourceBinding(const char* resourceName);
+    ResourceBinding* getResourceBinding(const char* resourceName) noexcept;
+    const ResourceBinding* getResourceBinding(
+                                      const char* resourceName) const noexcept;
+
     UniformVariable& getOrCreateUniform(const char* uniformFullName);
+    UniformVariable* getUniform(const char* uniformFullName) noexcept;
+    const UniformVariable* getUniform(
+                                    const char* uniformFullName) const noexcept;
+
     TechniquePass& getOrCreatePass(const char* passName);
+    TechniquePass* getPass(const char* passName) noexcept;
+    const TechniquePass* getPass(const char* passName) const noexcept;
 
     inline const std::string& debugName() const noexcept;
 
@@ -103,6 +128,7 @@ namespace mt
     void updateConfiguration();
 
   private:
+    void _setConfiguration(const TechniqueConfiguration& configuration);
     void _updateStaticSet(CommandProducerTransfer& commandProducer) const;
     bool _checkSetReady(DescriptorSetType setType) const noexcept;
     void _bindResources(DescriptorSet& descriptorSet,

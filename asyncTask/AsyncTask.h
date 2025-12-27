@@ -41,7 +41,7 @@ namespace mt
     AsyncTask(const AsyncTask&) = delete;
     AsyncTask& operator = (const AsyncTask&) = delete;
     virtual ~AsyncTask() noexcept = default;
-  
+
     inline const std::string& name() const noexcept;
     inline ExecutionMode executionMode() const noexcept;
     inline Visibility visibility() const noexcept;

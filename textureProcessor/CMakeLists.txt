@@ -12,6 +12,7 @@ include_directories(.
 
 add_executable (textureProcessor
                 "Application.cpp"
+                "BuildTextureTask.cpp"
                 "main.cpp"
                 "MainWindow.cpp"
                 "Project.cpp")
