@@ -3,7 +3,6 @@
 #include <vkr/image/ImageView.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/queue/CommandQueueGraphic.h>
-#include <vkr/FrameBuffer.h>
 
 #include <Application.h>
 #include <BuildTextureTask.h>
@@ -33,6 +32,9 @@ BuildTextureTask::BuildTextureTask( const mt::Technique& technique,
 
 void BuildTextureTask::_copyTechnique(const mt::Technique& technique)
 {
+  //  Создаем копию переданной техники, чтобы избежать конфликтов
+  //  в многопотоке
+
   const mt::TechniqueConfiguration* configuration = technique.configuration();
   MT_ASSERT(configuration != nullptr);
 
@@ -90,7 +92,31 @@ void BuildTextureTask::_copyTechnique(const mt::Technique& technique)
 
 void BuildTextureTask::asyncPart()
 {
+  _createImages();
+
+  reportStage("Build texture");
+
+  for(uint32_t arrayIndex = 0; arrayIndex < _arraySize; arrayIndex++)
+  {
+    for(uint32_t mipIndex = 0; mipIndex < _mipsCount; mipIndex++)
+    {
+      _buildSlice(mipIndex, arrayIndex);
+      int percent = 100 * (mipIndex + arrayIndex * _mipsCount) /
+                                                      (_arraySize * _mipsCount);
+      reportPercent((uint8_t)percent);
+      if(shouldBeAborted()) return;
+    }
+  }
+
+  reportStage("Save texture");
+  _saveTexture();
+  _savedImage.reset();
+}
+
+void BuildTextureTask::_createImages()
+{
   mt::Device& device = Application::instance().primaryDevice();
+
   VkImageCreateFlags imageFlags = 0;
   if( _textureSize.x == _textureSize.y &&
       _arraySize % 6 == 0)
@@ -127,27 +153,40 @@ void BuildTextureTask::asyncPart()
                                               true,
                                               "Result texture"));
   }
-
-  reportStage("Build texture");
-
-  for(uint32_t arrayIndex = 0; arrayIndex < _arraySize; arrayIndex++)
-  {
-    for(uint32_t mipIndex = 0; mipIndex < _mipsCount; mipIndex++)
-    {
-      _buildSlice(mipIndex, arrayIndex);
-      int percent = 100 * (mipIndex + arrayIndex * _mipsCount) /
-                                                      (_arraySize * _mipsCount);
-      reportPercent((uint8_t)percent);
-      if(shouldBeAborted()) return;
-    }
-  }
-
-  reportStage("Save texture");
-  _saveTexture();
-  _savedImage.reset();
 }
 
 void BuildTextureTask::_buildSlice(uint32_t mipIndex, uint32_t arrayIndex)
+{
+  _adjustIntrinsic(mipIndex, arrayIndex);
+
+  mt::Ref<mt::FrameBuffer> frameBuffer = _createFrameBuffer(mipIndex,
+                                                            arrayIndex);
+
+  mt::Device& device = Application::instance().primaryDevice();
+  mt::CommandQueueGraphic* queue = device.graphicQueue();
+  MT_ASSERT(queue != nullptr)
+
+  std::unique_ptr<mt::CommandProducerGraphic> producer = queue->startCommands();
+
+  //  Рендерим полноэкранный квадрат в слайс
+  mt::CommandProducerGraphic::RenderPass renderPass(*producer, *frameBuffer);
+  mt::TechniquePass& techniquePass = _technique->getOrCreatePass("Pass");
+  mt::Technique::Bind bind(*_technique, techniquePass, *producer);
+  if (bind.isValid())
+  {
+    producer->draw(4);
+    bind.release();
+  }
+  renderPass.endPass();
+
+  //  Перенесим отрендеренные данные в сохраняемую текстуру
+  _blitDataToSavedTexture(mipIndex, arrayIndex, *producer);
+
+  queue->submitCommands(std::move(producer));
+  queue->createSyncPoint().waitForReady();
+}
+
+void BuildTextureTask::_adjustIntrinsic(uint32_t mipIndex, uint32_t arrayIndex)
 {
   mt::UniformVariable& mipUniform =
                           _technique->getOrCreateUniform("intrinsic.mipLevel");
@@ -155,7 +194,12 @@ void BuildTextureTask::_buildSlice(uint32_t mipIndex, uint32_t arrayIndex)
   mt::UniformVariable& arrayIndexUniform =
                         _technique->getOrCreateUniform("intrinsic.arrayIndex");
   arrayIndexUniform.setValue(arrayIndex);
+}
 
+mt::Ref<mt::FrameBuffer> BuildTextureTask::_createFrameBuffer(
+                                                            uint32_t mipIndex,
+                                                            uint32_t arrayIndex)
+{
   mt::Ref<mt::ImageView> colorTarget(new mt::ImageView(
                                                 *_targetImage,
                                                 mt::ImageSlice(
@@ -171,45 +215,28 @@ void BuildTextureTask::_buildSlice(uint32_t mipIndex, uint32_t arrayIndex)
                     .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
                     .clearValue = VkClearColorValue{0.0f, 0.0f, 0.00f, 0.0f}};
 
-  mt::Ref<mt::FrameBuffer> frameBuffer(new mt::FrameBuffer(
-                                                  std::span(&colorAttachment, 1),
-                                                  nullptr));
+  return mt::Ref(new mt::FrameBuffer(std::span(&colorAttachment, 1), nullptr));
+}
 
-  mt::Device& device = Application::instance().primaryDevice();
-  mt::CommandQueueGraphic* queue = device.graphicQueue();
-  MT_ASSERT(queue != nullptr)
-
-  std::unique_ptr<mt::CommandProducerGraphic> producer = queue->startCommands();
-
-  mt::CommandProducerGraphic::RenderPass renderPass(*producer, *frameBuffer);
-  mt::TechniquePass& techniquePass = _technique->getOrCreatePass("Pass");
-  mt::Technique::Bind bind(*_technique, techniquePass, *producer);
-  if (bind.isValid())
-  {
-    producer->draw(4);
-    bind.release();
-  }
-  renderPass.endPass();
-
-  if(_savedImage != nullptr)
-  {
-    producer->blitImage(*_targetImage,
-                        VK_IMAGE_ASPECT_COLOR_BIT,
-                        arrayIndex,
-                        mipIndex,
-                        glm::uvec3(0),
-                        _targetImage->extent(mipIndex),
-                        *_savedImage,
-                        VK_IMAGE_ASPECT_COLOR_BIT,
-                        arrayIndex,
-                        mipIndex,
-                        glm::uvec3(0),
-                        _savedImage->extent(mipIndex),
-                        VK_FILTER_NEAREST);
-  }
-
-  queue->submitCommands(std::move(producer));
-  queue->createSyncPoint().waitForReady();
+void BuildTextureTask::_blitDataToSavedTexture(
+                                          uint32_t mipIndex,
+                                          uint32_t arrayIndex,
+                                          mt::CommandProducerGraphic& producer)
+{
+  if(_savedImage == nullptr) return;
+  producer.blitImage( *_targetImage,
+                      VK_IMAGE_ASPECT_COLOR_BIT,
+                      arrayIndex,
+                      mipIndex,
+                      glm::uvec3(0),
+                      _targetImage->extent(mipIndex),
+                      *_savedImage,
+                      VK_IMAGE_ASPECT_COLOR_BIT,
+                      arrayIndex,
+                      mipIndex,
+                      glm::uvec3(0),
+                      _savedImage->extent(mipIndex),
+                      VK_FILTER_NEAREST);
 }
 
 void BuildTextureTask::_saveTexture()
