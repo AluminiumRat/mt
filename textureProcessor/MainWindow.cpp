@@ -164,11 +164,7 @@ void MainWindow::_updateTitle()
 
 void MainWindow::_runShader()
 {
-  if(_project == nullptr)
-  {
-    mt::errorDialog(this, "Error", "Project is not opened");
-    return;
-  }
+  if(_project == nullptr) throw std::runtime_error("Project is not opened");
   _project->runTechnique();
 }
 

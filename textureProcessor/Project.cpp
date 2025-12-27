@@ -232,20 +232,8 @@ void Project::rebuildTechnique()
 
 void Project::runTechnique()
 {
-  if(_technique->configuration() == nullptr)
-  {
-    mt::errorDialog(mt::GUIWindow::currentWindow(),
-                    "Error",
-                    "The shader wasn't compiled correct");
-    return;
-  }
-  if(!_technique->isReady())
-  {
-    mt::errorDialog(mt::GUIWindow::currentWindow(),
-                    "Error",
-                    "Not all resources are setted");
-    return;
-  }
+  if(_technique->configuration() == nullptr) throw std::runtime_error("The shader wasn't compiled correct");
+  if(!_technique->isReady()) throw std::runtime_error("Not all resources are setted");
 
   if (_textureTaskHandle != nullptr) _textureTaskHandle->abortTask();
   std::unique_ptr<mt::AsyncTask> newTask( new BuildTextureTask( *_technique,
