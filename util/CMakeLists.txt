@@ -8,8 +8,10 @@ include_directories(..
                     )
 
 set(SOURCES
+    "Camera.cpp"
     "ContentLoader.cpp"
     "Log.cpp"
+    "ViewFrustum.cpp"
     "vkMeta.cpp"
     )
 
