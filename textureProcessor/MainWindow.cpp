@@ -12,9 +12,10 @@
 #include <vkr/image/ImageFormatFeatures.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/Device.h>
-#include <MainWindow.h>
 
 #include <Application.h>
+#include <MainWindow.h>
+#include <TextureViewer.h>
 
 // Сколько кадров будет показываться окно сохранения
 #define SAVE_WINDOW_FRAME_COUNT 5
@@ -31,6 +32,7 @@ void MainWindow::guiImplementation()
 
   _processMainMenu();
   if(_project != nullptr) _project->guiPass();
+  _showTextureViewer();
 
   // Если было сохранение, то на несколько кадров покажем окно сохранения
   if(_saveWindowStage != 0)
@@ -168,14 +170,12 @@ void MainWindow::_runShader()
   _project->runTechnique();
 }
 
-void MainWindow::drawImplementation(mt::CommandProducerGraphic& commandProducer,
-                                    mt::FrameBuffer& frameBuffer)
+void MainWindow::_showTextureViewer()
 {
-  mt::CommandProducerGraphic::RenderPass renderPass(commandProducer,
-                                                    frameBuffer);
-  renderPass.endPass();
+  if(_project == nullptr || _project->resultImage() == nullptr) return;
 
-  GUIWindow::drawImplementation(commandProducer, frameBuffer);
+  mt::ImGuiWindow viewerWindow("Texture view");
+  _textureViewer.makeGUI("Texture", *_project->resultImage());
 }
 
 bool MainWindow::canClose() noexcept

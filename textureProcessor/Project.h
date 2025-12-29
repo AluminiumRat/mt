@@ -20,6 +20,8 @@ public:
 
   inline const std::filesystem::path& projectFile() const;
 
+  inline const mt::Image* resultImage() const noexcept;
+
   void save(const std::filesystem::path& file);
   void guiPass();
 
@@ -31,7 +33,12 @@ protected:
                               EventType eventType) override;
 
 private:
+  class BuildTextureTask;
   class RebuildTechniqueTask;
+
+private:
+  //  Вызывается из BuildTextureTask
+  inline void setResultImage(mt::Image& image) noexcept;
 
 private:
   void _load();
@@ -53,6 +60,8 @@ private:
   mt::Ref<mt::TechniqueConfigurator> _configurator;
   mt::Ref<mt::Technique> _technique;
 
+  mt::Ref<mt::Image> _resultImage;
+
   mt::TechniquePropertyGrid _propsGrid;
 
   std::unique_ptr<mt::AsyncTaskQueue::TaskHandle> _rebuildTaskHandle;
@@ -63,3 +72,14 @@ inline const std::filesystem::path& Project::projectFile() const
 {
   return _projectFile;
 }
+
+inline const mt::Image* Project::resultImage() const noexcept
+{
+  return _resultImage.get();
+}
+
+inline void Project::setResultImage(mt::Image& image) noexcept
+{
+  _resultImage = mt::Ref(&image);
+}
+

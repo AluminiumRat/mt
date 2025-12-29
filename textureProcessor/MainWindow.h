@@ -5,6 +5,7 @@
 #include <gui/GUIWindow.h>
 
 #include <Project.h>
+#include <TextureViewer.h>
 
 class MainWindow : public mt::GUIWindow
 {
@@ -16,8 +17,6 @@ public:
 
 protected:
   virtual void guiImplementation() override;
-  virtual void drawImplementation(mt::CommandProducerGraphic& commandProducer,
-                                  mt::FrameBuffer& frameBuffer) override;
   virtual bool canClose() noexcept override;
 
 private:
@@ -29,6 +28,7 @@ private:
   void _saveProjectAs();
   void _updateTitle();
   void _runShader();
+  void _showTextureViewer();
 
 private:
   std::unique_ptr<Project> _project;
@@ -37,4 +37,6 @@ private:
   //  показывать окно сохранения в течении нескольких кадров. Это счетчик
   //  оставшихся кадров.
   int _saveWindowStage;
+
+  TextureViewer _textureViewer;
 };

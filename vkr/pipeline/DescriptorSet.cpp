@@ -209,3 +209,37 @@ void DescriptorSet::attachSampler(const Sampler& sampler,uint32_t binding)
                           0,
                           nullptr);
 }
+
+void DescriptorSet::attachCombinedImageSampler( const ImageView& imageView,
+                                                const Sampler& sampler,
+                                                uint32_t binding,
+                                                VkPipelineStageFlags stages)
+{
+  MT_ASSERT(!isFinalized());
+
+  _resources.push_back(ConstRef(&imageView));
+  _addImageAccess(imageView,
+                  stages,
+                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                  false);
+  _resources.push_back(ConstRef(&sampler));
+
+  VkDescriptorImageInfo imageInfo{};
+  imageInfo.imageView = imageView.handle();
+  imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+  imageInfo.sampler = sampler.handle();
+
+  VkWriteDescriptorSet descriptorWrite{};
+  descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+  descriptorWrite.dstSet = _handle;
+  descriptorWrite.dstBinding = binding;
+  descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  descriptorWrite.descriptorCount = 1;
+  descriptorWrite.pImageInfo = &imageInfo;
+
+  vkUpdateDescriptorSets( _device.handle(),
+                          1,
+                          &descriptorWrite,
+                          0,
+                          nullptr);
+}

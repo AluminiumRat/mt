@@ -250,7 +250,8 @@ void Project::runTechnique()
                                                                 _imageFormat,
                                                                 _outputSize,
                                                                 _mipsCount,
-                                                                _arraySize));
+                                                                _arraySize,
+                                                                *this));
   _textureTaskHandle = Application::instance().asyncQueue().addManagedTask(
                                                             std::move(newTask));
 }

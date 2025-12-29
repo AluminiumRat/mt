@@ -70,6 +70,11 @@ namespace mt
 
     void attachSampler(const Sampler& sampler, uint32_t binding);
 
+    void attachCombinedImageSampler(const ImageView& imageView,
+                                    const Sampler& sampler,
+                                    uint32_t binding,
+                                    VkPipelineStageFlags stages);
+
     //  В финализированные сеты нельзя добавлять новые ресурсы, но можно
     //    биндить в комманд продюсерах. Это защита от изменения сета во время
     //    использования.

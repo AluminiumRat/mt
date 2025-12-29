@@ -19,7 +19,7 @@ namespace mt
                                                   .b = VK_COMPONENT_SWIZZLE_B,
                                                   .a = VK_COMPONENT_SWIZZLE_A};
   public:
-    ImageView(Image& image,
+    ImageView(const Image& image,
               const ImageSlice& slice,
               VkImageViewType viewType,
               const VkComponentMapping& components = defaultComponentMapping);
@@ -30,7 +30,7 @@ namespace mt
 
   public:
     inline VkImageView handle() const noexcept;
-    inline Image& image() const noexcept;
+    inline const Image& image() const noexcept;
     const ImageSlice& slice() const noexcept;
     inline VkImageViewType viewType() const noexcept;
     inline const VkComponentMapping& components() const noexcept;
@@ -41,7 +41,7 @@ namespace mt
 
   private:
     VkImageView _handle;
-    Ref<Image> _image;
+    ConstRef<Image> _image;
     ImageSlice _slice;
     VkImageViewType _viewType;
     VkComponentMapping _components;
@@ -52,7 +52,7 @@ namespace mt
     return _handle;
   }
 
-  inline Image& ImageView::image() const noexcept
+  inline const Image& ImageView::image() const noexcept
   {
     return *_image;
   }

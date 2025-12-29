@@ -12,6 +12,8 @@
 #include <vkr/image/Image.h>
 #include <vkr/FrameBuffer.h>
 
+#include <Project.h>
+
 namespace mt
 {
   class CommandProducerGraphic;
@@ -21,7 +23,7 @@ namespace mt
 //  Для выбранных настроек запускает технику и рендерит во все слайсы
 //  текстуры. После этого сохранет тексуру в файл и отдает
 //  текстуру для просмотра в GUI
-class BuildTextureTask : public mt::AsyncTask
+class Project::BuildTextureTask : public mt::AsyncTask
 {
 public:
   //  outputFile может быть пустым, в этом случае результат сохраняться не будет
@@ -32,7 +34,8 @@ public:
                     VkFormat textureFormat,
                     glm::uvec2 textureSize,
                     uint32_t mipsCount,
-                    uint32_t arraySize);
+                    uint32_t arraySize,
+                    Project& project);
   BuildTextureTask(const BuildTextureTask&) = delete;
   BuildTextureTask& operator = (const BuildTextureTask&) = delete;
   virtual ~BuildTextureTask() noexcept = default;
@@ -64,4 +67,6 @@ private:
   mt::Ref<mt::Technique> _technique;
 
   mt::Ref<mt::Image> _targetImage;
+
+  Project& _project;
 };

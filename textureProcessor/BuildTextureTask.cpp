@@ -7,12 +7,14 @@
 #include <Application.h>
 #include <BuildTextureTask.h>
 
-BuildTextureTask::BuildTextureTask( const mt::Technique& technique,
-                                    const std::filesystem::path& outputFile,
-                                    VkFormat textureFormat,
-                                    glm::uvec2 textureSize,
-                                    uint32_t mipsCount,
-                                    uint32_t arraySize) :
+Project::BuildTextureTask::BuildTextureTask(
+                                        const mt::Technique& technique,
+                                        const std::filesystem::path& outputFile,
+                                        VkFormat textureFormat,
+                                        glm::uvec2 textureSize,
+                                        uint32_t mipsCount,
+                                        uint32_t arraySize,
+                                        Project& project) :
   AsyncTask("Build texture",
             mt::AsyncTask::EXCLUSIVE_MODE,
             mt::AsyncTask::EXPLICIT),
@@ -20,7 +22,8 @@ BuildTextureTask::BuildTextureTask( const mt::Technique& technique,
   _textureFormat(textureFormat),
   _textureSize(textureSize),
   _mipsCount(mipsCount),
-  _arraySize(arraySize)
+  _arraySize(arraySize),
+  _project(project)
 {
   _textureSize = glm::max(_textureSize, 1u);
   _mipsCount = glm::clamp(_mipsCount,
@@ -30,7 +33,7 @@ BuildTextureTask::BuildTextureTask( const mt::Technique& technique,
   _copyTechnique(technique);
 }
 
-void BuildTextureTask::_copyTechnique(const mt::Technique& technique)
+void Project::BuildTextureTask::_copyTechnique(const mt::Technique& technique)
 {
   //  Создаем копию переданной техники, чтобы избежать конфликтов
   //  в многопотоке
@@ -90,7 +93,7 @@ void BuildTextureTask::_copyTechnique(const mt::Technique& technique)
   }
 }
 
-void BuildTextureTask::asyncPart()
+void Project::BuildTextureTask::asyncPart()
 {
   _createTargetImage();
 
@@ -112,7 +115,7 @@ void BuildTextureTask::asyncPart()
   _saveTexture();
 }
 
-void BuildTextureTask::_createTargetImage()
+void Project::BuildTextureTask::_createTargetImage()
 {
   mt::Device& device = Application::instance().primaryDevice();
 
@@ -138,7 +141,8 @@ void BuildTextureTask::_createTargetImage()
                                             "Result texture"));
 }
 
-void BuildTextureTask::_buildSlice(uint32_t mipIndex, uint32_t arrayIndex)
+void Project::BuildTextureTask::_buildSlice(uint32_t mipIndex,
+                                            uint32_t arrayIndex)
 {
   _adjustIntrinsic(mipIndex, arrayIndex);
 
@@ -166,7 +170,8 @@ void BuildTextureTask::_buildSlice(uint32_t mipIndex, uint32_t arrayIndex)
   queue->createSyncPoint().waitForReady();
 }
 
-void BuildTextureTask::_adjustIntrinsic(uint32_t mipIndex, uint32_t arrayIndex)
+void Project::BuildTextureTask::_adjustIntrinsic( uint32_t mipIndex,
+                                                  uint32_t arrayIndex)
 {
   mt::UniformVariable& mipUniform =
                           _technique->getOrCreateUniform("intrinsic.mipLevel");
@@ -176,7 +181,7 @@ void BuildTextureTask::_adjustIntrinsic(uint32_t mipIndex, uint32_t arrayIndex)
   arrayIndexUniform.setValue(arrayIndex);
 }
 
-mt::Ref<mt::FrameBuffer> BuildTextureTask::_createFrameBuffer(
+mt::Ref<mt::FrameBuffer> Project::BuildTextureTask::_createFrameBuffer(
                                                             uint32_t mipIndex,
                                                             uint32_t arrayIndex)
 {
@@ -198,7 +203,7 @@ mt::Ref<mt::FrameBuffer> BuildTextureTask::_createFrameBuffer(
   return mt::Ref(new mt::FrameBuffer(std::span(&colorAttachment, 1), nullptr));
 }
 
-void BuildTextureTask::_saveTexture()
+void Project::BuildTextureTask::_saveTexture()
 {
   if(_outputFile.empty()) return;
 
@@ -208,6 +213,8 @@ void BuildTextureTask::_saveTexture()
   mt::saveToDDS(*_targetImage, _outputFile, queue);
 }
 
-void BuildTextureTask::finalizePart()
+void Project::BuildTextureTask::finalizePart()
 {
+  MT_ASSERT(_targetImage != nullptr);
+  _project.setResultImage(*_targetImage);
 }

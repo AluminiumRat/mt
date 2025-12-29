@@ -4,7 +4,7 @@
 
 using namespace mt;
 
-ImageView::ImageView( Image& image,
+ImageView::ImageView( const Image& image,
                       const ImageSlice& slice,
                       VkImageViewType viewType,
                       const VkComponentMapping& components) :
