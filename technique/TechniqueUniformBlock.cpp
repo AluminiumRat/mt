@@ -36,7 +36,7 @@ void TechniqueUniformBlock::bindToDescriptorSet(
 
     commandProducer.uniformBufferTransfer(*writeInfo.buffer,
                                           *gpuBuffer,
-                                          0,
+                                          writeInfo.offset,
                                           0,
                                           _cpuBuffer.size());
 
