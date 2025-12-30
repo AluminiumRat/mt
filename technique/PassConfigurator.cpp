@@ -476,7 +476,7 @@ void PassConfigurator::_parseUniformBlockMember(
   // Это матрица или массив матриц
   if(type->type_flags & SPV_REFLECT_TYPE_FLAG_MATRIX)
   {
-    MT_ASSERT(!newUniform.isVector);
+    newUniform.isVector = false;
     newUniform.isMatrix = true;
     newUniform.matrixSize = glm::uvec2(
                                     type->traits.numeric.matrix.column_count,

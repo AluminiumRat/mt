@@ -13,6 +13,8 @@ include_directories(.
 add_executable (textureProcessor
                 "Application.cpp"
                 "BuildTextureTask.cpp"
+                "CameraManipulator.cpp"
+                "FlatCameraManipulator.cpp"
                 "main.cpp"
                 "MainWindow.cpp"
                 "Project.cpp"

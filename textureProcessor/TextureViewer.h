@@ -3,12 +3,15 @@
 #include <glm/glm.hpp>
 
 #include <technique/Technique.h>
+#include <util/Camera.h>
 #include <util/Ref.h>
 #include <vkr/image/Image.h>
 #include <vkr/image/ImageView.h>
 #include <vkr/pipeline/DescriptorSet.h>
 #include <vkr/FrameBuffer.h>
 #include <vkr/Sampler.h>
+
+#include <FlatCameraManipulator.h>
 
 namespace mt
 {
@@ -32,10 +35,14 @@ public:
                 ImVec2 size = ImVec2(-FLT_MIN, -FLT_MIN));
 
 private:
+  //  Создет область, над которой бедет работать манипулятор камеры
+  void _makeUndraggedArea(glm::uvec2 widgetSize);
+
   // Определить реальный размер виджета по размеру, переданному пользователем
   glm::uvec2 _getWidgetSize(const ImVec2& userSize) const;
 
   void _rebuildRenderTarget(glm::uvec2 widgetSize);
+  void _setNewRenderedImage(const mt::Image& image);
   void _clearRenderTarget() noexcept;
 
   void _renderScene();
@@ -45,6 +52,7 @@ private:
   {
     mt::ResourceBinding* texture = nullptr;
     mt::TechniquePass* renderPass = nullptr;
+    mt::UniformVariable* viewProjection = nullptr;
   };
 
 private:
@@ -58,6 +66,9 @@ private:
 
   mt::Ref<mt::Image> _renderTargetImage;
   mt::Ref<mt::FrameBuffer> _frameBuffer;
+
+  mt::Camera _viewCamera;
+  FlatCameraManipulator _cameraManipulator;
 
   //  Объекты, которые нужны для отрисовки _renderTargetImage в окно ImGui
   mt::Ref<mt::Sampler> _imGuiSampler;

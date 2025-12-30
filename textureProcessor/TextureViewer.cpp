@@ -15,6 +15,7 @@
 
 TextureViewer::TextureViewer(mt::Device& device) :
   _device(device),
+  _cameraManipulator(_viewCamera),
   _imGuiSampler(new mt::Sampler(device))
 {
   MT_ASSERT(_device.graphicQueue() != nullptr);
@@ -28,6 +29,8 @@ TextureViewer::TextureViewer(mt::Device& device) :
   _squareProps.texture =
                   &_squareTechnique->getOrCreateResourceBinding("colorTexture");
   _squareProps.renderPass = &_squareTechnique->getOrCreatePass("RenderPass");
+  _squareProps.viewProjection =
+          &_squareTechnique->getOrCreateUniform("renderParams.viewProjMatrix");
 
   //  Создаем объекты, необходимые для отрисовки текстуры в ImGui
   mt::DescriptorCounter counters{};
@@ -86,8 +89,15 @@ void TextureViewer::makeGUI(const char* id,
                             const mt::Image& image,
                             ImVec2 size)
 {
+  mt::ImGuiPushID pushID(id);
+
   glm::uvec2 widgetSize = _getWidgetSize(size);
   if(widgetSize.x == 0 || widgetSize.y == 0) return;
+
+  _makeUndraggedArea(widgetSize);
+
+  _cameraManipulator.update(ImGui::GetCursorScreenPos(),
+                            ImVec2((float)widgetSize.x, (float)widgetSize.y));
 
   if( _renderTargetImage == nullptr ||
       widgetSize != glm::uvec2(_renderTargetImage->extent()))
@@ -95,16 +105,7 @@ void TextureViewer::makeGUI(const char* id,
     _rebuildRenderTarget(widgetSize);
   }
 
-  if(_renderedImage.get() != &image)
-  {
-    mt::ConstRef<mt::ImageView> newImageView =
-                        mt::ConstRef(new mt::ImageView( image,
-                                                        mt::ImageSlice(image),
-                                                        VK_IMAGE_VIEW_TYPE_2D));
-    _squareProps.texture->setImage(newImageView);
-    _renderedImageView = newImageView;
-    _renderedImage = mt::ConstRef(&image);
-  }
+  if(_renderedImage.get() != &image) _setNewRenderedImage(image);
 
   _renderScene();
 
@@ -113,6 +114,24 @@ void TextureViewer::makeGUI(const char* id,
                       ImVec2(0.0f, 0.0f),
                       ImVec2(1.0f, 1.0f),
                       ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+}
+
+void TextureViewer::_makeUndraggedArea(glm::uvec2 widgetSize)
+{
+  ImVec2 leftTopCorner = ImGui::GetCursorScreenPos();
+  ImGui::ColorButton( "##undraggedArea",
+                      ImVec4(0.0f, 0.0f, 0.0f, 0.0f),
+                      ImGuiColorEditFlags_NoTooltip |
+                        ImGuiColorEditFlags_NoDragDrop,
+                      ImVec2((float)widgetSize.x, (float)widgetSize.y));
+  if(ImGui::IsItemHovered())
+  {
+    //  Имитируем поведение для камера-манипулятора, как-будто курсор находится
+    //  вне окна
+    ImGui::SetNextFrameWantCaptureMouse(false);
+    ImGui::SetNextFrameWantCaptureKeyboard(false);
+  }
+  ImGui::SetCursorScreenPos(leftTopCorner);
 }
 
 void TextureViewer::_rebuildRenderTarget(glm::uvec2 widgetSize)
@@ -151,6 +170,17 @@ void TextureViewer::_rebuildRenderTarget(glm::uvec2 widgetSize)
   _renderTargetImage = newRenderTarget;
 }
 
+void TextureViewer::_setNewRenderedImage(const mt::Image& image)
+{
+  mt::ConstRef<mt::ImageView> newImageView =
+                  mt::ConstRef(new mt::ImageView( image,
+                                                  mt::ImageSlice(image),
+                                                  VK_IMAGE_VIEW_TYPE_2D_ARRAY));
+  _squareProps.texture->setImage(newImageView);
+  _renderedImageView = newImageView;
+  _renderedImage = mt::ConstRef(&image);
+}
+
 void TextureViewer::_renderScene()
 {
   mt::CommandQueueGraphic* queue = _device.graphicQueue();
@@ -167,6 +197,9 @@ void TextureViewer::_renderScene()
                           0);
 
   mt::CommandProducerGraphic::RenderPass renderPass(*producer, *_frameBuffer);
+
+  _squareProps.viewProjection->setValue(_viewCamera.projectionMatrix() *
+                                                      _viewCamera.viewMatrix());
 
   mt::Technique::Bind bind( *_squareTechnique,
                             *_squareProps.renderPass,

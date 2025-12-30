@@ -8,6 +8,7 @@ layout(location = 0) out vec4 outColor;
 
 void main()
 {
-  outColor = texture( sampler2D(colorTexture, textureSampler),
-                      texCoord);
+  vec3 arrayTexCoord = vec3(texCoord, 0);
+  outColor = texture( sampler2DArray(colorTexture, textureSampler),
+                      arrayTexCoord);
 }
