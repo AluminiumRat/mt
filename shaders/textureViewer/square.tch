@@ -1,0 +1,17 @@
+defaultSamplers:
+  textureSampler:
+    magFilter: LINEAR
+    minFilter: LINEAR
+    mipmapMode: LINEAR
+
+passes:
+  RenderPass :
+    shaders:
+      VERTEX : textureViewer/square.vert
+      FRAGMENT : textureViewer/square.frag
+
+    frameBuffer:
+      color: VK_FORMAT_B8G8R8A8_SRGB
+
+    graphicSettings:
+      topology: TRIANGLE_STRIP

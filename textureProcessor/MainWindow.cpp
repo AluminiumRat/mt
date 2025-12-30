@@ -22,7 +22,8 @@
 
 MainWindow::MainWindow() :
   GUIWindow(Application::instance().primaryDevice(), "Texture processor"),
-  _saveWindowStage(0)
+  _saveWindowStage(0),
+  _textureViewer(Application::instance().primaryDevice())
 {
 }
 
@@ -175,7 +176,8 @@ void MainWindow::_showTextureViewer()
   if(_project == nullptr || _project->resultImage() == nullptr) return;
 
   mt::ImGuiWindow viewerWindow("Texture view");
-  _textureViewer.makeGUI("Texture", *_project->resultImage());
+  _textureViewer.makeGUI( "Texture",
+                          *_project->resultImage());
 }
 
 bool MainWindow::canClose() noexcept
