@@ -45,21 +45,17 @@ private:
   void _setNewRenderedImage(const mt::Image& image);
   void _clearRenderTarget() noexcept;
 
+  void _updateRenderParams();
   void _renderScene();
-
-private:
-  struct TechniqueProps
-  {
-    mt::ResourceBinding* texture = nullptr;
-    mt::TechniquePass* renderPass = nullptr;
-    mt::UniformVariable* viewProjection = nullptr;
-  };
 
 private:
   mt::Device& _device;
 
-  mt::Ref<mt::Technique> _squareTechnique;
-  TechniqueProps _squareProps;
+  mt::Ref<mt::Technique> _viewTechnique;
+  mt::ResourceBinding* _texture;
+  mt::TechniquePass* _flatPass;
+  mt::UniformVariable* _viewProjectionMatrix;
+  mt::UniformVariable* _modelMatrix;
 
   mt::ConstRef<mt::Image> _renderedImage;
   mt::ConstRef<mt::ImageView> _renderedImageView;

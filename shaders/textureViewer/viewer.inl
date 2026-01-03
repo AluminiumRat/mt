@@ -2,6 +2,7 @@ layout (set = VOLATILE,
         binding = 0) uniform RenderParams
 {
   mat4 viewProjMatrix;
+  mat4 modelMatrix;
 } renderParams;
 
 layout (set = STATIC,

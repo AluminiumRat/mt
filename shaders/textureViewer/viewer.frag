@@ -1,6 +1,6 @@
 #version 450
 
-#include "textureViewer/square.inl"
+#include "textureViewer/viewer.inl"
 
 layout(location = 0) in vec2 texCoord;
 

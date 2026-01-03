@@ -15,6 +15,9 @@
 
 TextureViewer::TextureViewer(mt::Device& device) :
   _device(device),
+  _texture(nullptr),
+  _flatPass(nullptr),
+  _viewProjectionMatrix(nullptr),
   _cameraManipulator(_viewCamera),
   _imGuiSampler(new mt::Sampler(device))
 {
@@ -22,15 +25,16 @@ TextureViewer::TextureViewer(mt::Device& device) :
 
   mt::Ref squareConfigurator(new mt::TechniqueConfigurator(
                                                           device,
-                                                          "Square technique"));
-  mt::loadConfigurator(*squareConfigurator, "textureViewer/square.tch");
+                                                          "View technique"));
+  mt::loadConfigurator(*squareConfigurator, "textureViewer/viewer.tch");
   squareConfigurator->rebuildConfiguration();
-  _squareTechnique = mt::Ref(new mt::Technique(*squareConfigurator));
-  _squareProps.texture =
-                  &_squareTechnique->getOrCreateResourceBinding("colorTexture");
-  _squareProps.renderPass = &_squareTechnique->getOrCreatePass("RenderPass");
-  _squareProps.viewProjection =
-          &_squareTechnique->getOrCreateUniform("renderParams.viewProjMatrix");
+  _viewTechnique = mt::Ref(new mt::Technique(*squareConfigurator));
+  _texture = &_viewTechnique->getOrCreateResourceBinding("colorTexture");
+  _flatPass = &_viewTechnique->getOrCreatePass("FlatPass");
+  _viewProjectionMatrix =
+            &_viewTechnique->getOrCreateUniform("renderParams.viewProjMatrix");
+  _modelMatrix =
+            &_viewTechnique->getOrCreateUniform("renderParams.modelMatrix");
 
   //  Создаем объекты, необходимые для отрисовки текстуры в ImGui
   mt::DescriptorCounter counters{};
@@ -176,13 +180,28 @@ void TextureViewer::_setNewRenderedImage(const mt::Image& image)
                   mt::ConstRef(new mt::ImageView( image,
                                                   mt::ImageSlice(image),
                                                   VK_IMAGE_VIEW_TYPE_2D_ARRAY));
-  _squareProps.texture->setImage(newImageView);
+  _texture->setImage(newImageView);
   _renderedImageView = newImageView;
   _renderedImage = mt::ConstRef(&image);
 }
 
+void TextureViewer::_updateRenderParams()
+{
+  _viewProjectionMatrix->setValue(_viewCamera.projectionMatrix() *
+                                                      _viewCamera.viewMatrix());
+
+  //  Для Flat техники выставляем модельную матрицу так, чтобы сохранить
+  //  соотношение сторон
+  glm::mat4 newModelMatrix(1);
+  newModelMatrix[0][0] = (float)_renderedImage->extent().x /
+                                                    _renderedImage->extent().y;
+  _modelMatrix->setValue(newModelMatrix);
+}
+
 void TextureViewer::_renderScene()
 {
+  _updateRenderParams();
+
   mt::CommandQueueGraphic* queue = _device.graphicQueue();
   MT_ASSERT(queue != nullptr)
   std::unique_ptr<mt::CommandProducerGraphic> producer = queue->startCommands();
@@ -198,11 +217,8 @@ void TextureViewer::_renderScene()
 
   mt::CommandProducerGraphic::RenderPass renderPass(*producer, *_frameBuffer);
 
-  _squareProps.viewProjection->setValue(_viewCamera.projectionMatrix() *
-                                                      _viewCamera.viewMatrix());
-
-  mt::Technique::Bind bind( *_squareTechnique,
-                            *_squareProps.renderPass,
+  mt::Technique::Bind bind( *_viewTechnique,
+                            *_flatPass,
                             *producer);
   if (bind.isValid())
   {

@@ -5,10 +5,10 @@ defaultSamplers:
     mipmapMode: LINEAR
 
 passes:
-  RenderPass :
+  FlatPass :
     shaders:
-      VERTEX : textureViewer/square.vert
-      FRAGMENT : textureViewer/square.frag
+      VERTEX : textureViewer/viewer.vert
+      FRAGMENT : textureViewer/viewer.frag
 
     frameBuffer:
       color: VK_FORMAT_B8G8R8A8_SRGB
