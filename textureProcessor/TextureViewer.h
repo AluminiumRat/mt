@@ -35,6 +35,16 @@ public:
                 ImVec2 size = ImVec2(-FLT_MIN, -FLT_MIN));
 
 private:
+  enum SamplerType
+  {
+    NEAREST_SAMPLER,
+    LINEAR_SAMPLER
+  };
+
+private:
+  //  Виджеты управления сверху от основного окна просмотра
+  void _makeControlWidgets();
+
   //  Создет область, над которой бедет работать манипулятор камеры
   void _makeUndraggedArea(glm::uvec2 widgetSize);
 
@@ -56,6 +66,9 @@ private:
   mt::TechniquePass* _flatPass;
   mt::UniformVariable* _viewProjectionMatrix;
   mt::UniformVariable* _modelMatrix;
+  mt::UniformVariable* _mipUniform;
+  mt::UniformVariable* _layerUniform;
+  mt::Selection* _samplerSelection;
 
   mt::ConstRef<mt::Image> _renderedImage;
   mt::ConstRef<mt::ImageView> _renderedImageView;
@@ -65,6 +78,10 @@ private:
 
   mt::Camera _viewCamera;
   FlatCameraManipulator _cameraManipulator;
+
+  SamplerType _samplerType;
+  int _mipIndex;
+  int _layerIndex;
 
   //  Объекты, которые нужны для отрисовки _renderTargetImage в окно ImGui
   mt::Ref<mt::Sampler> _imGuiSampler;

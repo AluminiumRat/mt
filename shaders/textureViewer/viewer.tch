@@ -1,11 +1,10 @@
-defaultSamplers:
-  textureSampler:
-    magFilter: LINEAR
-    minFilter: LINEAR
-    mipmapMode: LINEAR
+selections:
+  NEAREST_SAMPLER: [0, 1]
 
 passes:
   FlatPass :
+    selections: [NEAREST_SAMPLER]
+
     shaders:
       VERTEX : textureViewer/viewer.vert
       FRAGMENT : textureViewer/viewer.frag
@@ -15,3 +14,14 @@ passes:
 
     graphicSettings:
       topology: TRIANGLE_STRIP
+
+defaultSamplers:
+  linearSampler:
+    magFilter: LINEAR
+    minFilter: LINEAR
+    mipmapMode: LINEAR
+
+  nearestSampler:
+    magFilter: NEAREST
+    minFilter: NEAREST
+    mipmapMode: NEAREST

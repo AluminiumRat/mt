@@ -4,6 +4,7 @@
 #include <imgui.h>
 
 #include <gui/ImGuiRAII.h>
+#include <gui/ImGuiWidgets.h>
 #include <technique/TechniqueLoader.h>
 #include <util/Abort.h>
 #include <util/Assert.h>
@@ -18,7 +19,14 @@ TextureViewer::TextureViewer(mt::Device& device) :
   _texture(nullptr),
   _flatPass(nullptr),
   _viewProjectionMatrix(nullptr),
+  _modelMatrix(nullptr),
+  _mipUniform(nullptr),
+  _layerUniform(nullptr),
+  _samplerSelection(nullptr),
   _cameraManipulator(_viewCamera),
+  _samplerType(NEAREST_SAMPLER),
+  _mipIndex(0),
+  _layerIndex(0),
   _imGuiSampler(new mt::Sampler(device))
 {
   MT_ASSERT(_device.graphicQueue() != nullptr);
@@ -35,6 +43,9 @@ TextureViewer::TextureViewer(mt::Device& device) :
             &_viewTechnique->getOrCreateUniform("renderParams.viewProjMatrix");
   _modelMatrix =
             &_viewTechnique->getOrCreateUniform("renderParams.modelMatrix");
+  _mipUniform = &_viewTechnique->getOrCreateUniform("renderParams.mipIndex");
+  _layerUniform = &_viewTechnique->getOrCreateUniform("renderParams.layer");
+  _samplerSelection = &_viewTechnique->getOrCreateSelection("NEAREST_SAMPLER");
 
   //  Создаем объекты, необходимые для отрисовки текстуры в ImGui
   mt::DescriptorCounter counters{};
@@ -95,6 +106,10 @@ void TextureViewer::makeGUI(const char* id,
 {
   mt::ImGuiPushID pushID(id);
 
+  if (_renderedImage.get() != &image) _setNewRenderedImage(image);
+
+  _makeControlWidgets();
+
   glm::uvec2 widgetSize = _getWidgetSize(size);
   if(widgetSize.x == 0 || widgetSize.y == 0) return;
 
@@ -109,8 +124,6 @@ void TextureViewer::makeGUI(const char* id,
     _rebuildRenderTarget(widgetSize);
   }
 
-  if(_renderedImage.get() != &image) _setNewRenderedImage(image);
-
   _renderScene();
 
   ImGui::ImageWithBg( (ImTextureID)_imGuiDescriptorSet->handle(),
@@ -118,6 +131,41 @@ void TextureViewer::makeGUI(const char* id,
                       ImVec2(0.0f, 0.0f),
                       ImVec2(1.0f, 1.0f),
                       ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+}
+
+void TextureViewer::_makeControlWidgets()
+{
+  MT_ASSERT(_renderedImage != nullptr);
+
+  //  Кобо бокс для выбора сэмплера
+  ImGui::Text("Sampler");
+  ImGui::SameLine();
+  static const mt::Bimap<SamplerType> samplerMap{
+    "Sampoler types",
+    {
+      {NEAREST_SAMPLER, "NEAREST"},
+      {LINEAR_SAMPLER, "LINEAR"}
+    }};
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
+  mt::enumSelectionCombo("##samplerCombo", _samplerType, samplerMap);
+
+  ImGui::SameLine();
+  ImGui::Text("Mip");
+  ImGui::SameLine();
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7);
+  ImGui::InputInt("##mip", &_mipIndex);
+  _mipIndex = glm::clamp( _mipIndex,
+                          0,
+                          (int)_renderedImage->mipmapCount() - 1);
+
+  ImGui::SameLine();
+  ImGui::Text("Layer");
+  ImGui::SameLine();
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7);
+  ImGui::InputInt("##layer", &_layerIndex);
+  _layerIndex = glm::clamp( _layerIndex,
+                            0,
+                            (int)_renderedImage->arraySize() - 1);
 }
 
 void TextureViewer::_makeUndraggedArea(glm::uvec2 widgetSize)
@@ -196,6 +244,12 @@ void TextureViewer::_updateRenderParams()
   newModelMatrix[0][0] = (float)_renderedImage->extent().x /
                                                     _renderedImage->extent().y;
   _modelMatrix->setValue(newModelMatrix);
+
+  if(_samplerType == NEAREST_SAMPLER) _samplerSelection->setValue("1");
+  else _samplerSelection->setValue("0");
+
+  _mipUniform->setValue((float)_mipIndex);
+  _layerUniform->setValue((float)_layerIndex);
 }
 
 void TextureViewer::_renderScene()
