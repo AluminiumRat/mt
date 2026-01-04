@@ -13,5 +13,6 @@ void main()
 {
   gl_Position = renderParams.modelMatrix * positions[gl_VertexIndex];
   gl_Position = renderParams.viewProjMatrix * gl_Position;
-  outTexCoord = positions[gl_VertexIndex].xy;
+  outTexCoord.x = positions[gl_VertexIndex].x;
+  outTexCoord.y = 1.0f - positions[gl_VertexIndex].y;
 }

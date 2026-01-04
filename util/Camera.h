@@ -9,14 +9,15 @@ namespace mt
   class Camera
   {
   public:
-    // Correction of projection matrix was getted from
-    // https://matthewwellings.com/blog/the-new-vulkan-coordinate-system/
-    // Component [2][2] was changed to implement reversed-Z technique
+    ///  Коррекция матрицы проекции, связанная с разными экранными системами
+    ///    координат в OpenGL и Vulkan. Взято с правками отсюда:
+    ///    https://matthewwellings.com/blog/the-new-vulkan-coordinate-system/
+    //  Компонент [2][2] изменен чтобы реализовать reversed-Z технику
     static constexpr glm::mat4 projectionCorrect = glm::mat4(
-                                              glm::vec4(1.f,  0.f,  0.f, 0.f),
-                                              glm::vec4(0.f, -1.f,  0.f, 0.f),
-                                              glm::vec4(0.f,  0.f, -.5f, 0.f),
-                                              glm::vec4(0.f,  0.f,  .5f, 1.f));
+                                          glm::vec4( 1.0f,  0.0f,  0.0f, 0.0f),
+                                          glm::vec4( 0.0f, -1.0f,  0.0f, 0.0f),
+                                          glm::vec4( 0.0f,  0.0f, -0.5f, 0.0f),
+                                          glm::vec4( 0.0f,  0.0f,  0.5f, 1.0f));
 
   public:
     Camera() noexcept;
@@ -49,10 +50,11 @@ namespace mt
     inline float nearDistance() const noexcept;
     inline float farDistance() const noexcept;
 
-    /// Frustum in view space
+    /// Результирующий фрустумв view пространстве
     inline const ViewFrustum& frustum() const noexcept;
 
-    /// Returns direction from eyePoint
+    ///   Получить направление из eyePoint. Результат в той же системе
+    ///     координат, в которой находится камера
     glm::vec3 getDirection(const glm::vec2& screenCoordinates) const noexcept;
 
   private:

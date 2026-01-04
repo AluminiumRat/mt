@@ -38,6 +38,9 @@ void FlatCameraManipulator::_processMouseWheel() noexcept
   glm::vec2 relMousePosition(mousePosition());
   relMousePosition /= areaSize();
 
+  // Экранная ось y и мировая направлены в противоположные стороны
+  relMousePosition.y = 1.0f - relMousePosition.y;
+
   _frustumOrigin -= frustumSizeDiff * relMousePosition;
 }
 
@@ -45,8 +48,8 @@ void FlatCameraManipulator::_aspectRatioCorrection() noexcept
 {
   if (areaSize().x == 0) return;
 
-  float aspectRatio = (float)areaSize().y / areaSize().x;
-  _frustumSize.y = _frustumSize.x * aspectRatio;
+  float aspectRatio = (float)areaSize().x / areaSize().y;
+  _frustumSize.x = _frustumSize.y * aspectRatio;
 }
 
 void FlatCameraManipulator::_updateCamera() noexcept
@@ -61,8 +64,8 @@ void FlatCameraManipulator::_updateCamera() noexcept
 
   _targetCamera.setOrthoProjection( -halfFrustumSize.x,
                                     halfFrustumSize.x,
-                                    halfFrustumSize.y,
                                     -halfFrustumSize.y,
+                                    halfFrustumSize.y,
                                     0,
                                     _maxZ - _minZ);
 }
@@ -72,7 +75,10 @@ void FlatCameraManipulator::onAreaResized(glm::ivec2 oldSize,
 {
   CameraManipulator::onAreaResized(oldSize, newSize);
 
-  float updateRate = (float)newSize.x / oldSize.x;
+  if(newSize.y == 0 || oldSize.y == 0) return;
+
+  float updateRate = (float)newSize.y / oldSize.y;
+  _frustumOrigin.y += _frustumSize.y * (1.0f - updateRate);
   _frustumSize *= updateRate;
 }
 
@@ -85,6 +91,9 @@ void FlatCameraManipulator::onDragging(glm::ivec2 mouseDelta)
 
   glm::vec2 fDelta(mouseDelta);
   fDelta /= fAreaSize;
+
+  // Экранная ось y и мировая направлены в противоположные стороны
+  fDelta.y *= -1;
 
   _frustumOrigin -= fDelta * _frustumSize;
 }
