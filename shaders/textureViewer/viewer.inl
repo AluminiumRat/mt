@@ -3,6 +3,7 @@ layout (set = VOLATILE,
 {
   mat4 viewProjMatrix;
   mat4 modelMatrix;
+  float brightness;
   float mipIndex;
   float layer;
 } renderParams;

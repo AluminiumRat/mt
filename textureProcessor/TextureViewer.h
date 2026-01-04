@@ -66,6 +66,7 @@ private:
   mt::TechniquePass* _flatPass;
   mt::UniformVariable* _viewProjectionMatrix;
   mt::UniformVariable* _modelMatrix;
+  mt::UniformVariable* _brightnessUniform;
   mt::UniformVariable* _mipUniform;
   mt::UniformVariable* _layerUniform;
   mt::Selection* _samplerSelection;
@@ -80,6 +81,7 @@ private:
   FlatCameraManipulator _cameraManipulator;
 
   SamplerType _samplerType;
+  float _brightness;
   int _mipIndex;
   int _layerIndex;
 

@@ -19,4 +19,6 @@ void main()
                           arrayTexCoord,
                           renderParams.mipIndex);
   #endif
+
+  outColor *= renderParams.brightness;
 }

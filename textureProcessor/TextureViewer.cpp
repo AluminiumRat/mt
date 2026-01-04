@@ -20,11 +20,13 @@ TextureViewer::TextureViewer(mt::Device& device) :
   _flatPass(nullptr),
   _viewProjectionMatrix(nullptr),
   _modelMatrix(nullptr),
+  _brightnessUniform(nullptr),
   _mipUniform(nullptr),
   _layerUniform(nullptr),
   _samplerSelection(nullptr),
   _cameraManipulator(_viewCamera),
   _samplerType(NEAREST_SAMPLER),
+  _brightness(1.0f),
   _mipIndex(0),
   _layerIndex(0),
   _imGuiSampler(new mt::Sampler(device))
@@ -43,6 +45,8 @@ TextureViewer::TextureViewer(mt::Device& device) :
             &_viewTechnique->getOrCreateUniform("renderParams.viewProjMatrix");
   _modelMatrix =
             &_viewTechnique->getOrCreateUniform("renderParams.modelMatrix");
+  _brightnessUniform =
+                &_viewTechnique->getOrCreateUniform("renderParams.brightness");
   _mipUniform = &_viewTechnique->getOrCreateUniform("renderParams.mipIndex");
   _layerUniform = &_viewTechnique->getOrCreateUniform("renderParams.layer");
   _samplerSelection = &_viewTechnique->getOrCreateSelection("NEAREST_SAMPLER");
@@ -150,6 +154,17 @@ void TextureViewer::_makeControlWidgets()
   mt::enumSelectionCombo("##samplerCombo", _samplerType, samplerMap);
 
   ImGui::SameLine();
+  ImGui::Text("Brightness");
+  ImGui::SameLine();
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
+  ImGui::InputFloat("##brightness", &_brightness, 0.1f, 1.0f, "%.2f");
+
+  //  Если ширины окна не хватает, то сделаем перенос строки
+  if(ImGui::GetContentRegionAvail().x > ImGui::GetFontSize() * 50)
+  {
+    ImGui::SameLine();
+  }
+
   ImGui::Text("Mip");
   ImGui::SameLine();
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7);
@@ -247,6 +262,8 @@ void TextureViewer::_updateRenderParams()
 
   if(_samplerType == NEAREST_SAMPLER) _samplerSelection->setValue("1");
   else _samplerSelection->setValue("0");
+
+  _brightnessUniform->setValue(_brightness);
 
   _mipUniform->setValue((float)_mipIndex);
   _layerUniform->setValue((float)_layerIndex);
