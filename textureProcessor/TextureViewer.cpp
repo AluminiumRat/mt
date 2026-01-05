@@ -166,7 +166,7 @@ void TextureViewer::_makeControlWidgets()
   mt::enumSelectionCombo("##view type", _viewType, viewTypeMap);
 
   //  Кобо бокс для выбора сэмплера
-  ImGui::SameLine();
+  mt::sameLineIfPossible(ImGui::GetFontSize() * 13);
   ImGui::Text("Sampler:");
   ImGui::SameLine();
   static const mt::Bimap<SamplerType> samplerMap{
@@ -178,18 +178,13 @@ void TextureViewer::_makeControlWidgets()
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
   mt::enumSelectionCombo("##samplerCombo", _samplerType, samplerMap);
 
-  ImGui::SameLine();
+  mt::sameLineIfPossible(ImGui::GetFontSize() * 15);
   ImGui::Text("Brightness:");
   ImGui::SameLine();
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
   ImGui::InputFloat("##brightness", &_brightness, 0.1f, 1.0f, "%.2f");
 
-  //  Если ширины окна не хватает, то сделаем перенос строки
-  if(ImGui::GetContentRegionAvail().x > ImGui::GetFontSize() * 55)
-  {
-    ImGui::SameLine();
-  }
-
+  mt::sameLineIfPossible(ImGui::GetFontSize() * 10);
   ImGui::Text("Mip:");
   ImGui::SameLine();
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7);
@@ -198,7 +193,7 @@ void TextureViewer::_makeControlWidgets()
                           0,
                           (int)_renderedImage->mipmapCount() - 1);
 
-  ImGui::SameLine();
+  mt::sameLineIfPossible(ImGui::GetFontSize() * 12);
   ImGui::Text("Layer:");
   ImGui::SameLine();
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7);

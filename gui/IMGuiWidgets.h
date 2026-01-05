@@ -10,6 +10,11 @@
 
 namespace mt
 {
+  //  Разместить следующий виджет в этой же строке, если в ней осталось место
+  //  не меньше reservedWidth
+  //  Используется для автопереноса в окнах изменяемого размера
+  inline void sameLineIfPossible(float reservedWidth) noexcept;
+
   //  Виджет - строка для выбора файла в проперти гриде
   //  controlId - уникальное имя для контрола, будет использоваться как ID для
   //    ImGUI
@@ -32,6 +37,12 @@ namespace mt
 
   //-------------------------------------------------------------------------
   //  Реализации функций
+  inline void sameLineIfPossible(float reservedWidth) noexcept
+  {
+    ImGui::SameLine();
+    if (ImGui::GetContentRegionAvail().x < reservedWidth) ImGui::NewLine();
+  }
+
   inline bool fileSelectionLine(const char* controlId,
                                 const std::filesystem::path& filePath) noexcept
   {
