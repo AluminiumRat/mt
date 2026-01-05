@@ -18,6 +18,7 @@ TextureViewer::TextureViewer(mt::Device& device) :
   _device(device),
   _flatPass(nullptr),
   _cubemapPass(nullptr),
+  _invCubemapPass(nullptr),
   _flatTexture(nullptr),
   _cubemapTexture(nullptr),
   _viewProjectionMatrix(nullptr),
@@ -46,6 +47,7 @@ TextureViewer::TextureViewer(mt::Device& device) :
   _viewTechnique = mt::Ref(new mt::Technique(*squareConfigurator));
   _flatPass = &_viewTechnique->getOrCreatePass("FlatPass");
   _cubemapPass = &_viewTechnique->getOrCreatePass("CubemapPass");
+  _invCubemapPass = &_viewTechnique->getOrCreatePass("InvCubemapPass");
   _flatTexture = &_viewTechnique->getOrCreateResourceBinding("flatTexture");
   _cubemapTexture =
                   &_viewTechnique->getOrCreateResourceBinding("cubemapTexture");
@@ -168,11 +170,13 @@ void TextureViewer::_viewTypeCombo()
 {
   if(_cubemapAllowed)
   {
-    static const mt::Bimap<ViewType> viewTypeMap{ "View types",
-                                                  {
-                                                    {FLAT_VIEW, "Flat"},
-                                                    {CUBEMAP_VIEW, "Cubemap"}
-                                                  }};
+    static const mt::Bimap<ViewType> viewTypeMap{
+                                              "View types",
+                                              {
+                                                {FLAT_VIEW, "Flat"},
+                                                {CUBEMAP_VIEW, "Cubemap"},
+                                                {INV_CUBEMAP_VIEW, "InvCubemap"}
+                                              }};
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
     mt::enumSelectionCombo("##view type", _viewType, viewTypeMap);
   }
@@ -361,24 +365,7 @@ void TextureViewer::_renderScene()
 
   mt::CommandProducerGraphic::RenderPass renderPass(*producer, *_frameBuffer);
 
-  if(_viewType == FLAT_VIEW)
-  {
-    mt::Technique::Bind bind( *_viewTechnique, *_flatPass, *producer);
-    if (bind.isValid())
-    {
-      producer->draw(4);
-      bind.release();
-    }
-  }
-  else
-  {
-    mt::Technique::Bind bind(*_viewTechnique, *_cubemapPass, *producer);
-    if (bind.isValid())
-    {
-      producer->draw(36);
-      bind.release();
-    }
-  }
+  _drawGeometry(*producer);
 
   renderPass.endPass();
 
@@ -392,4 +379,41 @@ void TextureViewer::_renderScene()
                           VK_ACCESS_SHADER_READ_BIT);
 
   queue->submitCommands(std::move(producer));
+}
+
+void TextureViewer::_drawGeometry(mt::CommandProducerGraphic& producer)
+{
+  switch(_viewType)
+  {
+  case FLAT_VIEW:
+    {
+      mt::Technique::Bind bind(*_viewTechnique, *_flatPass, producer);
+      if (bind.isValid())
+      {
+        producer.draw(4);
+        bind.release();
+      }
+      break;
+    }
+  case CUBEMAP_VIEW:
+    {
+      mt::Technique::Bind bind(*_viewTechnique, *_cubemapPass, producer);
+      if (bind.isValid())
+      {
+        producer.draw(36);
+        bind.release();
+      }
+      break;
+  }
+  case INV_CUBEMAP_VIEW:
+    {
+      mt::Technique::Bind bind(*_viewTechnique, *_invCubemapPass, producer);
+      if (bind.isValid())
+      {
+        producer.draw(36);
+        bind.release();
+      }
+      break;
+    }
+  }
 }

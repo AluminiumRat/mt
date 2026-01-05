@@ -16,6 +16,7 @@
 
 namespace mt
 {
+  class CommandProducerGraphic;
   class Device;
   class Image;
   class TechniqueManager;
@@ -39,7 +40,8 @@ private:
   enum ViewType
   {
     FLAT_VIEW,
-    CUBEMAP_VIEW
+    CUBEMAP_VIEW,
+    INV_CUBEMAP_VIEW
   };
 
   enum SamplerType
@@ -68,6 +70,7 @@ private:
 
   void _updateRenderParams();
   void _renderScene();
+  void _drawGeometry(mt::CommandProducerGraphic& producer);
 
 private:
   mt::Device& _device;
@@ -75,6 +78,7 @@ private:
   mt::Ref<mt::Technique> _viewTechnique;
   mt::TechniquePass* _flatPass;
   mt::TechniquePass* _cubemapPass;
+  mt::TechniquePass* _invCubemapPass;
   mt::ResourceBinding* _flatTexture;
   mt::ResourceBinding* _cubemapTexture;
   mt::UniformVariable* _viewProjectionMatrix;
