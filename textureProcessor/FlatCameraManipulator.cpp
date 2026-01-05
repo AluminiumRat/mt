@@ -25,9 +25,9 @@ void FlatCameraManipulator::update( ImVec2 areaPosition,
 void FlatCameraManipulator::_processMouseWheel() noexcept
 {
   if(areaSize().x == 0 || areaSize().y == 0) return;
+  if(!isActive()) return;
 
   ImGuiIO& io = ImGui::GetIO();
-  if(io.WantCaptureMouse) return;
 
   float scale = 1.0f - 0.1f * io.MouseWheel;
 
