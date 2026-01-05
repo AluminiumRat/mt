@@ -2,20 +2,20 @@
 
 #include "textureViewer/viewer.inl"
 
-layout(location = 0) in vec2 texCoord;
+layout(location = 0) in vec3 cubemapDirection;
 
 layout(location = 0) out vec4 outColor;
 
 void main()
 {
-  vec3 arrayTexCoord = vec3(texCoord, renderParams.layer);
+  vec4 arrayTexCoord = vec4(cubemapDirection, renderParams.layer);
 
   #if NEAREST_SAMPLER
-    outColor = textureLod(sampler2DArray(colorTexture, nearestSampler),
+    outColor = textureLod(samplerCubeArray(cubemapTexture, nearestSampler),
                           arrayTexCoord,
                           renderParams.mipIndex);
   #else
-    outColor = textureLod(sampler2DArray(colorTexture, linearSampler),
+    outColor = textureLod(samplerCubeArray(cubemapTexture, linearSampler),
                           arrayTexCoord,
                           renderParams.mipIndex);
   #endif

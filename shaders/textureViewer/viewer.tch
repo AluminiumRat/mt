@@ -6,14 +6,29 @@ passes:
     selections: [NEAREST_SAMPLER]
 
     shaders:
-      VERTEX : textureViewer/viewer.vert
-      FRAGMENT : textureViewer/viewer.frag
+      VERTEX : textureViewer/flat.vert
+      FRAGMENT : textureViewer/flat.frag
 
     frameBuffer:
       color: VK_FORMAT_B8G8R8A8_SRGB
 
     graphicSettings:
       topology: TRIANGLE_STRIP
+
+  CubemapPass :
+    selections: [NEAREST_SAMPLER]
+
+    shaders:
+      VERTEX : textureViewer/cubemap.vert
+      FRAGMENT : textureViewer/cubemap.frag
+
+    frameBuffer:
+      color: VK_FORMAT_B8G8R8A8_SRGB
+
+    graphicSettings:
+      topology: TRIANGLE_LIST
+      cullMode : BACK
+      frontFace : COUNTER_CLOCKWISE
 
 defaultSamplers:
   linearSampler:

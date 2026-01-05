@@ -16,14 +16,17 @@
 
 TextureViewer::TextureViewer(mt::Device& device) :
   _device(device),
-  _texture(nullptr),
   _flatPass(nullptr),
+  _cubemapPass(nullptr),
+  _flatTexture(nullptr),
+  _cubemapTexture(nullptr),
   _viewProjectionMatrix(nullptr),
   _modelMatrix(nullptr),
   _brightnessUniform(nullptr),
   _mipUniform(nullptr),
   _layerUniform(nullptr),
   _samplerSelection(nullptr),
+  _cubemapAllowed(false),
   _flatManipulator(_viewCamera),
   _orbitalManipulator(_viewCamera),
   _viewType(FLAT_VIEW),
@@ -41,8 +44,11 @@ TextureViewer::TextureViewer(mt::Device& device) :
   mt::loadConfigurator(*squareConfigurator, "textureViewer/viewer.tch");
   squareConfigurator->rebuildConfiguration();
   _viewTechnique = mt::Ref(new mt::Technique(*squareConfigurator));
-  _texture = &_viewTechnique->getOrCreateResourceBinding("colorTexture");
   _flatPass = &_viewTechnique->getOrCreatePass("FlatPass");
+  _cubemapPass = &_viewTechnique->getOrCreatePass("CubemapPass");
+  _flatTexture = &_viewTechnique->getOrCreateResourceBinding("flatTexture");
+  _cubemapTexture =
+                  &_viewTechnique->getOrCreateResourceBinding("cubemapTexture");
   _viewProjectionMatrix =
             &_viewTechnique->getOrCreateUniform("renderParams.viewProjMatrix");
   _modelMatrix =
@@ -158,19 +164,33 @@ void TextureViewer::makeGUI(const char* id,
                       ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
 }
 
+void TextureViewer::_viewTypeCombo()
+{
+  if(_cubemapAllowed)
+  {
+    static const mt::Bimap<ViewType> viewTypeMap{ "View types",
+                                                  {
+                                                    {FLAT_VIEW, "Flat"},
+                                                    {CUBEMAP_VIEW, "Cubemap"}
+                                                  }};
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
+    mt::enumSelectionCombo("##view type", _viewType, viewTypeMap);
+  }
+  else
+  {
+    _viewType = FLAT_VIEW;
+    static const mt::Bimap<ViewType> viewTypeMap{ "View types",
+                                                  {{FLAT_VIEW, "Flat"}}};
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
+    mt::enumSelectionCombo("##view type", _viewType, viewTypeMap);
+  }
+}
+
 void TextureViewer::_makeControlWidgets()
 {
   MT_ASSERT(_renderedImage != nullptr);
 
-  //  Комбо бокс для ViewType
-  static const mt::Bimap<ViewType> viewTypeMap{
-    "View types",
-    {
-      {FLAT_VIEW, "Flat"},
-      {CUBEMAP_VIEW, "Cubemap"}
-    }};
-  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 6);
-  mt::enumSelectionCombo("##view type", _viewType, viewTypeMap);
+  _viewTypeCombo();
 
   //  Кобо бокс для выбора сэмплера
   mt::sameLineIfPossible(ImGui::GetFontSize() * 13);
@@ -200,14 +220,21 @@ void TextureViewer::_makeControlWidgets()
                           0,
                           (int)_renderedImage->mipmapCount() - 1);
 
+  _layerInput();
+}
+
+void TextureViewer::_layerInput()
+{
   mt::sameLineIfPossible(ImGui::GetFontSize() * 12);
   ImGui::Text("Layer:");
   ImGui::SameLine();
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7);
   ImGui::InputInt("##layer", &_layerIndex);
-  _layerIndex = glm::clamp( _layerIndex,
-                            0,
-                            (int)_renderedImage->arraySize() - 1);
+
+  int maxLayerIndex = _viewType == FLAT_VIEW ?
+                                    (int)_renderedImage->arraySize() - 1 :
+                                    (int)_renderedImage->arraySize() / 6 - 1;
+  _layerIndex = glm::clamp( _layerIndex, 0, maxLayerIndex);
 }
 
 void TextureViewer::_makeUndraggedArea(glm::uvec2 widgetSize)
@@ -261,13 +288,37 @@ void TextureViewer::_rebuildRenderTarget(glm::uvec2 widgetSize)
 
 void TextureViewer::_setNewRenderedImage(const mt::Image& image)
 {
-  mt::ConstRef<mt::ImageView> newImageView =
-                  mt::ConstRef(new mt::ImageView( image,
-                                                  mt::ImageSlice(image),
-                                                  VK_IMAGE_VIEW_TYPE_2D_ARRAY));
-  _texture->setImage(newImageView);
-  _renderedImageView = newImageView;
-  _renderedImage = mt::ConstRef(&image);
+  try
+  {
+    _renderedImage = mt::ConstRef(&image);
+    _flatTexture->setImage(new mt::ImageView( image,
+                                              mt::ImageSlice(image),
+                                              VK_IMAGE_VIEW_TYPE_2D_ARRAY));
+    //  Для того чтобы из текстуры можно было сделать кубемапу, она должна быть
+    //  квадратной и в ней должно быть количество слоев, кратное 6
+    _cubemapAllowed =
+                  _renderedImage->extent().x == _renderedImage->extent().y &&
+                  _renderedImage->arraySize() % 6 == 0;
+    if(_cubemapAllowed)
+    {
+      _cubemapTexture->setImage(new mt::ImageView(
+                                                image,
+                                                mt::ImageSlice(image),
+                                                VK_IMAGE_VIEW_TYPE_CUBE_ARRAY));
+    }
+    else
+    {
+      _cubemapTexture->clear();
+    }
+  }
+  catch(...)
+  {
+    _flatTexture->clear();
+    _cubemapTexture->clear();
+    _renderedImage.reset();
+    _cubemapAllowed = false;
+    throw;
+  }
 }
 
 void TextureViewer::_updateRenderParams()
@@ -310,13 +361,23 @@ void TextureViewer::_renderScene()
 
   mt::CommandProducerGraphic::RenderPass renderPass(*producer, *_frameBuffer);
 
-  mt::Technique::Bind bind( *_viewTechnique,
-                            *_flatPass,
-                            *producer);
-  if (bind.isValid())
+  if(_viewType == FLAT_VIEW)
   {
-    producer->draw(4);
-    bind.release();
+    mt::Technique::Bind bind( *_viewTechnique, *_flatPass, *producer);
+    if (bind.isValid())
+    {
+      producer->draw(4);
+      bind.release();
+    }
+  }
+  else
+  {
+    mt::Technique::Bind bind(*_viewTechnique, *_cubemapPass, *producer);
+    if (bind.isValid())
+    {
+      producer->draw(36);
+      bind.release();
+    }
   }
 
   renderPass.endPass();

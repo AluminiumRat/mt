@@ -51,6 +51,10 @@ private:
 private:
   //  Виджеты управления сверху от основного окна просмотра
   void _makeControlWidgets();
+  //  Комбо бокс для выбора типа отрисовки
+  void _viewTypeCombo();
+  //  Контрол для выбора слоя текстурного массива
+  void _layerInput();
 
   //  Создет область, над которой бедет работать манипулятор камеры
   void _makeUndraggedArea(glm::uvec2 widgetSize);
@@ -69,8 +73,10 @@ private:
   mt::Device& _device;
 
   mt::Ref<mt::Technique> _viewTechnique;
-  mt::ResourceBinding* _texture;
   mt::TechniquePass* _flatPass;
+  mt::TechniquePass* _cubemapPass;
+  mt::ResourceBinding* _flatTexture;
+  mt::ResourceBinding* _cubemapTexture;
   mt::UniformVariable* _viewProjectionMatrix;
   mt::UniformVariable* _modelMatrix;
   mt::UniformVariable* _brightnessUniform;
@@ -79,7 +85,7 @@ private:
   mt::Selection* _samplerSelection;
 
   mt::ConstRef<mt::Image> _renderedImage;
-  mt::ConstRef<mt::ImageView> _renderedImageView;
+  bool _cubemapAllowed;
 
   mt::Ref<mt::Image> _renderTargetImage;
   mt::Ref<mt::FrameBuffer> _frameBuffer;

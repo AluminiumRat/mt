@@ -9,10 +9,13 @@ layout (set = VOLATILE,
 } renderParams;
 
 layout (set = STATIC,
-        binding = 0) uniform texture2DArray colorTexture;
+        binding = 0) uniform texture2DArray flatTexture;
 
 layout (set = STATIC,
-        binding = 1) uniform sampler nearestSampler;
+        binding = 1) uniform textureCubeArray cubemapTexture;
+
+        layout (set = STATIC,
+        binding = 2) uniform sampler nearestSampler;
 
 layout (set = STATIC,
-        binding = 2) uniform sampler linearSampler;
+        binding = 3) uniform sampler linearSampler;

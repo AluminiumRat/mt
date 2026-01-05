@@ -293,6 +293,7 @@ void VKRLib::_extendRequiredFeatures(
 {
   requiredFeatures.samplerAnisotropy = VK_TRUE;
   requiredFeatures.textureCompressionBC = VK_TRUE;
+  requiredFeatures.imageCubeArray = VK_TRUE;
 }
 
 std::set<std::string> VKRLib::_extendRequiredExtensions(
