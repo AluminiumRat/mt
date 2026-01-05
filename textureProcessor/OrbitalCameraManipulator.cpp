@@ -27,8 +27,17 @@ void OrbitalCameraManipulator::update(ImVec2 areaPosition,
                                       ImVec2 areaSize) noexcept
 {
   CameraManipulator::update(areaPosition, areaSize);
+  _processMouseWheel();
   _updateCameraPosition();
   _updateProjectionMatrix(areaSize);
+}
+
+void OrbitalCameraManipulator::_processMouseWheel() noexcept
+{
+  if (!isActive()) return;
+  ImGuiIO& io = ImGui::GetIO();
+  _distance *= 1.0f - 0.1f * io.MouseWheel;
+  _distance = std::max(0.01f, _distance);
 }
 
 void OrbitalCameraManipulator::_updateCameraPosition() noexcept

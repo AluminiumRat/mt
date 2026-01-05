@@ -10,6 +10,8 @@ namespace mt
   class Camera;
 }
 
+//  Управляет камерой, которая двигается по сфере вокруг фиксированной точки
+//  (центра)
 class OrbitalCameraManipulator : public CameraManipulator
 {
 public:
@@ -21,9 +23,11 @@ public:
 
   virtual void update(ImVec2 areaPosition, ImVec2 areaSize) noexcept override;
 
+  //  Точка, вокруг которой двигается камера
   inline const glm::vec3& centerPosition() const noexcept;
   inline void setCenterPosition(const glm::vec3& newValue) noexcept;
 
+  //  Расстояние от центра вращения до камеры
   inline float distance() const noexcept;
   inline void setDistance(float newValue) noexcept;
 
@@ -33,9 +37,11 @@ public:
   inline float pitchAngle() const noexcept;
   inline void setPitchAngle(float newValue) noexcept;
 
+  //  Чувствительность мышки
   inline float rotateSensitivity() const noexcept;
   inline void setRotateSensitivity(float newValue) noexcept;
 
+  //  Настройки проекции для камеры
   inline float fowY() const noexcept;
   inline float nearPlane() const noexcept;
   inline float farPlane() const noexcept;
@@ -47,6 +53,7 @@ protected:
   virtual void onDragging(glm::ivec2 mouseDelta) override;
 
 private:
+  void _processMouseWheel() noexcept;
   void _updateCameraPosition() noexcept;
   void _updateProjectionMatrix(ImVec2 areaSize) noexcept;
 
