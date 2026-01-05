@@ -169,7 +169,12 @@ void GUIWindow::drawImplementation( CommandProducerGraphic& commandProducer,
   CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
 
   CommandBuffer& commandBuffer = commandProducer.getOrCreateBuffer();
-  ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer.handle());
+
+  device().graphicQueue()->runSafe(
+    [&]()
+    {
+      ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer.handle());
+    });
 
   renderPass.endPass();
 }

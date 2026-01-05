@@ -105,6 +105,11 @@ namespace mt
     //  из очереди
     void waitIdle() const;
 
+    //  Выполнить какой-то код под защитой мьютекса очереди
+    //  Используется для выполнения внешнего кода (ImGui, например)
+    template <typename FunctorType>
+    inline void runSafe(FunctorType functor) const;
+
   private:
     void _cleanup() noexcept;
     // ВНИМАНИЕ!!! Этот метод не захватывает владение семафором, он работает
@@ -154,5 +159,12 @@ namespace mt
   inline const QueueFamily& CommandQueue::family() const
   {
     return _family;
+  }
+
+  template <typename FunctorType>
+  inline void CommandQueue::runSafe(FunctorType functor) const
+  {
+    std::lock_guard lock(commonMutex);
+    functor();
   }
 }
