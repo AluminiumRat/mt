@@ -12,6 +12,7 @@
 #include <vkr/Sampler.h>
 
 #include <FlatCameraManipulator.h>
+#include <OrbitalCameraManipulator.h>
 
 namespace mt
 {
@@ -35,6 +36,12 @@ public:
                 ImVec2 size = ImVec2(-FLT_MIN, -FLT_MIN));
 
 private:
+  enum ViewType
+  {
+    FLAT_VIEW,
+    CUBEMAP_VIEW
+  };
+
   enum SamplerType
   {
     NEAREST_SAMPLER,
@@ -78,8 +85,10 @@ private:
   mt::Ref<mt::FrameBuffer> _frameBuffer;
 
   mt::Camera _viewCamera;
-  FlatCameraManipulator _cameraManipulator;
+  FlatCameraManipulator _flatManipulator;
+  OrbitalCameraManipulator _orbitalManipulator;
 
+  ViewType _viewType;
   SamplerType _samplerType;
   float _brightness;
   int _mipIndex;

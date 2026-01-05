@@ -24,7 +24,9 @@ TextureViewer::TextureViewer(mt::Device& device) :
   _mipUniform(nullptr),
   _layerUniform(nullptr),
   _samplerSelection(nullptr),
-  _cameraManipulator(_viewCamera),
+  _flatManipulator(_viewCamera),
+  _orbitalManipulator(_viewCamera),
+  _viewType(FLAT_VIEW),
   _samplerType(NEAREST_SAMPLER),
   _brightness(1.0f),
   _mipIndex(0),
@@ -50,6 +52,9 @@ TextureViewer::TextureViewer(mt::Device& device) :
   _mipUniform = &_viewTechnique->getOrCreateUniform("renderParams.mipIndex");
   _layerUniform = &_viewTechnique->getOrCreateUniform("renderParams.layer");
   _samplerSelection = &_viewTechnique->getOrCreateSelection("NEAREST_SAMPLER");
+
+  _flatManipulator.setFrustumOrigin(glm::vec2(-0.1f, - 0.1f));
+  _flatManipulator.setFrustumSize(glm::vec2(1.2f, 1.2f));
 
   //  Создаем объекты, необходимые для отрисовки текстуры в ImGui
   mt::DescriptorCounter counters{};
@@ -119,8 +124,17 @@ void TextureViewer::makeGUI(const char* id,
 
   _makeUndraggedArea(widgetSize);
 
-  _cameraManipulator.update(ImGui::GetCursorScreenPos(),
+  if(_viewType == FLAT_VIEW)
+  {
+    _flatManipulator.update(ImGui::GetCursorScreenPos(),
                             ImVec2((float)widgetSize.x, (float)widgetSize.y));
+  }
+  else
+  {
+    _orbitalManipulator.update(
+                              ImGui::GetCursorScreenPos(),
+                              ImVec2((float)widgetSize.x, (float)widgetSize.y));
+  }
 
   if( _renderTargetImage == nullptr ||
       widgetSize != glm::uvec2(_renderTargetImage->extent()))
@@ -141,8 +155,19 @@ void TextureViewer::_makeControlWidgets()
 {
   MT_ASSERT(_renderedImage != nullptr);
 
+  //  Комбо бокс для ViewType
+  static const mt::Bimap<ViewType> viewTypeMap{
+    "View types",
+    {
+      {FLAT_VIEW, "Flat"},
+      {CUBEMAP_VIEW, "Cubemap"}
+    }};
+  ImGui::SetNextItemWidth(ImGui::GetFontSize() * 6);
+  mt::enumSelectionCombo("##view type", _viewType, viewTypeMap);
+
   //  Кобо бокс для выбора сэмплера
-  ImGui::Text("Sampler");
+  ImGui::SameLine();
+  ImGui::Text("Sampler:");
   ImGui::SameLine();
   static const mt::Bimap<SamplerType> samplerMap{
     "Sampoler types",
@@ -154,18 +179,18 @@ void TextureViewer::_makeControlWidgets()
   mt::enumSelectionCombo("##samplerCombo", _samplerType, samplerMap);
 
   ImGui::SameLine();
-  ImGui::Text("Brightness");
+  ImGui::Text("Brightness:");
   ImGui::SameLine();
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 8);
   ImGui::InputFloat("##brightness", &_brightness, 0.1f, 1.0f, "%.2f");
 
   //  Если ширины окна не хватает, то сделаем перенос строки
-  if(ImGui::GetContentRegionAvail().x > ImGui::GetFontSize() * 50)
+  if(ImGui::GetContentRegionAvail().x > ImGui::GetFontSize() * 55)
   {
     ImGui::SameLine();
   }
 
-  ImGui::Text("Mip");
+  ImGui::Text("Mip:");
   ImGui::SameLine();
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7);
   ImGui::InputInt("##mip", &_mipIndex);
@@ -174,7 +199,7 @@ void TextureViewer::_makeControlWidgets()
                           (int)_renderedImage->mipmapCount() - 1);
 
   ImGui::SameLine();
-  ImGui::Text("Layer");
+  ImGui::Text("Layer:");
   ImGui::SameLine();
   ImGui::SetNextItemWidth(ImGui::GetFontSize() * 7);
   ImGui::InputInt("##layer", &_layerIndex);

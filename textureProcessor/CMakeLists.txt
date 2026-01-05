@@ -17,6 +17,7 @@ add_executable (textureProcessor
                 "FlatCameraManipulator.cpp"
                 "main.cpp"
                 "MainWindow.cpp"
+                "OrbitalCameraManipulator.cpp"
                 "Project.cpp"
                 "TextureViewer.cpp")
 
