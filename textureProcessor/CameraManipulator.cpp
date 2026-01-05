@@ -13,6 +13,7 @@ CameraManipulator::CameraManipulator() :
   _areaInitialized(false),
   _areaPosition(0, 0),
   _areaSize(0, 0),
+  _isActive(false),
   _mousePressed(false),
   _mousePosition(0,0),
   _preDragging(false),
@@ -23,7 +24,7 @@ CameraManipulator::CameraManipulator() :
 void CameraManipulator::update(ImVec2 areaPosition, ImVec2 areaSize) noexcept
 {
   _processMoveResize(areaPosition, areaSize);
-  _processDragging();
+  _processMouse();
 }
 
 void CameraManipulator::_processMoveResize( ImVec2 areaPosition,
@@ -86,7 +87,40 @@ void CameraManipulator::onAreaInitialized(glm::ivec2 position, glm::ivec2 size)
   #endif
 }
 
-void CameraManipulator::_processDragging() noexcept
+void CameraManipulator::_updateIsActive() noexcept
+{
+  //  В случае, если было начато перетаскивание, то манипулятор деактивируется
+  //  только, когда пользователь отпустит кнопку мыши
+  if(_draggingState == DRAGGING)
+  {
+    _isActive = true;
+    return;
+  }
+
+  //  Если мышь вне области манипулятора - то манипулятор не активный
+  if( _mousePosition.x < 0 ||
+      _mousePosition.x > _areaSize.x ||
+      _mousePosition.y < 0 ||
+      _mousePosition.y > _areaSize.y)
+  {
+    _isActive = false;
+    return;
+  }
+
+  ImGuiIO& io = ImGui::GetIO();
+  if(io.WantCaptureMouse == false)
+  {
+    //  Случай, когда мышь находится над областью манипулятора, но при этом
+    //  не находится над окнами ImGui. Манипулятор не привязан к окнам ImGui
+    _isActive = true;
+    return;
+  }
+
+  // Проверяем, активное ли окно, к которому привязан манипулятор.
+  _isActive = ImGui::IsWindowFocused();
+}
+
+void CameraManipulator::_processMouse() noexcept
 {
   ImGuiIO& io = ImGui::GetIO();
 
@@ -96,16 +130,14 @@ void CameraManipulator::_processDragging() noexcept
   glm::ivec2 lastMousePosition = _mousePosition;
   _mousePosition = glm::ivec2(io.MousePos.x, io.MousePos.y) - _areaPosition;
 
+  _updateIsActive();
+
   if(_draggingState == NO_DRAGGING)
   {
     //  Состояние - нет перетаскивания. Здесь нам надо отследить момент, когда
     //  перетаскивание начинается. Это происходит, когда пользователь начинает
     //  перемещать мышь с зажатой кнопкой над областью манипулятора
-    if( _mousePosition.x >= 0 &&
-        _mousePosition.x <= _areaSize.x &&
-        _mousePosition.y >= 0 &&
-        _mousePosition.y <= _areaSize.y &&
-        io.WantCaptureMouse == false)
+    if(_isActive)
     {
       if(_mousePressed && !lastMousePressed)
       {

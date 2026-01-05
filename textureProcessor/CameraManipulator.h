@@ -24,6 +24,10 @@ public:
   //    (ImGui::GetCursorScreenPos)
   virtual void update(ImVec2 areaPosition, ImVec2 areaSize) noexcept;
 
+  //  Манипулятор находится в активном состоянии, то есть перехватывает
+  //  сообщения ввода и управляет камерой
+  inline bool isActive() const noexcept;
+
 protected:
   enum DraggingState
   {
@@ -60,7 +64,8 @@ protected:
 
 private:
   void _processMoveResize(ImVec2 areaPosition, ImVec2 areaSize) noexcept;
-  void _processDragging() noexcept;
+  void _updateIsActive() noexcept;
+  void _processMouse() noexcept;
 
 private:
   //  Флаг, говорящий о том, что update вызывается не первыйц раз.
@@ -68,6 +73,10 @@ private:
   bool _areaInitialized;
   glm::ivec2 _areaPosition;
   glm::ivec2 _areaSize;
+
+  //  Флаг, говорящий о том, что пользователь в данный момент работает с этим
+  //  манипулятором
+  bool _isActive;
 
   bool _mousePressed;
   glm::ivec2 _mousePosition;
@@ -78,6 +87,11 @@ private:
 
   DraggingState _draggingState;
 };
+
+inline bool CameraManipulator::isActive() const noexcept
+{
+  return _isActive;
+}
 
 inline glm::ivec2 CameraManipulator::areaPosition() const noexcept
 {

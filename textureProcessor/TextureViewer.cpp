@@ -213,24 +213,13 @@ void TextureViewer::_makeControlWidgets()
 void TextureViewer::_makeUndraggedArea(glm::uvec2 widgetSize)
 {
   ImVec2 leftTopCorner = ImGui::GetCursorScreenPos();
-  if( ImGui::GetContentRegionAvail().x <= 0 ||
-      ImGui::GetContentRegionAvail().y <= 0)
-  {
-    return;
-  }
 
   ImGui::ColorButton( "##undraggedArea",
                       ImVec4(0.0f, 0.0f, 0.0f, 0.0f),
                       ImGuiColorEditFlags_NoTooltip |
                         ImGuiColorEditFlags_NoDragDrop,
                       ImVec2((float)widgetSize.x, (float)widgetSize.y));
-  if(ImGui::IsItemHovered())
-  {
-    //  Имитируем поведение для камера-манипулятора, как-будто курсор находится
-    //  вне окна
-    ImGui::SetNextFrameWantCaptureMouse(false);
-    ImGui::SetNextFrameWantCaptureKeyboard(false);
-  }
+
   ImGui::SetCursorScreenPos(leftTopCorner);
 }
 
