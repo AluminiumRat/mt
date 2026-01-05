@@ -101,10 +101,16 @@ glm::uvec2 TextureViewer::_getWidgetSize(const ImVec2& userSize) const
   glm::uvec2 widgetSize(0);
 
   if(userSize.x >= 0) widgetSize.x = (uint32_t)userSize.x;
-  else widgetSize.x = (uint32_t)ImGui::GetContentRegionAvail().x;
+  else
+  {
+    widgetSize.x = (uint32_t)std::max( ImGui::GetContentRegionAvail().x, 0.0f);
+  }
 
   if (userSize.y >= 0) widgetSize.y = (uint32_t)userSize.y;
-  else widgetSize.y = (uint32_t)ImGui::GetContentRegionAvail().y;
+  else
+  {
+    widgetSize.y = (uint32_t)std::max(ImGui::GetContentRegionAvail().y, 0.0f);
+  }
 
   return widgetSize;
 }
@@ -113,9 +119,10 @@ void TextureViewer::makeGUI(const char* id,
                             const mt::Image& image,
                             ImVec2 size)
 {
+
   mt::ImGuiPushID pushID(id);
 
-  if (_renderedImage.get() != &image) _setNewRenderedImage(image);
+  if(_renderedImage.get() != &image) _setNewRenderedImage(image);
 
   _makeControlWidgets();
 
@@ -206,6 +213,12 @@ void TextureViewer::_makeControlWidgets()
 void TextureViewer::_makeUndraggedArea(glm::uvec2 widgetSize)
 {
   ImVec2 leftTopCorner = ImGui::GetCursorScreenPos();
+  if( ImGui::GetContentRegionAvail().x <= 0 ||
+      ImGui::GetContentRegionAvail().y <= 0)
+  {
+    return;
+  }
+
   ImGui::ColorButton( "##undraggedArea",
                       ImVec4(0.0f, 0.0f, 0.0f, 0.0f),
                       ImGuiColorEditFlags_NoTooltip |
