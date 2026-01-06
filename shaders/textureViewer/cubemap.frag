@@ -9,6 +9,7 @@ layout(location = 0) out vec4 outColor;
 void main()
 {
   vec4 arrayTexCoord = vec4(cubemapDirection, renderParams.layer);
+  arrayTexCoord.z = -arrayTexCoord.z;
 
   #if NEAREST_SAMPLER
     outColor = textureLod(samplerCubeArray(cubemapTexture, nearestSampler),
