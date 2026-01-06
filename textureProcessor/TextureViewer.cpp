@@ -28,8 +28,6 @@ TextureViewer::TextureViewer(mt::Device& device) :
   _layerUniform(nullptr),
   _samplerSelection(nullptr),
   _cubemapAllowed(false),
-  _flatManipulator(_viewCamera),
-  _orbitalManipulator(_viewCamera),
   _viewType(FLAT_VIEW),
   _samplerType(NEAREST_SAMPLER),
   _brightness(1.0f),
@@ -60,6 +58,9 @@ TextureViewer::TextureViewer(mt::Device& device) :
   _mipUniform = &_viewTechnique->getOrCreateUniform("renderParams.mipIndex");
   _layerUniform = &_viewTechnique->getOrCreateUniform("renderParams.layer");
   _samplerSelection = &_viewTechnique->getOrCreateSelection("NEAREST_SAMPLER");
+
+  _flatManipulator.setCamera(&_viewCamera);
+  _orbitalManipulator.setCamera(&_viewCamera);
 
   //  Создаем объекты, необходимые для отрисовки текстуры в ImGui
   mt::DescriptorCounter counters{};

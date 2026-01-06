@@ -1,11 +1,11 @@
 ﻿#include <glm/gtc/matrix_transform.hpp>
 
+#include <gui/CameraManipulator/FlatCameraManipulator.h>
 #include <util/Camera.h>
 
-#include <FlatCameraManipulator.h>
+using namespace mt;
 
-FlatCameraManipulator::FlatCameraManipulator(mt::Camera& targetCamera) :
-  _targetCamera(targetCamera),
+FlatCameraManipulator::FlatCameraManipulator() :
   _frustumOrigin(0, 0),
   _frustumSize(1, 1),
   _minZ(-1000),
@@ -54,20 +54,22 @@ void FlatCameraManipulator::_aspectRatioCorrection() noexcept
 
 void FlatCameraManipulator::_updateCamera() noexcept
 {
+  if(camera() == nullptr) return;
+
   glm::vec2 halfFrustumSize = _frustumSize / 2.0f;
   glm::vec3 frustumCenter = glm::vec3(_frustumOrigin + halfFrustumSize,
                                       _maxZ);
 
   glm::mat4 translate(1);
   translate = glm::translate(translate, frustumCenter);
-  _targetCamera.setTransformMatrix(translate);
+  camera()->setTransformMatrix(translate);
 
-  _targetCamera.setOrthoProjection( -halfFrustumSize.x,
-                                    halfFrustumSize.x,
-                                    -halfFrustumSize.y,
-                                    halfFrustumSize.y,
-                                    0,
-                                    _maxZ - _minZ);
+  camera()->setOrthoProjection( -halfFrustumSize.x,
+                                halfFrustumSize.x,
+                                -halfFrustumSize.y,
+                                halfFrustumSize.y,
+                                0,
+                                _maxZ - _minZ);
 }
 
 void FlatCameraManipulator::onAreaResized(glm::ivec2 oldSize,

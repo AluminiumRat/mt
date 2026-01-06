@@ -1,15 +1,17 @@
 ﻿#include <stdexcept>
 
+#include <gui/CameraManipulator/CameraManipulator.h>
 #include <util/Log.h>
 
-#include <CameraManipulator.h>
+using namespace mt;
 
 #define BEGIN_EXCEPT_CATCHING try{
-#define END_EXCEPT_CATCHING } catch(std::exception& error) { mt::Log::error() << error.what(); }
+#define END_EXCEPT_CATCHING } catch(std::exception& error) { Log::error() << error.what(); }
 
 //#define LOG_MANIPULATOR_EVENTS
 
 CameraManipulator::CameraManipulator() :
+  _camera(nullptr),
   _areaInitialized(false),
   _areaPosition(0, 0),
   _areaSize(0, 0),
@@ -19,6 +21,11 @@ CameraManipulator::CameraManipulator() :
   _preDragging(false),
   _draggingState(NO_DRAGGING)
 {
+}
+
+void CameraManipulator::setCamera(Camera* newCamera)
+{
+  _camera = newCamera;
 }
 
 void CameraManipulator::update(ImVec2 areaPosition, ImVec2 areaSize) noexcept
@@ -69,21 +76,21 @@ void CameraManipulator::onAreaMoved(glm::ivec2 oldPosition,
                                     glm::ivec2 newPosition)
 {
   #ifdef LOG_MANIPULATOR_EVENTS
-    mt::Log::info() << "onAreaMoved " << newPosition.x << " " << newPosition.y;
+    Log::info() << "onAreaMoved " << newPosition.x << " " << newPosition.y;
   #endif
 }
 
 void CameraManipulator::onAreaResized(glm::ivec2 oldSize, glm::ivec2 newSize)
 {
   #ifdef LOG_MANIPULATOR_EVENTS
-    mt::Log::info() << "onAreaResized " << oldSize.x << " " << newSize.y;
+    Log::info() << "onAreaResized " << oldSize.x << " " << newSize.y;
   #endif
 }
 
 void CameraManipulator::onAreaInitialized(glm::ivec2 position, glm::ivec2 size)
 {
   #ifdef LOG_MANIPULATOR_EVENTS
-    mt::Log::info() << "onAreaInitialized. Position: " << position.x << " " << position.y << " Size: " << size.x << " " << size.y;
+    Log::info() << "onAreaInitialized. Position: " << position.x << " " << position.y << " Size: " << size.x << " " << size.y;
   #endif
 }
 
@@ -194,20 +201,20 @@ void CameraManipulator::_processMouse() noexcept
 void CameraManipulator::onDraggingStarted(glm::ivec2 startMousePosition)
 {
   #ifdef LOG_MANIPULATOR_EVENTS
-    mt::Log::info() << "onDraggingStarted " << startMousePosition.x << " " << startMousePosition.y;
+    Log::info() << "onDraggingStarted " << startMousePosition.x << " " << startMousePosition.y;
   #endif
 }
 
 void CameraManipulator::onDragging(glm::ivec2 mouseDelta)
 {
   #ifdef LOG_MANIPULATOR_EVENTS
-    mt::Log::info() << "onDragging " << mouseDelta.x << " " << mouseDelta.y;
+    Log::info() << "onDragging " << mouseDelta.x << " " << mouseDelta.y;
   #endif
 }
 
 void CameraManipulator::onDraggingFinished()
 {
   #ifdef LOG_MANIPULATOR_EVENTS
-    mt::Log::info() << "onDraggingFinished";
+    Log::info() << "onDraggingFinished";
   #endif
 }

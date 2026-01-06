@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include <gui/CameraManipulator/FlatCameraManipulator.h>
+#include <gui/CameraManipulator/OrbitalCameraManipulator.h>
 #include <technique/Technique.h>
 #include <util/Camera.h>
 #include <util/Ref.h>
@@ -10,9 +12,6 @@
 #include <vkr/pipeline/DescriptorSet.h>
 #include <vkr/FrameBuffer.h>
 #include <vkr/Sampler.h>
-
-#include <FlatCameraManipulator.h>
-#include <OrbitalCameraManipulator.h>
 
 namespace mt
 {
@@ -98,8 +97,8 @@ private:
   mt::Ref<mt::FrameBuffer> _frameBuffer;
 
   mt::Camera _viewCamera;
-  FlatCameraManipulator _flatManipulator;
-  OrbitalCameraManipulator _orbitalManipulator;
+  mt::FlatCameraManipulator _flatManipulator;
+  mt::OrbitalCameraManipulator _orbitalManipulator;
 
   ViewType _viewType;
   SamplerType _samplerType;
