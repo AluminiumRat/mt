@@ -61,8 +61,11 @@ private:
   //  Создет область, над которой бедет работать манипулятор камеры
   void _makeUndraggedArea(glm::uvec2 widgetSize);
 
-  // Определить реальный размер виджета по размеру, переданному пользователем
+  //  Определить реальный размер виджета по размеру, переданному пользователем
   glm::uvec2 _getWidgetSize(const ImVec2& userSize) const;
+
+  //  Настроить flat view так, чтобы вся текстура влезала во вьювер
+  void _adjustFlatView(glm::uvec2 widgetSize);
 
   void _rebuildRenderTarget(glm::uvec2 widgetSize);
   void _setNewRenderedImage(const mt::Image& image);

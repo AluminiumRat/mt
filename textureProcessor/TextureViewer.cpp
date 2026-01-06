@@ -61,9 +61,6 @@ TextureViewer::TextureViewer(mt::Device& device) :
   _layerUniform = &_viewTechnique->getOrCreateUniform("renderParams.layer");
   _samplerSelection = &_viewTechnique->getOrCreateSelection("NEAREST_SAMPLER");
 
-  _flatManipulator.setFrustumOrigin(glm::vec2(-0.1f, - 0.1f));
-  _flatManipulator.setFrustumSize(glm::vec2(1.2f, 1.2f));
-
   //  Создаем объекты, необходимые для отрисовки текстуры в ImGui
   mt::DescriptorCounter counters{};
   counters.combinedImageSamplers = 1;
@@ -123,12 +120,48 @@ glm::uvec2 TextureViewer::_getWidgetSize(const ImVec2& userSize) const
   return widgetSize;
 }
 
+void TextureViewer::_adjustFlatView(glm::uvec2 widgetSize)
+{
+  float textureAspectRatio = (float)_renderedImage->extent().x /
+                                                    _renderedImage->extent().y;
+  // Размер прямоугольника, на который мы натягиваем текстуру
+  glm::vec2 imageSizeWorld(textureAspectRatio, 1.0f);
+
+  float widgetAspectRatio = (float)widgetSize.x / widgetSize.y;
+
+  glm::vec2 frustumOrigin(-0.1f, -0.1f);
+  glm::vec2 frustumSize(1.2f, 1.2f);
+
+  if(textureAspectRatio > widgetAspectRatio)
+  {
+    //  текстура более вытянута по горизонтали чем виджет
+    frustumSize.x = 1.2f * imageSizeWorld.x;
+    frustumSize.y = frustumSize.x / widgetAspectRatio;
+    frustumOrigin.x = -0.1f * imageSizeWorld.x;
+    frustumOrigin.y = -0.5f * (frustumSize.y - 1.0f);
+  }
+  else
+  {
+    //  виджет более вытянут по горизонтали чем текстура
+    frustumSize.x = 1.2f * widgetAspectRatio;
+    frustumOrigin.x = -0.5f * (frustumSize.x - textureAspectRatio);
+  }
+
+  _flatManipulator.setFrustumOrigin(frustumOrigin);
+  _flatManipulator.setFrustumSize(frustumSize);
+}
+
 void TextureViewer::makeGUI(const char* id,
                             const mt::Image& image,
                             ImVec2 size)
 {
-
   mt::ImGuiPushID pushID(id);
+
+  //  Если изменился размер текстуры, то необходимо будет перенастроить
+  //  камеру
+  bool needAdjustFlatView = _renderedImage == nullptr ||
+                            _renderedImage->extent().x != image.extent().x ||
+                            _renderedImage->extent().y != image.extent().y;
 
   if(_renderedImage.get() != &image) _setNewRenderedImage(image);
 
@@ -136,6 +169,8 @@ void TextureViewer::makeGUI(const char* id,
 
   glm::uvec2 widgetSize = _getWidgetSize(size);
   if(widgetSize.x == 0 || widgetSize.y == 0) return;
+
+  if(needAdjustFlatView) _adjustFlatView(widgetSize);
 
   _makeUndraggedArea(widgetSize);
 
