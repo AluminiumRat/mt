@@ -2,10 +2,10 @@
 
 #include <memory>
 
+#include <gui/TextureViewer/TextureViewer.h>
 #include <gui/GUIWindow.h>
 
 #include <Project.h>
-#include <TextureViewer.h>
 
 class MainWindow : public mt::GUIWindow
 {
@@ -38,5 +38,5 @@ private:
   //  оставшихся кадров.
   int _saveWindowStage;
 
-  TextureViewer _textureViewer;
+  mt::TextureViewer _textureViewer;
 };

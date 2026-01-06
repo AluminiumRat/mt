@@ -14,6 +14,7 @@ set(SOURCES
     "CameraManipulator/CameraManipulator.cpp"
     "CameraManipulator/FlatCameraManipulator.cpp"
     "CameraManipulator/OrbitalCameraManipulator.cpp"
+    "TextureViewer/TextureViewer.cpp"
     "AsyncTaskGui.cpp"
     "BaseWindow.cpp"
     "GUILib.cpp"

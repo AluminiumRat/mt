@@ -15,7 +15,6 @@
 
 #include <Application.h>
 #include <MainWindow.h>
-#include <TextureViewer.h>
 
 // Сколько кадров будет показываться окно сохранения
 #define SAVE_WINDOW_FRAME_COUNT 5

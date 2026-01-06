@@ -15,8 +15,7 @@ add_executable (textureProcessor
                 "BuildTextureTask.cpp"
                 "main.cpp"
                 "MainWindow.cpp"
-                "Project.cpp"
-                "TextureViewer.cpp")
+                "Project.cpp")
 
 target_link_libraries(textureProcessor
                       ${Vulkan_LIBRARIES}
