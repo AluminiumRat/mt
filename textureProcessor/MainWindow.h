@@ -2,7 +2,6 @@
 
 #include <memory>
 
-#include <gui/TextureViewer/TextureViewer.h>
 #include <gui/GUIWindow.h>
 
 #include <Project.h>
@@ -37,6 +36,4 @@ private:
   //  показывать окно сохранения в течении нескольких кадров. Это счетчик
   //  оставшихся кадров.
   int _saveWindowStage;
-
-  mt::TextureViewer _textureViewer;
 };

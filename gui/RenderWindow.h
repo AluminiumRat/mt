@@ -34,10 +34,11 @@ namespace mt
     RenderWindow& operator = (const RenderWindow&) = delete;
     virtual ~RenderWindow() noexcept;
 
+    inline Device& device() const noexcept;
+
     virtual void draw() override;
 
   protected:
-    inline Device& device() const noexcept;
     inline const SwapChain& swapChain() const noexcept;
 
     void cleanup() noexcept;

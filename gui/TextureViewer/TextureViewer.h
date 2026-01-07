@@ -8,7 +8,6 @@
 #include <util/Camera.h>
 #include <util/Ref.h>
 #include <vkr/image/Image.h>
-#include <vkr/image/ImageView.h>
 #include <vkr/pipeline/DescriptorSet.h>
 #include <vkr/FrameBuffer.h>
 #include <vkr/Sampler.h>
@@ -17,22 +16,40 @@ namespace mt
 {
   class CommandProducerGraphic;
   class Device;
-  class Image;
   class TechniqueManager;
 
+  //  Класс, который реализует конкретный вьювер-виджет
+  //  Можно создать и использовать этот класс непосредственно, но также можно
+  //    воспользоваться статическим методом "makeGUIIm" для вставки
+  //    вьювера в immediately mode стиле
   class TextureViewer
   {
   public:
-    TextureViewer(Device& device);
+    //  Если techniqueManager не nullptr, то она будет использована для
+    //    загрузки техники отрисовки виджета(асинхронно). В противном случае
+    //    техника будет загружена в конструкторе синхронно.
+    TextureViewer(Device& device, TechniqueManager* techniqueManager);
     TextureViewer(const TextureViewer&) = delete;
     TextureViewer& operator = (const TextureViewer&) = delete;
     ~TextureViewer() noexcept;
 
+    //  Добавить вьювер в ImGui контекст. Нестатический метод, пользователь
+    //    сам управляет объектом класса TextureViewer
     //  image должна либо иметь включенный автоконтроль лэйаута, либо находиться
     //    в лэйауте VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     void makeGUI( const char* id,
                   const Image& image,
                   ImVec2 size = ImVec2(-FLT_MIN, -FLT_MIN));
+
+    //  Добавить вьювер в ImGui контекст. Cтатический метод в стиле ImGui,
+    //    не требует явного создания и управления объектом TextureViewer
+    //  image должна либо иметь включенный автоконтроль лэйаута, либо находиться
+    //    в лэйауте VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    //  ВНИМАНИЕ! Метод обращается к TextureViewerManager. Убедитесь, что
+    //    TextureViewerManager создан и для него вызывается flush
+    static void makeGUIIm(const char* id,
+                          const Image& image,
+                          ImVec2 size = ImVec2(-FLT_MIN, -FLT_MIN));
 
   private:
     enum ViewType
@@ -49,6 +66,7 @@ namespace mt
     };
 
   private:
+    void _loadViewTechnique(TechniqueManager* techniqueManager);
     //  Виджеты управления сверху от основного окна просмотра
     void _makeControlWidgets();
     //  Комбо бокс для выбора типа отрисовки

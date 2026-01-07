@@ -20,7 +20,9 @@ Application::Application() :
                   _asyncTaskGui.addEvent(theEvent);
                 })),
   _textureManager(_fileWatcher, _asyncQueue),
-  _bufferManager(_fileWatcher, _asyncQueue)
+  _bufferManager(_fileWatcher, _asyncQueue),
+  _techniqueManager(_fileWatcher, _asyncQueue),
+  _textureViewerManager(&_techniqueManager)
 {
   _instance = this;
 
@@ -44,6 +46,7 @@ void Application::run()
   {
     _asyncQueue.update();
     _fileWatcher.propagateChanges();
+    _textureViewerManager.flush();
 
     _guiLib.updateWindows();
     _guiLib.drawWindows();

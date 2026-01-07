@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 
 #include <ddsSupport/ddsSupport.h>
+#include <gui/TextureViewer/TextureViewer.h>
 #include <gui/ImGuiRAII.h>
 #include <gui/modalDialogs.h>
 #include <technique/TechniqueLoader.h>
@@ -21,8 +22,7 @@
 
 MainWindow::MainWindow() :
   GUIWindow(Application::instance().primaryDevice(), "Texture processor"),
-  _saveWindowStage(0),
-  _textureViewer(Application::instance().primaryDevice())
+  _saveWindowStage(0)
 {
 }
 
@@ -175,8 +175,7 @@ void MainWindow::_showTextureViewer()
   if(_project == nullptr || _project->resultImage() == nullptr) return;
 
   mt::ImGuiWindow viewerWindow("Texture view");
-  _textureViewer.makeGUI( "Texture",
-                          *_project->resultImage());
+  mt::TextureViewer::makeGUIIm("Texture", *_project->resultImage());
 }
 
 bool MainWindow::canClose() noexcept

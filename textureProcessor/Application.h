@@ -3,11 +3,13 @@
 #include <memory>
 
 #include <asyncTask/AsyncTaskQueue.h>
+#include <gui/TextureViewer/TextureViewerManager.h>
 #include <gui/AsyncTaskGUI.h>
 #include <gui/GUILib.h>
 #include <resourceManagement/BufferResourceManager.h>
 #include <resourceManagement/FileWatcher.h>
 #include <resourceManagement/TextureManager.h>
+#include <resourceManagement/TechniqueManager.h>
 #include <util/Assert.h>
 #include <vkr/Device.h>
 #include <vkr/VKRLib.h>
@@ -30,6 +32,7 @@ public:
   inline mt::FileWatcher& fileWatcher() noexcept;
   inline mt::TextureManager& textureManager() noexcept;
   inline mt::BufferResourceManager& bufferManager() noexcept;
+  inline mt::TechniqueManager& techniqueManager() noexcept;
   inline mt::AsyncTaskGUI& asyncTaskGui() noexcept;
 
 private:
@@ -44,6 +47,8 @@ private:
   mt::FileWatcher _fileWatcher;
   mt::TextureManager _textureManager;
   mt::BufferResourceManager _bufferManager;
+  mt::TechniqueManager _techniqueManager;
+  mt::TextureViewerManager _textureViewerManager;
   mt::AsyncTaskGUI _asyncTaskGui;
 };
 
@@ -76,6 +81,11 @@ inline mt::TextureManager& Application::textureManager() noexcept
 inline mt::BufferResourceManager& Application::bufferManager() noexcept
 {
   return _bufferManager;
+}
+
+inline mt::TechniqueManager& Application::techniqueManager() noexcept
+{
+  return _techniqueManager;
 }
 
 inline mt::AsyncTaskGUI& Application::asyncTaskGui() noexcept

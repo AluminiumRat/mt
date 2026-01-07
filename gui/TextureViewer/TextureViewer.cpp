@@ -4,18 +4,25 @@
 #include <imgui.h>
 
 #include <gui/TextureViewer/TextureViewer.h>
+#include <gui/TextureViewer/TextureViewerManager.h>
+#include <gui/GUIWindow.h>
 #include <gui/ImGuiRAII.h>
 #include <gui/ImGuiWidgets.h>
+#include <resourceManagement/TechniqueManager.h>
 #include <technique/TechniqueLoader.h>
 #include <util/Abort.h>
 #include <util/Assert.h>
 #include <util/Log.h>
+#include <vkr/image/ImageView.h>
 #include <vkr/pipeline/DescriptorPool.h>
 #include <vkr/Device.h>
 
 using namespace mt;
 
-TextureViewer::TextureViewer(Device& device) :
+//#define LOG_TEXTURE_VIEWER_CREATE_DELETE
+
+TextureViewer::TextureViewer( Device& device,
+                              TechniqueManager* techniqueManager) :
   _device(device),
   _flatPass(nullptr),
   _cubemapPass(nullptr),
@@ -38,26 +45,7 @@ TextureViewer::TextureViewer(Device& device) :
 {
   MT_ASSERT(_device.graphicQueue() != nullptr);
 
-  Ref techniqueConfigurator(
-                          new TechniqueConfigurator(device, "View technique"));
-  loadConfigurator(*techniqueConfigurator, "textureViewer/viewer.tch");
-  techniqueConfigurator->rebuildConfiguration();
-  _viewTechnique = Ref(new Technique(*techniqueConfigurator));
-  _flatPass = &_viewTechnique->getOrCreatePass("FlatPass");
-  _cubemapPass = &_viewTechnique->getOrCreatePass("CubemapPass");
-  _invCubemapPass = &_viewTechnique->getOrCreatePass("InvCubemapPass");
-  _flatTexture = &_viewTechnique->getOrCreateResourceBinding("flatTexture");
-  _cubemapTexture =
-                  &_viewTechnique->getOrCreateResourceBinding("cubemapTexture");
-  _viewProjectionMatrix =
-            &_viewTechnique->getOrCreateUniform("renderParams.viewProjMatrix");
-  _modelMatrix =
-            &_viewTechnique->getOrCreateUniform("renderParams.modelMatrix");
-  _brightnessUniform =
-                &_viewTechnique->getOrCreateUniform("renderParams.brightness");
-  _mipUniform = &_viewTechnique->getOrCreateUniform("renderParams.mipIndex");
-  _layerUniform = &_viewTechnique->getOrCreateUniform("renderParams.layer");
-  _samplerSelection = &_viewTechnique->getOrCreateSelection("NEAREST_SAMPLER");
+  _loadViewTechnique(techniqueManager);
 
   _flatManipulator.setCamera(&_viewCamera);
   _orbitalManipulator.setCamera(&_viewCamera);
@@ -78,11 +66,63 @@ TextureViewer::TextureViewer(Device& device) :
   ConstRef setLayout(new DescriptorSetLayout( device,
                                               std::span(&binding, 1)));
   _imGuiDescriptorSet = pool->allocateSet(*setLayout);
+
+  #ifdef LOG_TEXTURE_VIEWER_CREATE_DELETE
+    Log::info() << "TextureViewer created";
+  #endif
+}
+
+void TextureViewer::_loadViewTechnique(TechniqueManager* techniqueManager)
+{
+  if(techniqueManager != nullptr)
+  {
+    _viewTechnique = techniqueManager->scheduleLoading(
+                                                    "textureViewer/viewer.tch",
+                                                    _device);
+  }
+  else
+  {
+    Ref configurator(new TechniqueConfigurator( _device,
+                                                "textureViewer/viewer.tch"));
+    loadConfigurator(*configurator, "textureViewer/viewer.tch");
+    configurator->rebuildConfiguration();
+    _viewTechnique = Ref(new Technique(*configurator));
+  }
+
+  _flatPass = &_viewTechnique->getOrCreatePass("FlatPass");
+  _cubemapPass = &_viewTechnique->getOrCreatePass("CubemapPass");
+  _invCubemapPass = &_viewTechnique->getOrCreatePass("InvCubemapPass");
+  _flatTexture = &_viewTechnique->getOrCreateResourceBinding("flatTexture");
+  _cubemapTexture =
+                  &_viewTechnique->getOrCreateResourceBinding("cubemapTexture");
+  _viewProjectionMatrix =
+            &_viewTechnique->getOrCreateUniform("renderParams.viewProjMatrix");
+  _modelMatrix =
+            &_viewTechnique->getOrCreateUniform("renderParams.modelMatrix");
+  _brightnessUniform =
+                &_viewTechnique->getOrCreateUniform("renderParams.brightness");
+  _mipUniform = &_viewTechnique->getOrCreateUniform("renderParams.mipIndex");
+  _layerUniform = &_viewTechnique->getOrCreateUniform("renderParams.layer");
+  _samplerSelection = &_viewTechnique->getOrCreateSelection("NEAREST_SAMPLER");
 }
 
 TextureViewer::~TextureViewer() noexcept
 {
   _clearRenderTarget();
+
+  #ifdef LOG_TEXTURE_VIEWER_CREATE_DELETE
+    Log::info() << "TextureViewer deleted";
+  #endif
+}
+
+void TextureViewer::makeGUIIm(const char* id, const Image& image, ImVec2 size)
+{
+  Device& device = image.device();
+  ImGuiID widgetId = ImGui::GetID(id);
+
+  TextureViewer& viewer =
+          TextureViewerManager::instance().getOrCreateViewer(widgetId, device);
+  viewer.makeGUI(id, image, size);
 }
 
 void TextureViewer::_clearRenderTarget() noexcept
@@ -153,6 +193,12 @@ void TextureViewer::_adjustFlatView(glm::uvec2 widgetSize)
 
 void TextureViewer::makeGUI(const char* id, const Image& image, ImVec2 size)
 {
+  MT_ASSERT(&image.device() == &_device);
+  if(GUIWindow::currentWindow() != nullptr)
+  {
+    MT_ASSERT(&GUIWindow::currentWindow()->device() == &_device);
+  }
+
   ImGuiPushID pushID(id);
 
   //  Если изменился размер текстуры, то необходимо будет перенастроить
@@ -414,6 +460,9 @@ void TextureViewer::_renderScene()
 
 void TextureViewer::_drawGeometry(CommandProducerGraphic& producer)
 {
+  //  Проверка, успела ли прогрузиться техника из TechniqueManager
+  if(!_viewTechnique->isReady()) return;
+
   switch(_viewType)
   {
   case FLAT_VIEW:
