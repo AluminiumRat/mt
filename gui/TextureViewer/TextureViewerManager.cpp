@@ -1,4 +1,4 @@
-﻿#include <gui/TextureViewer/TextureViewerManager.h>
+﻿#include <gui/textureViewer/TextureViewerManager.h>
 
 using namespace mt;
 

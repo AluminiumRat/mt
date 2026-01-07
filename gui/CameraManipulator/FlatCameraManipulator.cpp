@@ -1,6 +1,6 @@
 ﻿#include <glm/gtc/matrix_transform.hpp>
 
-#include <gui/CameraManipulator/FlatCameraManipulator.h>
+#include <gui/cameraManipulator/FlatCameraManipulator.h>
 #include <util/Camera.h>
 
 using namespace mt;

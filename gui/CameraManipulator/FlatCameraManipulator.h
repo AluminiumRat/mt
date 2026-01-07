@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include <gui/CameraManipulator/CameraManipulator.h>
+#include <gui/cameraManipulator/CameraManipulator.h>
 
 namespace mt
 {

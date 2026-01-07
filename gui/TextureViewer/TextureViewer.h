@@ -2,8 +2,8 @@
 
 #include <glm/glm.hpp>
 
-#include <gui/CameraManipulator/FlatCameraManipulator.h>
-#include <gui/CameraManipulator/OrbitalCameraManipulator.h>
+#include <gui/cameraManipulator/FlatCameraManipulator.h>
+#include <gui/cameraManipulator/OrbitalCameraManipulator.h>
 #include <technique/Technique.h>
 #include <util/Camera.h>
 #include <util/Ref.h>

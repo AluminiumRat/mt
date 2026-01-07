@@ -1,6 +1,6 @@
 ﻿#include <stdexcept>
 
-#include <gui/CameraManipulator/CameraManipulator.h>
+#include <gui/cameraManipulator/CameraManipulator.h>
 #include <util/Log.h>
 
 using namespace mt;

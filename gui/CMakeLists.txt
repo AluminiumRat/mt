@@ -11,11 +11,11 @@ include_directories(..
                     ${IMGUI_PATH})
 
 set(SOURCES
-    "CameraManipulator/CameraManipulator.cpp"
-    "CameraManipulator/FlatCameraManipulator.cpp"
-    "CameraManipulator/OrbitalCameraManipulator.cpp"
-    "TextureViewer/TextureViewer.cpp"
-    "TextureViewer/TextureViewerManager.cpp"
+    "cameraManipulator/CameraManipulator.cpp"
+    "cameraManipulator/FlatCameraManipulator.cpp"
+    "cameraManipulator/OrbitalCameraManipulator.cpp"
+    "textureViewer/TextureViewer.cpp"
+    "textureViewer/TextureViewerManager.cpp"
     "AsyncTaskGui.cpp"
     "BaseWindow.cpp"
     "GUILib.cpp"

@@ -4,7 +4,7 @@
 #include <glm/gtx/euler_angles.hpp>
 #include <glm/gtx/transform.hpp>
 
-#include <gui/CameraManipulator/OrbitalCameraManipulator.h>
+#include <gui/cameraManipulator/OrbitalCameraManipulator.h>
 #include <util/Abort.h>
 #include <util/Camera.h>
 #include <util/pi.h>

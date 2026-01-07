@@ -5,7 +5,7 @@
 #include <vulkan/vulkan.h>
 
 #include <ddsSupport/ddsSupport.h>
-#include <gui/TextureViewer/TextureViewer.h>
+#include <gui/textureViewer/TextureViewer.h>
 #include <gui/ImGuiRAII.h>
 #include <gui/modalDialogs.h>
 #include <technique/TechniqueLoader.h>

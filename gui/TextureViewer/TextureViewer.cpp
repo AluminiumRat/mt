@@ -3,8 +3,8 @@
 #include <backends/imgui_impl_vulkan.h>
 #include <imgui.h>
 
-#include <gui/TextureViewer/TextureViewer.h>
-#include <gui/TextureViewer/TextureViewerManager.h>
+#include <gui/textureViewer/TextureViewer.h>
+#include <gui/textureViewer/TextureViewerManager.h>
 #include <gui/GUIWindow.h>
 #include <gui/ImGuiRAII.h>
 #include <gui/ImGuiWidgets.h>

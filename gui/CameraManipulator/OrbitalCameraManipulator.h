@@ -3,7 +3,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
-#include <gui/CameraManipulator/CameraManipulator.h>
+#include <gui/cameraManipulator/CameraManipulator.h>
 
 namespace mt
 {

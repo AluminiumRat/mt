@@ -3,7 +3,7 @@
 #include <memory>
 
 #include <asyncTask/AsyncTaskQueue.h>
-#include <gui/TextureViewer/TextureViewerManager.h>
+#include <gui/textureViewer/TextureViewerManager.h>
 #include <gui/AsyncTaskGUI.h>
 #include <gui/GUILib.h>
 #include <resourceManagement/BufferResourceManager.h>

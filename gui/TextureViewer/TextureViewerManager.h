@@ -5,7 +5,7 @@
 
 #include <imgui.h>
 
-#include <gui/TextureViewer/TextureViewer.h>
+#include <gui/textureViewer/TextureViewer.h>
 #include <util/Ref.h>
 #include <util/Assert.h>
 
