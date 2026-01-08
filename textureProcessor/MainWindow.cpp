@@ -174,6 +174,8 @@ void MainWindow::_showTextureViewer()
 {
   if(_project == nullptr || _project->resultImage() == nullptr) return;
 
+  ImGui::SetNextWindowSizeConstraints(ImVec2(500, 500),
+                                      ImVec2(FLT_MAX, FLT_MAX));
   mt::ImGuiWindow viewerWindow("Texture view");
   mt::TextureViewer::makeGUIIm("Texture", *_project->resultImage());
 }
