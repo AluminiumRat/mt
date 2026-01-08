@@ -9,7 +9,7 @@
 #include <technique/ResourceBinding.h>
 #include <technique/Technique.h>
 #include <technique/UniformVariable.h>
-#include <techniquePropertyGrid/TechniquePropertySetCommon.h>
+#include <techniquePropertySet/TechniquePropertySetCommon.h>
 
 namespace YAML
 {

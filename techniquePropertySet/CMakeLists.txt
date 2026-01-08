@@ -1,6 +1,6 @@
 ﻿cmake_minimum_required (VERSION 3.10)
 
-project(techniquePropertyGrid)
+project(techniquePropertySet)
 
 include_directories(..
                     ${GLM_PATH}
@@ -15,7 +15,7 @@ set(SOURCES
     "TechniquePropertySet.cpp"
     )
 
-add_library(techniquePropertyGrid
+add_library(techniquePropertySet
             ${SOURCES})
 
-target_compile_definitions(techniquePropertyGrid PRIVATE YAML_CPP_STATIC_DEFINE)
+target_compile_definitions(techniquePropertySet PRIVATE YAML_CPP_STATIC_DEFINE)

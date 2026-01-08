@@ -28,7 +28,7 @@ target_link_libraries(textureProcessor
                       vkr
                       resourceManagement
                       technique
-                      techniquePropertyGrid
+                      techniquePropertySet
                       gui)
 
 target_compile_definitions(textureProcessor PRIVATE YAML_CPP_STATIC_DEFINE)

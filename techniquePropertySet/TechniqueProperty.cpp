@@ -1,7 +1,7 @@
 ﻿#include <yaml-cpp/yaml.h>
 
 #include <technique/TechniqueLoader.h>
-#include <techniquePropertyGrid/TechniqueProperty.h>
+#include <techniquePropertySet/TechniqueProperty.h>
 #include <resourceManagement/BufferResourceManager.h>
 #include <resourceManagement/TextureManager.h>
 #include <util/fileSystemHelpers.h>

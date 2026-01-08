@@ -7,7 +7,7 @@
 #include <asyncTask/AsyncTaskQueue.h>
 #include <resourceManagement/FileWatcher.h>
 #include <technique/Technique.h>
-#include <techniquePropertyGrid/TechniquePropertySet.h>
+#include <techniquePropertySet/TechniquePropertySet.h>
 #include <util/Ref.h>
 
 class Project : mt::FileObserver

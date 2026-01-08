@@ -1,7 +1,7 @@
 ﻿#include <yaml-cpp/yaml.h>
 
 #include <technique/Technique.h>
-#include <techniquePropertyGrid/TechniquePropertySet.h>
+#include <techniquePropertySet/TechniquePropertySet.h>
 #include <util/Assert.h>
 
 namespace fs = std::filesystem;

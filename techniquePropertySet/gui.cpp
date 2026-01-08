@@ -4,9 +4,9 @@
 #include <gui/ImGuiPropertyGrid.h>
 #include <gui/ImGuiWidgets.h>
 #include <gui/modalDialogs.h>
-#include <techniquePropertyGrid/gui.h>
-#include <techniquePropertyGrid/techniqueProperty.h>
-#include <techniquePropertyGrid/techniquePropertySet.h>
+#include <techniquePropertySet/gui.h>
+#include <techniquePropertySet/techniqueProperty.h>
+#include <techniquePropertySet/techniquePropertySet.h>
 #include <util/vkMeta.h>
 
 namespace fs = std::filesystem;

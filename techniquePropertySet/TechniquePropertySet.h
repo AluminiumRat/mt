@@ -3,8 +3,8 @@
 #include <map>
 #include <memory>
 
-#include <techniquePropertyGrid/TechniqueProperty.h>
-#include <techniquePropertyGrid/TechniquePropertySetCommon.h>
+#include <techniquePropertySet/TechniqueProperty.h>
+#include <techniquePropertySet/TechniquePropertySetCommon.h>
 
 namespace mt
 {

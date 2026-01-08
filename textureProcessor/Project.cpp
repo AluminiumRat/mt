@@ -11,7 +11,7 @@
 #include <gui/ImGuiWidgets.h>
 #include <gui/ImGuiRAII.h>
 #include <gui/modalDialogs.h>
-#include <techniquePropertyGrid/gui.h>
+#include <techniquePropertySet/gui.h>
 #include <util/Assert.h>
 #include <util/fileSystemHelpers.h>
 #include <vkr/image/ImageFormatFeatures.h>

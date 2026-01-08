@@ -46,7 +46,7 @@ add_subdirectory(ddsSupport)
 add_subdirectory(gui)
 add_subdirectory(resourceManagement)
 add_subdirectory(technique)
-add_subdirectory(techniquePropertyGrid)
+add_subdirectory(techniquePropertySet)
 add_subdirectory(util)
 add_subdirectory(vkr)
 
