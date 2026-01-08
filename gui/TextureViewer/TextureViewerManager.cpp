@@ -2,6 +2,10 @@
 
 using namespace mt;
 
+//  Какое каличество кадров должен неиспользоваться виджет, чтобы он был удален
+//  при вызове TextureViewerManager::flush
+static constexpr int framesUnusedToDelete = 100;
+
 TextureViewerManager* TextureViewerManager::_instance = nullptr;
 
 TextureViewerManager::TextureViewerManager(TechniqueManager* techniqueManager) :
@@ -24,12 +28,12 @@ TextureViewer& TextureViewerManager::getOrCreateViewer( ImGuiID widgetId,
   WidgetsMap::iterator iWidget = _widgetsMap.find(key);
   if(iWidget != _widgetsMap.end())
   {
-    iWidget->second.wasUsed = true;
+    iWidget->second.framesUnused = 0;
     return *iWidget->second.widget;
   }
 
   WidgedRecord newWidgetRecord;
-  newWidgetRecord.wasUsed = true;
+  newWidgetRecord.framesUnused = 0;
   newWidgetRecord.widget.reset(new TextureViewer(device, _techniqueManager));
   TextureViewer& widgetRef = *newWidgetRecord.widget;
 
@@ -44,9 +48,9 @@ void TextureViewerManager::flush() noexcept
   while(iWidget != _widgetsMap.end())
   {
     WidgedRecord& widgetRecord = iWidget->second;
-    if(widgetRecord.wasUsed)
+    if(widgetRecord.framesUnused < framesUnusedToDelete)
     {
-      widgetRecord.wasUsed = false;
+      widgetRecord.framesUnused++;
       iWidget++;
     }
     else

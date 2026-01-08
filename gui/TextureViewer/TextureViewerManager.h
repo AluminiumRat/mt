@@ -35,7 +35,7 @@ namespace mt
 
     TextureViewer& getOrCreateViewer(ImGuiID widgetId, Device& device);
 
-    //  Очистить инстансы, которые не были использованы с предыдущего flush-а
+    //  Очистить инстансы, которые давное не были использованы
     //  Необходимо вызывать периодически(можно раз в кадр) для предотвращения
     //    утечек ресурсов
     void flush() noexcept;
@@ -44,8 +44,8 @@ namespace mt
     struct WidgedRecord
     {
       std::unique_ptr<TextureViewer> widget;
-      // Флаг, использовался ли виджет с последнего flush-а
-      bool wasUsed;
+      // Счетчик, сколько кадров виджет не использовался
+      int framesUnused;
 
       WidgedRecord() noexcept = default;
       WidgedRecord(const WidgedRecord&) = delete;
