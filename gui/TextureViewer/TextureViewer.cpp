@@ -19,6 +19,8 @@
 
 using namespace mt;
 
+static constexpr glm::uvec2 minViewerSize(100, 100);
+
 //#define LOG_TEXTURE_VIEWER_CREATE_DELETE
 
 TextureViewer::TextureViewer( Device& device,
@@ -156,6 +158,8 @@ glm::uvec2 TextureViewer::_getWidgetSize(const ImVec2& userSize) const
   {
     widgetSize.y = (uint32_t)std::max(ImGui::GetContentRegionAvail().y, 0.0f);
   }
+
+  widgetSize = glm::max(widgetSize, minViewerSize);
 
   return widgetSize;
 }
