@@ -466,7 +466,7 @@ void TextureViewer::_renderScene()
 void TextureViewer::_drawGeometry(CommandProducerGraphic& producer)
 {
   //  Проверка, успела ли прогрузиться техника из TechniqueManager
-  if(!_viewTechnique->isReady()) return;
+  if(_viewTechnique->configuration() == nullptr) return;
 
   switch(_viewType)
   {
