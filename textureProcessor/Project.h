@@ -7,7 +7,7 @@
 #include <asyncTask/AsyncTaskQueue.h>
 #include <resourceManagement/FileWatcher.h>
 #include <technique/Technique.h>
-#include <techniquePropertyGrid/TechniquePropertyGrid.h>
+#include <techniquePropertyGrid/TechniquePropertySet.h>
 #include <util/Ref.h>
 
 class Project : mt::FileObserver
@@ -23,7 +23,7 @@ public:
   inline const mt::Image* resultImage() const noexcept;
 
   void save(const std::filesystem::path& file);
-  void guiPass();
+  void makeGui();
 
   void rebuildTechnique();
   void runTechnique();
@@ -58,11 +58,11 @@ private:
   int32_t _arraySize;
 
   mt::Ref<mt::TechniqueConfigurator> _configurator;
+
   mt::Ref<mt::Technique> _technique;
+  mt::TechniquePropertySet _techniqueProps;
 
   mt::Ref<mt::Image> _resultImage;
-
-  mt::TechniquePropertyGrid _propsGrid;
 
   std::unique_ptr<mt::AsyncTaskQueue::TaskHandle> _rebuildTaskHandle;
   std::unique_ptr<mt::AsyncTaskQueue::TaskHandle> _textureTaskHandle;

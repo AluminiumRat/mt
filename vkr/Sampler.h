@@ -26,6 +26,8 @@ namespace mt
     float maxLod = VK_LOD_CLAMP_NONE;
     VkBorderColor borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
     bool unnormalizedCoordinates = false;
+
+    bool operator == (const SamplerDescription&) const noexcept = default;
   };
 
   // Тонкая RAII обертка вокруг VkSampler

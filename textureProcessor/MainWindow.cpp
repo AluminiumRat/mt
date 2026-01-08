@@ -31,7 +31,7 @@ void MainWindow::guiImplementation()
   mt::GUIWindow::guiImplementation();
 
   _processMainMenu();
-  if(_project != nullptr) _project->guiPass();
+  if(_project != nullptr) _project->makeGui();
   _showTextureViewer();
 
   // Если было сохранение, то на несколько кадров покажем окно сохранения

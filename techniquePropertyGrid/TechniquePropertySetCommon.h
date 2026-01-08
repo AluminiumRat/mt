@@ -1,18 +1,16 @@
 ﻿#pragma once
 
-#include <filesystem>
-
 namespace mt
 {
   class TextureManager;
   class BufferResourceManager;
   class CommandQueueTransfer;
 
-  struct TechniquePropertyGridCommon
+  //  Общие данные для всех пропертей из проперти сета
+  struct TechniquePropertySetCommon
   {
     TextureManager* textureManager;
     BufferResourceManager* bufferManager;
     CommandQueueTransfer* resourceOwnerQueue;
-    std::filesystem::path* projectFile;
   };
 }

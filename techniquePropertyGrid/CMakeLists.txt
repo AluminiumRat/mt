@@ -10,8 +10,9 @@ include_directories(..
                     ${IMGUI_PATH})
 
 set(SOURCES
-    "TechniquePropertyGrid.cpp"
-    "TechniquePropertyWidget.cpp"
+    "gui.cpp"
+    "TechniqueProperty.cpp"
+    "TechniquePropertySet.cpp"
     )
 
 add_library(techniquePropertyGrid

@@ -11,6 +11,7 @@
 #include <gui/ImGuiWidgets.h>
 #include <gui/ImGuiRAII.h>
 #include <gui/modalDialogs.h>
+#include <techniquePropertyGrid/gui.h>
 #include <util/Assert.h>
 #include <util/fileSystemHelpers.h>
 #include <vkr/image/ImageFormatFeatures.h>
@@ -114,12 +115,10 @@ Project::Project( const fs::path& file) :
                                         Application::instance().primaryDevice(),
                                         "Make texture technique")),
   _technique(new mt::Technique(*_configurator)),
-  _propsGrid( *_technique,
-                mt::TechniquePropertyGridCommon{
-                        &Application::instance().textureManager(),
-                        &Application::instance().bufferManager(),
-                        Application::instance().primaryDevice().graphicQueue(),
-                        &_projectFile})
+  _techniqueProps(*_technique,
+                  Application::instance().textureManager(),
+                  Application::instance().bufferManager(),
+                  *Application::instance().primaryDevice().graphicQueue())
 {
   if(!_projectFile.empty())
   {
@@ -171,7 +170,7 @@ void Project::_load()
   _arraySize = glm::clamp(_arraySize, 1, 16536);
 
   YAML::Node shaderPropsNode = rootNode["shaderProps"];
-  _propsGrid.load(shaderPropsNode);
+  _techniqueProps.load(shaderPropsNode, projectFolder);
 }
 
 Project::~Project() noexcept
@@ -212,7 +211,7 @@ void Project::save(const fs::path& file)
 
   out << YAML::Key << "shaderProps";
   out << YAML::Value;
-  _propsGrid.save(out);
+  _techniqueProps.save(out, projectFolder);
 
   out << YAML::EndMap;
 
@@ -262,7 +261,7 @@ void Project::onFileChanged(const fs::path&,
   if(eventType != FILE_DISAPPEARANCE) rebuildTechnique();
 }
 
-void Project::guiPass()
+void Project::makeGui()
 {
   mt::ImGuiWindow window("Project");
 
@@ -274,7 +273,7 @@ void Project::guiPass()
   _guiOutputProps();
 
   ImGui::SeparatorText("Shader properties");
-  _propsGrid.makeGUI();
+  techniquePropertyGrid("Shader properties", _techniqueProps);
 }
 
 void Project::_selectShader() noexcept
