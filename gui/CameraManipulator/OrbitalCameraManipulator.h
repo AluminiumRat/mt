@@ -12,7 +12,7 @@ namespace mt
   class OrbitalCameraManipulator : public CameraManipulator
   {
   public:
-    explicit OrbitalCameraManipulator();
+    explicit OrbitalCameraManipulator(Location location);
     OrbitalCameraManipulator(const OrbitalCameraManipulator&) = delete;
     OrbitalCameraManipulator& operator = (
                                       const OrbitalCameraManipulator&) = delete;

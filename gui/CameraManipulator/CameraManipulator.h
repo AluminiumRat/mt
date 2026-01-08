@@ -16,10 +16,24 @@ namespace mt
   class CameraManipulator
   {
   public:
-    CameraManipulator();
+    //  Где находится область, над которой должен работать манипулятор
+    enum Location
+    {
+      //  Манипулятор работает над окном приложения, но вне области
+      //  окон ImGui.
+      APPLICATION_WINDOW_LOCATION,
+      //  Манипулятор встроен в окно ImGui. Метод update должен вызываться
+      //  внутри ImGui::Begin(), ImGui::End()
+      IMGUI_WINDOW_LOCATION
+    };
+
+  public:
+    explicit CameraManipulator(Location location);
     CameraManipulator(const CameraManipulator&) = delete;
     CameraManipulator& operator = (const CameraManipulator&) = delete;
     virtual ~CameraManipulator() noexcept = default;
+
+    inline Location location() const noexcept;
 
     virtual void setCamera(Camera* newCamera);
     inline Camera* camera() const noexcept;
@@ -75,6 +89,8 @@ namespace mt
     void _processMouse() noexcept;
 
   private:
+    Location _location;
+
     Camera* _camera;
 
     //  Флаг, говорящий о том, что update вызывается не первыйц раз.
@@ -96,6 +112,12 @@ namespace mt
 
     DraggingState _draggingState;
   };
+
+  inline CameraManipulator::Location
+                                    CameraManipulator::location() const noexcept
+  {
+    return _location;
+  }
 
   inline Camera* CameraManipulator::camera() const noexcept
   {

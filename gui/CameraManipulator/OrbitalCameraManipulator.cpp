@@ -11,7 +11,8 @@
 
 using namespace mt;
 
-OrbitalCameraManipulator::OrbitalCameraManipulator() :
+OrbitalCameraManipulator::OrbitalCameraManipulator(Location location) :
+  CameraManipulator(location),
   _centerPosition(0),
   _distance(5),
   _yawAngle(-glm::pi<float>() / 4.f),

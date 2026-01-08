@@ -5,7 +5,8 @@
 
 using namespace mt;
 
-FlatCameraManipulator::FlatCameraManipulator() :
+FlatCameraManipulator::FlatCameraManipulator(Location location) :
+  CameraManipulator(location),
   _frustumOrigin(0, 0),
   _frustumSize(1, 1),
   _minZ(-1000),

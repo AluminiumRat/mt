@@ -10,7 +10,8 @@ using namespace mt;
 
 //#define LOG_MANIPULATOR_EVENTS
 
-CameraManipulator::CameraManipulator() :
+CameraManipulator::CameraManipulator(Location location) :
+  _location(location),
   _camera(nullptr),
   _areaInitialized(false),
   _areaPosition(0, 0),
@@ -114,17 +115,14 @@ void CameraManipulator::_updateIsActive() noexcept
     return;
   }
 
-  ImGuiIO& io = ImGui::GetIO();
-  if(io.WantCaptureMouse == false)
+  if(_location == APPLICATION_WINDOW_LOCATION)
   {
-    //  Случай, когда мышь находится над областью манипулятора, но при этом
-    //  не находится над окнами ImGui. Манипулятор не привязан к окнам ImGui
-    _isActive = true;
-    return;
+    _isActive = !ImGui::GetIO().WantCaptureMouse;
   }
-
-  // Проверяем, активное ли окно, к которому привязан манипулятор.
-  _isActive = ImGui::IsWindowFocused();
+  else
+  {
+    _isActive = ImGui::IsWindowFocused() && ImGui::GetIO().WantCaptureMouse;
+  }
 }
 
 void CameraManipulator::_processMouse() noexcept

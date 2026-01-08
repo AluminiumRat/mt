@@ -38,6 +38,8 @@ TextureViewer::TextureViewer( Device& device,
   _layerUniform(nullptr),
   _samplerSelection(nullptr),
   _cubemapAllowed(false),
+  _flatManipulator(CameraManipulator::IMGUI_WINDOW_LOCATION),
+  _orbitalManipulator(CameraManipulator::IMGUI_WINDOW_LOCATION),
   _viewType(FLAT_VIEW),
   _samplerType(NEAREST_SAMPLER),
   _brightness(1.0f),
@@ -216,7 +218,6 @@ void TextureViewer::makeGUI(const char* id, const Image& image, ImVec2 size)
   _makeControlWidgets();
 
   glm::uvec2 widgetSize = _getWidgetSize(size);
-  if(widgetSize.x == 0 || widgetSize.y == 0) return;
 
   if(needAdjustFlatView) _adjustFlatView(widgetSize);
 

@@ -9,7 +9,7 @@ namespace mt
   class FlatCameraManipulator : public CameraManipulator
   {
   public:
-    explicit FlatCameraManipulator();
+    explicit FlatCameraManipulator(Location location);
     FlatCameraManipulator(const FlatCameraManipulator&) = delete;
     FlatCameraManipulator& operator = (const FlatCameraManipulator&) = delete;
     virtual ~FlatCameraManipulator() noexcept = default;
