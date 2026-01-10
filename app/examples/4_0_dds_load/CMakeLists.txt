@@ -3,7 +3,7 @@
 project (dds_load)
 
 include_directories(.
-                    ../..
+                    ../../../mtlib
                     ${GLM_PATH}
                     ${Vulkan_INCLUDE_DIRS}
                     ${VKMEMALLOC_PATH})

@@ -1,24 +1,23 @@
 ﻿cmake_minimum_required (VERSION 3.10)
 
-project (file_watcher)
+project (imgui)
 
 include_directories(.
-                    ../..
+                    ../../../mtlib
                     ${GLM_PATH}
                     ${Vulkan_INCLUDE_DIRS}
                     ${VKMEMALLOC_PATH}
                     ${IMGUI_PATH})
 
-add_executable (file_watcher
+add_executable (imgui
                 "main.cpp"
                 "TestWindow.cpp")
 
-target_link_libraries(file_watcher
+target_link_libraries(imgui
                       ${Vulkan_LIBRARIES}
                       ${Shaderc_LIBRARIES}
                       ${GLFW_PATH}/lib-vc2022/glfw3.lib
                       ${YamlCPP_LIBRARIES}
                       util
                       vkr
-                      gui
-                      resourceManagement)
+                      gui)

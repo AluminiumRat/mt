@@ -8,10 +8,10 @@ include_directories(..
                     ${Shaderc_INCLUDE_DIRS}
                     ${VKMEMALLOC_PATH}
                     ${YamlCPP_INCLUDE_DIRS}
-                    "../third_party/spirv_reflect")
+                    "../../3rdParty/spirv_reflect")
 
 set(SOURCES
-    "../third_party/spirv_reflect/spirv_reflect.c"
+    "../../3rdParty/spirv_reflect/spirv_reflect.c"
     "PassConfigurator.cpp"
     "ResourceBinding.cpp"
     "Selection.cpp"

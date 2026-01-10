@@ -1,18 +1,23 @@
 ﻿cmake_minimum_required (VERSION 3.10)
 
-project (resource_managers_example)
+project (textureProcessor)
 
 include_directories(.
-                    ../..
+                    ../../mtlib
                     ${GLM_PATH}
                     ${Vulkan_INCLUDE_DIRS}
-                    ${VKMEMALLOC_PATH})
+                    ${VKMEMALLOC_PATH}
+                    ${YamlCPP_INCLUDE_DIRS}
+                    ${IMGUI_PATH})
 
-add_executable (resource_managers_example
+add_executable (textureProcessor
+                "Application.cpp"
+                "BuildTextureTask.cpp"
                 "main.cpp"
-                "TestWindow.cpp")
+                "MainWindow.cpp"
+                "Project.cpp")
 
-target_link_libraries(resource_managers_example
+target_link_libraries(textureProcessor
                       ${Vulkan_LIBRARIES}
                       ${Shaderc_LIBRARIES}
                       ${GLFW_PATH}/lib-vc2022/glfw3.lib
@@ -23,4 +28,7 @@ target_link_libraries(resource_managers_example
                       vkr
                       resourceManagement
                       technique
+                      techniquePropertySet
                       gui)
+
+target_compile_definitions(textureProcessor PRIVATE YAML_CPP_STATIC_DEFINE)

@@ -1,18 +1,18 @@
 ﻿cmake_minimum_required (VERSION 3.10)
 
-project (technique_manual)
+project (technique_load)
 
 include_directories(.
-                    ../..
+                    ../../../mtlib
                     ${GLM_PATH}
                     ${Vulkan_INCLUDE_DIRS}
                     ${VKMEMALLOC_PATH})
 
-add_executable (technique_manual
+add_executable (technique_load
                 "main.cpp"
                 "TestWindow.cpp")
 
-target_link_libraries(technique_manual
+target_link_libraries(technique_load
                       ${Vulkan_LIBRARIES}
                       ${Shaderc_LIBRARIES}
                       ${GLFW_PATH}/lib-vc2022/glfw3.lib

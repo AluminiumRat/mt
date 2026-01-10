@@ -1,24 +1,21 @@
 ﻿cmake_minimum_required (VERSION 3.10)
 
-project (asyncTasks)
+project (rawVkr)
 
 include_directories(.
-                    ../..
+                    ../../../mtlib
                     ${GLM_PATH}
                     ${Vulkan_INCLUDE_DIRS}
-                    ${VKMEMALLOC_PATH}
-                    ${IMGUI_PATH})
+                    ${VKMEMALLOC_PATH})
 
-add_executable (asyncTasks
+add_executable (rawVkr
                 "main.cpp"
                 "TestWindow.cpp")
 
-target_link_libraries(asyncTasks
+target_link_libraries(rawVkr
                       ${Vulkan_LIBRARIES}
-                      ${Shaderc_LIBRARIES}
                       ${GLFW_PATH}/lib-vc2022/glfw3.lib
                       ${YamlCPP_LIBRARIES}
-                      asyncTask
                       util
                       vkr
                       gui)

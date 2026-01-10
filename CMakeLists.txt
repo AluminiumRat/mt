@@ -28,7 +28,7 @@ find_path(GLFW_PATH
 
 find_path(IMGUI_PATH
           imgui.h
-          HINTS "third_party/imgui"
+          HINTS "3rdParty/imgui"
           REQUIRED)
 
 find_path(VKMEMALLOC_PATH
@@ -38,26 +38,26 @@ find_path(VKMEMALLOC_PATH
 
 find_path(DDSIMAGE_PATH
           dds.hpp
-          HINTS "third_party/dds_image/include"
+          HINTS "3rdParty/dds_image/include"
           REQUIRED)
 
-add_subdirectory(asyncTask)
-add_subdirectory(ddsSupport)
-add_subdirectory(gui)
-add_subdirectory(resourceManagement)
-add_subdirectory(technique)
-add_subdirectory(techniquePropertySet)
-add_subdirectory(util)
-add_subdirectory(vkr)
+add_subdirectory(mtlib/asyncTask)
+add_subdirectory(mtlib/ddsSupport)
+add_subdirectory(mtlib/gui)
+add_subdirectory(mtlib/resourceManagement)
+add_subdirectory(mtlib/technique)
+add_subdirectory(mtlib/techniquePropertySet)
+add_subdirectory(mtlib/util)
+add_subdirectory(mtlib/vkr)
 
-add_subdirectory(examples/1_0_dumpHardware)
-add_subdirectory(examples/1_1_raw_vkr)
-add_subdirectory(examples/2_0_technique_manual)
-add_subdirectory(examples/2_1_technique_load)
-add_subdirectory(examples/3_0_imgui)
-add_subdirectory(examples/4_0_dds_load)
-add_subdirectory(examples/5_0_file_watcher)
-add_subdirectory(examples/5_1_async_tasks)
-add_subdirectory(examples/5_2_resource_managers)
+add_subdirectory(app/examples/1_0_dumpHardware)
+add_subdirectory(app/examples/1_1_raw_vkr)
+add_subdirectory(app/examples/2_0_technique_manual)
+add_subdirectory(app/examples/2_1_technique_load)
+add_subdirectory(app/examples/3_0_imgui)
+add_subdirectory(app/examples/4_0_dds_load)
+add_subdirectory(app/examples/5_0_file_watcher)
+add_subdirectory(app/examples/5_1_async_tasks)
+add_subdirectory(app/examples/5_2_resource_managers)
 
-add_subdirectory(textureProcessor)
+add_subdirectory(app/textureProcessor)

@@ -1,17 +1,17 @@
 find_path(YamlCPP_INCLUDE_DIRS
           yaml-cpp/yaml.h
-          HINTS "third_party/yaml-cpp/include"
+          HINTS "3rdParty/yaml-cpp/include"
           REQUIRED)
 
 if(YamlCPP_INCLUDE_DIRS)
   find_library( YamlCPP_LIBRARY_DEBUG
                 NAMES yaml-cppd
-                HINTS "third_party/yaml-cpp/build"
+                HINTS "3rdParty/yaml-cpp/build"
                 REQUIRED)
 
   find_library( YamlCPP_LIBRARY_RELEASE
                 NAMES yaml-cpp
-                HINTS "third_party/yaml-cpp/build"
+                HINTS "3rdParty/yaml-cpp/build"
                 REQUIRED)
 
   mark_as_advanced( YamlCPP_INCLUDE_DIRS

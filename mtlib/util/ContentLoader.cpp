@@ -55,7 +55,9 @@ static std::ifstream openFile(const fs::path& file,
 DefaultContentLoader::DefaultContentLoader()
 {
   _searchPatches.push_back(fs::current_path());
+  _searchPatches.push_back(fs::current_path() / "shaders");
   _searchPatches.push_back(fs::current_path() / "content");
+  _searchPatches.push_back(fs::current_path() / "content/shaders");
 
   // Парсим переменную окружения и ищем по путям в ней
   const char* patchesEnv = std::getenv("MT_CONTENT_DIRS");

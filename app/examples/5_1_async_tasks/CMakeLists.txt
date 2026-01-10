@@ -1,34 +1,24 @@
 ﻿cmake_minimum_required (VERSION 3.10)
 
-project (textureProcessor)
+project (asyncTasks)
 
 include_directories(.
-                    ..
+                    ../../../mtlib
                     ${GLM_PATH}
                     ${Vulkan_INCLUDE_DIRS}
                     ${VKMEMALLOC_PATH}
-                    ${YamlCPP_INCLUDE_DIRS}
                     ${IMGUI_PATH})
 
-add_executable (textureProcessor
-                "Application.cpp"
-                "BuildTextureTask.cpp"
+add_executable (asyncTasks
                 "main.cpp"
-                "MainWindow.cpp"
-                "Project.cpp")
+                "TestWindow.cpp")
 
-target_link_libraries(textureProcessor
+target_link_libraries(asyncTasks
                       ${Vulkan_LIBRARIES}
                       ${Shaderc_LIBRARIES}
                       ${GLFW_PATH}/lib-vc2022/glfw3.lib
                       ${YamlCPP_LIBRARIES}
                       asyncTask
-                      ddsSupport
                       util
                       vkr
-                      resourceManagement
-                      technique
-                      techniquePropertySet
                       gui)
-
-target_compile_definitions(textureProcessor PRIVATE YAML_CPP_STATIC_DEFINE)

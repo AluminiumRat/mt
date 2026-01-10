@@ -3,6 +3,6 @@
 set BASE_DIR=%CD%
 
 set VK_LAYER_ENABLES=VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT
-set MT_CONTENT_DIRS=%BASE_DIR%\content;%BASE_DIR%\shaders
+set MT_CONTENT_DIRS=%BASE_DIR%\content;%BASE_DIR%\content\shaders
 
 start devenv %BASE_DIR%
