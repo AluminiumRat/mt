@@ -100,10 +100,6 @@ namespace mt
     void save(YAML::Emitter& target,
               const std::filesystem::path& resourcesRootFolder) const;
 
-    //  Чтение имени проперти из YAML ноды. Имя нужно для создания
-    //  TechniqueProperty перед загрузкой
-    static std::string readName(const YAML::Node& source);
-
     //  Загрузка проперти из YAML ноды.
     //  ВНИАНИЕ! Не считывает имя проперти из ноды,
     //    предполагая, что fullName и shortName корректно указаны при
@@ -128,10 +124,10 @@ namespace mt
     void _saveResource( YAML::Emitter& target,
                         const std::filesystem::path& resourcesRootFolder) const;
     void _saveSampler(YAML::Emitter& target) const;
-    void _readUniform(const YAML::Node& source);
-    void _readResource( const YAML::Node& source,
-                        const std::filesystem::path& resourcesRootFolder);
-    void _readSampler(const YAML::Node& source);
+    bool _tryReadUniform(const YAML::Node& source);
+    bool _tryReadResource(const YAML::Node& source,
+                          const std::filesystem::path& resourcesRootFolder);
+    bool _tryReadSampler(const YAML::Node& source);
 
   private:
     Technique& _technique;

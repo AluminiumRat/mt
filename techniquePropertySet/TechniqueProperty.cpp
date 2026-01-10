@@ -261,38 +261,25 @@ TechniqueProperty::SamplerValue& TechniqueProperty::_getOrCreateSamplerValue()
 void TechniqueProperty::save( YAML::Emitter& target,
                               const fs::path& resourcesRootFolder) const
 {
-  target << YAML::BeginMap;
-
-  target << YAML::Key << "name";
-  target << YAML::Value << _name;
-
-  target << YAML::Key << "type";
   if(_uniform != nullptr)
   {
-    target << YAML::Value << "uniform";
     _saveUniform(target);
   }
   else if ( _resourceBinding != nullptr &&
             _resourceType == VK_DESCRIPTOR_TYPE_SAMPLER)
   {
-    target << YAML::Value << "sampler";
     _saveSampler(target);
   }
   else if(_resourceBinding != nullptr)
   {
-    target << YAML::Value << "resource";
     _saveResource(target, resourcesRootFolder);
   }
-  else
-  {
-    target << YAML::Value << "unknown";
-  }
-
-  target << YAML::EndMap;
 }
 
 void TechniqueProperty::_saveUniform(YAML::Emitter& target) const
 {
+  target << YAML::BeginMap;
+
   if(_scalarType == TechniqueConfiguration::FLOAT_TYPE)
   {
     target << YAML::Key << "float";
@@ -306,102 +293,113 @@ void TechniqueProperty::_saveUniform(YAML::Emitter& target) const
     std::vector<int> valueSequence( &_intValue[0], &_intValue[0] + _vectorSize);
     target << YAML::Value << YAML::Flow << valueSequence;
   }
+
+  target << YAML::EndMap;
 }
 
 void TechniqueProperty::_saveResource(
                         YAML::Emitter& target,
                         const fs::path& resourcesRootFolder) const
 {
+  target << YAML::BeginMap;
+
   target << YAML::Key << "file";
   target << YAML::Value << pathToUtf8(makeStoredPath( _resourcePath,
                                                       resourcesRootFolder));
+
+  target << YAML::EndMap;
 }
 
 void TechniqueProperty::_saveSampler(YAML::Emitter& target) const
 {
   if(_samplerValue == nullptr) return;
 
+  target << YAML::BeginMap;
+  target << YAML::Key << "sampler";
+
+  target << YAML::BeginMap;
+
   target << YAML::Key << "default";
   target << YAML::Value << (_samplerValue->mode == DEFAULT_SAMPLER_MODE);
 
-  if(_samplerValue->mode == DEFAULT_SAMPLER_MODE) return;
+  if(_samplerValue->mode != DEFAULT_SAMPLER_MODE)
+  {
+    const SamplerDescription& description = _samplerValue->description;
 
-  const SamplerDescription& description = _samplerValue->description;
+    target << YAML::Key << "magFilter";
+    target << YAML::Value << filterMap[description.magFilter];
 
-  target << YAML::Key << "magFilter";
-  target << YAML::Value << filterMap[description.magFilter];
+    target << YAML::Key << "minFilter";
+    target << YAML::Value << filterMap[description.minFilter];
 
-  target << YAML::Key << "minFilter";
-  target << YAML::Value << filterMap[description.minFilter];
+    target << YAML::Key << "mipmapMode";
+    target << YAML::Value << mipmapModeMap[description.mipmapMode];
 
-  target << YAML::Key << "mipmapMode";
-  target << YAML::Value << mipmapModeMap[description.mipmapMode];
+    target << YAML::Key << "addressModeU";
+    target << YAML::Value << addressModeMap[description.addressModeU];
 
-  target << YAML::Key << "addressModeU";
-  target << YAML::Value << addressModeMap[description.addressModeU];
+    target << YAML::Key << "addressModeV";
+    target << YAML::Value << addressModeMap[description.addressModeV];
 
-  target << YAML::Key << "addressModeV";
-  target << YAML::Value << addressModeMap[description.addressModeV];
+    target << YAML::Key << "addressModeW";
+    target << YAML::Value << addressModeMap[description.addressModeW];
 
-  target << YAML::Key << "addressModeW";
-  target << YAML::Value << addressModeMap[description.addressModeW];
+    target << YAML::Key << "mipLodBias";
+    target << YAML::Value << description.mipLodBias;
 
-  target << YAML::Key << "mipLodBias";
-  target << YAML::Value << description.mipLodBias;
+    target << YAML::Key << "anisotropyEnable";
+    target << YAML::Value << description.anisotropyEnable;
 
-  target << YAML::Key << "anisotropyEnable";
-  target << YAML::Value << description.anisotropyEnable;
+    target << YAML::Key << "maxAnisotropy";
+    target << YAML::Value << description.maxAnisotropy;
 
-  target << YAML::Key << "maxAnisotropy";
-  target << YAML::Value << description.maxAnisotropy;
+    target << YAML::Key << "compareEnable";
+    target << YAML::Value << description.compareEnable;
 
-  target << YAML::Key << "compareEnable";
-  target << YAML::Value << description.compareEnable;
+    target << YAML::Key << "compareOp";
+    target << YAML::Value << compareOpMap[description.compareOp];
 
-  target << YAML::Key << "compareOp";
-  target << YAML::Value << compareOpMap[description.compareOp];
+    target << YAML::Key << "minLod";
+    target << YAML::Value << description.minLod;
 
-  target << YAML::Key << "minLod";
-  target << YAML::Value << description.minLod;
+    target << YAML::Key << "maxLod";
+    target << YAML::Value << description.maxLod;
 
-  target << YAML::Key << "maxLod";
-  target << YAML::Value << description.maxLod;
+    target << YAML::Key << "borderColor";
+    target << YAML::Value << borderColorMap[description.borderColor];
 
-  target << YAML::Key << "borderColor";
-  target << YAML::Value << borderColorMap[description.borderColor];
-
-  target << YAML::Key << "unnormalizedCoordinates";
-  target << YAML::Value << description.unnormalizedCoordinates;
-}
-
-std::string TechniqueProperty::readName(const YAML::Node& source)
-{
-  return source["name"].as<std::string>("");
+    target << YAML::Key << "unnormalizedCoordinates";
+    target << YAML::Value << description.unnormalizedCoordinates;
+  }
+  target << YAML::EndMap;
+  target << YAML::EndMap;
 }
 
 void TechniqueProperty::load( const YAML::Node& source,
                               const fs::path& resourcesRootFolder)
 {
-  std::string type = source["type"].as<std::string>("no type");
-  if(type == "uniform")
+  if(_tryReadUniform(source))
   {
-    _readUniform(source);
     _updateUniformValue();
+    return;
   }
-  else if (type == "resource")
+
+ if (_tryReadResource(source, resourcesRootFolder))
   {
-    _readResource(source, resourcesRootFolder);
     _updateResource();
+    return;
   }
-  else if (type == "sampler")
+
+  if (_tryReadSampler(source))
   {
-    _readSampler(source);
     _updateResource();
+    return;
   }
-  else throw std::runtime_error(_name + ": unknown property type: " + type);
+
+  throw std::runtime_error(_name + ": unknown property type");
 }
 
-void TechniqueProperty::_readUniform(const YAML::Node& source)
+bool TechniqueProperty::_tryReadUniform(const YAML::Node& source)
 {
   YAML::Node floatNode = source["float"];
   if(floatNode.IsDefined() && floatNode.IsSequence())
@@ -413,6 +411,7 @@ void TechniqueProperty::_readUniform(const YAML::Node& source)
       valueIndex++;
       if(valueIndex == 4) break;
     }
+    return true;
   }
 
   YAML::Node intNode = source["int"];
@@ -425,32 +424,41 @@ void TechniqueProperty::_readUniform(const YAML::Node& source)
       valueIndex++;
       if(valueIndex == 4) break;
     }
+    return true;
   }
+  return false;
 }
 
-void TechniqueProperty::_readResource(const YAML::Node& source,
-                                      const fs::path& resourcesRootFolder)
+bool TechniqueProperty::_tryReadResource( const YAML::Node& source,
+                                          const fs::path& resourcesRootFolder)
 {
   YAML::Node fileNode = source["file"];
-  if(!fileNode.IsDefined()) return;
+  if(!fileNode.IsDefined()) return false;
 
   std::string filename = fileNode.as<std::string>("");
 
   _resourcePath = utf8ToPath(filename);
   _resourcePath = restoreAbsolutePath(_resourcePath, resourcesRootFolder);
+
+  return true;
 }
 
-void TechniqueProperty::_readSampler(const YAML::Node& source)
+bool TechniqueProperty::_tryReadSampler(const YAML::Node& source)
 {
+  YAML::Node samplerNode = source["sampler"];
+  if (!samplerNode.IsDefined()) return false;
+
   SamplerValue& samplerValue = _getOrCreateSamplerValue();
 
-  bool isDefault = source["default"].as<bool>(true);
+  bool isDefault = samplerNode["default"].as<bool>(true);
   if(isDefault)
   {
     samplerValue.mode = DEFAULT_SAMPLER_MODE;
-    return;
+    return true;
   }
 
   samplerValue.mode = CUSTOM_SAMPLER_MODE;
-  samplerValue.description = loadSamplerDescription(source);
+  samplerValue.description = loadSamplerDescription(samplerNode);
+
+  return true;
 }

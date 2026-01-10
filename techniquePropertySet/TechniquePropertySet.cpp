@@ -78,31 +78,35 @@ void TechniquePropertySet::_addProperty(const std::string& name)
 void TechniquePropertySet::save(YAML::Emitter& target,
                                 const fs::path& resourcesRootFolder) const
 {
-  target << YAML::BeginSeq;
+  target << YAML::BeginMap;
 
   for ( PropertiesMap::const_iterator iProperty = _properties.begin();
         iProperty != _properties.end();
         iProperty++)
   {
     const TechniqueProperty* property = iProperty->second.get();
-    if(property->isActive()) property->save(target, resourcesRootFolder);
+    if(property->isActive())
+    {
+      target << YAML::Key << property->name();
+      target << YAML::Value;
+      property->save(target, resourcesRootFolder);
+    }
   }
 
-  target << YAML::EndSeq;
+  target << YAML::EndMap;
 }
 
 void TechniquePropertySet::load(const YAML::Node& source,
                                 const fs::path& resourcesRootFolder)
 {
-  if(!source.IsDefined() || !source.IsSequence()) return;
+  if(!source.IsDefined() || !source.IsMap()) return;
 
-  //  Грузим настройки техники
-  for(YAML::Node propertyNode : source)
+  for(YAML::const_iterator iNode = source.begin();
+      iNode != source.end();
+      iNode++)
   {
-    //  Нам нужно полное и короткое имя, прежде чем мы сможем найти или создать
-    //  настройку
-    std::string propertyName = TechniqueProperty::readName(propertyNode);
-    if(propertyName.empty()) continue;
+    std::string propertyName = iNode->first.as<std::string>("");
+    if (propertyName.empty()) continue;
 
     //  Если настройки ещё нет, то добавим её
     _addProperty(propertyName);
@@ -110,6 +114,6 @@ void TechniquePropertySet::load(const YAML::Node& source,
     //  Найдем и загрузим настройку
     PropertiesMap::iterator iProperty = _properties.find(propertyName);
     MT_ASSERT(iProperty != _properties.end());
-    iProperty->second->load(propertyNode, resourcesRootFolder);
+    iProperty->second->load(iNode->second, resourcesRootFolder);
   }
 }
