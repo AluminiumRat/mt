@@ -54,8 +54,7 @@ namespace mt
     inline void enumerateProperties(EnumerateFunctor functor);
 
   private:
-    void _addProperty(const std::string& fullName,
-                      const std::string& shortName);
+    void _addProperty(const std::string& name);
 
   private:
     mt::Technique& _technique;

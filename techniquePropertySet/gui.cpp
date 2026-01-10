@@ -39,7 +39,7 @@ void mt::techniquePropertyGrid( const char* id,
       }
 
       techniquePropsGrid.addRow(property.shortName().c_str(),
-                                property.fullName().c_str());
+                                property.name().c_str());
       propertyGui(property);
     });
 }
@@ -78,16 +78,16 @@ static void makeUniformGUI(TechniqueProperty& property)
     switch(property.vectorSize())
     {
       case 1:
-        ImGui::InputInt(property.fullName().c_str(), newValue, 0);
+        ImGui::InputInt(property.name().c_str(), newValue, 0);
         break;
       case 2:
-        ImGui::InputInt2(property.fullName().c_str(), newValue, 0);
+        ImGui::InputInt2(property.name().c_str(), newValue, 0);
         break;
       case 3:
-        ImGui::InputInt3(property.fullName().c_str(), newValue, 0);
+        ImGui::InputInt3(property.name().c_str(), newValue, 0);
         break;
       case 4:
-        ImGui::InputInt4(property.fullName().c_str(), newValue, 0);
+        ImGui::InputInt4(property.name().c_str(), newValue, 0);
         break;
     }
     property.setUniformValue(glm::ivec4(newValue[0],
@@ -101,16 +101,16 @@ static void makeUniformGUI(TechniqueProperty& property)
     switch(property.vectorSize())
     {
       case 1:
-        ImGui::InputFloat(property.fullName().c_str(), (float*)&newValue, 0);
+        ImGui::InputFloat(property.name().c_str(), (float*)&newValue, 0);
         break;
       case 2:
-        ImGui::InputFloat2(property.fullName().c_str(), (float*)&newValue, 0);
+        ImGui::InputFloat2(property.name().c_str(), (float*)&newValue, 0);
         break;
       case 3:
-        ImGui::InputFloat3(property.fullName().c_str(), (float*)&newValue, 0);
+        ImGui::InputFloat3(property.name().c_str(), (float*)&newValue, 0);
         break;
       case 4:
-        ImGui::InputFloat4(property.fullName().c_str(), (float*)&newValue, 0);
+        ImGui::InputFloat4(property.name().c_str(), (float*)&newValue, 0);
         break;
     }
     property.setUniformValue(newValue);
@@ -138,7 +138,7 @@ static void makeResourceGUI(TechniqueProperty& property)
 
 static void makeTextureGUI(TechniqueProperty& property)
 {
-  if(fileSelectionLine(property.fullName().c_str(), property.resourcePath()))
+  if(fileSelectionLine(property.name().c_str(), property.resourcePath()))
   {
     try
     {
@@ -159,7 +159,7 @@ static void makeTextureGUI(TechniqueProperty& property)
 
 static void makeBufferGUI(TechniqueProperty& property)
 {
-  if(fileSelectionLine(property.fullName().c_str(), property.resourcePath()))
+  if(fileSelectionLine(property.name().c_str(), property.resourcePath()))
   {
     try
     {

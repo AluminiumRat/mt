@@ -48,7 +48,7 @@ void TechniquePropertySet::updateFromTechnique()
     for(const mt::TechniqueConfiguration::UniformVariable& variable :
                                                             buffer.variables)
     {
-      _addProperty(variable.fullName, variable.shortName);
+      _addProperty(variable.fullName);
     }
   }
 
@@ -57,24 +57,22 @@ void TechniquePropertySet::updateFromTechnique()
                                                     configuration->resources)
   {
     if(resource.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) continue;
-    _addProperty(resource.name, resource.name);
+    _addProperty(resource.name);
   }
 
   _lastConfigurationRevision = configuration->revision;
 }
 
-void TechniquePropertySet::_addProperty(const std::string& fullName,
-                                        const std::string& shortName)
+void TechniquePropertySet::_addProperty(const std::string& name)
 {
-  PropertiesMap::const_iterator iProperty = _properties.find(fullName);
+  PropertiesMap::const_iterator iProperty = _properties.find(name);
   if(iProperty != _properties.end()) return;
 
   std::unique_ptr<TechniqueProperty> newProperty(
                                             new TechniqueProperty(_technique,
-                                                                  fullName,
-                                                                  shortName,
+                                                                  name,
                                                                   _commonData));
-  _properties[fullName] = std::move(newProperty);
+  _properties[name] = std::move(newProperty);
 }
 
 void TechniquePropertySet::save(YAML::Emitter& target,
@@ -103,19 +101,14 @@ void TechniquePropertySet::load(const YAML::Node& source,
   {
     //  Нам нужно полное и короткое имя, прежде чем мы сможем найти или создать
     //  настройку
-    std::string fullPropertyName =
-                                  TechniqueProperty::readFullName(propertyNode);
-    if(fullPropertyName.empty()) continue;
-
-    std::string shortPropertyName =
-                                TechniqueProperty::readShortName(propertyNode);
-    if (shortPropertyName.empty()) shortPropertyName = fullPropertyName;
+    std::string propertyName = TechniqueProperty::readName(propertyNode);
+    if(propertyName.empty()) continue;
 
     //  Если настройки ещё нет, то добавим её
-    _addProperty(fullPropertyName, shortPropertyName);
+    _addProperty(propertyName);
 
     //  Найдем и загрузим настройку
-    PropertiesMap::iterator iProperty = _properties.find(fullPropertyName);
+    PropertiesMap::iterator iProperty = _properties.find(propertyName);
     MT_ASSERT(iProperty != _properties.end());
     iProperty->second->load(propertyNode, resourcesRootFolder);
   }

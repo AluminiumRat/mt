@@ -14,12 +14,11 @@ using namespace mt;
 
 TechniqueProperty::TechniqueProperty(
                                 Technique& technique,
-                                const std::string& fullName,
-                                const std::string& shortName,
+                                const std::string& name,
                                 const TechniquePropertySetCommon& commonData) :
   _technique(technique),
-  _fullName(fullName),
-  _shortName(shortName),
+  _name(name),
+  _shortName(name),
   _commonData(commonData),
   _isActive(false),
   _unsupportedType(false),
@@ -49,6 +48,7 @@ void TechniqueProperty::updateFromTechnique()
     _scalarType = uniformDescription->baseType;
     _vectorSize = uniformDescription->vectorSize;
     _guiHints = uniformDescription->guiHints;
+    _shortName = uniformDescription->shortName;
     if(_vectorSize == 0) _vectorSize = 1;
     if( _scalarType == TechniqueConfiguration::UNKNOWN_TYPE ||
         uniformDescription->isMatrix ||
@@ -58,7 +58,7 @@ void TechniqueProperty::updateFromTechnique()
       _unsupportedType = true;
     }
 
-    _uniform = &_technique.getOrCreateUniform(_fullName.c_str());
+    _uniform = &_technique.getOrCreateUniform(_name.c_str());
     _updateUniformValue();
     _isActive = true;
     return;
@@ -70,6 +70,7 @@ void TechniqueProperty::updateFromTechnique()
   {
     _resourceType = resourceDescription->type;
     _guiHints = resourceDescription->guiHints;
+    _shortName = _name;
     if( _resourceType != VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE &&
         _resourceType != VK_DESCRIPTOR_TYPE_SAMPLER &&
         _resourceType != VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
@@ -81,8 +82,7 @@ void TechniqueProperty::updateFromTechnique()
       _unsupportedType = true;
     }
 
-    _resourceBinding =
-                      &_technique.getOrCreateResourceBinding(_fullName.c_str());
+    _resourceBinding = &_technique.getOrCreateResourceBinding(_name.c_str());
     _updateResource();
     _isActive = true;
     return;
@@ -102,7 +102,7 @@ const TechniqueConfiguration::UniformVariable*
     for(const TechniqueConfiguration::UniformVariable& variable :
                                                               buffer.variables)
     {
-      if(variable.fullName == _fullName) return &variable;
+      if(variable.fullName == _name) return &variable;
     }
   }
 
@@ -119,7 +119,7 @@ const TechniqueConfiguration::Resource*
                                                       configuration->resources)
   {
     if(resource.set == DescriptorSetType::COMMON) continue;
-    if(resource.name == _fullName) return &resource;
+    if(resource.name == _name) return &resource;
   }
 
   return nullptr;
@@ -237,7 +237,7 @@ void TechniqueProperty::_updateSampler()
       for(const TechniqueConfiguration::DefaultSampler& sampler :
                                                  configuration->defaultSamplers)
       {
-        if(sampler.resourceName == _fullName)
+        if(sampler.resourceName == _name)
         {
           _resourceBinding->setSampler(sampler.defaultSampler);
           return;
@@ -263,11 +263,8 @@ void TechniqueProperty::save( YAML::Emitter& target,
 {
   target << YAML::BeginMap;
 
-  target << YAML::Key << "fullName";
-  target << YAML::Value << _fullName;
-
-  target << YAML::Key << "shortName";
-  target << YAML::Value << _shortName;
+  target << YAML::Key << "name";
+  target << YAML::Value << _name;
 
   target << YAML::Key << "type";
   if(_uniform != nullptr)
@@ -377,14 +374,9 @@ void TechniqueProperty::_saveSampler(YAML::Emitter& target) const
   target << YAML::Value << description.unnormalizedCoordinates;
 }
 
-std::string TechniqueProperty::readFullName(const YAML::Node& source)
+std::string TechniqueProperty::readName(const YAML::Node& source)
 {
-  return source["fullName"].as<std::string>("");
-}
-
-std::string TechniqueProperty::readShortName(const YAML::Node& source)
-{
-  return source["shortName"].as<std::string>("");
+  return source["name"].as<std::string>("");
 }
 
 void TechniqueProperty::load( const YAML::Node& source,
@@ -406,7 +398,7 @@ void TechniqueProperty::load( const YAML::Node& source,
     _readSampler(source);
     _updateResource();
   }
-  else throw std::runtime_error(_fullName + ": unknown property type: " + type);
+  else throw std::runtime_error(_name + ": unknown property type: " + type);
 }
 
 void TechniqueProperty::_readUniform(const YAML::Node& source)

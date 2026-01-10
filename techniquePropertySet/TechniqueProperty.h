@@ -39,19 +39,21 @@ namespace mt
     };
 
   public:
-    //  Для юниформы fullName - это имя вместе с названием буфера, в котором
-    //    она находится; shortName - название без буфера.
-    //  Для ресурсов fullName и shortName совпадают - имя соответствующего
-    //    ресурса из шейдера
+    //  name - имя юниформа или ресурса, по которому к нему идет обращение в
+    //    шейдере и технике. Для юниформов это имяБуфера.имяПеременной, для
+    //    текстур, буферов и сэмплеров - просто имя ресурса в шейдере
     TechniqueProperty(Technique& technique,
-                      const std::string& fullName,
-                      const std::string& shortName,
+                      const std::string& name,
                       const TechniquePropertySetCommon& commonData);
     TechniqueProperty(const TechniqueProperty&) = delete;
     TechniqueProperty& operator = (const TechniqueProperty&) = delete;
     ~TechniqueProperty() noexcept = default;
 
-    inline const std::string& fullName() const noexcept;
+    inline const std::string& name() const noexcept;
+    //  Для юниформы shortName -  название без имени юниформа буфера. Для
+    //    ресурсов name и shortName совпадают - имя соответствующего ресурса из
+    //    шейдера.
+    //  shortName корректен, только если проперти активно (метод isActive)
     inline const std::string& shortName() const noexcept;
 
     //  Если true, значит эта проперти соответствует рабочей униформе или
@@ -100,8 +102,7 @@ namespace mt
 
     //  Чтение имени проперти из YAML ноды. Имя нужно для создания
     //  TechniqueProperty перед загрузкой
-    static std::string readFullName(const YAML::Node& source);
-    static std::string readShortName(const YAML::Node& source);
+    static std::string readName(const YAML::Node& source);
 
     //  Загрузка проперти из YAML ноды.
     //  ВНИАНИЕ! Не считывает имя проперти из ноды,
@@ -135,7 +136,7 @@ namespace mt
   private:
     Technique& _technique;
 
-    std::string _fullName;
+    std::string _name;
     std::string _shortName;
 
     const TechniquePropertySetCommon& _commonData;
@@ -158,9 +159,9 @@ namespace mt
     std::unique_ptr<SamplerValue> _samplerValue;
   };
 
-  inline const std::string& TechniqueProperty::fullName() const noexcept
+  inline const std::string& TechniqueProperty::name() const noexcept
   {
-    return _fullName;
+    return _name;
   }
 
   inline const std::string& TechniqueProperty::shortName() const noexcept
