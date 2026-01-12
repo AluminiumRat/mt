@@ -44,6 +44,7 @@ find_path(DDSIMAGE_PATH
 add_subdirectory(mtlib/asyncTask)
 add_subdirectory(mtlib/ddsSupport)
 add_subdirectory(mtlib/gui)
+add_subdirectory(mtlib/hld)
 add_subdirectory(mtlib/resourceManagement)
 add_subdirectory(mtlib/technique)
 add_subdirectory(mtlib/techniquePropertySet)
