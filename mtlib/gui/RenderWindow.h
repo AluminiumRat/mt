@@ -29,12 +29,18 @@ namespace mt
   class RenderWindow : public BaseWindow
   {
   public:
-    RenderWindow(Device& device, const char* name);
+    RenderWindow(
+              Device& device,
+              const char* name,
+              std::optional<VkPresentModeKHR> presentationMode = std::nullopt,
+              std::optional<VkSurfaceFormatKHR> format = std::nullopt);
     RenderWindow(const RenderWindow&) = delete;
     RenderWindow& operator = (const RenderWindow&) = delete;
     virtual ~RenderWindow() noexcept;
 
     inline Device& device() const noexcept;
+    inline VkPresentModeKHR presentationMode() const noexcept;
+    inline VkSurfaceFormatKHR format() const noexcept;
 
     virtual void draw() override;
 
@@ -68,6 +74,10 @@ namespace mt
   private:
     Device& _device;
     std::unique_ptr<WindowSurface> _surface;
+
+    std::optional<VkPresentModeKHR> _presentationMode;
+    std::optional<VkSurfaceFormatKHR> _format;
+
     Ref<SwapChain> _swapChain;
     std::vector<Ref<FrameBuffer>> _frameBuffers;
   };
@@ -75,6 +85,18 @@ namespace mt
   inline Device& RenderWindow::device() const noexcept
   {
     return _device;
+  }
+
+  inline VkPresentModeKHR RenderWindow::presentationMode() const noexcept
+  {
+    MT_ASSERT(_presentationMode != std::nullopt);
+    return *_presentationMode;
+  }
+
+  inline VkSurfaceFormatKHR RenderWindow::format() const noexcept
+  {
+    MT_ASSERT(_presentationMode != std::nullopt);
+    return *_format;
   }
 
   inline const SwapChain& RenderWindow::swapChain() const noexcept

@@ -15,9 +15,14 @@
 
 using namespace mt;
 
-RenderWindow::RenderWindow(Device& device, const char* name) :
+RenderWindow::RenderWindow( Device& device,
+                            const char* name,
+                            std::optional<VkPresentModeKHR> presentationMode,
+                            std::optional<VkSurfaceFormatKHR> format) :
   BaseWindow(name),
-  _device(device)
+  _device(device),
+  _presentationMode(presentationMode),
+  _format(format)
 {
   try
   {
@@ -37,8 +42,13 @@ void RenderWindow::_createSwapchain()
   _deleteSwapchain();
   if(size().x == 0 || size().y == 0) return;
 
-  _swapChain = Ref<SwapChain>(
-                new SwapChain(_device, *_surface, std::nullopt, std::nullopt));
+  _swapChain = Ref<SwapChain>(new SwapChain(_device,
+                                            *_surface,
+                                            _presentationMode,
+                                            _format));
+
+  _presentationMode = _swapChain->presentationMode();
+  _format = _swapChain->imageFormat();
 }
 
 RenderWindow::~RenderWindow() noexcept

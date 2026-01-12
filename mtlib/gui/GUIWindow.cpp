@@ -53,8 +53,11 @@ public:
   }
 };
 
-GUIWindow::GUIWindow(Device& device, const char* name) :
-  RenderWindow(device, name),
+GUIWindow::GUIWindow( Device& device,
+                      const char* name,
+                      std::optional<VkPresentModeKHR> presentationMode,
+                      std::optional<VkSurfaceFormatKHR> format) :
+  RenderWindow(device, name, presentationMode, format),
   _imguiContext(nullptr)
 {
   _imguiContext = ImGui::CreateContext();

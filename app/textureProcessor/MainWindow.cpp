@@ -21,7 +21,9 @@
 #define SAVE_WINDOW_FRAME_COUNT 5
 
 MainWindow::MainWindow() :
-  GUIWindow(Application::instance().primaryDevice(), "Texture processor"),
+  GUIWindow(Application::instance().primaryDevice(),
+            "Texture processor",
+            VK_PRESENT_MODE_FIFO_KHR),
   _saveWindowStage(0)
 {
 }

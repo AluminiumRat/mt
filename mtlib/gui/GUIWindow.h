@@ -14,7 +14,10 @@ namespace mt
   class GUIWindow : public RenderWindow
   {
   public:
-    GUIWindow(Device& device, const char* name);
+    GUIWindow(Device& device,
+              const char* name,
+              std::optional<VkPresentModeKHR> presentationMode = std::nullopt,
+              std::optional<VkSurfaceFormatKHR> format = std::nullopt);
     GUIWindow(const GUIWindow&) = delete;
     GUIWindow& operator = (const GUIWindow&) = delete;
     virtual ~GUIWindow() noexcept;
