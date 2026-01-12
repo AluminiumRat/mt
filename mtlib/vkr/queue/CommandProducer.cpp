@@ -9,6 +9,7 @@
 #include <vkr/queue/CommandProducer.h>
 #include <vkr/queue/CommandQueue.h>
 #include <vkr/queue/VolatileDescriptorPool.h>
+#include <vkr/VKRLib.h>
 
 using namespace mt;
 
@@ -341,4 +342,27 @@ void CommandProducer::forceLayout(const Image& image,
                                   .writeAccessMask = writeAccessMask};
   imageAccess.slicesCount = 1;
   addImageUsage(image, imageAccess);
+}
+
+void CommandProducer::beginDebugLabel(const char* label)
+{
+  if (!VKRLib::instance().isDebugEnabled()) return;
+
+  VkDebugUtilsLabelEXT labelInfo{};
+  labelInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+  labelInfo.pLabelName = label;
+
+  CommandBuffer& buffer = getOrCreateBuffer();
+  Device& device = _queue.device();
+  device.extFunctions().vkCmdBeginDebugUtilsLabelEXT( buffer.handle(),
+                                                      &labelInfo);
+}
+
+void CommandProducer::endDebugLabel()
+{
+  if (!VKRLib::instance().isDebugEnabled()) return;
+
+  CommandBuffer& buffer = getOrCreateBuffer();
+  Device& device = _queue.device();
+  device.extFunctions().vkCmdEndDebugUtilsLabelEXT(buffer.handle());
 }

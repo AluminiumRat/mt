@@ -164,6 +164,8 @@ void GUIWindow::guiImplementation()
 void GUIWindow::drawImplementation( CommandProducerGraphic& commandProducer,
                                     FrameBuffer& frameBuffer)
 {
+  commandProducer.beginDebugLabel("ImGui");
+
   ImguiContextSetter setter(*_imguiContext, *this);
 
   ImGui::Render();
@@ -180,6 +182,8 @@ void GUIWindow::drawImplementation( CommandProducerGraphic& commandProducer,
     });
 
   renderPass.endPass();
+
+  commandProducer.endDebugLabel();
 }
 
 void GUIWindow::applyConfiguration(const WindowConfiguration& configuration)

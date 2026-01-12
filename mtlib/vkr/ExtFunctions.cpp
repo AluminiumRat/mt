@@ -10,4 +10,14 @@ ExtFunctions::ExtFunctions(VkDevice device) noexcept
           (PFN_vkSetDebugUtilsObjectNameEXT)
                             vkGetDeviceProcAddr(device,
                                                 "vkSetDebugUtilsObjectNameEXT");
+
+  _vkCmdBeginDebugUtilsLabelEXT =
+          (PFN_vkCmdBeginDebugUtilsLabelEXT)
+                            vkGetDeviceProcAddr(device,
+                                                "vkCmdBeginDebugUtilsLabelEXT");
+
+  _vkCmdEndDebugUtilsLabelEXT =
+          (PFN_vkCmdEndDebugUtilsLabelEXT)
+                            vkGetDeviceProcAddr(device,
+                                                  "vkCmdEndDebugUtilsLabelEXT");
 }
