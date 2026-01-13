@@ -22,7 +22,8 @@ namespace mt
 
     inline static HLDLib& instance() noexcept;
 
-    inline size_t getStageIndex(const std::string& stageName);
+    inline uint32_t getStageIndex(const std::string& stageName);
+    inline uint32_t getFrameTypeIndex(const std::string& frameTypeName);
 
     //  Создать новый уникальный groupIndex для использования в DrawCommand
     inline uint32_t allocateDrawCommandGroupIndex() noexcept;
@@ -30,6 +31,7 @@ namespace mt
   private:
     static HLDLib* _instance;
 
+    StringRegistry _frameTypeRegistry;
     StringRegistry _stagesRegistry;
     std::atomic<uint32_t> _drawCommandGroupCount;
   };
@@ -40,9 +42,14 @@ namespace mt
     return *_instance;
   }
 
-  inline size_t HLDLib::getStageIndex(const std::string& stageName)
+  inline uint32_t HLDLib::getFrameTypeIndex(const std::string& frameTypeName)
   {
-    return _stagesRegistry.getIndex(stageName);
+    return (uint32_t)_frameTypeRegistry.getIndex(frameTypeName);
+  }
+
+  inline uint32_t HLDLib::getStageIndex(const std::string& stageName)
+  {
+    return (uint32_t)_stagesRegistry.getIndex(stageName);
   }
 
   inline uint32_t HLDLib::allocateDrawCommandGroupIndex() noexcept

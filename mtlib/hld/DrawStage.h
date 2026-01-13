@@ -15,7 +15,7 @@ namespace mt
     virtual ~DrawStage() noexcept = default;
 
     inline const std::string& name() const noexcept;
-    inline size_t stageIndex() const noexcept;
+    inline uint32_t stageIndex() const noexcept;
 
     virtual void draw(FrameContext& frameContext) const;
 
@@ -25,7 +25,7 @@ namespace mt
 
   private:
     std::string _name;
-    size_t _stageIndex;
+    uint32_t _stageIndex;
   };
 
   inline const std::string& DrawStage::name() const noexcept
@@ -33,7 +33,7 @@ namespace mt
     return _name;
   }
 
-  inline size_t DrawStage::stageIndex() const noexcept
+  inline uint32_t DrawStage::stageIndex() const noexcept
   {
     return _stageIndex;
   }
