@@ -4,7 +4,8 @@ using namespace mt;
 
 HLDLib* HLDLib::_instance = nullptr;
 
-HLDLib::HLDLib()
+HLDLib::HLDLib() :
+  _drawCommandGroupCount(0)
 {
   MT_ASSERT(_instance == nullptr);
 

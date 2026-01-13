@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <atomic>
+
 #include <util/Assert.h>
 #include <util/StringRegistry.h>
 
@@ -22,10 +24,14 @@ namespace mt
 
     inline size_t getStageIndex(const std::string& stageName);
 
+    //  Создать новый уникальный groupIndex для использования в DrawCommand
+    inline uint32_t allocateDrawCommandGroupIndex() noexcept;
+
   private:
     static HLDLib* _instance;
 
     StringRegistry _stagesRegistry;
+    std::atomic<uint32_t> _drawCommandGroupCount;
   };
 
   inline HLDLib& HLDLib::instance() noexcept
@@ -37,5 +43,10 @@ namespace mt
   inline size_t HLDLib::getStageIndex(const std::string& stageName)
   {
     return _stagesRegistry.getIndex(stageName);
+  }
+
+  inline uint32_t HLDLib::allocateDrawCommandGroupIndex() noexcept
+  {
+    return _drawCommandGroupCount++;
   }
 }
