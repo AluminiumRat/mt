@@ -15,6 +15,7 @@ namespace mt
     Drawable& operator = (const Drawable&) = delete;
     virtual ~Drawable() noexcept = default;
 
-    virtual void addToDrawPlan(DrawPlan& plan, uint32_t frameTypeIndex) = 0;
+    virtual void addToDrawPlan( DrawPlan& plan,
+                                uint32_t frameTypeIndex) const = 0;
   };
 };

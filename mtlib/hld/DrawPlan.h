@@ -9,7 +9,7 @@ namespace mt
   class DrawPlan
   {
   public:
-    using StagePlan = std::vector<Drawable*>;
+    using StagePlan = std::vector<const Drawable*>;
 
   public:
     DrawPlan() = default;
@@ -19,7 +19,7 @@ namespace mt
     DrawPlan& operator = (DrawPlan&&) noexcept = default;
     ~DrawPlan() noexcept = default;
 
-    inline void addDrawable(Drawable& drawable, uint32_t stageIndex);
+    inline void addDrawable(const Drawable& drawable, uint32_t stageIndex);
     inline const StagePlan& stagePlan(uint32_t stageIndex) const noexcept;
     inline void clear() noexcept;
 
@@ -30,8 +30,11 @@ namespace mt
     StagePlan _emptyStagePlan;
   };
 
-  inline void DrawPlan::addDrawable(Drawable& drawable, uint32_t stageIndex)
+  inline void DrawPlan::addDrawable(const Drawable& drawable,
+                                    uint32_t stageIndex)
   {
+    if (stageIndex >= _stages.size()) _stages.resize(stageIndex + 1);
+    _stages[stageIndex].push_back(&drawable);
   }
 
   inline const DrawPlan::StagePlan& DrawPlan::stagePlan(
