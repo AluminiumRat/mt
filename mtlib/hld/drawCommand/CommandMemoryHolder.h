@@ -7,34 +7,6 @@
 
 namespace mt
 {
-  //  Кастомный деструктор для умного указателя CommandPtr
-  //  Уничтожает объект класса DrawCommand, но не освобождает память
-  class CommandDestructor
-  {
-  public:
-    CommandDestructor() noexcept = default;
-    CommandDestructor(const CommandDestructor&) = default;
-    CommandDestructor& operator = (const CommandDestructor&) = default;
-    ~CommandDestructor() noexcept = default;
-
-    inline void operator() (DrawCommand* command) const noexcept;
-  };
-
-  //  Кастомный unique_ptr на DrawCommand
-  //  При удалении вызывает деструктор DrawCommand, но не освобождает память,
-  //    так как управление памятью происходит централизованно через
-  //    CommandMemoryHolder
-  class CommandPtr : public std::unique_ptr<DrawCommand, CommandDestructor>
-  {
-  public:
-    CommandPtr() noexcept = default;
-    explicit inline CommandPtr(DrawCommand* p) noexcept;
-    CommandPtr(const CommandPtr&) = delete;
-    inline CommandPtr(CommandPtr&& other) noexcept;
-    CommandPtr& operator = (const CommandPtr&) = delete;
-    inline CommandPtr&  operator = (CommandPtr&& other) noexcept;
-  };
-
   //  Пул памяти фиксированной величины для объектов класса DrawCommand (и
   //    его потомков).
   //  Память из кучи выделяется один раз в конструкторе.
@@ -71,28 +43,6 @@ namespace mt
     std::unique_ptr<char[]> _memory;
     size_t _allocated;
   };
-
-  void CommandDestructor::operator()(DrawCommand* resource) const noexcept
-  {
-    resource->~DrawCommand();
-  }
-
-  CommandPtr::CommandPtr(DrawCommand* p) noexcept:
-    std::unique_ptr<DrawCommand, CommandDestructor>(p)
-  {
-  }
-
-  inline CommandPtr::CommandPtr(CommandPtr&& other) noexcept :
-    std::unique_ptr<DrawCommand, CommandDestructor>(std::move(other))
-  {
-  }
-
-  inline CommandPtr& CommandPtr::operator = (CommandPtr&& other) noexcept
-  {
-    std::unique_ptr<DrawCommand, CommandDestructor>::operator=(
-                                                              std::move(other));
-    return *this;
-  }
 
   inline CommandMemoryHolder::CommandMemoryHolder(size_t size) :
     _size(size),

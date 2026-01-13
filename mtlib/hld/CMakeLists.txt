@@ -8,8 +8,9 @@ include_directories(..
                     ${VKMEMALLOC_PATH})
 
 set(SOURCES
-    "drawCommand/DrawCommand.cpp"
     "drawCommand/CommandMemoryPool.cpp"
+    "drawCommand/DrawCommand.cpp"
+    "drawCommand/DrawCommandList.cpp"
     "DrawStage.cpp"
     "FrameContext.cpp"
     "HLDLib.cpp")
