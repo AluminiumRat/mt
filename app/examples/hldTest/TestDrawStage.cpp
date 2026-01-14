@@ -26,9 +26,8 @@ void TestDrawStage::draw(FrameContext& frameContext) const
                                   frameContext.drawPlan->stagePlan(_stageIndex);
   for(const Drawable* drawable : drawables)
   {
-    const TestDrawable* testDrawable =
-                                      static_cast<const TestDrawable*>(drawable);
-    testDrawable->addToCommandList(commands, frameContext);
+    MT_ASSERT(drawable->drawType() == Drawable::COMMANDS_DRAW);
+    drawable->addToCommandList(commands, frameContext);
   }
 
   CommandProducerGraphic::RenderPass renderPass(*frameContext.commandProducer,

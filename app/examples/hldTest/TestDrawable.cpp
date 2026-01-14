@@ -13,7 +13,7 @@
 
 using namespace mt;
 
-class TestDrawCommand : public DrawCommand
+class TestDrawable::TestDrawCommand : public DrawCommand
 {
 public:
   TestDrawCommand(const TestDrawable& drawable,
@@ -31,7 +31,14 @@ public:
     {
       const TestDrawCommand& testCommand =
                                   static_cast<const TestDrawCommand&>(*command);
-      testCommand._drawable.draw(producer);
+      const TestDrawable& drawable = testCommand._drawable;
+
+      Technique::Bind bind(*drawable._technique, drawable._pass, producer);
+      if (bind.isValid())
+      {
+        producer.draw(4);
+        bind.release();
+      }
     }
   }
 
@@ -40,6 +47,7 @@ private:
 };
 
 TestDrawable::TestDrawable(Device& device, float distance) :
+  Drawable(COMMANDS_DRAW),
   _distance(distance),
   _colorFrameType(HLDLib::instance().getFrameTypeIndex(TestWindow::colorFrameType)),
   _drawStage(HLDLib::instance().getStageIndex(TestDrawStage::stageName)),
@@ -110,14 +118,4 @@ void TestDrawable::addToCommandList(DrawCommandList& commandList,
   commandList.createCommand<TestDrawCommand>( *this,
                                               _drawCommandGroup,
                                               distance2);
-}
-
-void TestDrawable::draw(CommandProducerGraphic& commandProducer) const
-{
-  Technique::Bind bind(*_technique, _pass, commandProducer);
-  if (bind.isValid())
-  {
-    commandProducer.draw(4);
-    bind.release();
-  }
 }

@@ -20,9 +20,13 @@ namespace mt
 
     virtual void addToDrawPlan( DrawPlan& plan,
                                 uint32_t frameTypeIndex) const override;
-    void addToCommandList(DrawCommandList& commandList,
-                          const FrameContext& frameContext) const;
-    void draw(CommandProducerGraphic& commandProducer) const;
+
+    virtual void addToCommandList(
+                                DrawCommandList& commandList,
+                                const FrameContext& frameContext) const override;
+
+  private:
+    class TestDrawCommand;
 
   private:
     void _createVertexBuffer(Device& device);
