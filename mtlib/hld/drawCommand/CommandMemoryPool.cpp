@@ -11,22 +11,24 @@ CommandMemoryPool::CommandMemoryPool(size_t chunkSize) :
 
 void CommandMemoryPool::reset() noexcept
 {
+  std::lock_guard lock(_accessMutex);
+
   if(_holders.empty()) return;
   for(size_t iHolder = 0; iHolder < _holders.size(); iHolder++)
   {
     _holders[iHolder]->reset();
   }
-  selectHolder(0);
+  _selectHolder(0);
 }
 
-void CommandMemoryPool::addHolder()
+void CommandMemoryPool::_addHolder()
 {
   std::unique_ptr<CommandMemoryHolder>
                                 newHolder(new CommandMemoryHolder(_holderSize));
   _holders.push_back(std::move(newHolder));
 }
 
-void CommandMemoryPool::selectHolder(size_t holderIndex) noexcept
+void CommandMemoryPool::_selectHolder(size_t holderIndex) noexcept
 {
   _currentHolder = _holders[holderIndex].get();
   _currentHolderIndex = holderIndex;

@@ -1,9 +1,11 @@
 ﻿#pragma once
 
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #include <hld/drawCommand/CommandMemoryHolder.h>
+#include <util/SpinLock.h>
 
 namespace mt
 {
@@ -11,6 +13,7 @@ namespace mt
   //  Память из кучи выделяется фиксированными кусками по мере необходимости
   //  Память под объекты из пула выделяется в методе emplace
   //  Вернуть память в пул можно только всю сразу с помощью метода reset
+  //  Класс потокобезопасный
   class CommandMemoryPool
   {
   public:
@@ -33,8 +36,8 @@ namespace mt
     void reset() noexcept;
 
   private:
-    void addHolder();
-    void selectHolder(size_t holderIndex) noexcept;
+    void _addHolder();
+    void _selectHolder(size_t holderIndex) noexcept;
 
   private:
     size_t _holderSize;
@@ -42,21 +45,25 @@ namespace mt
     Holders _holders;
     size_t _currentHolderIndex;
     CommandMemoryHolder* _currentHolder;
+
+    SpinLock _accessMutex;
   };
 
   template<typename CommandType, typename... Args>
   inline CommandPtr CommandMemoryPool::emplace(Args&... args)
   {
+    std::lock_guard lock(_accessMutex);
+
     if(_holders.empty())
     {
-      addHolder();
-      selectHolder(0);
+      _addHolder();
+      _selectHolder(0);
     }
 
     if(_currentHolder->memoryLeft() < sizeof(CommandType))
     {
-      if(_currentHolderIndex == _holders.size() - 1) addHolder();
-      selectHolder(_currentHolderIndex + 1);
+      if(_currentHolderIndex == _holders.size() - 1) _addHolder();
+      _selectHolder(_currentHolderIndex + 1);
     }
 
     return _currentHolder->emplace<CommandType>(args...);

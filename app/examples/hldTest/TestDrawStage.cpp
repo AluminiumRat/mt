@@ -1,5 +1,4 @@
 ﻿#include <hld/drawCommand/DrawCommandList.h>
-#include <hld/drawCommand/CommandMemoryPool.h>
 #include <hld/DrawPlan.h>
 #include <hld/FrameContext.h>
 #include <hld/HLDLib.h>
@@ -21,8 +20,7 @@ void TestDrawStage::draw(FrameContext& frameContext) const
 
   frameContext.drawStageIndex = _stageIndex;
 
-  CommandMemoryPool commandsPool(1024);
-  DrawCommandList commands(commandsPool);
+  DrawCommandList commands(*frameContext.commandMemoryPool);
 
   const std::vector<const Drawable*>& drawables =
                                   frameContext.drawPlan->stagePlan(_stageIndex);
@@ -43,4 +41,3 @@ void TestDrawStage::draw(FrameContext& frameContext) const
 
   frameContext.commandProducer->endDebugLabel();
 }
-

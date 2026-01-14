@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <gui/RenderWindow.h>
+#include <hld/drawCommand/CommandMemoryPool.h>
 #include <hld/drawScene/SimpleDrawScene.h>
 #include <hld/DrawPlan.h>
 #include <util/Camera.h>
@@ -34,5 +35,6 @@ namespace mt
     TestDrawStage _drawStage;
 
     DrawPlan _drawPlan;
+    CommandMemoryPool _commandMemoryPool;
   };
 }
