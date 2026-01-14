@@ -7,7 +7,6 @@ namespace mt
   class Camera;
   class CommandProducerGraphic;
   class DrawPlan;
-  class DrawStage;
   class FrameBuffer;
 
   class FrameContext
@@ -15,7 +14,7 @@ namespace mt
   public:
     uint32_t frameTypeIndex;
     const DrawPlan* drawPlan;
-    const DrawStage* drawStage;
+    uint32_t drawStageIndex;
     const FrameBuffer* frameBuffer;
     const Camera* viewCamera;
     CommandProducerGraphic* commandProducer;

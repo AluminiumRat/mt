@@ -12,7 +12,6 @@ set(SOURCES
     "drawCommand/DrawCommand.cpp"
     "drawCommand/DrawCommandList.cpp"
     "drawScene/SimpleDrawScene.cpp"
-    "DrawStage.cpp"
     "FrameContext.cpp"
     "HLDLib.cpp")
 

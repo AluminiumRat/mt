@@ -10,7 +10,7 @@ TestWindow::TestWindow(Device& device) :
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(colorFrameType)),
   _drawable(device, 1)
 {
-  _camera.setPerspectiveProjection(1, 1, .1, 100);
+  _camera.setPerspectiveProjection(1, 1, 0.1f, 100);
   _scene.addDrawable(_drawable);
 }
 

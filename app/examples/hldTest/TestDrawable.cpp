@@ -2,7 +2,6 @@
 #include <hld/drawCommand/DrawCommandList.h>
 #include <hld/drawCommand/DrawCommand.h>
 #include <hld/DrawPlan.h>
-#include <hld/DrawStage.h>
 #include <hld/FrameContext.h>
 #include <hld/HLDLib.h>
 #include <technique/TechniqueLoader.h>
@@ -102,7 +101,7 @@ void TestDrawable::addToCommandList(DrawCommandList& commandList,
                                     const FrameContext& frameContext) const
 {
   if (frameContext.frameTypeIndex != _colorFrameType) return;
-  if (frameContext.drawStage->stageIndex() != _drawStage) return;
+  if (frameContext.drawStageIndex != _drawStage) return;
 
   commandList.createCommand<TestDrawCommand>( *this,
                                               _drawCommandGroup,

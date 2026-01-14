@@ -2,6 +2,7 @@
 #include <hld/drawCommand/CommandMemoryPool.h>
 #include <hld/DrawPlan.h>
 #include <hld/FrameContext.h>
+#include <hld/HLDLib.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 
 #include <TestDrawable.h>
@@ -10,17 +11,21 @@
 using namespace mt;
 
 TestDrawStage::TestDrawStage() :
-  DrawStage(stageName)
+  _stageIndex(HLDLib::instance().getStageIndex(stageName))
 {
 }
 
-void TestDrawStage::drawImplementation(FrameContext& frameContext) const
+void TestDrawStage::draw(FrameContext& frameContext) const
 {
+  frameContext.commandProducer->beginDebugLabel(stageName);
+
+  frameContext.drawStageIndex = _stageIndex;
+
   CommandMemoryPool commandsPool(1024);
   DrawCommandList commands(commandsPool);
 
   const std::vector<const Drawable*>& drawables =
-                                frameContext.drawPlan->stagePlan(stageIndex());
+                                  frameContext.drawPlan->stagePlan(_stageIndex);
   for(const Drawable* drawable : drawables)
   {
     const TestDrawable* testDrawable =
@@ -35,4 +40,7 @@ void TestDrawStage::drawImplementation(FrameContext& frameContext) const
                 DrawCommandList::FAR_FIRST_SORTING);
 
   renderPass.endPass();
+
+  frameContext.commandProducer->endDebugLabel();
 }
+

@@ -1,10 +1,8 @@
 ﻿#pragma once
 
-#include <hld/DrawStage.h>
-
 namespace mt
 {
-  class TestDrawStage : public DrawStage
+  class TestDrawStage
   {
   public:
     static constexpr const char* stageName = "TestDrawStage";
@@ -13,9 +11,11 @@ namespace mt
     TestDrawStage();
     TestDrawStage(const TestDrawStage&) = delete;
     TestDrawStage& operator = (const TestDrawStage&) = delete;
-    virtual ~TestDrawStage() noexcept = default;
+    ~TestDrawStage() noexcept = default;
 
-  protected:
-    virtual void drawImplementation(FrameContext& frameContext) const override;
+    void draw(FrameContext& frameContext) const;
+
+  private:
+    uint32_t _stageIndex;
   };
 }
