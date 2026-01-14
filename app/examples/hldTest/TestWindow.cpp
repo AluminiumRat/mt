@@ -1,0 +1,30 @@
+﻿#include <hld/FrameContext.h>
+#include <hld/HLDLib.h>
+
+#include <TestWindow.h>
+
+using namespace mt;
+
+TestWindow::TestWindow(Device& device) :
+  RenderWindow(device, "Test window"),
+  _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(colorFrameType)),
+  _drawable(device, 1)
+{
+  _camera.setPerspectiveProjection(1, 1, .1, 100);
+  _scene.addDrawable(_drawable);
+}
+
+void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,
+                                    FrameBuffer& frameBuffer)
+{
+  _drawPlan.clear();
+  _scene.fillDrawPlan(_drawPlan, _camera, _frameTypeIndex);
+
+  FrameContext frameContext{};
+  frameContext.frameTypeIndex = _frameTypeIndex;
+  frameContext.drawPlan = &_drawPlan;
+  frameContext.frameBuffer = &frameBuffer;
+  frameContext.commandProducer = &commandProducer;
+
+  _drawStage.draw(frameContext);
+}

@@ -9,7 +9,7 @@ namespace mt
   class DrawStage
   {
   public:
-    DrawStage(const char* name);
+    explicit DrawStage(const char* name);
     DrawStage(const DrawStage&) = delete;
     DrawStage& operator = (const DrawStage&) = delete;
     virtual ~DrawStage() noexcept = default;

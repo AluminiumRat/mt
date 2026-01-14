@@ -1,0 +1,38 @@
+﻿#pragma once
+
+#include <gui/RenderWindow.h>
+#include <hld/drawScene/SimpleDrawScene.h>
+#include <hld/DrawPlan.h>
+#include <util/Camera.h>
+
+#include <TestDrawable.h>
+#include <TestDrawStage.h>
+
+namespace mt
+{
+  class TestWindow : public RenderWindow
+  {
+  public:
+    static constexpr const char* colorFrameType = "ColorFrame";
+
+  public:
+    TestWindow(Device& device);
+    TestWindow(const TestWindow&) = delete;
+    TestWindow& operator = (const TestWindow&) = delete;
+    virtual ~TestWindow() noexcept = default;
+
+  protected:
+    virtual void drawImplementation(CommandProducerGraphic& commandProducer,
+                                    FrameBuffer& frameBuffer) override;
+  private:
+    uint32_t _frameTypeIndex;
+
+    Camera _camera;
+    SimpleDrawScene _scene;
+    TestDrawable _drawable;
+
+    TestDrawStage _drawStage;
+
+    DrawPlan _drawPlan;
+  };
+}
