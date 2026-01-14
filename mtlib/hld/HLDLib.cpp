@@ -1,11 +1,12 @@
-﻿#include <hld/HLDLib.h>
+﻿#include <hld/drawCommand/DrawCommand.h>
+#include <hld/HLDLib.h>
 
 using namespace mt;
 
 HLDLib* HLDLib::_instance = nullptr;
 
 HLDLib::HLDLib() :
-  _drawCommandGroupCount(0)
+  _drawCommandGroupCount(DrawCommand::noGroupIndex + 1)
 {
   MT_ASSERT(_instance == nullptr);
 

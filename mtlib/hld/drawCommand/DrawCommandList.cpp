@@ -24,10 +24,14 @@ void DrawCommandList::draw(CommandProducerGraphic& producer, Sorting sortingType
 
     Commands::iterator nextCommand = chunkStartCommand;
     nextCommand++;
-    while(nextCommand != _commands.end() &&
-          (*nextCommand)->groupIndex() == chunkGoupIndex)
+
+    if(chunkGoupIndex != DrawCommand::noGroupIndex)
     {
-      nextCommand++;
+      while(nextCommand != _commands.end() &&
+            (*nextCommand)->groupIndex() == chunkGoupIndex)
+      {
+        nextCommand++;
+      }
     }
 
     std::span<const CommandPtr> commandsChunk(&(*chunkStartCommand),
