@@ -35,7 +35,7 @@ void TestDrawStage::draw(FrameContext& frameContext) const
                                                 *frameContext.frameBuffer);
 
   commands.draw(*frameContext.commandProducer,
-                DrawCommandList::FAR_FIRST_SORTING);
+                DrawCommandList::BY_GROUP_INDEX_SORTING);
 
   renderPass.endPass();
 

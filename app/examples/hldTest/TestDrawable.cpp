@@ -106,6 +106,10 @@ void TestDrawable::addToCommandList(DrawCommandList& commandList,
   commandList.createCommand<TestDrawCommand>( *this,
                                               _drawCommandGroup,
                                               _distance);
+  float distance2 = _distance + 10;
+  commandList.createCommand<TestDrawCommand>( *this,
+                                              _drawCommandGroup,
+                                              distance2);
 }
 
 void TestDrawable::draw(CommandProducerGraphic& commandProducer) const

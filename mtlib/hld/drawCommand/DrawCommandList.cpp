@@ -48,25 +48,28 @@ void DrawCommandList::_sort(Sorting sortingType)
               [](const CommandPtr& x, const CommandPtr& y) -> bool
               {
                 if(x->layer() != y->layer()) return x->layer() > y->layer();
-                else return x->distance() > y->distance();
+                else return x->distance() < y->distance();
               });
+    break;
 
   case FAR_FIRST_SORTING:
     std::sort(_commands.begin(),
               _commands.end(),
               [](const CommandPtr& x, const CommandPtr& y) -> bool
               {
-                if(x->layer() == y->layer()) return x->layer() < y->layer();
+                if(x->layer() != y->layer()) return x->layer() < y->layer();
                 else return x->distance() > y->distance();
               });
+    break;
 
   case BY_GROUP_INDEX_SORTING:
     std::sort(_commands.begin(),
               _commands.end(),
               [](const CommandPtr& x, const CommandPtr& y) -> bool
               {
-                if(x->layer() == y->layer()) return x->layer() < y->layer();
-                else return x->groupIndex() > y->groupIndex();
+                if(x->layer() != y->layer()) return x->layer() < y->layer();
+                else return x->groupIndex() < y->groupIndex();
               });
+    break;
   }
 }

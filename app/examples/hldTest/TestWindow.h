@@ -31,6 +31,7 @@ namespace mt
     Camera _camera;
     SimpleDrawScene _scene;
     TestDrawable _drawable;
+    TestDrawable _drawable2;
 
     TestDrawStage _drawStage;
 
