@@ -16,8 +16,8 @@ namespace mt
     MeshDrawable& operator = (const MeshDrawable&) = delete;
     virtual ~MeshDrawable() noexcept = default;
 
-    inline MeshAsset* asset() const noexcept;
-    virtual void setAsset(MeshAsset* newAsset);
+    inline const MeshAsset* asset() const noexcept;
+    virtual void setAsset(const MeshAsset* newAsset);
 
     virtual void addToDrawPlan( DrawPlan& plan,
                                 uint32_t frameTypeIndex) const override;
@@ -27,10 +27,10 @@ namespace mt
                               const FrameContext& frameContext) const override;
 
   private:
-    Ref<MeshAsset> _asset;
+    ConstRef<MeshAsset> _asset;
   };
 
-  inline MeshAsset* MeshDrawable::asset() const noexcept
+  inline const MeshAsset* MeshDrawable::asset() const noexcept
   {
     return _asset.get();
   }

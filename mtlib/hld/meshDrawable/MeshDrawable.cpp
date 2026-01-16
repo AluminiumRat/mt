@@ -11,7 +11,7 @@ MeshDrawable::MeshDrawable() :
 {
 }
 
-void MeshDrawable::setAsset(MeshAsset* newAsset)
+void MeshDrawable::setAsset(const MeshAsset* newAsset)
 {
   _asset = newAsset;
 }

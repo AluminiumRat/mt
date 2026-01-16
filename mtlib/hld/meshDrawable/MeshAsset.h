@@ -69,7 +69,9 @@ namespace mt
 
     virtual void setConfiguration(const Configuration& configuration);
 
-    inline Technique* technique() const noexcept;
+    inline const Technique* technique() const noexcept;
+    inline Technique* technique() noexcept;
+
     inline uint32_t vertexCount() const noexcept;
     inline uint32_t maxInstancesCount() const noexcept;
 
@@ -122,7 +124,12 @@ namespace mt
     return _debugName;
   }
 
-  inline Technique* MeshAsset::technique() const noexcept
+  inline const Technique* MeshAsset::technique() const noexcept
+  {
+    return _technique.get();
+  }
+
+  inline Technique* MeshAsset::technique() noexcept
   {
     return _technique.get();
   }
