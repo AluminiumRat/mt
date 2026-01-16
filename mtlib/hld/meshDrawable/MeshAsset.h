@@ -13,7 +13,7 @@ namespace mt
   class DrawCommandList;
   class FrameContext;
 
-  //  Общие данные для MeshDrawable
+  //  Разделяемые данные для MeshDrawable
   //  Позволяет переиспользовать данные для отрисовки одинаковых мешей
   //    в разном контексте(с разными настройками) и использовать инстансинг
   class MeshAsset : public RefCounter
