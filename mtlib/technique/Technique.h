@@ -35,7 +35,7 @@ namespace mt
     {
     public:
       inline Bind() noexcept;
-      inline Bind(Technique& technique,
+      inline Bind(const Technique& technique,
                   const TechniquePass& pass,
                   CommandProducerGraphic& producer,
                   const TechniqueVolatileContext* volatileContext = nullptr);
@@ -49,7 +49,7 @@ namespace mt
       inline bool isValid() const noexcept;
 
     private:
-      Technique* _technique;
+      const Technique* _technique;
       CommandProducerGraphic* _graphicProducer;
     };
 
@@ -184,7 +184,7 @@ namespace mt
   }
 
   inline Technique::Bind::Bind(
-                            Technique& technique,
+                            const Technique& technique,
                             const TechniquePass& pass,
                             CommandProducerGraphic& producer,
                             const TechniqueVolatileContext* volatileContext) :

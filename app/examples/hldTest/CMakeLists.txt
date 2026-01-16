@@ -10,7 +10,6 @@ include_directories(.
 
 add_executable (hld_Test
                 "main.cpp"
-                "TestDrawable.cpp"
                 "TestDrawStage.cpp"
                 "TestWindow.cpp")
 

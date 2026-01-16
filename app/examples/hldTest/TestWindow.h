@@ -3,10 +3,10 @@
 #include <gui/RenderWindow.h>
 #include <hld/drawCommand/CommandMemoryPool.h>
 #include <hld/drawScene/SimpleDrawScene.h>
+#include <hld/meshDrawable/MeshDrawable.h>
 #include <hld/DrawPlan.h>
 #include <util/Camera.h>
 
-#include <TestDrawable.h>
 #include <TestDrawStage.h>
 
 namespace mt
@@ -26,12 +26,16 @@ namespace mt
     virtual void drawImplementation(CommandProducerGraphic& commandProducer,
                                     FrameBuffer& frameBuffer) override;
   private:
+    void _createMeshAsset();
+
+  private:
     uint32_t _frameTypeIndex;
 
     Camera _camera;
     SimpleDrawScene _scene;
-    TestDrawable _drawable;
-    TestDrawable _drawable2;
+    MeshDrawable _drawable1;
+    MeshDrawable _drawable2;
+    MeshDrawable _drawable3;
 
     TestDrawStage _drawStage;
 

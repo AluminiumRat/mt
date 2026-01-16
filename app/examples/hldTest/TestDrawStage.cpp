@@ -1,10 +1,10 @@
 ﻿#include <hld/drawCommand/DrawCommandList.h>
+#include <hld/drawScene/Drawable.h>
 #include <hld/DrawPlan.h>
 #include <hld/FrameContext.h>
 #include <hld/HLDLib.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 
-#include <TestDrawable.h>
 #include <TestDrawStage.h>
 
 using namespace mt;

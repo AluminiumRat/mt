@@ -12,6 +12,9 @@ set(SOURCES
     "drawCommand/DrawCommand.cpp"
     "drawCommand/DrawCommandList.cpp"
     "drawScene/Drawable.cpp"
+    "meshDrawable/MeshAsset.cpp"
+    "meshDrawable/MeshDrawable.cpp"
+    "meshDrawable/MeshDrawCommand.cpp"
     "drawScene/SimpleDrawScene.cpp"
     "FrameContext.cpp"
     "HLDLib.cpp")

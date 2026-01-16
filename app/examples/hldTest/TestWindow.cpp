@@ -1,5 +1,9 @@
-﻿#include <hld/FrameContext.h>
+﻿#include <ddsSupport/ddsSupport.h>
+#include <hld/meshDrawable/MeshAsset.h>
+#include <hld/FrameContext.h>
 #include <hld/HLDLib.h>
+#include <technique/TechniqueLoader.h>
+#include <vkr/Device.h>
 
 #include <TestWindow.h>
 
@@ -8,13 +12,68 @@ using namespace mt;
 TestWindow::TestWindow(Device& device) :
   RenderWindow(device, "Test window"),
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(colorFrameType)),
-  _drawable(device, 1),
-  _drawable2(device, 2),
   _commandMemoryPool(4 * 1024)
 {
   _camera.setPerspectiveProjection(1, 1, 0.1f, 100);
-  _scene.addDrawable(_drawable);
+
+  _createMeshAsset();
+
+  _scene.addDrawable(_drawable1);
   _scene.addDrawable(_drawable2);
+  _scene.addDrawable(_drawable3);
+}
+
+void TestWindow::_createMeshAsset()
+{
+  //  Техника отрисовки меша
+  Ref configurator(new TechniqueConfigurator(device(), "Test technique"));
+  loadConfigurator(*configurator, "examples/dds_load/technique.tch");
+  configurator->rebuildConfiguration();
+  Ref technique(new Technique(*configurator));
+
+  //  Создаем вершинный буфер
+  glm::vec4 vertices[4] =  {{-0.5f, -0.5f, 0.0f, 1.0f},
+                            {-0.5f,  0.5f, 0.0f, 1.0f},
+                            { 0.5f, -0.5f, 0.0f, 1.0f},
+                            { 0.5f,  0.5f, 0.0f, 1.0f}};
+  Ref vertexBuffer(new DataBuffer(device(),
+                                  sizeof(vertices),
+                                  DataBuffer::STORAGE_BUFFER,
+                                  "Vertex buffer"));
+  device().graphicQueue()->uploadToBuffer(*vertexBuffer,
+                                          0,
+                                          sizeof(vertices),
+                                          vertices);
+  technique->getOrCreateResourceBinding("vertices").setBuffer(vertexBuffer);
+
+  //  Создаем текстуру
+  Ref<Image> image = loadDDS( "examples/image.dds",
+                              device(),
+                              nullptr,
+                              true);
+  Ref<ImageView> imageView(new ImageView( *image,
+                                          ImageSlice(*image),
+                                          VK_IMAGE_VIEW_TYPE_2D));
+  technique->getOrCreateResourceBinding("colorTexture").setImage(imageView);
+
+  //  Конфигурация ассета
+  MeshAsset::Configuration meshConfig{};
+  meshConfig.technique = technique;
+  meshConfig.passes.push_back(MeshAsset::PassConfig{
+                                        .frameTypeName = colorFrameType,
+                                        .stageName = TestDrawStage::stageName,
+                                        .layer = 0,
+                                        .passName = "RenderPass"});
+  meshConfig.vertexCount = sizeof(vertices) / sizeof(vertices[0]);
+  meshConfig.maxInstancesCount = 2;
+
+  //  Создаем ассет и подключаем к дравэйблам
+  Ref meshAsset(new MeshAsset("Test mesh"));
+  meshAsset->setConfiguration(meshConfig);
+
+  _drawable1.setAsset(meshAsset.get());
+  _drawable2.setAsset(meshAsset.get());
+  _drawable3.setAsset(meshAsset.get());
 }
 
 void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,

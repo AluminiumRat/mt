@@ -40,8 +40,17 @@ namespace mt
     virtual void addToDrawPlan( DrawPlan& plan,
                                 uint32_t frameTypeIndex) const = 0;
 
+    //  Использовать commandProducer из frameContext и добавить в него
+    //    команды на отрисовку.
+    //  Метод используется, если drawType = DIRECT_DRAW. В противном
+    //    случае поведение метода не определено
     virtual void draw(const FrameContext& frameContext) const;
 
+    //  Добавить в commandList команды рисования для конкретного frameType
+    //    и конкретной стадии. frameTypeIndex и drawStageIndex указаны в
+    //    frameContext
+    //  Метод используется, если drawType = COMMANDS_DRAW. В противном
+    //    случае поведение метода не определено
     virtual void addToCommandList(DrawCommandList& commandList,
                                   const FrameContext& frameContext) const;
   private:
