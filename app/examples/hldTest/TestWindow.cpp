@@ -69,11 +69,13 @@ void TestWindow::_createMeshAsset()
 
   //  Создаем ассет и подключаем к дравэйблам
   Ref meshAsset(new MeshAsset("Test mesh"));
-  meshAsset->setConfiguration(meshConfig);
+  //meshAsset->setConfiguration(meshConfig);
 
   _drawable1.setAsset(meshAsset.get());
   _drawable2.setAsset(meshAsset.get());
   _drawable3.setAsset(meshAsset.get());
+
+  meshAsset->setConfiguration(meshConfig);
 }
 
 void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,

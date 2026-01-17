@@ -5,6 +5,7 @@
 #include <hld/drawScene/Drawable.h>
 #include <hld/meshDrawable/MeshAsset.h>
 #include <util/Ref.h>
+#include <util/Signal.h>
 
 namespace mt
 {
@@ -22,7 +23,7 @@ namespace mt
     MeshDrawable();
     MeshDrawable(const MeshDrawable&) = delete;
     MeshDrawable& operator = (const MeshDrawable&) = delete;
-    virtual ~MeshDrawable() noexcept = default;
+    virtual ~MeshDrawable() noexcept;
 
     inline const MeshAsset* asset() const noexcept;
     virtual void setAsset(const MeshAsset* newAsset);
@@ -34,8 +35,15 @@ namespace mt
                               DrawCommandList& commandList,
                               const FrameContext& frameContext) const override;
 
+  protected:
+    virtual void onAssetUpdated();
+
+  private:
+    void _disconnectFromAsset() noexcept;
+
   private:
     ConstRef<MeshAsset> _asset;
+    Slot<> _onAssetUpdatedSlot;
   };
 
   inline const MeshAsset* MeshDrawable::asset() const noexcept

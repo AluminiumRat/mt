@@ -48,10 +48,13 @@ void MeshAsset::setConfiguration(const Configuration& configuration)
         _addPass(frameTypeIndex, stageIndex, passConfig.layer, pass);
       }
     }
+
+    configurationUpdated.emit();
   }
   catch(...)
   {
     _clearConfiguration();
+    configurationUpdated.emit();
     throw;
   }
 }

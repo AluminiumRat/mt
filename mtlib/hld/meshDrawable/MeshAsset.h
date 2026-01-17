@@ -6,6 +6,7 @@
 #include <technique/Technique.h>
 #include <util/Ref.h>
 #include <util/RefCounter.h>
+#include <util/Signal.h>
 
 namespace mt
 {
@@ -82,6 +83,10 @@ namespace mt
     //  Какие есть проходы для отдельной стадии отдельного фрэйм-типа
     inline const StagePasses& passes( uint32_t frameTypeIndex,
                                       uint32_t stageIndex) const noexcept;
+
+  public:
+    //  Сигнал о том, что был вызван метод setConfiguration
+    mutable Signal<> configurationUpdated;
 
   private:
     void _clearConfiguration() noexcept;
