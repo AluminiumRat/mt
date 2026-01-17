@@ -49,12 +49,12 @@ void MeshAsset::setConfiguration(const Configuration& configuration)
       }
     }
 
-    configurationUpdated.emit();
+    _configurationUpdated.emit();
   }
   catch(...)
   {
     _clearConfiguration();
-    configurationUpdated.emit();
+    _configurationUpdated.emit();
     throw;
   }
 }

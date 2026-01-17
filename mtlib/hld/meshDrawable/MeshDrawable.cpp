@@ -21,7 +21,7 @@ void MeshDrawable::_disconnectFromAsset() noexcept
 {
   if(_asset != nullptr)
   {
-    _asset->configurationUpdated.removeSlot(_onAssetUpdatedSlot);
+    _asset->removeUpdateConfigurationSlot(_onAssetUpdatedSlot);
     _asset = nullptr;
   }
 }
@@ -36,7 +36,7 @@ void MeshDrawable::setAsset(const MeshAsset* newAsset)
 
     if(_asset != nullptr)
     {
-      _asset->configurationUpdated.addSlot(_onAssetUpdatedSlot);
+      _asset->addUpdateConfigurationSlot(_onAssetUpdatedSlot).release();
     }
   }
   catch(...)

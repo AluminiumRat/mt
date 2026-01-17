@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -7,6 +8,7 @@
 #include <util/Ref.h>
 #include <util/RefCounter.h>
 #include <util/Signal.h>
+#include <util/SpinLock.h>
 
 namespace mt
 {
@@ -68,7 +70,16 @@ namespace mt
   public:
     inline const std::string& debugName() const noexcept;
 
+    //  Установить конфигурацию. Фактически - выставить весь контент
+    //    для ассета.
+    //  Вызывать строго в синхронной части рабочего цикла, так как метод
+    //    инициирует сигнал и вызывает немедленное обновление обсерверов
     virtual void setConfiguration(const Configuration& configuration);
+
+    //  Подключть слот, который будет ловить сигнал о том, что был вызван
+    //  метод setConfiguration
+    inline Connection<> addUpdateConfigurationSlot(Slot<>& slot) const;
+    inline void removeUpdateConfigurationSlot(Slot<>& slot) const;
 
     inline const Technique* technique() const noexcept;
     inline Technique* technique() noexcept;
@@ -84,10 +95,6 @@ namespace mt
     inline const StagePasses& passes( uint32_t frameTypeIndex,
                                       uint32_t stageIndex) const noexcept;
 
-  public:
-    //  Сигнал о том, что был вызван метод setConfiguration
-    mutable Signal<> configurationUpdated;
-
   private:
     void _clearConfiguration() noexcept;
     void _addPass(uint32_t frameTypeIndex,
@@ -102,6 +109,12 @@ namespace mt
     Ref<Technique> _technique;
     uint32_t _vertexCount;
     uint32_t _maxInstancesCount;
+
+    //  Сигнал о том, что был вызван метод setConfiguration. Ассет является
+    //    разделяемым ресурсом, поэтому добавление и удаление слотов защищено
+    //    от многопотока
+    mutable Signal<> _configurationUpdated;
+    mutable SpinLock _configurationUpdatedMutex;
 
     //  Стадии, доступные для отдельных фрэйм-типов. Индекс в векторе - это
     //  frameTypeIndex(HLDLib::getFrameTypeIndex)
@@ -127,6 +140,18 @@ namespace mt
   inline const std::string& MeshAsset::debugName() const noexcept
   {
     return _debugName;
+  }
+
+  inline Connection<> MeshAsset::addUpdateConfigurationSlot(Slot<>& slot) const
+  {
+    std::lock_guard lock(_configurationUpdatedMutex);
+    return Connection<>(_configurationUpdated, slot);
+  }
+
+  inline void MeshAsset::removeUpdateConfigurationSlot(Slot<>& slot) const
+  {
+    std::lock_guard lock(_configurationUpdatedMutex);
+    _configurationUpdated.removeSlot(slot);
   }
 
   inline const Technique* MeshAsset::technique() const noexcept
