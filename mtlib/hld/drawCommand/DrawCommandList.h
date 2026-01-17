@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <utility>
 #include <vector>
 
 #include <hld/drawCommand/CommandMemoryPool.h>
@@ -28,7 +29,7 @@ namespace mt
     ~DrawCommandList() noexcept = default;
 
     template<typename CommandType, typename... Args>
-    inline CommandType& createCommand(Args&... args);
+    inline CommandType& createCommand(Args&&... args);
 
     inline bool empty() const noexcept;
     inline void clear() noexcept;
@@ -46,9 +47,10 @@ namespace mt
   };
 
   template<typename CommandType, typename... Args>
-  inline CommandType& DrawCommandList::createCommand(Args&... args)
+  inline CommandType& DrawCommandList::createCommand(Args&&... args)
   {
-    CommandPtr newCommand = _memoryPool->emplace<CommandType>(args...);
+    CommandPtr newCommand =
+              _memoryPool->emplace<CommandType>(std::forward<Args>(args)...);
     CommandType& newCommandRef = static_cast<CommandType&>(*newCommand);
     _commands.emplace_back(std::move(newCommand));
     return newCommandRef;

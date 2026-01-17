@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <mutex>
+#include <utility>
 #include <vector>
 
 #include <hld/drawCommand/CommandMemoryHolder.h>
@@ -27,7 +28,7 @@ namespace mt
     //  Выделить из пула память под объект CommandType и сконструировать
     //  на этой памяти объект
     template<typename CommandType, typename... Args>
-    inline CommandPtr emplace(Args&... args);
+    inline CommandPtr emplace(Args&&... args);
 
     //  Вернуть всю выделенную паиять обратно в пул.
     //  ВНИМАНИЕ! Этот метод не вызывает деструкторы созданных объектов.
@@ -50,7 +51,7 @@ namespace mt
   };
 
   template<typename CommandType, typename... Args>
-  inline CommandPtr CommandMemoryPool::emplace(Args&... args)
+  inline CommandPtr CommandMemoryPool::emplace(Args&&... args)
   {
     std::lock_guard lock(_accessMutex);
 
@@ -66,6 +67,6 @@ namespace mt
       _selectHolder(_currentHolderIndex + 1);
     }
 
-    return _currentHolder->emplace<CommandType>(args...);
+    return _currentHolder->emplace<CommandType>(std::forward<Args>(args)...);
   }
 }

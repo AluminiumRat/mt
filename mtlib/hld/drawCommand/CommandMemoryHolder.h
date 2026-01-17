@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <memory>
+#include <utility>
 
 #include <hld/drawCommand/DrawCommand.h>
 #include <util/Assert.h>
@@ -30,7 +31,7 @@ namespace mt
     //  Выделить из пула память под объект CommandType и сконструировать
     //  на этой памяти объект
     template<typename CommandType, typename... Args>
-    inline CommandPtr emplace(Args&... args);
+    inline CommandPtr emplace(Args&&... args);
 
     //  Вернуть всю выделенную паиять обратно в пул.
     //  ВНИМАНИЕ! Этот метод не вызывает деструкторы созданных объектов.
@@ -67,13 +68,14 @@ namespace mt
   }
 
   template<typename CommandType, typename... Args>
-  inline CommandPtr CommandMemoryHolder::emplace(Args&... args)
+  inline CommandPtr CommandMemoryHolder::emplace(Args&&... args)
   {
 
     MT_ASSERT(sizeof(CommandType) <= memoryLeft());
     void* placePosition = _memory.get() + _allocated;
 
-    CommandType* newCommand = new (placePosition) CommandType(args...);
+    CommandType* newCommand =
+                  new (placePosition) CommandType(std::forward<Args>(args)...);
     CommandPtr result(newCommand);
   
     _allocated += sizeof(CommandType);

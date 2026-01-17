@@ -27,7 +27,9 @@ namespace mt
     //  layer - слой рисования. Используется при сортировке. Команды из разных
     //    слоем не могут смешиваться друг с другом. Слои отрисовываются от
     //    меньшего индекса к большему
-    DrawCommand(uint32_t groupIndex, int32_t layer, float distance) noexcept;
+    inline DrawCommand( uint32_t groupIndex,
+                        int32_t layer,
+                        float distance) noexcept;
     DrawCommand(const DrawCommand&) = delete;
     DrawCommand& operator = (const DrawCommand&) = delete;
     virtual ~DrawCommand() noexcept = default;
@@ -81,6 +83,14 @@ namespace mt
     ~CommandPtr() noexcept = default;
   };
 
+  inline DrawCommand::DrawCommand(uint32_t groupIndex,
+                                  int32_t layer,
+                                  float distance) noexcept :
+    _groupIndex(groupIndex),
+    _layer(layer),
+    _distance(distance)
+  {
+  }
 
   inline uint32_t DrawCommand::groupIndex() const noexcept
   {

@@ -36,15 +36,12 @@ void MeshDrawable::addToCommandList(DrawCommandList& commandList,
                                                   frameContext.drawStageIndex);
   for(const MeshAsset::PassInfo pass : passes)
   {
-    uint32_t vertexCount = _asset->vertexCount();
-    uint32_t maxInstances = _asset->maxInstancesCount();
-    float distance = 0;
     commandList.createCommand<MeshDrawCommand>( *_asset->technique(),
                                                 *pass.pass,
-                                                vertexCount,
-                                                maxInstances,
+                                                _asset->vertexCount(),
+                                                _asset->maxInstancesCount(),
                                                 pass.commandGroup,
                                                 pass.layer,
-                                                distance);
+                                                0.0f);
   }
 }

@@ -3,21 +3,6 @@
 
 using namespace mt;
 
-MeshDrawCommand::MeshDrawCommand( const Technique& technique,
-                                  const TechniquePass& pass,
-                                  uint32_t vertexCount,
-                                  uint32_t maxInstances,
-                                  uint32_t groupIndex,
-                                  int32_t layer,
-                                  float distance) :
-  DrawCommand(groupIndex, layer, distance),
-  _technique(&technique),
-  _pass(pass),
-  _vertexCount(vertexCount),
-  _maxInstances(maxInstances)
-{
-}
-
 void MeshDrawCommand::draw( CommandProducerGraphic& producer,
                             std::span<const CommandPtr> commands)
 {

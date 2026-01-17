@@ -9,7 +9,6 @@ include_directories(..
 
 set(SOURCES
     "drawCommand/CommandMemoryPool.cpp"
-    "drawCommand/DrawCommand.cpp"
     "drawCommand/DrawCommandList.cpp"
     "drawScene/Drawable.cpp"
     "meshDrawable/MeshAsset.cpp"
