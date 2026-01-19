@@ -6,6 +6,7 @@
 
 #include <hld/drawCommand/DrawCommand.h>
 #include <hld/FrameTypeIndex.h>
+#include <hld/StageIndex.h>
 #include <technique/Technique.h>
 #include <util/Ref.h>
 #include <util/RefCounter.h>
@@ -46,7 +47,7 @@ namespace mt
 
     //  Набор доступных стадий для одного отдельного фрэйм-типа
     //  Используется при отрисовке мешей
-    using StageIndices = std::vector<uint32_t>;
+    using StageIndices = std::vector<StageIndex>;
 
     //  Информация об отдельном проходе отрисовки меша
     //  Используется при отрисовке мешей
@@ -99,15 +100,16 @@ namespace mt
 
     //  Какие есть проходы для отдельной стадии отдельного фрэйм-типа
     inline const StagePasses& passes( FrameTypeIndex frameTypeIndex,
-                                      uint32_t stageIndex) const noexcept;
+                                      StageIndex stageIndex) const noexcept;
 
   private:
     void _clearConfiguration() noexcept;
     void _addPass(FrameTypeIndex frameTypeIndex,
-                  uint32_t stageIndex,
+                  StageIndex stageIndex,
                   int32_t layer,
                   TechniquePass& pass);
-    void _addAvailableStage(FrameTypeIndex frameTypeIndex, uint32_t stageIndex);
+    void _addAvailableStage(FrameTypeIndex frameTypeIndex,
+                            StageIndex stageIndex);
 
   private:
     std::string _debugName;
@@ -209,8 +211,8 @@ namespace mt
   }
 
   inline const MeshAsset::StagePasses&
-                          MeshAsset::passes(FrameTypeIndex frameTypeIndex,
-                                            uint32_t stageIndex) const noexcept
+                        MeshAsset::passes(FrameTypeIndex frameTypeIndex,
+                                          StageIndex stageIndex) const noexcept
   {
     if (frameTypeIndex >= _drawMap.size()) return _emptyStageInfo;
     const FrameStages& frameStages = _drawMap[frameTypeIndex];

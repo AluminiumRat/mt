@@ -55,7 +55,7 @@ void MeshDrawable::addToDrawPlan( DrawPlan& plan,
   if(_asset == nullptr) return;
   const MeshAsset::StageIndices& stages =
                                         _asset->availableStages(frameTypeIndex);
-  for(uint32_t stage : stages) plan.addDrawable(*this, stage);
+  for(StageIndex stage : stages) plan.addDrawable(*this, stage);
 }
 
 void MeshDrawable::addToCommandList(DrawCommandList& commandList,
@@ -65,8 +65,8 @@ void MeshDrawable::addToCommandList(DrawCommandList& commandList,
   if(_asset->technique() == nullptr) return;
 
   const MeshAsset::StagePasses& passes = _asset->passes(
-                                                  frameContext.frameTypeIndex,
-                                                  frameContext.drawStageIndex);
+                                                    frameContext.frameTypeIndex,
+                                                    frameContext.stageIndex);
   for(const MeshAsset::PassInfo pass : passes)
   {
     commandList.createCommand<MeshDrawCommand>( *this,

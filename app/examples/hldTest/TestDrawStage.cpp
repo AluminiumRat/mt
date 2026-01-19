@@ -18,7 +18,7 @@ void TestDrawStage::draw(FrameContext& frameContext) const
 {
   frameContext.commandProducer->beginDebugLabel(stageName);
 
-  frameContext.drawStageIndex = _stageIndex;
+  frameContext.stageIndex = _stageIndex;
 
   DrawCommandList commands(*frameContext.commandMemoryPool);
 

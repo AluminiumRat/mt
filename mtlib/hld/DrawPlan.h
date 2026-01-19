@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include <hld/StageIndex.h>
+
 namespace mt
 {
   class Drawable;
@@ -19,8 +21,8 @@ namespace mt
     DrawPlan& operator = (DrawPlan&&) noexcept = default;
     ~DrawPlan() noexcept = default;
 
-    inline void addDrawable(const Drawable& drawable, uint32_t stageIndex);
-    inline const StagePlan& stagePlan(uint32_t stageIndex) const noexcept;
+    inline void addDrawable(const Drawable& drawable, StageIndex stageIndex);
+    inline const StagePlan& stagePlan(StageIndex stageIndex) const noexcept;
     inline void clear() noexcept;
 
   private:
@@ -31,14 +33,14 @@ namespace mt
   };
 
   inline void DrawPlan::addDrawable(const Drawable& drawable,
-                                    uint32_t stageIndex)
+                                    StageIndex stageIndex)
   {
     if (stageIndex >= _stages.size()) _stages.resize(stageIndex + 1);
     _stages[stageIndex].push_back(&drawable);
   }
 
   inline const DrawPlan::StagePlan& DrawPlan::stagePlan(
-                                              uint32_t stageIndex) const noexcept
+                                          StageIndex stageIndex) const noexcept
   {
     if( stageIndex >= _stages.size()) return _emptyStagePlan;
     return _stages[stageIndex];

@@ -54,7 +54,7 @@ void MeshAsset::setConfiguration(const Configuration& configuration)
       {
         FrameTypeIndex frameTypeIndex =
                 HLDLib::instance().getFrameTypeIndex(passConfig.frameTypeName);
-        uint32_t stageIndex =
+        StageIndex stageIndex =
                         HLDLib::instance().getStageIndex(passConfig.stageName);
         TechniquePass& pass =
                       _technique->getOrCreatePass(passConfig.passName.c_str());
@@ -73,7 +73,7 @@ void MeshAsset::setConfiguration(const Configuration& configuration)
 }
 
 void MeshAsset::_addPass( FrameTypeIndex frameTypeIndex,
-                          uint32_t stageIndex,
+                          StageIndex stageIndex,
                           int32_t layer,
                           TechniquePass& pass)
 {
@@ -98,7 +98,7 @@ void MeshAsset::_addPass( FrameTypeIndex frameTypeIndex,
 }
 
 void MeshAsset::_addAvailableStage( FrameTypeIndex frameTypeIndex,
-                                    uint32_t stageIndex)
+                                    StageIndex stageIndex)
 {
   if(_availableStages.size() <= frameTypeIndex)
   {

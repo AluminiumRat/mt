@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 
 #include <hld/FrameTypeIndex.h>
+#include <hld/StageIndex.h>
 
 namespace mt
 {
@@ -18,7 +19,7 @@ namespace mt
     FrameTypeIndex frameTypeIndex;
     const DrawPlan* drawPlan;
     CommandMemoryPool* commandMemoryPool;
-    uint32_t drawStageIndex;
+    StageIndex stageIndex;
     const FrameBuffer* frameBuffer;
     const Camera* viewCamera;
     CommandProducerGraphic* commandProducer;
