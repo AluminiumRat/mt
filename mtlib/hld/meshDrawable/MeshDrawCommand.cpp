@@ -30,14 +30,21 @@ void MeshDrawCommand::_processChunk(CommandProducerGraphic& producer,
   TechniqueVolatileContext volatileContext =
                                       technique.createVolatileContext(producer);
 
-  _updatePositionMatrix(volatileContext, commands);
-  _updateBivecMatrix(volatileContext, commands);
-  _updatePrevPositionMatrix(volatileContext, commands);
+  updateInstanceData(volatileContext, commands);
 
   Technique::Bind bind(technique, _pass, producer, &volatileContext);
   if (!bind.isValid()) return;
 
   producer.draw(_vertexCount, (uint32_t)commands.size());
+}
+
+void MeshDrawCommand::updateInstanceData(
+                                    TechniqueVolatileContext& volatileContext,
+                                    std::span<const CommandPtr> commands)
+{
+  _updatePositionMatrix(volatileContext, commands);
+  _updateBivecMatrix(volatileContext, commands);
+  _updatePrevPositionMatrix(volatileContext, commands);
 }
 
 void MeshDrawCommand::_updatePositionMatrix(

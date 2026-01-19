@@ -25,6 +25,10 @@ namespace mt
     virtual void draw(CommandProducerGraphic& producer,
                       std::span<const CommandPtr> commands) override;
 
+  protected:
+    virtual void updateInstanceData(TechniqueVolatileContext& volatileContext,
+                                    std::span<const CommandPtr> commands);
+
   private:
     void _processChunk( CommandProducerGraphic& producer,
                         const Technique& technique,
