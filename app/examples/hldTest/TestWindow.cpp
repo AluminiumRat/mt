@@ -1,5 +1,4 @@
 ﻿#include <ddsSupport/ddsSupport.h>
-#include <hld/meshDrawable/MeshAsset.h>
 #include <hld/FrameContext.h>
 #include <hld/HLDLib.h>
 #include <technique/TechniqueLoader.h>
@@ -12,18 +11,22 @@ using namespace mt;
 TestWindow::TestWindow(Device& device) :
   RenderWindow(device, "Test window"),
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(colorFrameType)),
+  _meshAsset(new MeshAsset("Test mesh")),
+  _drawable1(*_meshAsset),
+  _drawable2(*_meshAsset),
+  _drawable3(*_meshAsset),
   _commandMemoryPool(4 * 1024)
 {
   _camera.setPerspectiveProjection(1, 1, 0.1f, 100);
 
-  _createMeshAsset();
+  _setupMeshAsset();
 
   _scene.addDrawable(_drawable1);
   _scene.addDrawable(_drawable2);
   _scene.addDrawable(_drawable3);
 }
 
-void TestWindow::_createMeshAsset()
+void TestWindow::_setupMeshAsset()
 {
   //  Техника отрисовки меша
   Ref configurator(new TechniqueConfigurator(device(), "Test technique"));
@@ -67,15 +70,7 @@ void TestWindow::_createMeshAsset()
   meshConfig.vertexCount = sizeof(vertices) / sizeof(vertices[0]);
   meshConfig.maxInstancesCount = 2;
 
-  //  Создаем ассет и подключаем к дравэйблам
-  Ref meshAsset(new MeshAsset("Test mesh"));
-  //meshAsset->setConfiguration(meshConfig);
-
-  _drawable1.setAsset(meshAsset.get());
-  _drawable2.setAsset(meshAsset.get());
-  _drawable3.setAsset(meshAsset.get());
-
-  meshAsset->setConfiguration(meshConfig);
+  _meshAsset->setConfiguration(meshConfig);
 }
 
 void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,

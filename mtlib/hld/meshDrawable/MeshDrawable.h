@@ -20,13 +20,12 @@ namespace mt
   class MeshDrawable : public Drawable
   {
   public:
-    MeshDrawable();
+    explicit MeshDrawable(const MeshAsset& asset);
     MeshDrawable(const MeshDrawable&) = delete;
     MeshDrawable& operator = (const MeshDrawable&) = delete;
     virtual ~MeshDrawable() noexcept;
 
-    inline const MeshAsset* asset() const noexcept;
-    virtual void setAsset(const MeshAsset* newAsset);
+    inline const MeshAsset& asset() const noexcept;
 
     virtual void addToDrawPlan( DrawPlan& plan,
                                 uint32_t frameTypeIndex) const override;
@@ -39,15 +38,12 @@ namespace mt
     virtual void onAssetUpdated();
 
   private:
-    void _disconnectFromAsset() noexcept;
-
-  private:
     ConstRef<MeshAsset> _asset;
     Slot<> _onAssetUpdatedSlot;
   };
 
-  inline const MeshAsset* MeshDrawable::asset() const noexcept
+  inline const MeshAsset& MeshDrawable::asset() const noexcept
   {
-    return _asset.get();
+    return *_asset;
   }
 }

@@ -6,44 +6,18 @@
 
 using namespace mt;
 
-MeshDrawable::MeshDrawable() :
+MeshDrawable::MeshDrawable(const MeshAsset& asset) :
   Drawable(COMMANDS_DRAW),
   _onAssetUpdatedSlot(*this, &MeshDrawable::onAssetUpdated)
 {
+  asset.addUpdateConfigurationSlot(_onAssetUpdatedSlot).release();
+  _asset = &asset;
 }
 
 MeshDrawable::~MeshDrawable() noexcept
 {
-  _disconnectFromAsset();
-}
-
-void MeshDrawable::_disconnectFromAsset() noexcept
-{
-  if(_asset != nullptr)
-  {
-    _asset->removeUpdateConfigurationSlot(_onAssetUpdatedSlot);
-    _asset = nullptr;
-  }
-}
-
-void MeshDrawable::setAsset(const MeshAsset* newAsset)
-{
-  try
-  {
-    _disconnectFromAsset();
-
-    _asset = newAsset;
-
-    if(_asset != nullptr)
-    {
-      _asset->addUpdateConfigurationSlot(_onAssetUpdatedSlot).release();
-    }
-  }
-  catch(...)
-  {
-    _disconnectFromAsset();
-    throw;
-  }
+  _asset->removeUpdateConfigurationSlot(_onAssetUpdatedSlot);
+  _asset = nullptr;
 }
 
 void MeshDrawable::onAssetUpdated()
