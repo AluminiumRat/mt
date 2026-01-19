@@ -39,6 +39,10 @@ namespace mt
 
     inline const std::string& name() const noexcept;
 
+    //  Переменная подключена к какому-либо униформ буферу и используется
+    //  в технике
+    inline bool isActive() const noexcept;
+
     //  Установить значение переменной, сохранив его в технике
     //  Значение сохраняется между циклами рендера
     template <typename DataType>
@@ -121,6 +125,11 @@ namespace mt
   {
     if(_description != nullptr) return _description->fullName;
     return _savedName;
+  }
+
+  inline bool UniformVariable::isActive() const noexcept
+  {
+    return _storage != nullptr;
   }
 
   template <typename DataType>

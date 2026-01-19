@@ -10,12 +10,18 @@ using namespace mt;
 MeshAsset::MeshAsset(const char* debugName) :
   _debugName(debugName),
   _vertexCount(0),
-  _maxInstancesCount(1)
+  _maxInstancesCount(1),
+  _positionMatrixUniform(nullptr),
+  _prevPositionMatrixUniform(nullptr),
+  _bivecMatrixUniform(nullptr)
 {
 }
 
 void MeshAsset::_clearConfiguration() noexcept
 {
+  _positionMatrixUniform = nullptr;
+  _prevPositionMatrixUniform = nullptr;
+  _bivecMatrixUniform = nullptr;
   _technique.reset();
   _vertexCount = 0;
   _maxInstancesCount = 1;
@@ -33,6 +39,13 @@ void MeshAsset::setConfiguration(const Configuration& configuration)
 
     if(_technique != nullptr)
     {
+      _positionMatrixUniform =
+                &_technique->getOrCreateUniform("transformData.positionMatrix");
+      _prevPositionMatrixUniform =
+            &_technique->getOrCreateUniform("transformData.prevPositionMatrix");
+      _bivecMatrixUniform =
+                  &_technique->getOrCreateUniform("transformData.bivecMatrix");
+
       _vertexCount = configuration.vertexCount;
       _maxInstancesCount = configuration.maxInstancesCount;
       if(_maxInstancesCount == 0) throw std::runtime_error(_debugName + ": maxInstancesCount is 0");

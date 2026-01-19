@@ -84,6 +84,10 @@ namespace mt
     inline const Technique* technique() const noexcept;
     inline Technique* technique() noexcept;
 
+    inline const UniformVariable* positionMatrixUniform() const noexcept;
+    inline const UniformVariable* prevPositionMatrixUniform() const noexcept;
+    inline const UniformVariable* bivecMatrixUniform() const noexcept;
+
     inline uint32_t vertexCount() const noexcept;
     inline uint32_t maxInstancesCount() const noexcept;
 
@@ -109,6 +113,10 @@ namespace mt
     Ref<Technique> _technique;
     uint32_t _vertexCount;
     uint32_t _maxInstancesCount;
+
+    UniformVariable* _positionMatrixUniform;
+    UniformVariable* _prevPositionMatrixUniform;
+    UniformVariable* _bivecMatrixUniform;
 
     //  Сигнал о том, что был вызван метод setConfiguration. Ассет является
     //    разделяемым ресурсом, поэтому добавление и удаление слотов защищено
@@ -162,6 +170,23 @@ namespace mt
   inline Technique* MeshAsset::technique() noexcept
   {
     return _technique.get();
+  }
+
+  inline const UniformVariable*
+                              MeshAsset::positionMatrixUniform() const noexcept
+  {
+    return _positionMatrixUniform;
+  }
+
+  inline const UniformVariable*
+                            MeshAsset::prevPositionMatrixUniform() const noexcept
+  {
+    return _prevPositionMatrixUniform;
+  }
+
+  inline const UniformVariable* MeshAsset::bivecMatrixUniform() const noexcept
+  {
+    return _bivecMatrixUniform;
   }
 
   inline uint32_t MeshAsset::vertexCount() const noexcept

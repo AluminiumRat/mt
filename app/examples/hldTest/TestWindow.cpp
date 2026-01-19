@@ -30,7 +30,7 @@ void TestWindow::_setupMeshAsset()
 {
   //  Техника отрисовки меша
   Ref configurator(new TechniqueConfigurator(device(), "Test technique"));
-  loadConfigurator(*configurator, "examples/dds_load/technique.tch");
+  loadConfigurator(*configurator, "examples/mesh/technique.tch");
   configurator->rebuildConfiguration();
   Ref technique(new Technique(*configurator));
 
