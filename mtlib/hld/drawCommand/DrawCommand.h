@@ -15,9 +15,15 @@ namespace mt
   class DrawCommand
   {
   public:
+    //  Признак, по которому команды могут быть сгруппированы вместе и выполнены
+    //    совместно (например для инстансинга)
+    //  Если две идущие подряд команды принадлежат одной группе (кроме значения
+    //    noGroup), то они могут быть объединены
+    using Group = uint32_t;
+
     //  Если использовать это число как groupIndex для DrawCommand, то эти
     //  команды не будут группироваться и всегда будут исполняться по одной
-    static constexpr uint32_t noGroupIndex = 0;
+    static constexpr Group noGroup = 0;
 
   public:
     //  groupIndex - признак, по которому команды могут быть собраны вместе и
@@ -27,14 +33,14 @@ namespace mt
     //  layer - слой рисования. Используется при сортировке. Команды из разных
     //    слоем не могут смешиваться друг с другом. Слои отрисовываются от
     //    меньшего индекса к большему
-    inline DrawCommand( uint32_t groupIndex,
+    inline DrawCommand( Group groupIndex,
                         int32_t layer,
                         float distance) noexcept;
     DrawCommand(const DrawCommand&) = delete;
     DrawCommand& operator = (const DrawCommand&) = delete;
     virtual ~DrawCommand() noexcept = default;
 
-    inline uint32_t groupIndex() const noexcept;
+    inline Group group() const noexcept;
     inline int32_t layer() const noexcept;
     inline float distance() const noexcept;
 
@@ -45,7 +51,7 @@ namespace mt
     virtual void draw(CommandProducerGraphic& producer,
                       std::span<const CommandPtr> commands) = 0;
   private:
-    uint32_t _groupIndex;
+    Group _group;
     int32_t _layer;
     float _distance;
   };
@@ -83,18 +89,18 @@ namespace mt
     ~CommandPtr() noexcept = default;
   };
 
-  inline DrawCommand::DrawCommand(uint32_t groupIndex,
+  inline DrawCommand::DrawCommand(Group group,
                                   int32_t layer,
                                   float distance) noexcept :
-    _groupIndex(groupIndex),
+    _group(group),
     _layer(layer),
     _distance(distance)
   {
   }
 
-  inline uint32_t DrawCommand::groupIndex() const noexcept
+  inline DrawCommand::Group DrawCommand::group() const noexcept
   {
-    return _groupIndex;
+    return _group;
   }
 
   inline int32_t DrawCommand::layer() const noexcept

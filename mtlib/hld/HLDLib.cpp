@@ -6,7 +6,7 @@ using namespace mt;
 HLDLib* HLDLib::_instance = nullptr;
 
 HLDLib::HLDLib() :
-  _drawCommandGroupCount(DrawCommand::noGroupIndex + 1)
+  _drawCommandGroupCount(DrawCommand::noGroup + 1)
 {
   MT_ASSERT(_instance == nullptr);
 

@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include <hld/drawCommand/DrawCommand.h>
 #include <technique/Technique.h>
 #include <util/Ref.h>
 #include <util/RefCounter.h>
@@ -52,7 +53,7 @@ namespace mt
     {
       int32_t layer;
       TechniquePass* pass;
-      uint32_t commandGroup;
+      DrawCommand::Group commandGroup;
     };
 
     //  Информация обо всех проходах отрисовки для одной отдельной стадии

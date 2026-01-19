@@ -15,7 +15,7 @@ namespace mt
                             const TechniquePass& pass,
                             uint32_t vertexCount,
                             uint32_t maxInstances,
-                            uint32_t groupIndex,
+                            Group groupIndex,
                             int32_t layer,
                             float distance);
     MeshDrawCommand(const MeshDrawCommand&) = delete;
@@ -47,7 +47,7 @@ namespace mt
                                           const TechniquePass& pass,
                                           uint32_t vertexCount,
                                           uint32_t maxInstances,
-                                          uint32_t groupIndex,
+                                          Group groupIndex,
                                           int32_t layer,
                                           float distance) :
     DrawCommand(groupIndex, layer, distance),

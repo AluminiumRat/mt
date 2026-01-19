@@ -20,15 +20,15 @@ void DrawCommandList::draw(CommandProducerGraphic& producer, Sorting sortingType
   Commands::iterator chunkStartCommand = _commands.begin();
   while(chunkStartCommand != _commands.end())
   {
-    uint32_t chunkGoupIndex = (*chunkStartCommand)->groupIndex();
+    DrawCommand::Group chunkGoup = (*chunkStartCommand)->group();
 
     Commands::iterator nextCommand = chunkStartCommand;
     nextCommand++;
 
-    if(chunkGoupIndex != DrawCommand::noGroupIndex)
+    if(chunkGoup != DrawCommand::noGroup)
     {
       while(nextCommand != _commands.end() &&
-            (*nextCommand)->groupIndex() == chunkGoupIndex)
+            (*nextCommand)->group() == chunkGoup)
       {
         nextCommand++;
       }
@@ -72,7 +72,7 @@ void DrawCommandList::_sort(Sorting sortingType)
               [](const CommandPtr& x, const CommandPtr& y) -> bool
               {
                 if(x->layer() != y->layer()) return x->layer() < y->layer();
-                else return x->groupIndex() < y->groupIndex();
+                else return x->group() < y->group();
               });
     break;
   }

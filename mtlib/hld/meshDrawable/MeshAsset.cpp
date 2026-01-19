@@ -90,9 +90,9 @@ void MeshAsset::_addPass( uint32_t frameTypeIndex,
   newPass.pass = &pass;
   if(_maxInstancesCount > 1)
   {
-    newPass.commandGroup = HLDLib::instance().allocateDrawCommandGroupIndex();
+    newPass.commandGroup = HLDLib::instance().allocateDrawCommandGroup();
   }
-  else newPass.commandGroup = DrawCommand::noGroupIndex;
+  else newPass.commandGroup = DrawCommand::noGroup;
 
   passes.push_back(newPass);
 }
