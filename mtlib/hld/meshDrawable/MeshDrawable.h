@@ -28,7 +28,7 @@ namespace mt
     inline const MeshAsset& asset() const noexcept;
 
     virtual void addToDrawPlan( DrawPlan& plan,
-                                uint32_t frameTypeIndex) const override;
+                                FrameTypeIndex frameTypeIndex) const override;
 
     virtual void addToCommandList(
                               DrawCommandList& commandList,

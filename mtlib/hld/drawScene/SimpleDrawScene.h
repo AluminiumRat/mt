@@ -25,7 +25,7 @@ namespace mt
 
     virtual void fillDrawPlan(DrawPlan& plan,
                               Camera& camera,
-                              uint32_t frameTypeIndex) const override;
+                              FrameTypeIndex frameTypeIndex) const override;
 
   private:
     using Drawables = std::vector<Drawable*>;

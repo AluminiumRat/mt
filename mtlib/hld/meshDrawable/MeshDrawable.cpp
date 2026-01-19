@@ -50,7 +50,7 @@ void MeshDrawable::onAssetUpdated()
 }
 
 void MeshDrawable::addToDrawPlan( DrawPlan& plan,
-                                  uint32_t frameTypeIndex) const
+                                  FrameTypeIndex frameTypeIndex) const
 {
   if(_asset == nullptr) return;
   const MeshAsset::StageIndices& stages =

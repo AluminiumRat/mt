@@ -3,6 +3,7 @@
 #include <atomic>
 
 #include <hld/drawCommand/DrawCommand.h>
+#include <hld/FrameTypeIndex.h>
 #include <util/Assert.h>
 #include <util/StringRegistry.h>
 
@@ -23,8 +24,11 @@ namespace mt
 
     inline static HLDLib& instance() noexcept;
 
+    //  Получить индлекс стадии отрисовки по её имени
     inline uint32_t getStageIndex(const std::string& stageName);
-    inline uint32_t getFrameTypeIndex(const std::string& frameTypeName);
+
+    //  Получить тип фрэйма по его имени
+    inline FrameTypeIndex getFrameTypeIndex(const std::string& frameTypeName);
 
     //  Создать новый уникальный groupIndex для использования в DrawCommand
     inline DrawCommand::Group allocateDrawCommandGroup() noexcept;
@@ -43,9 +47,10 @@ namespace mt
     return *_instance;
   }
 
-  inline uint32_t HLDLib::getFrameTypeIndex(const std::string& frameTypeName)
+  inline FrameTypeIndex HLDLib::getFrameTypeIndex(
+                                              const std::string& frameTypeName)
   {
-    return (uint32_t)_frameTypeRegistry.getIndex(frameTypeName);
+    return (FrameTypeIndex)_frameTypeRegistry.getIndex(frameTypeName);
   }
 
   inline uint32_t HLDLib::getStageIndex(const std::string& stageName)

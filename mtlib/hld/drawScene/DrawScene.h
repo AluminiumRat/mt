@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <hld/FrameTypeIndex.h>
+
 namespace mt
 {
   class DrawPlan;
@@ -15,6 +17,6 @@ namespace mt
 
     virtual void fillDrawPlan(DrawPlan& plan,
                               Camera& camera,
-                              uint32_t frameTypeIndex) const = 0;
+                              FrameTypeIndex frameTypeIndex) const = 0;
   };
 }

@@ -5,7 +5,7 @@ using namespace mt;
 
 void SimpleDrawScene::fillDrawPlan( DrawPlan& plan,
                                     Camera& camera,
-                                    uint32_t frameTypeIndex) const
+                                    FrameTypeIndex frameTypeIndex) const
 {
   for(Drawable* drawable : _drawables)
   {

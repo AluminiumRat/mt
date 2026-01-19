@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include <cstdint>
+#include <hld/FrameTypeIndex.h>
 
 namespace mt
 {
@@ -38,7 +38,7 @@ namespace mt
     inline DrawType drawType() const noexcept;
 
     virtual void addToDrawPlan( DrawPlan& plan,
-                                uint32_t frameTypeIndex) const = 0;
+                                FrameTypeIndex frameTypeIndex) const = 0;
 
     //  Использовать commandProducer из frameContext и добавить в него
     //    команды на отрисовку.

@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <hld/drawCommand/DrawCommand.h>
+#include <hld/FrameTypeIndex.h>
 #include <technique/Technique.h>
 #include <util/Ref.h>
 #include <util/RefCounter.h>
@@ -94,19 +95,19 @@ namespace mt
 
     //  Какие стадии поддерживаются для отдельного фрэйм-типа
     inline const StageIndices& availableStages(
-                                        uint32_t frameTypeIndex) const noexcept;
+                                  FrameTypeIndex frameTypeIndex) const noexcept;
 
     //  Какие есть проходы для отдельной стадии отдельного фрэйм-типа
-    inline const StagePasses& passes( uint32_t frameTypeIndex,
+    inline const StagePasses& passes( FrameTypeIndex frameTypeIndex,
                                       uint32_t stageIndex) const noexcept;
 
   private:
     void _clearConfiguration() noexcept;
-    void _addPass(uint32_t frameTypeIndex,
+    void _addPass(FrameTypeIndex frameTypeIndex,
                   uint32_t stageIndex,
                   int32_t layer,
                   TechniquePass& pass);
-    void _addAvailableStage(uint32_t frameTypeIndex, uint32_t stageIndex);
+    void _addAvailableStage(FrameTypeIndex frameTypeIndex, uint32_t stageIndex);
 
   private:
     std::string _debugName;
@@ -201,14 +202,14 @@ namespace mt
   }
 
   inline const MeshAsset::StageIndices& MeshAsset::availableStages(
-                                        uint32_t frameTypeIndex) const noexcept
+                                  FrameTypeIndex frameTypeIndex) const noexcept
   {
     if(frameTypeIndex >= _availableStages.size()) return _emptyFrameInfo;
     return _availableStages[frameTypeIndex];
   }
 
   inline const MeshAsset::StagePasses&
-                          MeshAsset::passes(uint32_t frameTypeIndex,
+                          MeshAsset::passes(FrameTypeIndex frameTypeIndex,
                                             uint32_t stageIndex) const noexcept
   {
     if (frameTypeIndex >= _drawMap.size()) return _emptyStageInfo;

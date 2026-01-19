@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include <hld/FrameTypeIndex.h>
+
 namespace mt
 {
   class Camera;
@@ -13,7 +15,7 @@ namespace mt
   class FrameContext
   {
   public:
-    uint32_t frameTypeIndex;
+    FrameTypeIndex frameTypeIndex;
     const DrawPlan* drawPlan;
     CommandMemoryPool* commandMemoryPool;
     uint32_t drawStageIndex;
