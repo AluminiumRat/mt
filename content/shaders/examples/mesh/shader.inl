@@ -16,7 +16,7 @@ layout (set = VOLATILE,
 
 struct Vertex
 {
-    vec3 position;
+  vec3 position;
 };
 layout (set = STATIC,
         binding = 0) readonly buffer VertexBuffer

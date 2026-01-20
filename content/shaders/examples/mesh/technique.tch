@@ -12,6 +12,11 @@ passes:
 
     frameBuffer:
       color: VK_FORMAT_B8G8R8A8_SRGB
+      depthStencil: VK_FORMAT_D16_UNORM
 
     graphicSettings:
-      topology: TRIANGLE_STRIP
+      topology: TRIANGLE_LIST
+      cullMode : BACK
+      depthTest : true
+      depthWrite : true
+      depthCompareOp : GREATER_OR_EQUAL

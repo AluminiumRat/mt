@@ -1,4 +1,7 @@
-﻿#include <ddsSupport/ddsSupport.h>
+﻿#include <glm/gtc/matrix_transform.hpp>
+
+#include <ddsSupport/ddsSupport.h>
+#include <gui/ImGuiRAII.h>
 #include <hld/FrameContext.h>
 #include <hld/HLDLib.h>
 #include <technique/TechniqueLoader.h>
@@ -9,7 +12,11 @@
 using namespace mt;
 
 TestWindow::TestWindow(Device& device) :
-  GUIWindow(device, "Test window"),
+  GUIWindow(device,
+            "Test window",
+            std::nullopt,
+            std::nullopt,
+            VK_FORMAT_D16_UNORM),
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(colorFrameType)),
   _cameraManipulator(CameraManipulator::APPLICATION_WINDOW_LOCATION),
   _meshAsset(new MeshAsset("Test mesh")),
@@ -24,8 +31,12 @@ TestWindow::TestWindow(Device& device) :
   _setupMeshAsset();
 
   _scene.addDrawable(_drawable1);
+
   _scene.addDrawable(_drawable2);
+  _drawable2.setPositionMatrix(glm::translate(glm::mat4(1), glm::vec3(3, 0, 0)));
+
   _scene.addDrawable(_drawable3);
+  _drawable3.setPositionMatrix(glm::translate(glm::mat4(1), glm::vec3(0, 3, 0)));
 }
 
 void TestWindow::_setupMeshAsset()
@@ -37,19 +48,57 @@ void TestWindow::_setupMeshAsset()
   Ref technique(new Technique(*configurator));
 
   //  Создаем вершинный буфер
-  glm::vec4 vertices[4] =  {{-0.5f, -0.5f, 0.0f, 1.0f},
-                            {-0.5f,  0.5f, 0.0f, 1.0f},
-                            { 0.5f, -0.5f, 0.0f, 1.0f},
-                            { 0.5f,  0.5f, 0.0f, 1.0f}};
-  Ref vertexBuffer(new DataBuffer(device(),
-                                  sizeof(vertices),
-                                  DataBuffer::STORAGE_BUFFER,
-                                  "Vertex buffer"));
-  device().graphicQueue()->uploadToBuffer(*vertexBuffer,
+  glm::vec4 positions[36] = { {-1.0f, -1.0f, -1.0f, 1.0f},
+                              {-1.0f,  1.0f, -1.0f, 1.0f},
+                              { 1.0f,  1.0f, -1.0f, 1.0f},
+                              {-1.0f, -1.0f, -1.0f, 1.0f},
+                              { 1.0f,  1.0f, -1.0f, 1.0f},
+                              { 1.0f, -1.0f, -1.0f, 1.0f},
+
+                              {-1.0f, -1.0f, 1.0f, 1.0f},
+                              { 1.0f, -1.0f, 1.0f, 1.0f},
+                              { 1.0f,  1.0f, 1.0f, 1.0f},
+                              {-1.0f, -1.0f, 1.0f, 1.0f},
+                              { 1.0f,  1.0f, 1.0f, 1.0f},
+                              {-1.0f,  1.0f, 1.0f, 1.0f},
+
+                              {-1.0f, -1.0f, -1.0f, 1.0f},
+                              {-1.0f, -1.0f,  1.0f, 1.0f},
+                              {-1.0f,  1.0f,  1.0f, 1.0f},
+                              {-1.0f, -1.0f, -1.0f, 1.0f},
+                              {-1.0f,  1.0f,  1.0f, 1.0f},
+                              {-1.0f,  1.0f, -1.0f, 1.0f},
+
+                              { 1.0f, -1.0f, -1.0f, 1.0f},
+                              { 1.0f,  1.0f, -1.0f, 1.0f},
+                              { 1.0f,  1.0f,  1.0f, 1.0f},
+                              { 1.0f, -1.0f, -1.0f, 1.0f},
+                              { 1.0f,  1.0f,  1.0f, 1.0f},
+                              { 1.0f, -1.0f,  1.0f, 1.0f},
+
+                              {-1.0f, 1.0f, -1.0f, 1.0f},
+                              {-1.0f, 1.0f,  1.0f, 1.0f},
+                              { 1.0f, 1.0f,  1.0f, 1.0f},
+                              {-1.0f, 1.0f, -1.0f, 1.0f},
+                              { 1.0f, 1.0f,  1.0f, 1.0f},
+                              { 1.0f, 1.0f, -1.0f, 1.0f},
+
+                              {-1.0f, -1.0f, -1.0f, 1.0f},
+                              { 1.0f, -1.0f, -1.0f, 1.0f},
+                              { 1.0f, -1.0f,  1.0f, 1.0f},
+                              {-1.0f, -1.0f, -1.0f, 1.0f},
+                              { 1.0f, -1.0f,  1.0f, 1.0f},
+                              {-1.0f, -1.0f,  1.0f, 1.0f}};
+
+  Ref positionsBuffer(new DataBuffer( device(),
+                                      sizeof(positions),
+                                      DataBuffer::STORAGE_BUFFER,
+                                      "Positions buffer"));
+  device().graphicQueue()->uploadToBuffer(*positionsBuffer,
                                           0,
-                                          sizeof(vertices),
-                                          vertices);
-  technique->getOrCreateResourceBinding("vertices").setBuffer(vertexBuffer);
+                                          sizeof(positions),
+                                          positions);
+  technique->getOrCreateResourceBinding("vertices").setBuffer(positionsBuffer);
 
   //  Создаем текстуру
   Ref<Image> image = loadDDS( "examples/image.dds",
@@ -69,7 +118,7 @@ void TestWindow::_setupMeshAsset()
                                         .stageName = TestDrawStage::stageName,
                                         .layer = 0,
                                         .passName = "RenderPass"});
-  meshConfig.vertexCount = sizeof(vertices) / sizeof(vertices[0]);
+  meshConfig.vertexCount = sizeof(positions) / sizeof(positions[0]);
   meshConfig.maxInstancesCount = 2;
 
   _meshAsset->setConfiguration(meshConfig);

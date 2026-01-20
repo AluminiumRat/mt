@@ -10,6 +10,7 @@
 #include <hld/FrameTypeIndex.h>
 #include <util/Camera.h>
 #include <util/Ref.h>
+#include <vkr/image/ImageView.h>
 
 #include <TestDrawStage.h>
 
@@ -50,5 +51,7 @@ namespace mt
 
     DrawPlan _drawPlan;
     CommandMemoryPool _commandMemoryPool;
+
+    Ref<ImageView> _depthBufferView;
   };
 }
