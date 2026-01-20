@@ -392,3 +392,18 @@ SyncPoint CommandQueue::ownershipTransfer(CommandQueue& oldQueue,
     Abort("CommandQueue::ownershipTransfer: unable to acquire buffer ownership");
   }
 }
+
+void CommandQueue::initImageLayout(const Image& image, VkImageLayout layout)
+{
+  MT_ASSERT(!image.isLayoutAutoControlEnabled());
+  std::unique_ptr<CommandProducer> producer = startCommands();
+  producer->imageBarrier( image,
+                          ImageSlice(image),
+                          VK_IMAGE_LAYOUT_UNDEFINED,
+                          layout,
+                          0,
+                          0,
+                          0,
+                          0);
+  submitCommands(std::move(producer));
+}

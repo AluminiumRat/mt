@@ -101,6 +101,12 @@ namespace mt
                                         CommandQueue& newQueue,
                                         const DataBuffer& buffer);
 
+    //  Первичная инициализация лэйаута для Image. Перевести из
+    //  лэйаута VK_IMAGE_LAYOUT_UNDEFINED в нужный лэйаут. Можно использовать
+    //  после создания Image без автоконтроля лэйаута до первого использования
+    //  этого Image
+    void initImageLayout(const Image& image, VkImageLayout layout);
+
     //  Приостановить работу текущего потока пока не будут выполнены все команды
     //  из очереди
     void waitIdle() const;
