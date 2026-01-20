@@ -1,11 +1,13 @@
 ﻿#pragma once
 
-#include <gui/RenderWindow.h>
+#include <gui/cameraManipulator/OrbitalCameraManipulator.h>
+#include <gui/GUIWindow.h>
 #include <hld/drawCommand/CommandMemoryPool.h>
 #include <hld/drawScene/SimpleDrawScene.h>
 #include <hld/meshDrawable/MeshAsset.h>
 #include <hld/meshDrawable/MeshDrawable.h>
 #include <hld/DrawPlan.h>
+#include <hld/FrameTypeIndex.h>
 #include <util/Camera.h>
 #include <util/Ref.h>
 
@@ -13,7 +15,7 @@
 
 namespace mt
 {
-  class TestWindow : public RenderWindow
+  class TestWindow : public GUIWindow
   {
   public:
     static constexpr const char* colorFrameType = "ColorFrame";
@@ -25,17 +27,20 @@ namespace mt
     virtual ~TestWindow() noexcept = default;
 
   protected:
+    virtual void guiImplementation() override;
     virtual void drawImplementation(CommandProducerGraphic& commandProducer,
                                     FrameBuffer& frameBuffer) override;
   private:
     void _setupMeshAsset();
 
   private:
-    uint32_t _frameTypeIndex;
+    FrameTypeIndex _frameTypeIndex;
+
+    Camera _camera;
+    OrbitalCameraManipulator _cameraManipulator;
 
     Ref<MeshAsset> _meshAsset;
 
-    Camera _camera;
     SimpleDrawScene _scene;
     MeshDrawable _drawable1;
     MeshDrawable _drawable2;

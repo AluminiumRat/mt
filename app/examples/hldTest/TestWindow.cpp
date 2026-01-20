@@ -9,15 +9,17 @@
 using namespace mt;
 
 TestWindow::TestWindow(Device& device) :
-  RenderWindow(device, "Test window"),
+  GUIWindow(device, "Test window"),
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(colorFrameType)),
+  _cameraManipulator(CameraManipulator::APPLICATION_WINDOW_LOCATION),
   _meshAsset(new MeshAsset("Test mesh")),
   _drawable1(*_meshAsset),
   _drawable2(*_meshAsset),
   _drawable3(*_meshAsset),
+  _drawStage(device),
   _commandMemoryPool(4 * 1024)
 {
-  _camera.setPerspectiveProjection(1, 1, 0.1f, 100);
+  _cameraManipulator.setCamera(&_camera);
 
   _setupMeshAsset();
 
@@ -87,6 +89,20 @@ void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,
   frameContext.commandMemoryPool = &_commandMemoryPool;
   frameContext.frameBuffer = &frameBuffer;
   frameContext.commandProducer = &commandProducer;
+  frameContext.viewCamera = &_camera;
+
+  CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
 
   _drawStage.draw(frameContext);
+  drawGUI(commandProducer);
+
+  renderPass.endPass();
+}
+
+void TestWindow::guiImplementation()
+{
+  GUIWindow::guiImplementation();
+
+  _cameraManipulator.update(ImVec2(0.0f, 0.0f),
+                            ImVec2((float)size().x, (float)size().y));
 }

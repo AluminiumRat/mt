@@ -9,6 +9,18 @@ namespace mt
   class Camera
   {
   public:
+    //  Данные, предназначенные для записи в униформ буффер
+    //  Предполагается, что эти данные попадут в CommonSet стадии или кадра
+    //    и будут отсылаться на GPU небольшое количество раз (в идеале 1) за
+    //    кадр. Поэтому сюда записывается как можно больше информации.
+    struct ShaderData
+    {
+      alignas(16) glm::mat4 viewMatrix;
+      alignas(16) glm::mat4 projectionMatrix;
+      alignas(16) glm::mat4 viewProjectionMatrix;
+    };
+
+  public:
     ///  Коррекция матрицы проекции, связанная с разными экранными системами
     ///    координат в OpenGL и Vulkan. Взято с правками отсюда:
     ///    https://matthewwellings.com/blog/the-new-vulkan-coordinate-system/
@@ -56,6 +68,8 @@ namespace mt
     ///   Получить направление из eyePoint. Результат в той же системе
     ///     координат, в которой находится камера
     glm::vec3 getDirection(const glm::vec2& screenCoordinates) const noexcept;
+
+    inline ShaderData makeShaderData() const noexcept;
 
   private:
     void _updateFromPositionMatrix() noexcept;
@@ -131,5 +145,15 @@ namespace mt
   inline const ViewFrustum& Camera::frustum() const noexcept
   {
     return _frustum;
+  }
+
+  inline Camera::ShaderData Camera::makeShaderData() const noexcept
+  {
+    ShaderData shaderData{};
+    shaderData.viewMatrix = viewMatrix();
+    shaderData.projectionMatrix = projectionMatrix();
+    shaderData.viewProjectionMatrix =
+                            shaderData.projectionMatrix * shaderData.viewMatrix;
+    return shaderData;
   }
 }

@@ -2,6 +2,12 @@
 
 #include <cstdint>
 
+#include <hld/StageIndex.h>
+#include <util/Ref.h>
+#include <vkr/pipeline/DescriptorSet.h>
+#include <vkr/pipeline/PipelineLayout.h>
+#include <vkr/DataBuffer.h>
+
 namespace mt
 {
   class TestDrawStage
@@ -10,7 +16,7 @@ namespace mt
     static constexpr const char* stageName = "TestDrawStage";
 
   public:
-    TestDrawStage();
+    explicit TestDrawStage(Device& device);
     TestDrawStage(const TestDrawStage&) = delete;
     TestDrawStage& operator = (const TestDrawStage&) = delete;
     ~TestDrawStage() noexcept = default;
@@ -18,6 +24,15 @@ namespace mt
     void draw(FrameContext& frameContext) const;
 
   private:
-    uint32_t _stageIndex;
+    void _createCommonSet(Device& device);
+    void _updateCommonSet(FrameContext& frameContext) const;
+    void _processDrawables(FrameContext& frameContext) const;
+
+  private:
+    StageIndex _stageIndex;
+
+    Ref<DescriptorSet> _commonDescriptorSet;
+    Ref<DataBuffer> _commonUniformBuffer;
+    Ref<PipelineLayout> _pipelineLayout;
   };
 }

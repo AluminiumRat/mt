@@ -1,3 +1,11 @@
+#include <lib/cameraData.inl>
+
+layout (set = COMMON,
+        binding = 0) uniform CameraDataBlock
+{
+  CameraData value;
+} cameraData;
+
 layout (set = VOLATILE,
         binding = 0) uniform TransformData
 {

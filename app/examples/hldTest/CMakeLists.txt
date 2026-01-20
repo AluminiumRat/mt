@@ -6,7 +6,8 @@ include_directories(.
                     ../../../mtlib
                     ${GLM_PATH}
                     ${Vulkan_INCLUDE_DIRS}
-                    ${VKMEMALLOC_PATH})
+                    ${VKMEMALLOC_PATH}
+                    ${IMGUI_PATH})
 
 add_executable (hld_Test
                 "main.cpp"
