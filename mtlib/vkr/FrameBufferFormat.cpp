@@ -1,6 +1,7 @@
 ﻿#include <mutex>
 
 #include <util/Assert.h>
+#include <vkr/image/ImageFormatFeatures.h>
 #include <vkr/FrameBufferFormat.h>
 
 using namespace mt;
@@ -35,8 +36,20 @@ void FrameBufferFormat::fillPipelineCreateInfo() noexcept
   _pipelineCreateInfo.viewMask = 0;
   _pipelineCreateInfo.colorAttachmentCount = uint32_t(_colorAttachments.size());
   _pipelineCreateInfo.pColorAttachmentFormats = _colorAttachments.data();
-  _pipelineCreateInfo.depthAttachmentFormat = _depthStencilAttachment;
-  _pipelineCreateInfo.stencilAttachmentFormat = _depthStencilAttachment;
+
+  if(_depthStencilAttachment != VK_FORMAT_UNDEFINED)
+  {
+    const ImageFormatFeatures& depthStencilDesc =
+                                      getFormatFeatures(_depthStencilAttachment);
+    if(depthStencilDesc.hasDepth)
+    {
+      _pipelineCreateInfo.depthAttachmentFormat = _depthStencilAttachment;
+    }
+    if(depthStencilDesc.hasStencil)
+    {
+      _pipelineCreateInfo.stencilAttachmentFormat = _depthStencilAttachment;
+    }
+  }
 }
 
 FrameBufferFormat::FrameBufferFormat( std::span<VkFormat> colotAttachments,
