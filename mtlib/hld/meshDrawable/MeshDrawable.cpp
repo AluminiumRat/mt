@@ -23,13 +23,13 @@ MeshDrawable::~MeshDrawable() noexcept
   _asset = nullptr;
 }
 
-void MeshDrawable::setPositionMatrix(const glm::mat3x4& newValue)
+void MeshDrawable::setPositionMatrix(const glm::mat4& newValue)
 {
   _positionMatrix = newValue;
   _updateBivecMatrix();
 }
 
-void MeshDrawable::setPrevPositionMatrix(const glm::mat3x4& newValue)
+void MeshDrawable::setPrevPositionMatrix(const glm::mat4& newValue)
 {
   _prevPositionMatrix = newValue;
 }
