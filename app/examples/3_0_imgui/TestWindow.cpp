@@ -9,7 +9,7 @@
 using namespace mt;
 
 TestWindow::TestWindow(Device& device, const char* name) :
-  GUIWindow(device, name)
+  GUIWindow(device, name, std::nullopt, std::nullopt, VK_FORMAT_UNDEFINED)
 {
 }
 

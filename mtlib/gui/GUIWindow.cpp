@@ -9,6 +9,7 @@
 #include <util/Abort.h>
 #include <util/Assert.h>
 #include <util/Log.h>
+#include <vkr/image/ImageFormatFeatures.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/Device.h>
 #include <vkr/VKRLib.h>
@@ -56,8 +57,13 @@ public:
 GUIWindow::GUIWindow( Device& device,
                       const char* name,
                       std::optional<VkPresentModeKHR> presentationMode,
-                      std::optional<VkSurfaceFormatKHR> format) :
-  RenderWindow(device, name, presentationMode, format),
+                      std::optional<VkSurfaceFormatKHR> swapchainFormat,
+                      VkFormat bepthBufferFormat) :
+  RenderWindow( device,
+                name,
+                presentationMode,
+                swapchainFormat,
+                bepthBufferFormat),
   _imguiContext(nullptr)
 {
   _imguiContext = ImGui::CreateContext();
@@ -71,15 +77,20 @@ GUIWindow::GUIWindow( Device& device,
 
   ImGui_ImplGlfw_InitForVulkan(&handle(), true);
 
+  _initImGuiVulkanBackend();
+}
+
+void GUIWindow::_initImGuiVulkanBackend()
+{
   VKRLib& vkrLib = VKRLib::instance();
 
   ImGui_ImplVulkan_InitInfo vulkanInitInfo{};
   vulkanInitInfo.ApiVersion = vkrLib.vulkanApiVersion();
   vulkanInitInfo.Instance = vkrLib.handle();
-  vulkanInitInfo.PhysicalDevice = device.physicalDevice().handle();
-  vulkanInitInfo.Device = device.handle();
-  vulkanInitInfo.QueueFamily = device.primaryQueue().family().index();
-  vulkanInitInfo.Queue = device.primaryQueue().handle();
+  vulkanInitInfo.PhysicalDevice = device().physicalDevice().handle();
+  vulkanInitInfo.Device = device().handle();
+  vulkanInitInfo.QueueFamily = device().graphicQueue()->family().index();
+  vulkanInitInfo.Queue = device().graphicQueue()->handle();
   vulkanInitInfo.PipelineCache = VK_NULL_HANDLE;
   vulkanInitInfo.DescriptorPoolSize =
                               IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE;
@@ -90,12 +101,28 @@ GUIWindow::GUIWindow( Device& device,
 
   vulkanInitInfo.UseDynamicRendering = true;
   vulkanInitInfo.PipelineInfoMain = ImGui_ImplVulkan_PipelineInfo{};
+
   VkPipelineRenderingCreateInfoKHR& pipelineInfo =
                     vulkanInitInfo.PipelineInfoMain.PipelineRenderingCreateInfo;
   pipelineInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+
   pipelineInfo.colorAttachmentCount = 1;
   VkFormat targetFormat = swapChain().imageFormat().format;
   pipelineInfo.pColorAttachmentFormats = &targetFormat;
+
+  VkFormat depthFormat = depthBufferFormat();
+  if(depthFormat != VK_FORMAT_UNDEFINED)
+  {
+    const ImageFormatFeatures& formatProps = getFormatFeatures(depthFormat);
+    if(formatProps.hasDepth)
+    {
+      pipelineInfo.depthAttachmentFormat = depthFormat;
+    }
+    if(formatProps.hasStencil)
+    {
+      pipelineInfo.stencilAttachmentFormat = depthFormat;
+    }
+  }
 
   ImGui_ImplVulkan_Init(&vulkanInitInfo);
 }

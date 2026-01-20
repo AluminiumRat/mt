@@ -23,7 +23,9 @@
 MainWindow::MainWindow() :
   GUIWindow(Application::instance().primaryDevice(),
             "Texture processor",
-            VK_PRESENT_MODE_FIFO_KHR),
+            VK_PRESENT_MODE_FIFO_KHR,
+            std::nullopt,
+            VK_FORMAT_UNDEFINED),
   _saveWindowStage(0)
 {
 }

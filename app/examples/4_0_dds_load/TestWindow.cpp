@@ -11,7 +11,11 @@
 using namespace mt;
 
 TestWindow::TestWindow(Device& device) :
-  RenderWindow(device, "Test window"),
+  RenderWindow( device,
+                "Test window",
+                std::nullopt,
+                std::nullopt,
+                VK_FORMAT_UNDEFINED),
   _configurator(new TechniqueConfigurator(device, "Test technique")),
   _technique(new Technique(*_configurator)),
   _pass(_technique->getOrCreatePass("RenderPass")),

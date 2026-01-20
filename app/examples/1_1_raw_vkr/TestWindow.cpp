@@ -11,7 +11,11 @@ using namespace mt;
 static Ref<DescriptorSet> createDescriptorSet(GraphicPipeline& pipeline);
 
 TestWindow::TestWindow(Device& device) :
-  RenderWindow(device, "Vulkan window"),
+  RenderWindow( device,
+                "Vulkan window",
+                std::nullopt,
+                std::nullopt,
+                VK_FORMAT_UNDEFINED),
   _pipeline(_createPipeline()),
   _descriptorSet(_createDescriptorSet(*_pipeline))
 {

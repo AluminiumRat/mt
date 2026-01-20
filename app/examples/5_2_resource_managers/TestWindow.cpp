@@ -13,7 +13,11 @@
 using namespace mt;
 
 TestWindow::TestWindow(Device& device) :
-  RenderWindow(device, "Test window"),
+  RenderWindow( device,
+                "Test window",
+                std::nullopt,
+                std::nullopt,
+                VK_FORMAT_UNDEFINED),
   _asyncQueue(nullptr),
   _textureManager(_fileWatcher, _asyncQueue),
   _bufferManager(_fileWatcher, _asyncQueue),

@@ -18,11 +18,13 @@ using namespace mt;
 RenderWindow::RenderWindow( Device& device,
                             const char* name,
                             std::optional<VkPresentModeKHR> presentationMode,
-                            std::optional<VkSurfaceFormatKHR> format) :
+                            std::optional<VkSurfaceFormatKHR> swapchainFormat,
+                            VkFormat depthBufferFormat) :
   BaseWindow(name),
   _device(device),
   _presentationMode(presentationMode),
-  _format(format)
+  _swapchainFormat(swapchainFormat),
+  _depthBufferFormat(depthBufferFormat)
 {
   try
   {
@@ -45,10 +47,10 @@ void RenderWindow::_createSwapchain()
   _swapChain = Ref<SwapChain>(new SwapChain(_device,
                                             *_surface,
                                             _presentationMode,
-                                            _format));
+                                            _swapchainFormat));
 
   _presentationMode = _swapChain->presentationMode();
-  _format = _swapChain->imageFormat();
+  _swapchainFormat = _swapChain->imageFormat();
 }
 
 RenderWindow::~RenderWindow() noexcept
@@ -84,7 +86,7 @@ void RenderWindow::draw()
         frameIndex++)
     {
       Ref<FrameBuffer> newBuffer =
-                              createFrameBuffer(_swapChain->frame(frameIndex));
+                              _createFrameBuffer(_swapChain->frame(frameIndex));
       _frameBuffers.push_back(newBuffer);
     }
   }
@@ -123,8 +125,31 @@ void RenderWindow::draw()
   frame.present();
 }
 
-Ref<FrameBuffer> RenderWindow::createFrameBuffer(Image& targetColorBuffer)
+Ref<FrameBuffer> RenderWindow::_createFrameBuffer(Image& targetColorBuffer)
 {
+  //  Создаем дэф буфер
+  if(_depthBufferView == nullptr && _depthBufferFormat != VK_FORMAT_UNDEFINED)
+  {
+    Ref _depthBufferImage(new Image(device(),
+                                    VK_IMAGE_TYPE_2D,
+                                    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                                    0,
+                                    _depthBufferFormat,
+                                    targetColorBuffer.extent(),
+                                    targetColorBuffer.samples(),
+                                    1,
+                                    1,
+                                    false,
+                                    "DepthBuffer"));
+    device().graphicQueue()->initImageLayout(
+                              *_depthBufferImage,
+                              VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    _depthBufferView = new ImageView( *_depthBufferImage,
+                                      ImageSlice(*_depthBufferImage),
+                                      VK_IMAGE_VIEW_TYPE_2D);
+  }
+
+  //  Колор буфер делам из Image из свапчейна
   Ref<ImageView> colorTarget(new ImageView( targetColorBuffer,
                                             ImageSlice(targetColorBuffer),
                                             VK_IMAGE_VIEW_TYPE_2D));
@@ -135,9 +160,17 @@ Ref<FrameBuffer> RenderWindow::createFrameBuffer(Image& targetColorBuffer)
                     .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
                     .clearValue = VkClearColorValue{0.05f, 0.1f, 0.05f, 1.0f}};
 
+  FrameBuffer::DepthStencilAttachmentInfo depthAttachment = {
+                                        .target = _depthBufferView.get(),
+                                        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                                        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                                        .clearValue = { .depth = 0,
+                                                        .stencil = 0}};
+
   return Ref<FrameBuffer>(new FrameBuffer(
                                 std::span(&colorAttachment, 1),
-                                nullptr));
+                                _depthBufferView != nullptr ? &depthAttachment :
+                                                              nullptr));
 }
 
 void RenderWindow::drawImplementation(CommandProducerGraphic& commandProducer,
@@ -152,6 +185,7 @@ void RenderWindow::onResize() noexcept
   BaseWindow::onResize();
 
   _deleteSwapchain();
+  _depthBufferView = nullptr;
 
   try
   {

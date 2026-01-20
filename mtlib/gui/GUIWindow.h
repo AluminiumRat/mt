@@ -14,10 +14,17 @@ namespace mt
   class GUIWindow : public RenderWindow
   {
   public:
+    //  presentationMode - режим презентации свапчейна. Если nullopt, то режим
+    //    будет выбран автоматически
+    //  swapchainFormat - формат image в свапчейне. Если nullopt, то формат будет
+    //    выбран автоматически
+    //  bepthBufferFormat - формат деф буфера. Если VK_FORMAT_UNDEFINED, то деф
+    //    буфер не будет использоваться
     GUIWindow(Device& device,
               const char* name,
-              std::optional<VkPresentModeKHR> presentationMode = std::nullopt,
-              std::optional<VkSurfaceFormatKHR> format = std::nullopt);
+              std::optional<VkPresentModeKHR> presentationMode,
+              std::optional<VkSurfaceFormatKHR> swapchainFormat,
+              VkFormat bepthBufferFormat);
     GUIWindow(const GUIWindow&) = delete;
     GUIWindow& operator = (const GUIWindow&) = delete;
     virtual ~GUIWindow() noexcept;
@@ -51,6 +58,7 @@ namespace mt
     class ImguiContextSetter;
 
   private:
+    void _initImGuiVulkanBackend();
     void _clean() noexcept;
 
   private:
