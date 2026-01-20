@@ -164,14 +164,19 @@ void GUIWindow::guiImplementation()
 void GUIWindow::drawImplementation( CommandProducerGraphic& commandProducer,
                                     FrameBuffer& frameBuffer)
 {
+  CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
+  drawGUI(commandProducer);
+  renderPass.endPass();
+}
+
+void GUIWindow::drawGUI(CommandProducerGraphic& commandProducer)
+{
   commandProducer.beginDebugLabel("ImGui");
 
   ImguiContextSetter setter(*_imguiContext, *this);
 
   ImGui::Render();
   ImDrawData* draw_data = ImGui::GetDrawData();
-
-  CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
 
   CommandBuffer& commandBuffer = commandProducer.getOrCreateBuffer();
 
@@ -180,8 +185,6 @@ void GUIWindow::drawImplementation( CommandProducerGraphic& commandProducer,
     {
       ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer.handle());
     });
-
-  renderPass.endPass();
 
   commandProducer.endDebugLabel();
 }

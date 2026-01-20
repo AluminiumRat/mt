@@ -35,6 +35,10 @@ namespace mt
     //  Переопределите и заполните этот метод в потомках
     virtual void guiImplementation();
 
+    //  Отрисовать gui в текущем ренде пасе (не очищая таргет). Можно
+    //  использовать, чтобы отрисовать gui поверх уже отрендеренной сцены
+    void drawGUI(CommandProducerGraphic& commandProducer);
+
   protected:
     virtual void onClose() noexcept override;
     virtual void drawImplementation(CommandProducerGraphic& commandProducer,
