@@ -10,7 +10,8 @@ TechniqueUniformBlock::TechniqueUniformBlock(
                       size_t& revisionCounter) :
   _description(description),
   _technique(technique),
-  _revisionCounter(revisionCounter)
+  _revisionCounter(revisionCounter),
+  _isEmpty(true)
 {
   MT_ASSERT(_description.size != 0);
   _cpuBuffer.resize(_description.size);

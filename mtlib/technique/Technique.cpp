@@ -419,7 +419,8 @@ TechniqueVolatileContext Technique::createVolatileContext(
   //  Копируем данные униформ буферов
   for(const std::unique_ptr<TechniqueUniformBlock>& block : _uniformBlocks)
   {
-    if(block->description().set == DescriptorSetType::VOLATILE)
+    if( block->description().set == DescriptorSetType::VOLATILE &&
+        !block->isEmpty())
     {
       void* dstData = (char*)context.uniformData +
                                     block->description().volatileContextOffset;

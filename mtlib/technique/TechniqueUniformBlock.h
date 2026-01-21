@@ -48,6 +48,9 @@ namespace mt
     inline const void* getData(uint32_t offset) const;
     inline void copyDataTo(void* dst) const;
 
+    //  Возвращает true, если метод ещё setData ни разу не вызывался
+    inline bool isEmpty() const noexcept;
+
     void bindToDescriptorSet(
                         DescriptorSet& set,
                         CommandProducerTransfer& commandProducer,
@@ -57,6 +60,8 @@ namespace mt
     const TechniqueConfiguration::UniformBuffer& _description;
     const Technique& _technique;
     size_t& _revisionCounter;
+
+    bool _isEmpty;
 
     std::vector<char> _cpuBuffer;
   };
@@ -77,6 +82,7 @@ namespace mt
     {
       _revisionCounter++;
     }
+    _isEmpty = false;
   }
 
   inline const void* TechniqueUniformBlock::getData(uint32_t offset) const
@@ -88,5 +94,10 @@ namespace mt
   inline void TechniqueUniformBlock::copyDataTo(void* dst) const
   {
     memcpy(dst, _cpuBuffer.data(), _description.size);
+  }
+
+  inline bool TechniqueUniformBlock::isEmpty() const noexcept
+  {
+    return _isEmpty;
   }
 }

@@ -30,7 +30,6 @@ void UniformVariable::_bindToConfiguration(
   TechniqueUniformBlock* newStorage = _findStorage(descriptions, blocks);
 
   const std::string& nameRef = name();
-  ValueRef valueRef = getValue();
 
   try
   {
@@ -39,6 +38,7 @@ void UniformVariable::_bindToConfiguration(
     else _savedName = std::string();
 
     // Переносим значение
+    ValueRef valueRef = getValue();
     if(valueRef.data != nullptr)
     {
       if( newStorage != nullptr &&
