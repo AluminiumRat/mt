@@ -32,6 +32,7 @@ namespace mt
     inline CommandType& createCommand(Args&&... args);
 
     inline bool empty() const noexcept;
+    inline size_t size() const noexcept;
     inline void clear() noexcept;
 
     void draw(CommandProducerGraphic& producer, Sorting sortingType);
@@ -59,6 +60,11 @@ namespace mt
   inline bool DrawCommandList::empty() const noexcept
   {
     return _commands.empty();
+  }
+
+  inline size_t DrawCommandList::size() const noexcept
+  {
+    return _commands.size();
   }
 
   inline void DrawCommandList::clear() noexcept

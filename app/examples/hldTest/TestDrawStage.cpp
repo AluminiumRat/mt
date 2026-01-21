@@ -1,4 +1,6 @@
-﻿#include <hld/drawCommand/DrawCommandList.h>
+﻿#include <imgui.h>
+
+#include <hld/drawCommand/DrawCommandList.h>
 #include <hld/drawScene/Drawable.h>
 #include <hld/DrawPlan.h>
 #include <hld/FrameContext.h>
@@ -13,7 +15,8 @@
 using namespace mt;
 
 TestDrawStage::TestDrawStage(Device& device) :
-  _stageIndex(HLDLib::instance().getStageIndex(stageName))
+  _stageIndex(HLDLib::instance().getStageIndex(stageName)),
+  _lastFrameCommandsCount(0)
 {
   _createCommonSet(device);
 }
@@ -94,6 +97,13 @@ void TestDrawStage::_processDrawables(FrameContext& frameContext) const
     drawable->addToCommandList(commands, frameContext);
   }
 
+  _lastFrameCommandsCount = commands.size();
+
   commands.draw(*frameContext.commandProducer,
                 DrawCommandList::BY_GROUP_INDEX_SORTING);
+}
+
+void TestDrawStage::makeImGui() const
+{
+  ImGui::Text("Commands: %d", (int)_lastFrameCommandsCount);
 }

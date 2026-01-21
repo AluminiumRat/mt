@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+#include <memory>
+#include <vector>
+
 #include <gui/cameraManipulator/OrbitalCameraManipulator.h>
 #include <gui/GUIWindow.h>
 #include <hld/drawCommand/CommandMemoryPool.h>
@@ -33,6 +36,7 @@ namespace mt
                                     FrameBuffer& frameBuffer) override;
   private:
     void _setupMeshAsset();
+    void _fillScene();
 
   private:
     FrameTypeIndex _frameTypeIndex;
@@ -43,9 +47,7 @@ namespace mt
     Ref<MeshAsset> _meshAsset;
 
     SimpleDrawScene _scene;
-    MeshDrawable _drawable1;
-    MeshDrawable _drawable2;
-    MeshDrawable _drawable3;
+    std::vector<std::unique_ptr<MeshDrawable>> _drawables;
 
     TestDrawStage _drawStage;
 

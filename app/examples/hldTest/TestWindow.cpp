@@ -20,23 +20,13 @@ TestWindow::TestWindow(Device& device) :
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(colorFrameType)),
   _cameraManipulator(CameraManipulator::APPLICATION_WINDOW_LOCATION),
   _meshAsset(new MeshAsset("Test mesh")),
-  _drawable1(*_meshAsset),
-  _drawable2(*_meshAsset),
-  _drawable3(*_meshAsset),
   _drawStage(device),
   _commandMemoryPool(4 * 1024)
 {
   _cameraManipulator.setCamera(&_camera);
 
   _setupMeshAsset();
-
-  _scene.addDrawable(_drawable1);
-
-  _scene.addDrawable(_drawable2);
-  _drawable2.setPositionMatrix(glm::translate(glm::mat4(1), glm::vec3(3, 0, 0)));
-
-  _scene.addDrawable(_drawable3);
-  _drawable3.setPositionMatrix(glm::translate(glm::mat4(1), glm::vec3(0, 3, 0)));
+  _fillScene();
 }
 
 void TestWindow::_setupMeshAsset()
@@ -126,6 +116,22 @@ void TestWindow::_setupMeshAsset()
   _meshAsset->setConfiguration(meshConfig);
 }
 
+void TestWindow::_fillScene()
+{
+  for(int i = -2; i <=2; i++)
+  {
+    for(int j = -2; j <= 2; j++)
+    {
+      std::unique_ptr<MeshDrawable> newDrawable(new MeshDrawable(*_meshAsset));
+      _scene.addDrawable(*newDrawable);
+      glm::mat4 translete =
+                      glm::translate(glm::mat4(1), glm::vec3(i * 3, j * 3, 0));
+      newDrawable->setPositionMatrix(translete);
+      _drawables.push_back(std::move(newDrawable));
+    }
+  }
+}
+
 void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,
                                     FrameBuffer& frameBuffer)
 {
@@ -156,4 +162,11 @@ void TestWindow::guiImplementation()
 
   _cameraManipulator.update(ImVec2(0.0f, 0.0f),
                             ImVec2((float)size().x, (float)size().y));
+
+  ImGuiWindow statisticWindow("Statistic");
+  if(statisticWindow.visible())
+  {
+    _drawStage.makeImGui();
+    statisticWindow.end();
+  }
 }

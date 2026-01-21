@@ -23,6 +23,9 @@ namespace mt
 
     void draw(FrameContext& frameContext) const;
 
+    //  Добавить в текущий контекст ImGui виджеты со статистикой последнего кадра
+    void makeImGui() const;
+
   private:
     void _createCommonSet(Device& device);
     void _updateCommonSet(FrameContext& frameContext) const;
@@ -34,5 +37,7 @@ namespace mt
     Ref<DescriptorSet> _commonDescriptorSet;
     Ref<DataBuffer> _commonUniformBuffer;
     Ref<PipelineLayout> _pipelineLayout;
+
+    mutable size_t _lastFrameCommandsCount;
   };
 }
