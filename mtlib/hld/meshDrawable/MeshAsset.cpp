@@ -25,6 +25,7 @@ void MeshAsset::_clearConfiguration() noexcept
   _technique.reset();
   _vertexCount = 0;
   _maxInstancesCount = 1;
+  _boundingBox.invalidate();
   _availableStages.clear();
   _drawMap.clear();
 }
@@ -49,6 +50,8 @@ void MeshAsset::setConfiguration(const Configuration& configuration)
       _vertexCount = configuration.vertexCount;
       _maxInstancesCount = configuration.maxInstancesCount;
       if(_maxInstancesCount == 0) throw std::runtime_error(_debugName + ": maxInstancesCount is 0");
+
+      _boundingBox = configuration.boundingBox;
 
       for(const PassConfig& passConfig : configuration.passes)
       {

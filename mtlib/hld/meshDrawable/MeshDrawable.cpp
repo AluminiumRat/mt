@@ -7,7 +7,7 @@
 using namespace mt;
 
 MeshDrawable::MeshDrawable(const MeshAsset& asset) :
-  Drawable(COMMANDS_DRAW),
+  Drawable3D(COMMANDS_DRAW),
   _onAssetUpdatedSlot(*this, &MeshDrawable::onAssetUpdated),
   _positionMatrix(1),
   _prevPositionMatrix(1),
@@ -27,6 +27,7 @@ void MeshDrawable::setPositionMatrix(const glm::mat4& newValue)
 {
   _positionMatrix = newValue;
   _updateBivecMatrix();
+  _updateBoundingBox();
 }
 
 void MeshDrawable::setPrevPositionMatrix(const glm::mat4& newValue)
@@ -44,9 +45,15 @@ void MeshDrawable::_updateBivecMatrix() noexcept
   _bivecMatrix = glm::transpose(_bivecMatrix);
 }
 
+void MeshDrawable::_updateBoundingBox() noexcept
+{
+  setBoundingBox(_asset->boundingBox().translated(_positionMatrix));
+}
+
 void MeshDrawable::onAssetUpdated()
 {
   _updateBivecMatrix();
+  _updateBoundingBox();
 }
 
 void MeshDrawable::addToDrawPlan( DrawPlan& plan,

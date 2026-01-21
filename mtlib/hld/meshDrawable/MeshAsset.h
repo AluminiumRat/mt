@@ -8,6 +8,7 @@
 #include <hld/FrameTypeIndex.h>
 #include <hld/StageIndex.h>
 #include <technique/Technique.h>
+#include <util/AABB.h>
 #include <util/Ref.h>
 #include <util/RefCounter.h>
 #include <util/Signal.h>
@@ -43,6 +44,7 @@ namespace mt
       std::vector<PassConfig> passes;
       uint32_t vertexCount;
       uint32_t maxInstancesCount;
+      AABB boundingBox;
     };
 
     //  Набор доступных стадий для одного отдельного фрэйм-типа
@@ -94,6 +96,8 @@ namespace mt
     inline uint32_t vertexCount() const noexcept;
     inline uint32_t maxInstancesCount() const noexcept;
 
+    inline const AABB& boundingBox() const noexcept;
+
     //  Какие стадии поддерживаются для отдельного фрэйм-типа
     inline const StageIndices& availableStages(
                                   FrameTypeIndex frameTypeIndex) const noexcept;
@@ -117,6 +121,8 @@ namespace mt
     Ref<Technique> _technique;
     uint32_t _vertexCount;
     uint32_t _maxInstancesCount;
+
+    AABB _boundingBox;
 
     UniformVariable* _positionMatrixUniform;
     UniformVariable* _prevPositionMatrixUniform;
@@ -201,6 +207,11 @@ namespace mt
   inline uint32_t MeshAsset::maxInstancesCount() const noexcept
   {
     return _maxInstancesCount;
+  }
+
+  inline const AABB& MeshAsset::boundingBox() const noexcept
+  {
+    return _boundingBox;
   }
 
   inline const MeshAsset::StageIndices& MeshAsset::availableStages(

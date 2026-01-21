@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-#include <hld/drawScene/Drawable.h>
+#include <hld/drawScene/Drawable3D.h>
 #include <hld/meshDrawable/MeshAsset.h>
 #include <util/Ref.h>
 #include <util/Signal.h>
@@ -17,7 +17,7 @@ namespace mt
   //      отрисовки и все общие данные
   //    Меш дравэйбл(MeshDrawable) - конкретный экземпляр на сцене. Отвечает
   //      за индивидуальные данные (положение, тинт и т.д)
-  class MeshDrawable : public Drawable
+  class MeshDrawable : public Drawable3D
   {
   public:
     explicit MeshDrawable(const MeshAsset& asset);
@@ -52,6 +52,7 @@ namespace mt
 
   private:
     void _updateBivecMatrix() noexcept;
+    void _updateBoundingBox() noexcept;
 
   private:
     ConstRef<MeshAsset> _asset;

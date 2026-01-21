@@ -4,6 +4,7 @@
 
 namespace mt
 {
+  class Drawable3D;
   class DrawCommandList;
   class DrawPlan;
   class FrameContext;
@@ -53,6 +54,10 @@ namespace mt
     //    случае поведение метода не определено
     virtual void addToCommandList(DrawCommandList& commandList,
                                   const FrameContext& frameContext) const;
+
+    virtual Drawable3D* asDrawable3D() noexcept;
+    virtual const Drawable3D* asDrawable3D() const noexcept;
+
   private:
     DrawType _drawType;
   };

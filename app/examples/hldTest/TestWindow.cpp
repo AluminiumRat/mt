@@ -121,6 +121,8 @@ void TestWindow::_setupMeshAsset()
   meshConfig.vertexCount = sizeof(positions) / sizeof(positions[0]);
   meshConfig.maxInstancesCount = 2;
 
+  meshConfig.boundingBox = AABB(-1, -1, -1, 1, 1, 1);
+
   _meshAsset->setConfiguration(meshConfig);
 }
 
