@@ -32,7 +32,11 @@ namespace mt
   
     inline const Plane& face(Face face) const noexcept;
 
+    //  Проверить, есть ли пересечение со сферой
     inline bool intersect(const Sphere& sphere) const noexcept;
+
+    //  Проверить, есть ли пересечение с AABB
+    inline bool intersect(const AABB& box) const noexcept;
 
     //  Применить матрицу преобразования
     //  Под капотом использует инвертирование-транспонирование матрицы
@@ -61,6 +65,18 @@ namespace mt
     for(const Plane& face : _faces)
     {
       if (face.signedDistance(sphere.center) > sphere.radius) return false;
+    }
+
+    return true;
+  }
+
+  inline bool ViewFrustum::intersect(const AABB& box) const noexcept
+  {
+    if(!box.valid()) return false;
+
+    for (const Plane& face : _faces)
+    {
+      if (!face.isBoxBelow(box)) return false;
     }
 
     return true;

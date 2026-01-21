@@ -52,6 +52,7 @@ void MeshAsset::setConfiguration(const Configuration& configuration)
       if(_maxInstancesCount == 0) throw std::runtime_error(_debugName + ": maxInstancesCount is 0");
 
       _boundingBox = configuration.boundingBox;
+      if(!_boundingBox.valid()) _boundingBox = AABB(0, 0, 0, 0, 0, 0);
 
       for(const PassConfig& passConfig : configuration.passes)
       {

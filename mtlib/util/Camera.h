@@ -62,8 +62,11 @@ namespace mt
     inline float nearDistance() const noexcept;
     inline float farDistance() const noexcept;
 
-    /// Результирующий фрустумв view пространстве
+    /// Вью фрустум в view пространстве
     inline const ViewFrustum& frustum() const noexcept;
+
+    /// Вью фрустум в мировом пространстве
+    inline ViewFrustum worldFrustum() const noexcept;
 
     ///   Получить направление из eyePoint. Результат в той же системе
     ///     координат, в которой находится камера
@@ -145,6 +148,13 @@ namespace mt
   inline const ViewFrustum& Camera::frustum() const noexcept
   {
     return _frustum;
+  }
+
+  inline ViewFrustum Camera::worldFrustum() const noexcept
+  {
+    ViewFrustum translatedFrustum(_frustum);
+    translatedFrustum.translate(_transformMatrix);
+    return translatedFrustum;
   }
 
   inline Camera::ShaderData Camera::makeShaderData() const noexcept
