@@ -123,7 +123,7 @@ void TestWindow::_fillScene()
     for(int j = -2; j <= 2; j++)
     {
       std::unique_ptr<MeshDrawable> newDrawable(new MeshDrawable(*_meshAsset));
-      _scene.addDrawable(*newDrawable);
+      _scene.registerDrawable(*newDrawable);
       glm::mat4 translete =
                       glm::translate(glm::mat4(1), glm::vec3(i * 3, j * 3, 0));
       newDrawable->setPositionMatrix(translete);

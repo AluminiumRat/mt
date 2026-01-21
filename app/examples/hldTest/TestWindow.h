@@ -6,7 +6,7 @@
 #include <gui/cameraManipulator/OrbitalCameraManipulator.h>
 #include <gui/GUIWindow.h>
 #include <hld/drawCommand/CommandMemoryPool.h>
-#include <hld/drawScene/SimpleDrawScene.h>
+#include <hld/drawScene/DrawScene.h>
 #include <hld/meshDrawable/MeshAsset.h>
 #include <hld/meshDrawable/MeshDrawable.h>
 #include <hld/DrawPlan.h>
@@ -46,7 +46,7 @@ namespace mt
 
     Ref<MeshAsset> _meshAsset;
 
-    SimpleDrawScene _scene;
+    DrawScene _scene;
     std::vector<std::unique_ptr<MeshDrawable>> _drawables;
 
     TestDrawStage _drawStage;
