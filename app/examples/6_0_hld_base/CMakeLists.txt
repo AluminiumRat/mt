@@ -1,6 +1,6 @@
 ﻿cmake_minimum_required (VERSION 3.10)
 
-project (hld_Test)
+project (hld_base)
 
 include_directories(.
                     ../../../mtlib
@@ -9,12 +9,12 @@ include_directories(.
                     ${VKMEMALLOC_PATH}
                     ${IMGUI_PATH})
 
-add_executable (hld_Test
+add_executable (hld_base
                 "main.cpp"
                 "TestDrawStage.cpp"
                 "TestWindow.cpp")
 
-target_link_libraries(hld_Test
+target_link_libraries(hld_base
                       ${Vulkan_LIBRARIES}
                       ${Shaderc_LIBRARIES}
                       ${GLFW_PATH}/lib-vc2022/glfw3.lib
