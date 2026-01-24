@@ -10,7 +10,7 @@
 #include <hld/FrameTypeIndex.h>
 #include <util/Ref.h>
 #include <vkr/image/Image.h>
-#include <vkr/pipeline/DescriptorSetLayout.h>
+#include <vkr/pipeline/DescriptorSet.h>
 #include <vkr/pipeline/PipelineLayout.h>
 #include <vkr/DataBuffer.h>
 #include <vkr/FrameBuffer.h>
@@ -53,9 +53,8 @@ namespace mt
                       CommandProducerGraphic& commandProducer);
 
   private:
-    void _updateBuffers(FrameBuffer& targetFrameBuffer,
-                        CommandProducerGraphic& producer);
-    void _bindCommonSet(ColorFrameContext& context);
+    void _updateBuffers(FrameBuffer& targetFrameBuffer);
+    Ref<DescriptorSet> _buildCommonSet(ColorFrameContext& context);
 
   private:
     Device& _device;

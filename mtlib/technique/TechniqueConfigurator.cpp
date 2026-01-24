@@ -130,7 +130,15 @@ void TechniqueConfigurator::_createLayouts(
     binding.binding = resource.bindingIndex;
     binding.descriptorType = resource.type;
     binding.descriptorCount = resource.count;
-    binding.stageFlags = resource.shaderStages;
+    if(resource.set != DescriptorSetType::COMMON)
+    {
+      binding.stageFlags = resource.shaderStages;
+    }
+    else
+    {
+      binding.stageFlags =  VK_SHADER_STAGE_ALL_GRAPHICS |
+                            VK_SHADER_STAGE_COMPUTE_BIT;
+    }
 
     uint32_t setIndex = uint32_t(resource.set);
     bindings[setIndex].push_back(binding);

@@ -4,6 +4,7 @@
 #include <hld/drawScene/Drawable.h>
 #include <hld/DrawPlan.h>
 #include <hld/HLDLib.h>
+#include <technique/DescriptorSetType.h>
 #include <util/Assert.h>
 #include <vkr/image/ImageView.h>
 #include <vkr/queue/CommandProducerGraphic.h>
@@ -16,7 +17,9 @@ OpaqueColorStage::OpaqueColorStage(Device& device) :
 {
 }
 
-void OpaqueColorStage::draw(ColorFrameContext& frameContext)
+void OpaqueColorStage::draw(ColorFrameContext& frameContext,
+                            const DescriptorSet& commonDescriptorSet,
+                            const PipelineLayout& commonSetPipelineLayout)
 {
   MT_ASSERT(_hdrBuffer != nullptr);
   MT_ASSERT(_depthBuffer != nullptr);
@@ -39,8 +42,18 @@ void OpaqueColorStage::draw(ColorFrameContext& frameContext)
 
     CommandProducerGraphic::RenderPass renderPass(*frameContext.commandProducer,
                                                   *_frameBuffer);
+
+    frameContext.commandProducer->bindDescriptorSetGraphic(
+                                            commonDescriptorSet,
+                                            (uint32_t)DescriptorSetType::COMMON,
+                                            commonSetPipelineLayout);
+
       commands.draw(*frameContext.commandProducer,
                     DrawCommandList::BY_GROUP_INDEX_SORTING);
+
+    frameContext.commandProducer->unbindDescriptorSetGraphic(
+                                          (uint32_t)DescriptorSetType::COMMON);
+
     renderPass.endPass();
 
     frameContext.frameBuffer = nullptr;

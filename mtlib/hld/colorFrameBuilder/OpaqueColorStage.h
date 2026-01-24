@@ -8,7 +8,9 @@
 namespace mt
 {
   struct ColorFrameContext;
+  class DescriptorSet;
   class Device;
+  class PipelineLayout;
 
   class OpaqueColorStage
   {
@@ -21,7 +23,9 @@ namespace mt
     OpaqueColorStage& operator = (const OpaqueColorStage&) = delete;
     virtual ~OpaqueColorStage() noexcept = default;
 
-    void draw(ColorFrameContext& frameContext);
+    void draw(ColorFrameContext& frameContext,
+              const DescriptorSet& commonDescriptorSet,
+              const PipelineLayout& commonSetPipelineLayout);
 
     inline void setHdrBuffer(Image& newBuffer) noexcept;
     inline void setDepthBuffer(Image& newBuffer) noexcept;

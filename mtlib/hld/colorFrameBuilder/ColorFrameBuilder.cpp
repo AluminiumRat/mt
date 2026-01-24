@@ -24,7 +24,7 @@ ColorFrameBuilder::ColorFrameBuilder(Device& device) :
                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
   commonSetBindings[cameraBufferBinding].descriptorCount = 1;
   commonSetBindings[cameraBufferBinding].stageFlags =
-                                                  VK_SHADER_STAGE_ALL_GRAPHICS;
+                    VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT;
 
   commonSetBindings[illuminationBufferBinding] = {};
   commonSetBindings[illuminationBufferBinding].binding = 1;
@@ -32,7 +32,7 @@ ColorFrameBuilder::ColorFrameBuilder(Device& device) :
                                               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
   commonSetBindings[illuminationBufferBinding].descriptorCount = 1;
   commonSetBindings[illuminationBufferBinding].stageFlags =
-                                                  VK_SHADER_STAGE_ALL_GRAPHICS;
+                    VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT;
 
   _commonSetLayout = new DescriptorSetLayout(_device, commonSetBindings);
 
@@ -62,16 +62,17 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
   frameContext.viewCamera = &viewCamera;
   frameContext.illumination = &illumination;
 
+  Ref<DescriptorSet> commonSet;
   {
     //  Подготовительные работы
-    std::unique_ptr<CommandProducerGraphic> initProducer =
+    /*std::unique_ptr<CommandProducerGraphic> initProducer =
                                         _device.graphicQueue()->startCommands();
-    frameContext.commandProducer = initProducer.get();
+    frameContext.commandProducer = initProducer.get();*/
 
-    _updateBuffers(target, *initProducer);
+    _updateBuffers(target);
 
-    frameContext.commandProducer = nullptr;
-    _device.graphicQueue()->submitCommands(std::move(initProducer));
+    /*frameContext.commandProducer = nullptr;
+    _device.graphicQueue()->submitCommands(std::move(initProducer));*/
   }
 
   {
@@ -80,10 +81,9 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
                                         _device.graphicQueue()->startCommands();
     frameContext.commandProducer = opaqueProducer.get();
 
-    _bindCommonSet(frameContext);
-      _opaqueColorStage.draw(frameContext);
-    opaqueProducer->unbindDescriptorSetGraphic(
-                                          (uint32_t)DescriptorSetType::COMMON);
+    commonSet = _buildCommonSet(frameContext);
+
+    _opaqueColorStage.draw(frameContext, *commonSet, *_commonSetPipelineLayout);
 
     frameContext.commandProducer = nullptr;
     _device.graphicQueue()->submitCommands(std::move(opaqueProducer));
@@ -108,8 +108,7 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
   }
 }
 
-void ColorFrameBuilder::_updateBuffers( FrameBuffer& targetFrameBuffer,
-                                        CommandProducerGraphic& producer)
+void ColorFrameBuilder::_updateBuffers( FrameBuffer& targetFrameBuffer)
 {
   if (_hdrBuffer == nullptr ||
       glm::uvec2(_hdrBuffer->extent()) != targetFrameBuffer.extent())
@@ -147,7 +146,8 @@ void ColorFrameBuilder::_updateBuffers( FrameBuffer& targetFrameBuffer,
   }
 }
 
-void ColorFrameBuilder::_bindCommonSet( ColorFrameContext& context)
+Ref<DescriptorSet> ColorFrameBuilder::_buildCommonSet(
+                                                    ColorFrameContext& context)
 {
   Camera::ShaderData cameraData = context.viewCamera->makeShaderData();
   UniformMemoryPool::MemoryInfo uploadedCameraData =
@@ -166,8 +166,5 @@ void ColorFrameBuilder::_bindCommonSet( ColorFrameContext& context)
                                           illuminationBufferBinding);
   commonDescriptorSet->finalize();
 
-  context.commandProducer->bindDescriptorSetGraphic(
-                                            *commonDescriptorSet,
-                                            (uint32_t)DescriptorSetType::COMMON,
-                                            *_commonSetPipelineLayout);
+  return commonDescriptorSet;
 }

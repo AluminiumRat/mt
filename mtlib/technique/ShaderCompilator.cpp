@@ -159,13 +159,13 @@ std::vector<char> ShaderCompilator::compile(
   std::string shaderText = ContentLoader::getLoader().loadText(file);
   if (shaderText.empty()) throw std::runtime_error(shaderFilename + " : file is empty");
 
-  // Настраиваем макросы
   shaderc::CompileOptions options;
   options.SetOptimizationLevel(shaderc_optimization_level_performance);
   options.SetGenerateDebugInfo();
   options.SetWarningsAsErrors();
   options.SetAutoBindUniforms(true);
   options.SetAutoMapLocations(true);
+  options.SetPreserveBindings(true);
   options.AddMacroDefinition("M_PI", "3.1415926535897932384626433832795f");
   options.AddMacroDefinition("COMMON", "0");
   options.AddMacroDefinition("STATIC", "1");
