@@ -16,7 +16,6 @@ namespace mt
   {
   public:
     const DrawPlan* drawPlan;
-    const FrameBuffer* frameBuffer;
     const Camera* viewCamera;
     CommandProducerGraphic* commandProducer;
   };

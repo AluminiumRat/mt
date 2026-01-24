@@ -19,7 +19,6 @@ set(SOURCES
     "meshDrawable/MeshDrawCommand.cpp"
     "drawScene/Drawable3D.cpp"
     "drawScene/DrawScene.cpp"
-    "FrameContext.cpp"
     "HLDLib.cpp")
 
 add_library(hld

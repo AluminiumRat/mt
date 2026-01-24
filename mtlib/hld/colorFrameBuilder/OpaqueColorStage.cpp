@@ -35,7 +35,6 @@ void OpaqueColorStage::draw(FrameContext& frameContext,
     _initBuffersLayout(*frameContext.commandProducer);
 
     if(_frameBuffer == nullptr) _buildFrameBuffer();
-    frameContext.frameBuffer = _frameBuffer.get();
 
     const std::vector<const Drawable*>& drawables =
                                   frameContext.drawPlan->stagePlan(_stageIndex);
@@ -64,7 +63,6 @@ void OpaqueColorStage::draw(FrameContext& frameContext,
 
     renderPass.endPass();
 
-    frameContext.frameBuffer = nullptr;
   frameContext.commandProducer->endDebugLabel();
 }
 

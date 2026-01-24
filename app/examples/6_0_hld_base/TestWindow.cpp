@@ -141,7 +141,6 @@ void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,
 
   FrameContext frameContext{};
   frameContext.drawPlan = &_drawPlan;
-  frameContext.frameBuffer = &frameBuffer;
   frameContext.commandProducer = &commandProducer;
   frameContext.viewCamera = &_camera;
 
