@@ -1,5 +1,4 @@
-﻿#include <hld/FrameContext.h>
-#include <hld/colorFrameBuilder/OpaqueColorStage.h>
+﻿#include <hld/colorFrameBuilder/OpaqueColorStage.h>
 #include <hld/drawCommand/DrawCommandList.h>
 #include <hld/drawScene/Drawable.h>
 #include <hld/DrawPlan.h>
@@ -22,7 +21,7 @@ OpaqueColorStage::OpaqueColorStage( Device& device,
 }
 
 void OpaqueColorStage::draw(CommandProducerGraphic& commandProducer,
-                            FrameContext& frameContext,
+                            const DrawPlan& drawPlan,
                             const DescriptorSet& commonDescriptorSet,
                             const PipelineLayout& commonSetPipelineLayout)
 {
@@ -37,9 +36,7 @@ void OpaqueColorStage::draw(CommandProducerGraphic& commandProducer,
 
     if(_frameBuffer == nullptr) _buildFrameBuffer();
 
-    const std::vector<const Drawable*>& drawables =
-                                  frameContext.drawPlan->stagePlan(_stageIndex);
-    for(const Drawable* drawable : drawables)
+    for(const Drawable* drawable : drawPlan.stagePlan(_stageIndex))
     {
       MT_ASSERT(drawable->drawType() == Drawable::COMMANDS_DRAW);
       drawable->addToCommandList( _drawCommands,

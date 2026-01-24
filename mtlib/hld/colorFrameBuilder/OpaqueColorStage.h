@@ -11,9 +11,9 @@
 namespace mt
 {
   class CommandProducerGraphic;
-  class FrameContext;
   class DescriptorSet;
   class Device;
+  class DrawPlan;
   class PipelineLayout;
 
   class OpaqueColorStage
@@ -28,7 +28,7 @@ namespace mt
     virtual ~OpaqueColorStage() noexcept = default;
 
     void draw(CommandProducerGraphic& commandProducer,
-              FrameContext& frameContext,
+              const DrawPlan& drawPlan,
               const DescriptorSet& commonDescriptorSet,
               const PipelineLayout& commonSetPipelineLayout);
 

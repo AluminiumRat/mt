@@ -2,7 +2,6 @@
 
 #include <ddsSupport/ddsSupport.h>
 #include <gui/ImGuiRAII.h>
-#include <hld/FrameContext.h>
 #include <hld/HLDLib.h>
 #include <technique/TechniqueLoader.h>
 #include <vkr/image/ImageView.h>
@@ -139,13 +138,9 @@ void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,
 
   _scene.fillDrawPlan(_drawPlan, _camera, _frameTypeIndex);
 
-  FrameContext frameContext{};
-  frameContext.drawPlan = &_drawPlan;
-  frameContext.viewCamera = &_camera;
-
   CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
 
-  _drawStage.draw(commandProducer, frameContext);
+  _drawStage.draw(commandProducer, _drawPlan, _camera);
   drawGUI(commandProducer);
 
   renderPass.endPass();

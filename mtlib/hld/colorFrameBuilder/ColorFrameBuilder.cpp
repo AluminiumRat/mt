@@ -1,7 +1,6 @@
 ﻿#include <hld/colorFrameBuilder/ColorFrameBuilder.h>
 #include <hld/colorFrameBuilder/GlobalLight.h>
 #include <hld/drawScene/DrawScene.h>
-#include <hld/FrameContext.h>
 #include <hld/HLDLib.h>
 #include <technique/DescriptorSetType.h>
 #include <util/Camera.h>
@@ -55,10 +54,6 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
 
   scene.fillDrawPlan(_drawPlan, viewCamera, _frameTypeIndex);
 
-  FrameContext frameContext{};
-  frameContext.drawPlan = &_drawPlan;
-  frameContext.viewCamera = &viewCamera;
-
   {
     //  Подготовительные работы
     _updateBuffers(target);
@@ -70,11 +65,11 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
                                         _device.graphicQueue()->startCommands();
 
     Ref<DescriptorSet> commonSet = _buildCommonSet( *opaqueProducer,
-                                                    frameContext,
+                                                    viewCamera,
                                                     illumination);
 
     _opaqueColorStage.draw( *opaqueProducer,
-                            frameContext,
+                            _drawPlan,
                             *commonSet,
                             *_commonSetPipelineLayout);
 
@@ -136,10 +131,10 @@ void ColorFrameBuilder::_updateBuffers( FrameBuffer& targetFrameBuffer)
 
 Ref<DescriptorSet> ColorFrameBuilder::_buildCommonSet(
                                         CommandProducerGraphic& commandProducer,
-                                        FrameContext& context,
+                                        const Camera& camera,
                                         const GlobalLight& illumination)
 {
-  Camera::ShaderData cameraData = context.viewCamera->makeShaderData();
+  Camera::ShaderData cameraData = camera.makeShaderData();
   UniformMemoryPool::MemoryInfo uploadedCameraData =
                       commandProducer.uniformMemorySession().write(cameraData);
   commandProducer.copyFromBufferToBuffer( *uploadedCameraData.buffer,

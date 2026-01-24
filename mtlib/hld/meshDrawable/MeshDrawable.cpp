@@ -2,7 +2,6 @@
 #include <hld/meshDrawable/MeshDrawable.h>
 #include <hld/meshDrawable/MeshDrawCommand.h>
 #include <hld/DrawPlan.h>
-#include <hld/FrameContext.h>
 
 using namespace mt;
 

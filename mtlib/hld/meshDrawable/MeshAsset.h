@@ -18,7 +18,6 @@ namespace mt
 {
   class CommandProducerGraphic;
   class DrawCommandList;
-  class FrameContext;
 
   //  Разделяемые данные для MeshDrawable
   //  Позволяет переиспользовать данные для отрисовки одинаковых мешей

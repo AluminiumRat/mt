@@ -2,7 +2,6 @@
 
 #include <hld/drawScene/Drawable.h>
 #include <hld/DrawPlan.h>
-#include <hld/FrameContext.h>
 #include <hld/HLDLib.h>
 #include <technique/DescriptorSetType.h>
 #include <util/Camera.h>
@@ -54,16 +53,17 @@ void TestDrawStage::_createCommonSet(Device& device)
 }
 
 void TestDrawStage::draw( CommandProducerGraphic& commandProducer,
-                          FrameContext& frameContext)
+                          const DrawPlan& drawPlan,
+                          const Camera& camera)
 {
   commandProducer.beginDebugLabel(stageName);
 
-    _updateCommonSet(commandProducer, frameContext);
+    _updateCommonSet(commandProducer, camera);
     commandProducer.bindDescriptorSetGraphic(
                                             *_commonDescriptorSet,
                                             (uint32_t)DescriptorSetType::COMMON,
                                             *_pipelineLayout);
-      _processDrawables(commandProducer, frameContext);
+      _processDrawables(commandProducer, drawPlan);
 
     commandProducer.unbindDescriptorSetGraphic(
                                           (uint32_t)DescriptorSetType::COMMON);
@@ -71,9 +71,9 @@ void TestDrawStage::draw( CommandProducerGraphic& commandProducer,
 }
 
 void TestDrawStage::_updateCommonSet( CommandProducerGraphic& commandProducer,
-                                      FrameContext& frameContext)
+                                      const Camera& camera)
 {
-  Camera::ShaderData cameraData = frameContext.viewCamera->makeShaderData();
+  Camera::ShaderData cameraData = camera.makeShaderData();
   UniformMemoryPool::MemoryInfo uploadedData =
                       commandProducer.uniformMemorySession().write(cameraData);
   commandProducer.uniformBufferTransfer(*uploadedData.buffer,
@@ -84,14 +84,12 @@ void TestDrawStage::_updateCommonSet( CommandProducerGraphic& commandProducer,
 }
 
 void TestDrawStage::_processDrawables(CommandProducerGraphic& commandProducer,
-                                      FrameContext& frameContext)
+                                      const DrawPlan& drawPlan)
 {
   _drawCommands.clear();
   _commandMemoryPool.reset();
 
-  const std::vector<const Drawable*>& drawables =
-                                  frameContext.drawPlan->stagePlan(_stageIndex);
-  for(const Drawable* drawable : drawables)
+  for(const Drawable* drawable : drawPlan.stagePlan(_stageIndex))
   {
     MT_ASSERT(drawable->drawType() == Drawable::COMMANDS_DRAW);
     drawable->addToCommandList( _drawCommands,
