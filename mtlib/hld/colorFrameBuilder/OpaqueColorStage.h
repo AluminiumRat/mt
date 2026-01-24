@@ -27,7 +27,8 @@ namespace mt
     OpaqueColorStage& operator = (const OpaqueColorStage&) = delete;
     virtual ~OpaqueColorStage() noexcept = default;
 
-    void draw(FrameContext& frameContext,
+    void draw(CommandProducerGraphic& commandProducer,
+              FrameContext& frameContext,
               const DescriptorSet& commonDescriptorSet,
               const PipelineLayout& commonSetPipelineLayout);
 

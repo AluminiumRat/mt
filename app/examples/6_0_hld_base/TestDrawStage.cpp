@@ -53,39 +53,38 @@ void TestDrawStage::_createCommonSet(Device& device)
                                         std::span(&commonSetLayout, 1));
 }
 
-void TestDrawStage::draw(FrameContext& frameContext)
+void TestDrawStage::draw( CommandProducerGraphic& commandProducer,
+                          FrameContext& frameContext)
 {
-  frameContext.commandProducer->beginDebugLabel(stageName);
+  commandProducer.beginDebugLabel(stageName);
 
-  _updateCommonSet(frameContext);
-
-  frameContext.commandProducer->bindDescriptorSetGraphic(
+    _updateCommonSet(commandProducer, frameContext);
+    commandProducer.bindDescriptorSetGraphic(
                                             *_commonDescriptorSet,
                                             (uint32_t)DescriptorSetType::COMMON,
                                             *_pipelineLayout);
-  _processDrawables(frameContext);
+      _processDrawables(commandProducer, frameContext);
 
-  frameContext.commandProducer->unbindDescriptorSetGraphic(
+    commandProducer.unbindDescriptorSetGraphic(
                                           (uint32_t)DescriptorSetType::COMMON);
-
-  frameContext.commandProducer->endDebugLabel();
+  commandProducer.endDebugLabel();
 }
 
-void TestDrawStage::_updateCommonSet(FrameContext& frameContext)
+void TestDrawStage::_updateCommonSet( CommandProducerGraphic& commandProducer,
+                                      FrameContext& frameContext)
 {
-  CommandProducerGraphic* commandProducer = frameContext.commandProducer;
-
   Camera::ShaderData cameraData = frameContext.viewCamera->makeShaderData();
   UniformMemoryPool::MemoryInfo uploadedData =
-                      commandProducer->uniformMemorySession().write(cameraData);
-  commandProducer->uniformBufferTransfer( *uploadedData.buffer,
-                                          *_commonUniformBuffer,
-                                          uploadedData.offset,
-                                          0,
-                                          sizeof(Camera::ShaderData));
+                      commandProducer.uniformMemorySession().write(cameraData);
+  commandProducer.uniformBufferTransfer(*uploadedData.buffer,
+                                        *_commonUniformBuffer,
+                                        uploadedData.offset,
+                                        0,
+                                        sizeof(Camera::ShaderData));
 }
 
-void TestDrawStage::_processDrawables(FrameContext& frameContext)
+void TestDrawStage::_processDrawables(CommandProducerGraphic& commandProducer,
+                                      FrameContext& frameContext)
 {
   _drawCommands.clear();
   _commandMemoryPool.reset();
@@ -103,7 +102,7 @@ void TestDrawStage::_processDrawables(FrameContext& frameContext)
 
   _lastFrameCommandsCount = _drawCommands.size();
 
-  _drawCommands.draw( *frameContext.commandProducer,
+  _drawCommands.draw( commandProducer,
                       DrawCommandList::BY_GROUP_INDEX_SORTING);
 }
 

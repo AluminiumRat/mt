@@ -59,49 +59,40 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
   frameContext.drawPlan = &_drawPlan;
   frameContext.viewCamera = &viewCamera;
 
-  Ref<DescriptorSet> commonSet;
   {
     //  Подготовительные работы
-    /*std::unique_ptr<CommandProducerGraphic> initProducer =
-                                        _device.graphicQueue()->startCommands();
-    frameContext.commandProducer = initProducer.get();*/
-
     _updateBuffers(target);
-
-    /*frameContext.commandProducer = nullptr;
-    _device.graphicQueue()->submitCommands(std::move(initProducer));*/
   }
 
   {
     //  Opaque проход
     std::unique_ptr<CommandProducerGraphic> opaqueProducer =
                                         _device.graphicQueue()->startCommands();
-    frameContext.commandProducer = opaqueProducer.get();
 
-    commonSet = _buildCommonSet(frameContext, illumination);
+    Ref<DescriptorSet> commonSet = _buildCommonSet( *opaqueProducer,
+                                                    frameContext,
+                                                    illumination);
 
-    _opaqueColorStage.draw(frameContext, *commonSet, *_commonSetPipelineLayout);
+    _opaqueColorStage.draw( *opaqueProducer,
+                            frameContext,
+                            *commonSet,
+                            *_commonSetPipelineLayout);
 
-    frameContext.commandProducer = nullptr;
     _device.graphicQueue()->submitCommands(std::move(opaqueProducer));
   }
 
   {
     //  Сборка конечного кадра
-    frameContext.commandProducer = &commandProducer;
-
     commandProducer.beginDebugLabel("LDRStage");
       CommandProducerGraphic::RenderPass renderPass(commandProducer, target);
         if(imGuiDraw)
         {
           commandProducer.beginDebugLabel("ImGui");
           imGuiDraw(commandProducer);
-          frameContext.commandProducer->endDebugLabel();
+          commandProducer.endDebugLabel();
         }
       renderPass.endPass();
-    frameContext.commandProducer->endDebugLabel();
-
-    frameContext.commandProducer = nullptr;
+    commandProducer.endDebugLabel();
   }
 }
 
@@ -144,20 +135,21 @@ void ColorFrameBuilder::_updateBuffers( FrameBuffer& targetFrameBuffer)
 }
 
 Ref<DescriptorSet> ColorFrameBuilder::_buildCommonSet(
-                                                FrameContext& context,
-                                                const GlobalLight& illumination)
+                                        CommandProducerGraphic& commandProducer,
+                                        FrameContext& context,
+                                        const GlobalLight& illumination)
 {
   Camera::ShaderData cameraData = context.viewCamera->makeShaderData();
   UniformMemoryPool::MemoryInfo uploadedCameraData =
-              context.commandProducer->uniformMemorySession().write(cameraData);
-  context.commandProducer->copyFromBufferToBuffer(*uploadedCameraData.buffer,
-                                                  *_cameraBuffer,
-                                                  uploadedCameraData.offset,
-                                                  0,
-                                                  sizeof(Camera::ShaderData));
+                      commandProducer.uniformMemorySession().write(cameraData);
+  commandProducer.copyFromBufferToBuffer( *uploadedCameraData.buffer,
+                                          *_cameraBuffer,
+                                          uploadedCameraData.offset,
+                                          0,
+                                          sizeof(Camera::ShaderData));
 
   Ref<DescriptorSet> commonDescriptorSet =
-      context.commandProducer->descriptorPool().allocateSet(*_commonSetLayout);
+                commandProducer.descriptorPool().allocateSet(*_commonSetLayout);
   commonDescriptorSet->attachUniformBuffer(*_cameraBuffer, cameraBufferBinding);
   commonDescriptorSet->attachUniformBuffer( illumination.uniformBuffer(),
                                             illuminationBufferBinding);

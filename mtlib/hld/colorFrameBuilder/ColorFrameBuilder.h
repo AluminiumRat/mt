@@ -54,7 +54,8 @@ namespace mt
 
   private:
     void _updateBuffers(FrameBuffer& targetFrameBuffer);
-    Ref<DescriptorSet> _buildCommonSet( FrameContext& context,
+    Ref<DescriptorSet> _buildCommonSet( CommandProducerGraphic& commandProducer,
+                                        FrameContext& context,
                                         const GlobalLight& illumination);
 
   private:

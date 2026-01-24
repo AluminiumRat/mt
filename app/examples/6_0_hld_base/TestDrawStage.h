@@ -11,6 +11,8 @@
 
 namespace mt
 {
+  class CommandProducerGraphic;
+
   class TestDrawStage
   {
   public:
@@ -22,15 +24,18 @@ namespace mt
     TestDrawStage& operator = (const TestDrawStage&) = delete;
     ~TestDrawStage() noexcept = default;
 
-    void draw(FrameContext& frameContext);
+    void draw(CommandProducerGraphic& commandProducer,
+              FrameContext& frameContext);
 
     //  Добавить в текущий контекст ImGui виджеты со статистикой последнего кадра
     void makeImGui() const;
 
   private:
     void _createCommonSet(Device& device);
-    void _updateCommonSet(FrameContext& frameContext);
-    void _processDrawables(FrameContext& frameContext);
+    void _updateCommonSet(CommandProducerGraphic& commandProducer,
+                          FrameContext& frameContext);
+    void _processDrawables( CommandProducerGraphic& commandProducer,
+                            FrameContext& frameContext);
 
   private:
     StageIndex _stageIndex;

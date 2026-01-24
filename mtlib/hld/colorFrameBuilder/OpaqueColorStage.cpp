@@ -21,7 +21,8 @@ OpaqueColorStage::OpaqueColorStage( Device& device,
 {
 }
 
-void OpaqueColorStage::draw(FrameContext& frameContext,
+void OpaqueColorStage::draw(CommandProducerGraphic& commandProducer,
+                            FrameContext& frameContext,
                             const DescriptorSet& commonDescriptorSet,
                             const PipelineLayout& commonSetPipelineLayout)
 {
@@ -31,8 +32,8 @@ void OpaqueColorStage::draw(FrameContext& frameContext,
   _drawCommands.clear();
   _commandMemoryPool.reset();
 
-  frameContext.commandProducer->beginDebugLabel(stageName);
-    _initBuffersLayout(*frameContext.commandProducer);
+  commandProducer.beginDebugLabel(stageName);
+    _initBuffersLayout(commandProducer);
 
     if(_frameBuffer == nullptr) _buildFrameBuffer();
 
@@ -47,23 +48,23 @@ void OpaqueColorStage::draw(FrameContext& frameContext,
                                   nullptr);
     }
 
-    CommandProducerGraphic::RenderPass renderPass(*frameContext.commandProducer,
+    CommandProducerGraphic::RenderPass renderPass(commandProducer,
                                                   *_frameBuffer);
 
-    frameContext.commandProducer->bindDescriptorSetGraphic(
+    commandProducer.bindDescriptorSetGraphic(
                                             commonDescriptorSet,
                                             (uint32_t)DescriptorSetType::COMMON,
                                             commonSetPipelineLayout);
 
-    _drawCommands.draw( *frameContext.commandProducer,
+    _drawCommands.draw( commandProducer,
                         DrawCommandList::BY_GROUP_INDEX_SORTING);
 
-    frameContext.commandProducer->unbindDescriptorSetGraphic(
+    commandProducer.unbindDescriptorSetGraphic(
                                           (uint32_t)DescriptorSetType::COMMON);
 
     renderPass.endPass();
 
-  frameContext.commandProducer->endDebugLabel();
+  commandProducer.endDebugLabel();
 }
 
 void OpaqueColorStage::_buildFrameBuffer()

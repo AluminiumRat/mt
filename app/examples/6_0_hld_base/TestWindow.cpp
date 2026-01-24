@@ -141,12 +141,11 @@ void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,
 
   FrameContext frameContext{};
   frameContext.drawPlan = &_drawPlan;
-  frameContext.commandProducer = &commandProducer;
   frameContext.viewCamera = &_camera;
 
   CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
 
-  _drawStage.draw(frameContext);
+  _drawStage.draw(commandProducer, frameContext);
   drawGUI(commandProducer);
 
   renderPass.endPass();
