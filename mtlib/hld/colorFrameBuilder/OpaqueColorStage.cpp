@@ -1,4 +1,4 @@
-﻿#include <hld/colorFrameBuilder/ColorFrameContext.h>
+﻿#include <hld/FrameContext.h>
 #include <hld/colorFrameBuilder/OpaqueColorStage.h>
 #include <hld/drawCommand/DrawCommandList.h>
 #include <hld/drawScene/Drawable.h>
@@ -17,7 +17,7 @@ OpaqueColorStage::OpaqueColorStage(Device& device) :
 {
 }
 
-void OpaqueColorStage::draw(ColorFrameContext& frameContext,
+void OpaqueColorStage::draw(FrameContext& frameContext,
                             const DescriptorSet& commonDescriptorSet,
                             const PipelineLayout& commonSetPipelineLayout)
 {
@@ -26,7 +26,7 @@ void OpaqueColorStage::draw(ColorFrameContext& frameContext,
 
   frameContext.commandProducer->beginDebugLabel(stageName);
     frameContext.stageIndex = _stageIndex;
-    _initBuffersLayout(frameContext);
+    _initBuffersLayout(*frameContext.commandProducer);
 
     if(_frameBuffer == nullptr) _buildFrameBuffer();
     frameContext.frameBuffer = _frameBuffer.get();
@@ -98,19 +98,19 @@ void OpaqueColorStage::_buildFrameBuffer()
                                   &depthAttachment);
 }
 
-void OpaqueColorStage::_initBuffersLayout(ColorFrameContext& frameContext)
+void OpaqueColorStage::_initBuffersLayout(
+                                        CommandProducerGraphic& commandProducer)
 {
-  frameContext.commandProducer->imageBarrier(
-                                      *_hdrBuffer,
-                                      ImageSlice(*_hdrBuffer),
-                                      VK_IMAGE_LAYOUT_UNDEFINED,
-                                      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                      0,
-                                      0,
-                                      0,
-                                      0);
+  commandProducer.imageBarrier( *_hdrBuffer,
+                                ImageSlice(*_hdrBuffer),
+                                VK_IMAGE_LAYOUT_UNDEFINED,
+                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                0,
+                                0,
+                                0,
+                                0);
 
-  frameContext.commandProducer->imageBarrier(
+  commandProducer.imageBarrier(
                               *_depthBuffer,
                               ImageSlice(*_depthBuffer),
                               VK_IMAGE_LAYOUT_UNDEFINED,

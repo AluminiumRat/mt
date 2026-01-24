@@ -7,7 +7,8 @@
 
 namespace mt
 {
-  struct ColorFrameContext;
+  class CommandProducerGraphic;
+  class FrameContext;
   class DescriptorSet;
   class Device;
   class PipelineLayout;
@@ -23,7 +24,7 @@ namespace mt
     OpaqueColorStage& operator = (const OpaqueColorStage&) = delete;
     virtual ~OpaqueColorStage() noexcept = default;
 
-    void draw(ColorFrameContext& frameContext,
+    void draw(FrameContext& frameContext,
               const DescriptorSet& commonDescriptorSet,
               const PipelineLayout& commonSetPipelineLayout);
 
@@ -32,7 +33,7 @@ namespace mt
 
   private:
     void _buildFrameBuffer();
-    void _initBuffersLayout(ColorFrameContext& frameContext);
+    void _initBuffersLayout(CommandProducerGraphic& commandProducer);
 
   private:
     Device& _device;

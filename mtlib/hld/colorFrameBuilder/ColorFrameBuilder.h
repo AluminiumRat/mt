@@ -18,7 +18,7 @@
 namespace mt
 {
   class Camera;
-  struct ColorFrameContext;
+  class FrameContext;
   class CommandProducerGraphic;
   class Device;
   class DrawScene;
@@ -54,7 +54,8 @@ namespace mt
 
   private:
     void _updateBuffers(FrameBuffer& targetFrameBuffer);
-    Ref<DescriptorSet> _buildCommonSet(ColorFrameContext& context);
+    Ref<DescriptorSet> _buildCommonSet( FrameContext& context,
+                                        const GlobalLight& illumination);
 
   private:
     Device& _device;

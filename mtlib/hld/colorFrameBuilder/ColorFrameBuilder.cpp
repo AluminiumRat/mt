@@ -1,7 +1,7 @@
 ﻿#include <hld/colorFrameBuilder/ColorFrameBuilder.h>
-#include <hld/colorFrameBuilder/ColorFrameContext.h>
 #include <hld/colorFrameBuilder/GlobalLight.h>
 #include <hld/drawScene/DrawScene.h>
+#include <hld/FrameContext.h>
 #include <hld/HLDLib.h>
 #include <technique/DescriptorSetType.h>
 #include <util/Camera.h>
@@ -55,12 +55,11 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
   _drawPlan.clear();
   scene.fillDrawPlan(_drawPlan, viewCamera, _frameTypeIndex);
 
-  ColorFrameContext frameContext{};
+  FrameContext frameContext{};
   frameContext.frameTypeIndex = _frameTypeIndex;
   frameContext.drawPlan = &_drawPlan;
   frameContext.commandMemoryPool = &_memoryPool;
   frameContext.viewCamera = &viewCamera;
-  frameContext.illumination = &illumination;
 
   Ref<DescriptorSet> commonSet;
   {
@@ -81,7 +80,7 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
                                         _device.graphicQueue()->startCommands();
     frameContext.commandProducer = opaqueProducer.get();
 
-    commonSet = _buildCommonSet(frameContext);
+    commonSet = _buildCommonSet(frameContext, illumination);
 
     _opaqueColorStage.draw(frameContext, *commonSet, *_commonSetPipelineLayout);
 
@@ -147,7 +146,8 @@ void ColorFrameBuilder::_updateBuffers( FrameBuffer& targetFrameBuffer)
 }
 
 Ref<DescriptorSet> ColorFrameBuilder::_buildCommonSet(
-                                                    ColorFrameContext& context)
+                                                FrameContext& context,
+                                                const GlobalLight& illumination)
 {
   Camera::ShaderData cameraData = context.viewCamera->makeShaderData();
   UniformMemoryPool::MemoryInfo uploadedCameraData =
@@ -161,9 +161,8 @@ Ref<DescriptorSet> ColorFrameBuilder::_buildCommonSet(
   Ref<DescriptorSet> commonDescriptorSet =
       context.commandProducer->descriptorPool().allocateSet(*_commonSetLayout);
   commonDescriptorSet->attachUniformBuffer(*_cameraBuffer, cameraBufferBinding);
-  commonDescriptorSet->attachUniformBuffer(
-                                          context.illumination->uniformBuffer(),
-                                          illuminationBufferBinding);
+  commonDescriptorSet->attachUniformBuffer( illumination.uniformBuffer(),
+                                            illuminationBufferBinding);
   commonDescriptorSet->finalize();
 
   return commonDescriptorSet;
