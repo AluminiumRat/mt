@@ -5,6 +5,7 @@
 #include <hld/FrameContext.h>
 #include <hld/HLDLib.h>
 #include <technique/TechniqueLoader.h>
+#include <vkr/image/ImageView.h>
 #include <vkr/Device.h>
 
 #include <TestWindow.h>

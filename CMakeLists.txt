@@ -61,5 +61,6 @@ add_subdirectory(app/examples/5_0_file_watcher)
 add_subdirectory(app/examples/5_1_async_tasks)
 add_subdirectory(app/examples/5_2_resource_managers)
 add_subdirectory(app/examples/6_0_hld_base)
+add_subdirectory(app/examples/6_1_hld_opaque)
 
 add_subdirectory(app/textureProcessor)

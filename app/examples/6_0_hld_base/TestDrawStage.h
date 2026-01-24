@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include <cstdint>
-
 #include <hld/StageIndex.h>
 #include <util/Ref.h>
 #include <vkr/pipeline/DescriptorSet.h>

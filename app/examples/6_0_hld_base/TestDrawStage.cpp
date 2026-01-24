@@ -74,7 +74,6 @@ void TestDrawStage::_updateCommonSet(FrameContext& frameContext) const
 {
   CommandProducerGraphic* commandProducer = frameContext.commandProducer;
 
-  //  Копируем данные камеры в юниформ буфер
   Camera::ShaderData cameraData = frameContext.viewCamera->makeShaderData();
   UniformMemoryPool::MemoryInfo uploadedData =
                       commandProducer->uniformMemorySession().write(cameraData);
