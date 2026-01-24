@@ -11,8 +11,6 @@ CommandMemoryPool::CommandMemoryPool(size_t chunkSize) :
 
 void CommandMemoryPool::reset() noexcept
 {
-  std::lock_guard lock(_accessMutex);
-
   if(_holders.empty()) return;
   for(size_t iHolder = 0; iHolder < _holders.size(); iHolder++)
   {

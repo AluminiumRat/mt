@@ -61,7 +61,6 @@ namespace mt
     Device& _device;
 
     DrawPlan _drawPlan;
-    CommandMemoryPool _memoryPool;
 
     ConstRef<DescriptorSetLayout> _commonSetLayout;
     ConstRef<PipelineLayout> _commonSetPipelineLayout;

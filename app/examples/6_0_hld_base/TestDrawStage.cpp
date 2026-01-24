@@ -1,6 +1,5 @@
 ﻿#include <imgui.h>
 
-#include <hld/drawCommand/DrawCommandList.h>
 #include <hld/drawScene/Drawable.h>
 #include <hld/DrawPlan.h>
 #include <hld/FrameContext.h>
@@ -17,6 +16,8 @@ using namespace mt;
 TestDrawStage::TestDrawStage(Device& device, FrameTypeIndex frameTypeIndex) :
   _stageIndex(HLDLib::instance().getStageIndex(stageName)),
   _frameTypeIndex(frameTypeIndex),
+  _commandMemoryPool(4 * 1024),
+  _drawCommands(_commandMemoryPool),
   _lastFrameCommandsCount(0)
 {
   _createCommonSet(device);
@@ -52,7 +53,7 @@ void TestDrawStage::_createCommonSet(Device& device)
                                         std::span(&commonSetLayout, 1));
 }
 
-void TestDrawStage::draw(FrameContext& frameContext) const
+void TestDrawStage::draw(FrameContext& frameContext)
 {
   frameContext.commandProducer->beginDebugLabel(stageName);
 
@@ -70,7 +71,7 @@ void TestDrawStage::draw(FrameContext& frameContext) const
   frameContext.commandProducer->endDebugLabel();
 }
 
-void TestDrawStage::_updateCommonSet(FrameContext& frameContext) const
+void TestDrawStage::_updateCommonSet(FrameContext& frameContext)
 {
   CommandProducerGraphic* commandProducer = frameContext.commandProducer;
 
@@ -84,22 +85,26 @@ void TestDrawStage::_updateCommonSet(FrameContext& frameContext) const
                                           sizeof(Camera::ShaderData));
 }
 
-void TestDrawStage::_processDrawables(FrameContext& frameContext) const
+void TestDrawStage::_processDrawables(FrameContext& frameContext)
 {
-  DrawCommandList commands(*frameContext.commandMemoryPool);
+  _drawCommands.clear();
+  _commandMemoryPool.reset();
 
   const std::vector<const Drawable*>& drawables =
                                   frameContext.drawPlan->stagePlan(_stageIndex);
   for(const Drawable* drawable : drawables)
   {
     MT_ASSERT(drawable->drawType() == Drawable::COMMANDS_DRAW);
-    drawable->addToCommandList(commands, _frameTypeIndex, _stageIndex, nullptr);
+    drawable->addToCommandList( _drawCommands,
+                                _frameTypeIndex,
+                                _stageIndex,
+                                nullptr);
   }
 
-  _lastFrameCommandsCount = commands.size();
+  _lastFrameCommandsCount = _drawCommands.size();
 
-  commands.draw(*frameContext.commandProducer,
-                DrawCommandList::BY_GROUP_INDEX_SORTING);
+  _drawCommands.draw( *frameContext.commandProducer,
+                      DrawCommandList::BY_GROUP_INDEX_SORTING);
 }
 
 void TestDrawStage::makeImGui() const

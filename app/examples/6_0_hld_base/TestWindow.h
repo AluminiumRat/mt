@@ -5,7 +5,6 @@
 
 #include <gui/cameraManipulator/OrbitalCameraManipulator.h>
 #include <gui/GUIWindow.h>
-#include <hld/drawCommand/CommandMemoryPool.h>
 #include <hld/drawScene/DrawScene.h>
 #include <hld/meshDrawable/MeshAsset.h>
 #include <hld/meshDrawable/MeshDrawable.h>
@@ -51,6 +50,5 @@ namespace mt
     TestDrawStage _drawStage;
 
     DrawPlan _drawPlan;
-    CommandMemoryPool _commandMemoryPool;
   };
 }

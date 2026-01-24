@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <hld/drawCommand/CommandMemoryPool.h>
+#include <hld/drawCommand/DrawCommandList.h>
 #include <hld/FrameTypeIndex.h>
 #include <hld/StageIndex.h>
 #include <util/Ref.h>
@@ -45,6 +47,9 @@ namespace mt
     Ref<Image> _hdrBuffer;
     Ref<Image> _depthBuffer;
     Ref<FrameBuffer> _frameBuffer;
+
+    CommandMemoryPool _commandMemoryPool;
+    DrawCommandList _drawCommands;
   };
 
   inline void OpaqueColorStage::setHdrBuffer(Image& newBuffer) noexcept

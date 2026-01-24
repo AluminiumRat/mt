@@ -15,7 +15,9 @@ OpaqueColorStage::OpaqueColorStage( Device& device,
                                     FrameTypeIndex frameTypeIndex) :
   _device(device),
   _frameTypeIndex(frameTypeIndex),
-  _stageIndex(HLDLib::instance().getStageIndex(stageName))
+  _stageIndex(HLDLib::instance().getStageIndex(stageName)),
+  _commandMemoryPool(4 * 1024),
+  _drawCommands(_commandMemoryPool)
 {
 }
 
@@ -26,19 +28,21 @@ void OpaqueColorStage::draw(FrameContext& frameContext,
   MT_ASSERT(_hdrBuffer != nullptr);
   MT_ASSERT(_depthBuffer != nullptr);
 
+  _drawCommands.clear();
+  _commandMemoryPool.reset();
+
   frameContext.commandProducer->beginDebugLabel(stageName);
     _initBuffersLayout(*frameContext.commandProducer);
 
     if(_frameBuffer == nullptr) _buildFrameBuffer();
     frameContext.frameBuffer = _frameBuffer.get();
 
-    DrawCommandList commands(*frameContext.commandMemoryPool);
     const std::vector<const Drawable*>& drawables =
                                   frameContext.drawPlan->stagePlan(_stageIndex);
     for(const Drawable* drawable : drawables)
     {
       MT_ASSERT(drawable->drawType() == Drawable::COMMANDS_DRAW);
-      drawable->addToCommandList( commands,
+      drawable->addToCommandList( _drawCommands,
                                   _frameTypeIndex,
                                   _stageIndex,
                                   nullptr);
@@ -52,8 +56,8 @@ void OpaqueColorStage::draw(FrameContext& frameContext,
                                             (uint32_t)DescriptorSetType::COMMON,
                                             commonSetPipelineLayout);
 
-      commands.draw(*frameContext.commandProducer,
-                    DrawCommandList::BY_GROUP_INDEX_SORTING);
+    _drawCommands.draw( *frameContext.commandProducer,
+                        DrawCommandList::BY_GROUP_INDEX_SORTING);
 
     frameContext.commandProducer->unbindDescriptorSetGraphic(
                                           (uint32_t)DescriptorSetType::COMMON);

@@ -21,8 +21,7 @@ TestWindow::TestWindow(Device& device) :
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(colorFrameType)),
   _cameraManipulator(CameraManipulator::APPLICATION_WINDOW_LOCATION),
   _meshAsset(new MeshAsset("Test mesh")),
-  _drawStage(device, _frameTypeIndex),
-  _commandMemoryPool(4 * 1024)
+  _drawStage(device, _frameTypeIndex)
 {
   _cameraManipulator.setCamera(&_camera);
 
@@ -137,13 +136,11 @@ void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,
                                     FrameBuffer& frameBuffer)
 {
   _drawPlan.clear();
-  _commandMemoryPool.reset();
 
   _scene.fillDrawPlan(_drawPlan, _camera, _frameTypeIndex);
 
   FrameContext frameContext{};
   frameContext.drawPlan = &_drawPlan;
-  frameContext.commandMemoryPool = &_commandMemoryPool;
   frameContext.frameBuffer = &frameBuffer;
   frameContext.commandProducer = &commandProducer;
   frameContext.viewCamera = &_camera;

@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <hld/drawCommand/CommandMemoryPool.h>
+#include <hld/drawCommand/DrawCommandList.h>
 #include <hld/FrameTypeIndex.h>
 #include <hld/StageIndex.h>
 #include <util/Ref.h>
@@ -20,15 +22,15 @@ namespace mt
     TestDrawStage& operator = (const TestDrawStage&) = delete;
     ~TestDrawStage() noexcept = default;
 
-    void draw(FrameContext& frameContext) const;
+    void draw(FrameContext& frameContext);
 
     //  Добавить в текущий контекст ImGui виджеты со статистикой последнего кадра
     void makeImGui() const;
 
   private:
     void _createCommonSet(Device& device);
-    void _updateCommonSet(FrameContext& frameContext) const;
-    void _processDrawables(FrameContext& frameContext) const;
+    void _updateCommonSet(FrameContext& frameContext);
+    void _processDrawables(FrameContext& frameContext);
 
   private:
     StageIndex _stageIndex;
@@ -38,6 +40,9 @@ namespace mt
     Ref<DataBuffer> _commonUniformBuffer;
     Ref<PipelineLayout> _pipelineLayout;
 
-    mutable size_t _lastFrameCommandsCount;
+    CommandMemoryPool _commandMemoryPool;
+    DrawCommandList _drawCommands;
+
+    size_t _lastFrameCommandsCount;
   };
 }
