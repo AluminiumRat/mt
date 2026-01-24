@@ -1,0 +1,22 @@
+defaultSamplers:
+  linearSampler:
+    magFilter: LINEAR
+    minFilter: LINEAR
+    mipmapMode: LINEAR
+
+passes:
+  RenderPass :
+    shaders:
+      VERTEX : lib/opaqueMesh/opaqueMesh.vert
+      FRAGMENT : lib/opaqueMesh/opaqueMesh.frag
+
+    frameBuffer:
+      color: VK_FORMAT_B10G11R11_UFLOAT_PACK32
+      depthStencil: VK_FORMAT_D32_SFLOAT_S8_UINT
+
+    graphicSettings:
+      topology: TRIANGLE_LIST
+      cullMode : BACK
+      depthTest : true
+      depthWrite : true
+      depthCompareOp : GREATER_OR_EQUAL

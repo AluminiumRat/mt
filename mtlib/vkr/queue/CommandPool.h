@@ -26,6 +26,11 @@ namespace mt
   class CommandPool
   {
   public:
+    //  Размер куска, которыми выделяется память в UniformMemoryPool
+    //  В UniformMemoryPool нельзя положить непрерывные данные большего размера
+    static constexpr size_t memoryPoolChunkSize = 32 * 1024;
+
+  public:
     CommandPool(CommandQueue& queue);
     CommandPool(const CommandPool&) = delete;
     CommandPool& operator = (const CommandPool&) = delete;

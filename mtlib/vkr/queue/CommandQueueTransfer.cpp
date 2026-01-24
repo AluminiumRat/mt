@@ -24,17 +24,36 @@ void CommandQueueTransfer::uploadToBuffer(const DataBuffer& dstBuffer,
                                           size_t dataSize,
                                           const void* srcData)
 {
-  Ref<DataBuffer> stagingBuffer(new DataBuffer( device(),
-                                                dataSize,
-                                                DataBuffer::UPLOADING_BUFFER,
-                                                "Uploading buffer"));
-  stagingBuffer->uploadData(srcData, 0, dataSize);
   std::unique_ptr<CommandProducerTransfer> producer = startCommands();
-  producer->copyFromBufferToBuffer( *stagingBuffer,
-                                    dstBuffer,
-                                    0,
-                                    0,
-                                    dataSize);
+
+  if(dataSize <= CommandPool::memoryPoolChunkSize)
+  {
+    //  Данные можно протолкнуть через UniformMemoryPool
+    UniformMemoryPool::MemoryInfo stagingInfo =
+                          producer->uniformMemorySession().write(
+                                                          (const char*)srcData,
+                                                          dataSize);
+    producer->copyFromBufferToBuffer( *stagingInfo.buffer,
+                                      dstBuffer,
+                                      stagingInfo.offset,
+                                      shiftInDstBuffer,
+                                      dataSize);
+  }
+  else
+  {
+    //  Кусок данных слишком большой, протаскиваем его через отдельный
+    //  upload буфер
+    Ref<DataBuffer> stagingBuffer(new DataBuffer( device(),
+                                                  dataSize,
+                                                  DataBuffer::UPLOADING_BUFFER,
+                                                  "Uploading buffer"));
+    stagingBuffer->uploadData(srcData, 0, dataSize);
+    producer->copyFromBufferToBuffer( *stagingBuffer,
+                                      dstBuffer,
+                                      0,
+                                      0,
+                                      dataSize);
+  }
   submitCommands(std::move(producer));
 }
 

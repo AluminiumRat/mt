@@ -25,7 +25,7 @@ namespace mt
     inline void unregisterDrawable(Drawable& drawable);
 
     virtual void fillDrawPlan(DrawPlan& plan,
-                              Camera& camera,
+                              const Camera& camera,
                               FrameTypeIndex frameTypeIndex) const;
 
   private:

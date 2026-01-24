@@ -8,6 +8,9 @@ include_directories(..
                     ${VKMEMALLOC_PATH})
 
 set(SOURCES
+    "colorFrameBuilder/ColorFrameBuilder.cpp"
+    "colorFrameBuilder/GlobalLight.cpp"
+    "colorFrameBuilder/OpaqueColorStage.cpp"
     "drawCommand/CommandMemoryPool.cpp"
     "drawCommand/DrawCommandList.cpp"
     "drawScene/Drawable.cpp"
