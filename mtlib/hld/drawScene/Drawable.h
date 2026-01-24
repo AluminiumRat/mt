@@ -1,13 +1,14 @@
 ﻿#pragma once
 
 #include <hld/FrameTypeIndex.h>
+#include <hld/StageIndex.h>
 
 namespace mt
 {
+  class CommandProducerGraphic;
   class Drawable3D;
   class DrawCommandList;
   class DrawPlan;
-  class FrameContext;
 
   //  Какой-то объект, который может быть добавлен в план по отрисовке кадра а
   //    после обработан на одной или нескольких стадиях рендера
@@ -41,19 +42,27 @@ namespace mt
     virtual void addToDrawPlan( DrawPlan& plan,
                                 FrameTypeIndex frameTypeIndex) const = 0;
 
-    //  Использовать commandProducer из frameContext и добавить в него
-    //    команды на отрисовку.
+    //  Отрисовать объект непосредственно в CommandProducerGraphic
+    //  Можно использовать, когда не нужна группировка и сортировка команд
+    //    отрисовки
     //  Метод используется, если drawType = DIRECT_DRAW. В противном
     //    случае поведение метода не определено
-    virtual void draw(const FrameContext& frameContext) const;
+    //  extraData - дополнительные данные для специализированных стадий.
+    virtual void draw(CommandProducerGraphic& commandProducer,
+                      FrameTypeIndex frame,
+                      StageIndex stage,
+                      const void* extraData) const;
 
     //  Добавить в commandList команды рисования для конкретного frameType
-    //    и конкретной стадии. frameTypeIndex и drawStageIndex указаны в
-    //    frameContext
+    //    и конкретной стадии
+    //  Используется при батчинге (сортировка и группировка команд отрисовки)
     //  Метод используется, если drawType = COMMANDS_DRAW. В противном
     //    случае поведение метода не определено
+    //  extraData - дополнительные данные для специализированных стадий.
     virtual void addToCommandList(DrawCommandList& commandList,
-                                  const FrameContext& frameContext) const;
+                                  FrameTypeIndex frame,
+                                  StageIndex stage,
+                                  const void* extraData) const;
 
     virtual Drawable3D* asDrawable3D() noexcept;
     virtual const Drawable3D* asDrawable3D() const noexcept;

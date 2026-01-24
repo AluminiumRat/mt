@@ -66,14 +66,14 @@ void MeshDrawable::addToDrawPlan( DrawPlan& plan,
 }
 
 void MeshDrawable::addToCommandList(DrawCommandList& commandList,
-                                    const FrameContext& frameContext) const
+                                    FrameTypeIndex frame,
+                                    StageIndex stage,
+                                    const void* extraData) const
 {
   if(_asset == nullptr) return;
   if(_asset->technique() == nullptr) return;
 
-  const MeshAsset::StagePasses& passes = _asset->passes(
-                                                    frameContext.frameTypeIndex,
-                                                    frameContext.stageIndex);
+  const MeshAsset::StagePasses& passes = _asset->passes(frame, stage);
   for(const MeshAsset::PassInfo pass : passes)
   {
     commandList.createCommand<MeshDrawCommand>( *this,

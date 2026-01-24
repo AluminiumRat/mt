@@ -30,9 +30,10 @@ namespace mt
     virtual void addToDrawPlan( DrawPlan& plan,
                                 FrameTypeIndex frameTypeIndex) const override;
 
-    virtual void addToCommandList(
-                              DrawCommandList& commandList,
-                              const FrameContext& frameContext) const override;
+    virtual void addToCommandList(DrawCommandList& commandList,
+                                  FrameTypeIndex frame,
+                                  StageIndex stage,
+                                  const void* extraData) const override;
 
     //  Матрица положения в текущем кадре
     inline const glm::mat4& positionMatrix() const noexcept;

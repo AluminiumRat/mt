@@ -16,10 +16,8 @@ namespace mt
   class FrameContext
   {
   public:
-    FrameTypeIndex frameTypeIndex;
     const DrawPlan* drawPlan;
     CommandMemoryPool* commandMemoryPool;
-    StageIndex stageIndex;
     const FrameBuffer* frameBuffer;
     const Camera* viewCamera;
     CommandProducerGraphic* commandProducer;

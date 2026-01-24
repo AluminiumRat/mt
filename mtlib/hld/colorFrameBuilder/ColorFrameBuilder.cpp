@@ -15,7 +15,7 @@ ColorFrameBuilder::ColorFrameBuilder(Device& device) :
   _device(device),
   _memoryPool(100 * 1024),
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(frameTypeName)),
-  _opaqueColorStage(device)
+  _opaqueColorStage(device, _frameTypeIndex)
 {
   VkDescriptorSetLayoutBinding commonSetBindings[2];
   commonSetBindings[cameraBufferBinding] = {};
@@ -53,10 +53,11 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
                               CommandProducerGraphic& commandProducer)
 {
   _drawPlan.clear();
+  _memoryPool.reset();
+
   scene.fillDrawPlan(_drawPlan, viewCamera, _frameTypeIndex);
 
   FrameContext frameContext{};
-  frameContext.frameTypeIndex = _frameTypeIndex;
   frameContext.drawPlan = &_drawPlan;
   frameContext.commandMemoryPool = &_memoryPool;
   frameContext.viewCamera = &viewCamera;

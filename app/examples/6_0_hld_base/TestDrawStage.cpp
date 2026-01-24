@@ -14,8 +14,9 @@
 
 using namespace mt;
 
-TestDrawStage::TestDrawStage(Device& device) :
+TestDrawStage::TestDrawStage(Device& device, FrameTypeIndex frameTypeIndex) :
   _stageIndex(HLDLib::instance().getStageIndex(stageName)),
+  _frameTypeIndex(frameTypeIndex),
   _lastFrameCommandsCount(0)
 {
   _createCommonSet(device);
@@ -55,8 +56,6 @@ void TestDrawStage::draw(FrameContext& frameContext) const
 {
   frameContext.commandProducer->beginDebugLabel(stageName);
 
-  frameContext.stageIndex = _stageIndex;
-
   _updateCommonSet(frameContext);
 
   frameContext.commandProducer->bindDescriptorSetGraphic(
@@ -94,7 +93,7 @@ void TestDrawStage::_processDrawables(FrameContext& frameContext) const
   for(const Drawable* drawable : drawables)
   {
     MT_ASSERT(drawable->drawType() == Drawable::COMMANDS_DRAW);
-    drawable->addToCommandList(commands, frameContext);
+    drawable->addToCommandList(commands, _frameTypeIndex, _stageIndex, nullptr);
   }
 
   _lastFrameCommandsCount = commands.size();

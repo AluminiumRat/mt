@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <hld/FrameTypeIndex.h>
 #include <hld/StageIndex.h>
 #include <util/Ref.h>
 #include <vkr/image/Image.h>
@@ -19,7 +20,7 @@ namespace mt
     static constexpr const char* stageName = "OpaqueColorStage";
 
   public:
-    explicit OpaqueColorStage(Device& device);
+    OpaqueColorStage(Device& device, FrameTypeIndex frameTypeIndex);
     OpaqueColorStage(const OpaqueColorStage&) = delete;
     OpaqueColorStage& operator = (const OpaqueColorStage&) = delete;
     virtual ~OpaqueColorStage() noexcept = default;
@@ -38,6 +39,7 @@ namespace mt
   private:
     Device& _device;
 
+    FrameTypeIndex _frameTypeIndex;
     StageIndex _stageIndex;
 
     Ref<Image> _hdrBuffer;

@@ -7,12 +7,17 @@ Drawable::Drawable(DrawType drawType) noexcept :
 {
 }
 
-void Drawable::draw(const FrameContext& frameContext) const
+void Drawable::draw(CommandProducerGraphic& commandProducer,
+                    FrameTypeIndex frame,
+                    StageIndex stage,
+                    const void* extraData) const
 {
 }
 
 void Drawable::addToCommandList(DrawCommandList& commandList,
-                                const FrameContext& frameContext) const
+                                FrameTypeIndex frame,
+                                StageIndex stage,
+                                const void* extraData) const
 {
 }
 

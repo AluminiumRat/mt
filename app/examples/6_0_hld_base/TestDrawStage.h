@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <hld/FrameTypeIndex.h>
 #include <hld/StageIndex.h>
 #include <util/Ref.h>
 #include <vkr/pipeline/DescriptorSet.h>
@@ -14,7 +15,7 @@ namespace mt
     static constexpr const char* stageName = "TestDrawStage";
 
   public:
-    explicit TestDrawStage(Device& device);
+    TestDrawStage(Device& device, FrameTypeIndex frameTypeIndex);
     TestDrawStage(const TestDrawStage&) = delete;
     TestDrawStage& operator = (const TestDrawStage&) = delete;
     ~TestDrawStage() noexcept = default;
@@ -31,6 +32,7 @@ namespace mt
 
   private:
     StageIndex _stageIndex;
+    FrameTypeIndex _frameTypeIndex;
 
     Ref<DescriptorSet> _commonDescriptorSet;
     Ref<DataBuffer> _commonUniformBuffer;
