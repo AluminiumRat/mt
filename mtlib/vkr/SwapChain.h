@@ -28,11 +28,9 @@ namespace mt
   //    свапчейна.
   //  Одновременно может быть захвачено не более 1 кадра
   //  Освобождение и презентация происходит через FrameAccess::present
-  //  Свапчейн не позволяет бесконечно набивать очередь команд, при возвращении
-  //    кадра в свапчейн происходит синхронизация GPU и CPU, гарантирующая
-  //    что все команды для этого изображения с предыдущих кадров выполнены. То
-  //    есть свапчейн может использоваться для синхронизации CPU-GPU в основном
-  //    цикле.
+  //  Свапчейн не позволяет бесконечно набивать очередь команд, при захвате
+  //    кадра из свапчейна происходит синхронизация GPU и CPU. То есть свапчейн
+  //    может использоваться для синхронизации CPU-GPU в основном цикле.
   class SwapChain : public RefCounter
   {
   public:
@@ -131,24 +129,11 @@ namespace mt
 
     Ref<Fence> _imageIsReadyFence;
 
-    // Набор семафоров для синхронизации основной очереди и очереди презентации
-    struct SemaphoresPair
-    {
-      // На этом семафоре основная очередь ждет, когда будет готов Image из
-      // свапчейна
-      Ref<Semaphore> startDrawing;
-      // На этом семафоре очередь презентации ждет, когда картинка будет
-      // нарисована, прежде чем отправить её на экран
-      Ref<Semaphore> endDrawing;
-    };
-    std::vector<SemaphoresPair> _semaphoresPool;
+    std::vector<Ref<Image>> _frames;
+    //  Набор семафоров для синхронизации основной очереди и очереди презентации
+    //  Каждой image из свапчейна по 1 семафору
+    std::vector<Ref<Semaphore>> _endDrawingSemaphores;
 
-    struct FrameRecord
-    {
-      Ref<Image> image;
-      SemaphoresPair semaphores;
-    };
-    std::vector<FrameRecord> _frames;
     std::optional<uint32_t> _lockedFrameIndex;
   };
 
@@ -217,6 +202,6 @@ namespace mt
 
   inline Image& SwapChain::frame(uint32_t frameIndex) const noexcept
   {
-    return *_frames[frameIndex].image;
+    return *_frames[frameIndex];
   }
 }

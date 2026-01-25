@@ -69,29 +69,6 @@ void CommandQueue::addSignalSemaphore(Semaphore& semaphore)
   }
 }
 
-void CommandQueue::addWaitForSemaphore(
-  Semaphore& semaphore,
-  VkPipelineStageFlags waitStages)
-{
-  std::lock_guard lock(commonMutex);
-
-  VkSubmitInfo submitInfo{};
-  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-  submitInfo.waitSemaphoreCount = 1;
-  VkSemaphore waitSemaphores[] = { semaphore.handle() };
-  submitInfo.pWaitSemaphores = waitSemaphores;
-  submitInfo.pWaitDstStageMask = &waitStages;
-  submitInfo.commandBufferCount = 0;
-  submitInfo.pCommandBuffers = nullptr;
-  if (vkQueueSubmit(handle(),
-                    1,
-                    &submitInfo,
-                    VK_NULL_HANDLE) != VK_SUCCESS)
-  {
-    throw std::runtime_error("CommandQueue: Failed to submit semaphore wait");
-  }
-}
-
 SyncPoint CommandQueue::createSyncPoint()
 {
   std::lock_guard lock(commonMutex);

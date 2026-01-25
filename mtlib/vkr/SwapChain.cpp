@@ -110,15 +110,9 @@ SwapChain::SwapChain( Device& device,
   {
     _createHandle(surface, presentationMode, format);
 
-    // Так как vkAcquireNextImageKHR требует на вход гарантированно
-    // неиспользуемый семафор, то нам необходимо иметь по меньшей мере на 1
-    // пару семафоров больше, чем кадров в свапчейне, так как мы заранее не
-    // можем сказать, какой именно Image вернет свапчейн.
-    _semaphoresPool.resize(_frames.size() + 1);
-    for(SemaphoresPair& semaphoresPair : _semaphoresPool)
+    for(size_t i = 0; i< _frames.size(); i++)
     {
-      semaphoresPair.startDrawing = new Semaphore(_device);
-      semaphoresPair.endDrawing = new Semaphore(_device);
+      _endDrawingSemaphores.push_back(Ref(new Semaphore(_device)));
     }
   }
   catch(...)
@@ -212,18 +206,18 @@ void SwapChain::_createHandle(
   _frames.resize(imageCount);
   for(size_t frameIndex = 0; frameIndex < _frames.size(); frameIndex++)
   {
-    _frames[frameIndex].image = new Image(_device,
-                                          images[frameIndex],
-                                          VK_IMAGE_TYPE_2D,
-                                          _imageFormat.format,
-                                          glm::uvec3(_extent, 1),
-                                          VK_SAMPLE_COUNT_1_BIT,
-                                          1,
-                                          1,
-                                          createInfo.imageSharingMode,
-                                          false,
-                                          ImageAccess(),
-                                          "Swapchain image");
+    _frames[frameIndex] = new Image(_device,
+                                    images[frameIndex],
+                                    VK_IMAGE_TYPE_2D,
+                                    _imageFormat.format,
+                                    glm::uvec3(_extent, 1),
+                                    VK_SAMPLE_COUNT_1_BIT,
+                                    1,
+                                    1,
+                                    createInfo.imageSharingMode,
+                                    false,
+                                    ImageAccess(),
+                                    "Swapchain image");
   }
 }
 
@@ -250,10 +244,6 @@ void SwapChain::_cleanup() noexcept
 uint32_t SwapChain::lockFrame()
 {
   MT_ASSERT(!_lockedFrameIndex.has_value() && "swapchain is already in the locked state");
-  MT_ASSERT(!_semaphoresPool.empty());
-
-  SemaphoresPair newSemaphores = _semaphoresPool.back();
-  _semaphoresPool.pop_back();
 
   _imageIsReadyFence->reset();
 
@@ -261,23 +251,13 @@ uint32_t SwapChain::lockFrame()
   if(vkAcquireNextImageKHR( _device.handle(),
                             _handle,
                             UINT64_MAX,
-                            newSemaphores.startDrawing->handle(),
+                            VK_NULL_HANDLE,
                             _imageIsReadyFence->handle(),
                             &frameIndex) != VK_SUCCESS)
   {
     throw std::runtime_error("SwapChain: Failed to acquire next image from swapchain.");
   }
-
-  // Если к этому фрэйму уже были привязаны семафоры, то возвращаем их в пул
-  if(_frames[frameIndex].semaphores.startDrawing != nullptr)
-  {
-    _semaphoresPool.push_back(_frames[frameIndex].semaphores);
-  }
-  // Привязываем новые семафоры к фрэйму
-  _frames[frameIndex].semaphores = newSemaphores;
-
-  _primaryQueue->addWaitForSemaphore( *newSemaphores.startDrawing,
-                                      VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+  _imageIsReadyFence->wait();
 
   _lockedFrameIndex = frameIndex;
   return frameIndex;
@@ -287,15 +267,11 @@ void SwapChain::presentFrame()
 {
   MT_ASSERT(_lockedFrameIndex.has_value() && "swapchain is not in the locked state");
 
-  // Дожидаемся, когда картинка будет освобождена от предыдущих
-  // манипуляций в свапчейне
-  _imageIsReadyFence->wait();
-
   uint32_t frameIndex = _lockedFrameIndex.value();
-  Semaphore& endDrawningSemaphore = *_frames[frameIndex].semaphores.endDrawing;
 
   // Для начала синхронизируемся с основной очередью, для того чтобы
   // дождаться окончания отрисовки.
+  Semaphore& endDrawningSemaphore = *_endDrawingSemaphores[frameIndex];
   _primaryQueue->addSignalSemaphore(endDrawningSemaphore);
 
   // Теперь отправляем картинку на презентацию

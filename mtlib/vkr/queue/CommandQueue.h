@@ -48,11 +48,9 @@ namespace mt
     inline const QueueFamily& family() const;
 
     // Добавить команду, переводящую семафор в состояние "signaled"
-    void addSignalSemaphore(Semaphore& semaphore);
     // ВНИМАНИЕ!!! Очередь не захватывает владение семафором! Вызовите
     // waitIdle перед удалением семафора.
-    void addWaitForSemaphore( Semaphore& semaphore,
-                              VkPipelineStageFlags waitStages);
+    void addSignalSemaphore(Semaphore& semaphore);
 
     //  Добавляет инкремент встроенного таймлайн семафора в конец очереди и
     //  возвращает соответствующую пару семафор-значение
