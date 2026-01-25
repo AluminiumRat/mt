@@ -130,8 +130,7 @@ void TestWindow::_fillScene()
   }
 }
 
-void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,
-                                    FrameBuffer& frameBuffer)
+void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
 {
   _illumination.update();
   _frameBuilder.draw( frameBuffer,
@@ -141,8 +140,7 @@ void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,
                       [this](CommandProducerGraphic& commandProducer)
                       {
                         drawGUI(commandProducer);
-                      },
-                      commandProducer);
+                      });
 }
 
 void TestWindow::guiImplementation()

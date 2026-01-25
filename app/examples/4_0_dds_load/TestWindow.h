@@ -18,8 +18,7 @@ namespace mt
     virtual ~TestWindow() noexcept = default;
 
   protected:
-    virtual void drawImplementation(CommandProducerGraphic& commandProducer,
-                                    FrameBuffer& frameBuffer) override;
+    virtual void drawImplementation(FrameBuffer& frameBuffer) override;
 
   private:
     void _makeConfiguration();

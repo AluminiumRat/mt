@@ -25,8 +25,7 @@ namespace mt
 
   protected:
     virtual void guiImplementation() override;
-    virtual void drawImplementation(CommandProducerGraphic& commandProducer,
-                                    FrameBuffer& frameBuffer) override;
+    virtual void drawImplementation(FrameBuffer& frameBuffer) override;
   private:
     void _setupMeshAsset();
     void _fillScene();

@@ -120,21 +120,24 @@ void TestWindow::_createTexture()
   _texture.setImage(imageView);
 }
 
-void TestWindow::drawImplementation(
-                                      CommandProducerGraphic& commandProducer,
-                                      FrameBuffer& frameBuffer)
+void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
 {
-  CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
+  std::unique_ptr<CommandProducerGraphic> commandProducer =
+                                      device().graphicQueue()->startCommands();
+
+  CommandProducerGraphic::RenderPass renderPass(*commandProducer, frameBuffer);
 
   //  Можно перенести создание конфигурации сюда, и оно будет работать,
   //   но очень медленно
   //_makeConfiguration();
 
   //  Можно выбрать один из вариантов рендера
-  _drawSimple(commandProducer);
+  _drawSimple(*commandProducer);
   //_drawVolatileContext(commandProducer);
 
   renderPass.endPass();
+
+  device().graphicQueue()->submitCommands(std::move(commandProducer));
 }
 
 void TestWindow::_drawSimple(CommandProducerGraphic& commandProducer)

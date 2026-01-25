@@ -48,8 +48,7 @@ namespace mt
                       const DrawScene& scene,
                       const Camera& viewCamera,
                       const GlobalLight& illumination,
-                      const ExtraDraw& imGuiDraw,
-                      CommandProducerGraphic& commandProducer);
+                      const ExtraDraw& imGuiDraw);
 
   private:
     void _updateBuffers(FrameBuffer& targetFrameBuffer);

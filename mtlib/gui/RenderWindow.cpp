@@ -98,7 +98,6 @@ void RenderWindow::draw()
   std::unique_ptr<CommandProducerGraphic> producer =
                                         _device.graphicQueue()->startCommands();
   producer->beginDebugLabel(name().c_str());
-
   producer->imageBarrier( *frame.image(),
                           ImageSlice(*frame.image()),
                           VK_IMAGE_LAYOUT_UNDEFINED,
@@ -107,9 +106,11 @@ void RenderWindow::draw()
                           VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                           VK_ACCESS_NONE,
                           VK_ACCESS_COLOR_ATTACHMENT_READ_BIT);
+  _device.graphicQueue()->submitCommands(std::move(producer));
 
-  drawImplementation(*producer, *_frameBuffers[frame.frameIndex()]);
+  drawImplementation(*_frameBuffers[frame.frameIndex()]);
 
+  producer = _device.graphicQueue()->startCommands();
   producer->imageBarrier( *frame.image(),
                           ImageSlice(*frame.image()),
                           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -118,9 +119,7 @@ void RenderWindow::draw()
                           VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                           VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                           VK_ACCESS_NONE);
-
   producer->endDebugLabel();
-
   _device.graphicQueue()->submitCommands(std::move(producer));
   frame.present();
 }
@@ -173,11 +172,15 @@ Ref<FrameBuffer> RenderWindow::_createFrameBuffer(Image& targetColorBuffer)
                                                               nullptr));
 }
 
-void RenderWindow::drawImplementation(CommandProducerGraphic& commandProducer,
-                                      FrameBuffer& frameBuffer)
+void RenderWindow::drawImplementation(FrameBuffer& frameBuffer)
 {
-  CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
+  std::unique_ptr<CommandProducerGraphic> producer =
+                                        _device.graphicQueue()->startCommands();
+
+  CommandProducerGraphic::RenderPass renderPass(*producer, frameBuffer);
   renderPass.endPass();
+
+  _device.graphicQueue()->submitCommands(std::move(producer));
 }
 
 void RenderWindow::onResize() noexcept

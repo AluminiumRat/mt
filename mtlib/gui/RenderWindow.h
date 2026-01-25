@@ -63,8 +63,7 @@ namespace mt
     //    быть выставлен по окончании метода. Об остальных Image из фрэйм
     //    буфера должен беспокоиться сам метод drawImplementation, гарантируется
     //    что лэйаут не будет измерен вне этого метода.
-    virtual void drawImplementation(CommandProducerGraphic& commandProducer,
-                                    FrameBuffer& frameBuffer);
+    virtual void drawImplementation(FrameBuffer& frameBuffer);
 
   protected:
     virtual void onResize() noexcept override;

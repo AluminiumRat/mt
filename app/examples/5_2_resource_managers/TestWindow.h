@@ -24,8 +24,7 @@ namespace mt
 
   protected:
     virtual void update() override;
-    virtual void drawImplementation(CommandProducerGraphic& commandProducer,
-                                    FrameBuffer& frameBuffer) override;
+    virtual void drawImplementation(FrameBuffer& frameBuffer) override;
 
   private:
     void _createVertexBuffer();

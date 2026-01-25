@@ -48,8 +48,7 @@ namespace mt
 
   protected:
     virtual void onClose() noexcept override;
-    virtual void drawImplementation(CommandProducerGraphic& commandProducer,
-                                    FrameBuffer& frameBuffer) override;
+    virtual void drawImplementation(FrameBuffer& frameBuffer) override;
     virtual void applyConfiguration(const WindowConfiguration& configuration);
     virtual void fillConfiguration(
                             WindowConfiguration& configuration) const override;

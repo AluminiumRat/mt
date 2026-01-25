@@ -67,17 +67,21 @@ void TestWindow::_createTexture()
   _texture.setImage(imageView);
 }
 
-void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,
-                                    FrameBuffer& frameBuffer)
+void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
 {
-  CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
+  std::unique_ptr<CommandProducerGraphic> commandProducer =
+                                      device().graphicQueue()->startCommands();
 
-  Technique::Bind bind(*_technique, _pass, commandProducer);
+  CommandProducerGraphic::RenderPass renderPass(*commandProducer, frameBuffer);
+
+  Technique::Bind bind(*_technique, _pass, *commandProducer);
   if (bind.isValid())
   {
-    commandProducer.draw(4);
+    commandProducer->draw(4);
     bind.release();
   }
 
   renderPass.endPass();
+
+  device().graphicQueue()->submitCommands(std::move(commandProducer));
 }

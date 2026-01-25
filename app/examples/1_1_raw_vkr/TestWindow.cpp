@@ -196,19 +196,23 @@ Ref<DataBuffer> TestWindow::_createVertexBuffer()
   return vertexBuffer;
 }
 
-void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,
-                                    FrameBuffer& frameBuffer)
+void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
 {
-  CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
+  std::unique_ptr<CommandProducerGraphic> commandProducer =
+                                      device().graphicQueue()->startCommands();
 
-  commandProducer.bindDescriptorSetGraphic( *_descriptorSet,
+  CommandProducerGraphic::RenderPass renderPass(*commandProducer, frameBuffer);
+
+  commandProducer->bindDescriptorSetGraphic(*_descriptorSet,
                                             0,
                                             _pipeline->layout());
 
-  commandProducer.setGraphicPipeline(*_pipeline);
-  commandProducer.draw(3);
+  commandProducer->setGraphicPipeline(*_pipeline);
+  commandProducer->draw(3);
 
-  commandProducer.unbindDescriptorSetGraphic(1);
+  commandProducer->unbindDescriptorSetGraphic(1);
 
   renderPass.endPass();
+
+  device().graphicQueue()->submitCommands(std::move(commandProducer));
 }

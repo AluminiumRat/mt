@@ -131,19 +131,23 @@ void TestWindow::_fillScene()
   }
 }
 
-void TestWindow::drawImplementation(CommandProducerGraphic& commandProducer,
-                                    FrameBuffer& frameBuffer)
+void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
 {
   _drawPlan.clear();
 
   _scene.fillDrawPlan(_drawPlan, _camera, _frameTypeIndex);
 
-  CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
+  std::unique_ptr<CommandProducerGraphic> commandProducer =
+                                      device().graphicQueue()->startCommands();
 
-  _drawStage.draw(commandProducer, _drawPlan, _camera);
-  drawGUI(commandProducer);
+  CommandProducerGraphic::RenderPass renderPass(*commandProducer, frameBuffer);
+
+  _drawStage.draw(*commandProducer, _drawPlan, _camera);
+  drawGUI(*commandProducer);
 
   renderPass.endPass();
+
+  device().graphicQueue()->submitCommands(std::move(commandProducer));
 }
 
 void TestWindow::guiImplementation()

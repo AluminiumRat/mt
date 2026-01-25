@@ -188,12 +188,16 @@ void GUIWindow::guiImplementation()
 {
 }
 
-void GUIWindow::drawImplementation( CommandProducerGraphic& commandProducer,
-                                    FrameBuffer& frameBuffer)
+void GUIWindow::drawImplementation(FrameBuffer& frameBuffer)
 {
-  CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
-  drawGUI(commandProducer);
+  std::unique_ptr<CommandProducerGraphic> commandProducer =
+                                      device().graphicQueue()->startCommands();
+
+  CommandProducerGraphic::RenderPass renderPass(*commandProducer, frameBuffer);
+  drawGUI(*commandProducer);
   renderPass.endPass();
+
+  device().graphicQueue()->submitCommands(std::move(commandProducer));
 }
 
 void GUIWindow::drawGUI(CommandProducerGraphic& commandProducer)

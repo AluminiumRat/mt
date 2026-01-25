@@ -88,11 +88,12 @@ void TestWindow::_createTexture()
   _texture.setImage(imageView);
 }
 
-void TestWindow::drawImplementation(
-                                      CommandProducerGraphic& commandProducer,
-                                      FrameBuffer& frameBuffer)
+void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
 {
-  CommandProducerGraphic::RenderPass renderPass(commandProducer, frameBuffer);
+  std::unique_ptr<CommandProducerGraphic> commandProducer =
+                                      device().graphicQueue()->startCommands();
+
+  CommandProducerGraphic::RenderPass renderPass(*commandProducer, frameBuffer);
 
   static int frameIndex = 0;
 
@@ -112,13 +113,15 @@ void TestWindow::drawImplementation(
   _color.setValue(colorValue);
 
   //  Бинд техники и отрисовка
-  Technique::Bind bind(*_technique, _pass, commandProducer);
+  Technique::Bind bind(*_technique, _pass, *commandProducer);
   if (bind.isValid())
   {
-    commandProducer.draw(3);
+    commandProducer->draw(3);
     bind.release();
   }
 
   renderPass.endPass();
   frameIndex++;
+
+  device().graphicQueue()->submitCommands(std::move(commandProducer));
 }
