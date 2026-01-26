@@ -117,12 +117,13 @@ void TechniqueManager::TechniqueResource::_updateFileWatching(
   }
 }
 
-Ref<Technique> TechniqueManager::TechniqueResource::createTechnique(
+std::unique_ptr<Technique>
+                TechniqueManager::TechniqueResource::createTechnique(
                                                             bool checkProcessed)
 {
   std::lock_guard lock(_configuratorMutex);
   if(checkProcessed && !_processed) _rebuild();
-  return Ref(new Technique(*_configurator));
+  return std::unique_ptr<Technique>(new Technique(*_configurator));
 }
 
 void TechniqueManager::TechniqueResource::propagateConfiguration()
@@ -161,8 +162,9 @@ TechniqueManager::TechniqueManager( FileWatcher& fileWatcher,
 {
 }
 
-Ref<Technique> TechniqueManager::loadImmediately( const fs::path& filePath,
-                                                  Device& device)
+std::unique_ptr<Technique> TechniqueManager::loadImmediately(
+                                                        const fs::path& filePath,
+                                                        Device& device)
 {
   fs::path normalizedPath = filePath.lexically_normal();
 
@@ -185,14 +187,14 @@ Ref<Technique> TechniqueManager::loadImmediately( const fs::path& filePath,
     Log::error() << "TechniqueManager::unable to load technique " << filePath << " : " << error.what();
   }
 
-  Ref<Technique> technique = newResource->createTechnique(true);
+  std::unique_ptr<Technique> technique = newResource->createTechnique(true);
 
   _resources[{normalizedPath, & device}] = std::move(newResource);
 
   return technique;
 }
 
-Ref<Technique> TechniqueManager::scheduleLoading(
+std::unique_ptr<Technique> TechniqueManager::scheduleLoading(
                                           const std::filesystem::path& filePath,
                                           Device& device)
 {
@@ -210,7 +212,7 @@ Ref<Technique> TechniqueManager::scheduleLoading(
                           new TechniqueResource(normalizedPath, device, *this));
   newResource->scheduleRebuild();
 
-  Ref<Technique> technique = newResource->createTechnique(false);
+  std::unique_ptr<Technique> technique = newResource->createTechnique(false);
 
   _resources[{normalizedPath, & device}] = std::move(newResource);
 

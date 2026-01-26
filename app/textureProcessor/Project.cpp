@@ -114,8 +114,8 @@ Project::Project( const fs::path& file) :
   _configurator(new mt::TechniqueConfigurator(
                                         Application::instance().primaryDevice(),
                                         "Make texture technique")),
-  _technique(new mt::Technique(*_configurator)),
-  _techniqueProps(*_technique,
+  _technique(*_configurator),
+  _techniqueProps(_technique,
                   Application::instance().textureManager(),
                   Application::instance().bufferManager(),
                   *Application::instance().primaryDevice().graphicQueue())
@@ -240,11 +240,11 @@ void Project::rebuildTechnique()
 
 void Project::runTechnique()
 {
-  if(_technique->configuration() == nullptr) throw std::runtime_error("The shader wasn't compiled correct");
-  if(!_technique->isReady()) throw std::runtime_error("Not all resources are setted");
+  if(_technique.configuration() == nullptr) throw std::runtime_error("The shader wasn't compiled correct");
+  if(!_technique.isReady()) throw std::runtime_error("Not all resources are setted");
 
   if (_textureTaskHandle != nullptr) _textureTaskHandle->abortTask();
-  std::unique_ptr<mt::AsyncTask> newTask( new BuildTextureTask( *_technique,
+  std::unique_ptr<mt::AsyncTask> newTask( new BuildTextureTask( _technique,
                                                                 _outputFile,
                                                                 _imageFormat,
                                                                 _outputSize,

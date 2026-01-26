@@ -37,7 +37,7 @@ namespace mt
     BufferResourceManager _bufferManager;
     TechniqueManager _techniqueManager;
 
-    Ref<Technique> _technique;
+    std::unique_ptr<Technique> _technique;
     TechniquePass& _pass;
     ResourceBinding& _vertexBuffer;
     ResourceBinding& _texture;

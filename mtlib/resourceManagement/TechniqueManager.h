@@ -42,16 +42,18 @@ namespace mt
     //  Независимо от того, удастся ли загрузить технику, соответствующие файлы
     //    будут направлены на отслеживание и при изменениях в файловой системе
     //    техника будет загружаться повторно
-    Ref<Technique> loadImmediately( const std::filesystem::path& filePath,
-                                    Device& device);
+    std::unique_ptr<Technique> loadImmediately(
+                                          const std::filesystem::path& filePath,
+                                          Device& device);
 
     //  Асинхронная загрузка техники через отдельный поток.
     //  Никогда не возвращает nullptr
     //  Если конфигуратор уже был загружен ранее, то возвращает технику
     //    немедленно, иначе запустит асинхронную задачу на загрузку текстуры
     //    и вернет технику без собранных пайплайнов.
-    Ref<Technique> scheduleLoading( const std::filesystem::path& filePath,
-                                    Device& device);
+    std::unique_ptr<Technique> scheduleLoading(
+                                          const std::filesystem::path& filePath,
+                                          Device& device);
 
     //  Удалить конфигураторы, на которые нет внешних ссылок.
     void removeUnused() noexcept;
@@ -77,7 +79,7 @@ namespace mt
       //  Создать технику из конфигуратора.
       //  checkProcessed - если true, то проверяем флаг _processed и загружаем
       //    конфигуратор при необходимости
-      Ref<Technique> createTechnique(bool checkProcessed);
+      std::unique_ptr<Technique> createTechnique(bool checkProcessed);
 
     private:
       virtual void onFileChanged( const std::filesystem::path& filePath,

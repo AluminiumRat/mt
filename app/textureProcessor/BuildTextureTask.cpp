@@ -42,8 +42,7 @@ void Project::BuildTextureTask::_copyTechnique(const mt::Technique& technique)
   MT_ASSERT(configuration != nullptr);
 
   // Создаем новую технику на той же конфигурации
-  _technique = mt::Ref(new mt::Technique( *technique.configuration(),
-                                          "Build image technique"));
+  _technique.emplace( *technique.configuration(), "Build image technique");
 
   // Копируем в новую технику юниформы
   for(const mt::TechniqueConfiguration::UniformBuffer& buffer :

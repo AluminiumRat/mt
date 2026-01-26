@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <memory>
+
 #include <glm/glm.hpp>
 
 #include <gui/cameraManipulator/FlatCameraManipulator.h>
@@ -94,7 +96,7 @@ namespace mt
   private:
     Device& _device;
 
-    Ref<Technique> _viewTechnique;
+    std::unique_ptr<Technique> _viewTechnique;
     TechniquePass* _flatPass;
     TechniquePass* _cubemapPass;
     TechniquePass* _invCubemapPass;

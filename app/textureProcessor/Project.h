@@ -59,7 +59,7 @@ private:
 
   mt::Ref<mt::TechniqueConfigurator> _configurator;
 
-  mt::Ref<mt::Technique> _technique;
+  mt::Technique _technique;
   mt::TechniquePropertySet _techniqueProps;
 
   mt::Ref<mt::Image> _resultImage;

@@ -30,13 +30,14 @@ void MeshAsset::_clearConfiguration() noexcept
   _drawMap.clear();
 }
 
-void MeshAsset::setConfiguration(const Configuration& configuration)
+void MeshAsset::setConfiguration( const Configuration& configuration,
+                                  std::unique_ptr<Technique> technique)
 {
   try
   {
     _clearConfiguration();
 
-    _technique = configuration.technique;
+    _technique = std::move(technique);
 
     if(_technique != nullptr)
     {

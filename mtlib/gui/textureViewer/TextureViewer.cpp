@@ -90,7 +90,7 @@ void TextureViewer::_loadViewTechnique(TechniqueManager* techniqueManager)
                                                 "textureViewer/viewer.tch"));
     loadConfigurator(*configurator, "textureViewer/viewer.tch");
     configurator->rebuildConfiguration();
-    _viewTechnique = Ref(new Technique(*configurator));
+    _viewTechnique.reset(new Technique(*configurator));
   }
 
   _flatPass = &_viewTechnique->getOrCreatePass("FlatPass");

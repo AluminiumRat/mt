@@ -27,7 +27,7 @@ namespace mt
 
   private:
     Ref<TechniqueConfigurator> _configurator;
-    Ref<Technique> _technique;
+    Technique _technique;
 
     TechniquePass& _pass;
 

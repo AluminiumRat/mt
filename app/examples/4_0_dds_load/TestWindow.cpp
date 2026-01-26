@@ -17,10 +17,10 @@ TestWindow::TestWindow(Device& device) :
                 std::nullopt,
                 VK_FORMAT_UNDEFINED),
   _configurator(new TechniqueConfigurator(device, "Test technique")),
-  _technique(new Technique(*_configurator)),
-  _pass(_technique->getOrCreatePass("RenderPass")),
-  _vertexBuffer(_technique->getOrCreateResourceBinding("vertices")),
-  _texture(_technique->getOrCreateResourceBinding("colorTexture"))
+  _technique(*_configurator),
+  _pass(_technique.getOrCreatePass("RenderPass")),
+  _vertexBuffer(_technique.getOrCreateResourceBinding("vertices")),
+  _texture(_technique.getOrCreateResourceBinding("colorTexture"))
 {
   _makeConfiguration();
   _createVertexBuffer();
@@ -74,7 +74,7 @@ void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
 
   CommandProducerGraphic::RenderPass renderPass(*commandProducer, frameBuffer);
 
-  Technique::Bind bind(*_technique, _pass, *commandProducer);
+  Technique::Bind bind(_technique, _pass, *commandProducer);
   if (bind.isValid())
   {
     commandProducer->draw(4);

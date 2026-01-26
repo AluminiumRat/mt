@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -39,7 +40,6 @@ namespace mt
     //  Используется во время загрузки/настройки ассета
     struct Configuration
     {
-      Ref<Technique> technique;
       std::vector<PassConfig> passes;
       uint32_t vertexCount;
       uint32_t maxInstancesCount;
@@ -78,7 +78,8 @@ namespace mt
     //    для ассета.
     //  Вызывать строго в синхронной части рабочего цикла, так как метод
     //    инициирует сигнал и вызывает немедленное обновление обсерверов
-    virtual void setConfiguration(const Configuration& configuration);
+    virtual void setConfiguration(const Configuration& configuration,
+                                  std::unique_ptr<Technique> technique);
 
     //  Подключть слот, который будет ловить сигнал о том, что был вызван
     //  метод setConfiguration
@@ -117,7 +118,7 @@ namespace mt
   private:
     std::string _debugName;
 
-    Ref<Technique> _technique;
+    std::unique_ptr<Technique> _technique;
     uint32_t _vertexCount;
     uint32_t _maxInstancesCount;
 

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <filesystem>
+#include <memory>
 
 #include <vulkan/vulkan.h>
 
@@ -64,7 +65,8 @@ private:
 
   //  Копия оригенальной техники. Оригенальную технику использовать нельзя, так
   //    как она может перенастраиваться в основном потоке
-  mt::Ref<mt::Technique> _technique;
+  //  optional используется для отложенной инициализации
+  std::optional<mt::Technique> _technique;
 
   mt::Ref<mt::Image> _targetImage;
 

@@ -13,7 +13,6 @@
 #include <technique/TechniqueVolatileContext.h>
 #include <technique/UniformVariable.h>
 #include <util/Ref.h>
-#include <util/RefCounter.h>
 #include <util/SpinLock.h>
 #include <vkr/pipeline/DescriptorPool.h>
 #include <vkr/pipeline/DescriptorSet.h>
@@ -26,7 +25,7 @@ namespace mt
   class CommandQueueTransfer;
   class Device;
 
-  class Technique : public RefCounter
+  class Technique
   {
   public:
     //  RAII обертка вокруг биндинга техники к комманд продюсеру
@@ -69,9 +68,7 @@ namespace mt
               const char* debugName);
     Technique(const Technique&) = delete;
     Technique& operator = (const Technique&) = delete;
-  protected:
     virtual ~Technique() noexcept;
-  public:
 
     inline Device& device() const noexcept;
 

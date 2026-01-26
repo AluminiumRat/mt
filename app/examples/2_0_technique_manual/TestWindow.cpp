@@ -11,13 +11,13 @@ TestWindow::TestWindow(Device& device) :
                 std::nullopt,
                 VK_FORMAT_UNDEFINED),
   _configurator(new TechniqueConfigurator(device, "Test technique")),
-  _technique(new Technique(*_configurator)),
-  _pass(_technique->getOrCreatePass("RenderPass")),
-  _colorSelector(_technique->getOrCreateSelection("colorSelector")),
-  _vertexBuffer(_technique->getOrCreateResourceBinding("vertices")),
-  _texture(_technique->getOrCreateResourceBinding("colorTexture")),
-  _sampler(_technique->getOrCreateResourceBinding("samplerState")),
-  _color(_technique->getOrCreateUniform("colorData.color"))
+  _technique(*_configurator),
+  _pass(_technique.getOrCreatePass("RenderPass")),
+  _colorSelector(_technique.getOrCreateSelection("colorSelector")),
+  _vertexBuffer(_technique.getOrCreateResourceBinding("vertices")),
+  _texture(_technique.getOrCreateResourceBinding("colorTexture")),
+  _sampler(_technique.getOrCreateResourceBinding("samplerState")),
+  _color(_technique.getOrCreateUniform("colorData.color"))
 {
   //  Настраивать и пересобирать конфигурацию можно и до и после настройки
   //  ресурсов и юниформов. Эту строку можно перенести в конец конструктора
@@ -167,7 +167,7 @@ void TestWindow::_drawSimple(CommandProducerGraphic& commandProducer)
   _color.setValue(colorValue);
 
   //  Бинд техники и отрисовка
-  Technique::Bind bind(*_technique, _pass, commandProducer);
+  Technique::Bind bind(_technique, _pass, commandProducer);
   if (bind.isValid())
   {
     commandProducer.draw(3);
@@ -184,7 +184,7 @@ void TestWindow::_drawVolatileContext(
   //    техники и зависимых объектов во время отрисовки. Этот подход нужен
   //    только если нужен константный или многопоточный рендер.
   TechniqueVolatileContext volatileContext =
-                            _technique->createVolatileContext(commandProducer);
+                              _technique.createVolatileContext(commandProducer);
 
   static int frameIndex = 0;
 
@@ -204,7 +204,7 @@ void TestWindow::_drawVolatileContext(
   _color.setValue(volatileContext, colorValue);
 
   //  Бинд техники и отрисовка
-  Technique::Bind bind(*_technique, _pass, commandProducer, &volatileContext);
+  Technique::Bind bind(_technique, _pass, commandProducer, &volatileContext);
   if(bind.isValid())
   {
     commandProducer.draw(3);

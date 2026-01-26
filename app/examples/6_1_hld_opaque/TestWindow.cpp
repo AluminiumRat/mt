@@ -33,7 +33,7 @@ void TestWindow::_setupMeshAsset()
   Ref configurator(new TechniqueConfigurator(device(), "Test technique"));
   loadConfigurator(*configurator, "lib/opaqueMesh/opaqueMesh.tch");
   configurator->rebuildConfiguration();
-  Ref technique(new Technique(*configurator));
+  std::unique_ptr<Technique> technique(new Technique(*configurator));
 
   //  Создаем вершинный буфер
   glm::vec4 positions[36] = { {-1.0f, -1.0f, -1.0f, 1.0f},
@@ -100,7 +100,6 @@ void TestWindow::_setupMeshAsset()
 
   //  Конфигурация ассета
   MeshAsset::Configuration meshConfig{};
-  meshConfig.technique = technique;
   meshConfig.passes.push_back(MeshAsset::PassConfig{
                               .frameTypeName = ColorFrameBuilder::frameTypeName,
                               .stageName = OpaqueColorStage::stageName,
@@ -111,7 +110,7 @@ void TestWindow::_setupMeshAsset()
 
   meshConfig.boundingBox = AABB(-1, -1, -1, 1, 1, 1);
 
-  _meshAsset->setConfiguration(meshConfig);
+  _meshAsset->setConfiguration(meshConfig, std::move(technique));
 }
 
 void TestWindow::_fillScene()
