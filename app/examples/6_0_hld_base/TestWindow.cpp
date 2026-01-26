@@ -93,7 +93,7 @@ void TestWindow::_setupMeshAsset()
   Ref<Image> image = loadDDS( "examples/image.dds",
                               device(),
                               nullptr,
-                              true);
+                              false);
   Ref<ImageView> imageView(new ImageView( *image,
                                           ImageSlice(*image),
                                           VK_IMAGE_VIEW_TYPE_2D));
