@@ -138,7 +138,7 @@ void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
   _scene.fillDrawPlan(_drawPlan, _camera, _frameTypeIndex);
 
   std::unique_ptr<CommandProducerGraphic> commandProducer =
-                                      device().graphicQueue()->startCommands();
+                        device().graphicQueue()->startCommands(colorFrameType);
 
   CommandProducerGraphic::RenderPass renderPass(*commandProducer, frameBuffer);
 

@@ -56,18 +56,14 @@ void TestDrawStage::draw( CommandProducerGraphic& commandProducer,
                           const DrawPlan& drawPlan,
                           const Camera& camera)
 {
-  commandProducer.beginDebugLabel(stageName);
-
-    _updateCommonSet(commandProducer, camera);
-    commandProducer.bindDescriptorSetGraphic(
-                                            *_commonDescriptorSet,
+  _updateCommonSet(commandProducer, camera);
+  commandProducer.bindDescriptorSetGraphic( *_commonDescriptorSet,
                                             (uint32_t)DescriptorSetType::COMMON,
                                             *_pipelineLayout);
-      _processDrawables(commandProducer, drawPlan);
+  _processDrawables(commandProducer, drawPlan);
 
-    commandProducer.unbindDescriptorSetGraphic(
+  commandProducer.unbindDescriptorSetGraphic(
                                           (uint32_t)DescriptorSetType::COMMON);
-  commandProducer.endDebugLabel();
 }
 
 void TestDrawStage::_updateCommonSet( CommandProducerGraphic& commandProducer,

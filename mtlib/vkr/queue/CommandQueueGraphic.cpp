@@ -11,8 +11,10 @@ CommandQueueGraphic::CommandQueueGraphic( Device& device,
 {
 }
 
-std::unique_ptr<CommandProducerGraphic> CommandQueueGraphic::startCommands()
+std::unique_ptr<CommandProducerGraphic> CommandQueueGraphic::startCommands(
+                                                  const char* producerDebugName)
 {
   std::lock_guard lock(commonMutex);
-  return std::make_unique<CommandProducerGraphic>(commonPoolSet);
+  return std::make_unique<CommandProducerGraphic>(commonPoolSet,
+                                                  producerDebugName);
 }

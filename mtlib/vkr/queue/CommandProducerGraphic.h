@@ -61,7 +61,10 @@ namespace mt
     };
 
   public:
-    CommandProducerGraphic(CommandPoolSet& poolSet);
+    //  Если debugName - не пустая строка, то все команды продюсера
+    //  будут обернуты в vkCmdBeginDebugUtilsLabelEXT и
+    //  vkCmdEndDebugUtilsLabelEXT
+    CommandProducerGraphic(CommandPoolSet& poolSet, const char* debugName);
     CommandProducerGraphic(const CommandProducerGraphic&) = delete;
     CommandProducerCompute& operator = (const CommandProducerGraphic&) = delete;
     virtual ~CommandProducerGraphic() noexcept;

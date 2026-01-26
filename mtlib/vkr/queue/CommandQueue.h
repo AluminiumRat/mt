@@ -64,7 +64,11 @@ namespace mt
     //    в том числе из разных потоков. Очередность отправки команд на
     //    выполненение определяется тем, в какой очередности продюсеры будут
     //    возвращены в очередь.
-    std::unique_ptr<CommandProducer> startCommands();
+    //  Если producerDebugName - не пустая строка, то все команды продюсера
+    //    будут обернуты в vkCmdBeginDebugUtilsLabelEXT и
+    //    vkCmdEndDebugUtilsLabelEXT
+    std::unique_ptr<CommandProducer> startCommands(
+                                            const char* producerDebugName = "");
 
     //  Отправить собранный в продюсере буфер команд на исполнение и
     //    финализировать работу с продюсером.

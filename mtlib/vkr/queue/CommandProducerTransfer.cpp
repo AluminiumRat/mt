@@ -4,8 +4,9 @@
 
 using namespace mt;
 
-CommandProducerTransfer::CommandProducerTransfer(CommandPoolSet& poolSet) :
-  CommandProducer(poolSet)
+CommandProducerTransfer::CommandProducerTransfer( CommandPoolSet& poolSet,
+                                                  const char* debugName) :
+  CommandProducer(poolSet, debugName)
 {
 }
 

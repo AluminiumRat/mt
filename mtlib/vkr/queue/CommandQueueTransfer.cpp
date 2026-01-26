@@ -13,10 +13,12 @@ CommandQueueTransfer::CommandQueueTransfer( Device& device,
 {
 }
 
-std::unique_ptr<CommandProducerTransfer> CommandQueueTransfer::startCommands()
+std::unique_ptr<CommandProducerTransfer> CommandQueueTransfer::startCommands(
+                                                  const char* producerDebugName)
 {
   std::lock_guard lock(commonMutex);
-  return std::make_unique<CommandProducerTransfer>(commonPoolSet);
+  return std::make_unique<CommandProducerTransfer>( commonPoolSet,
+                                                    producerDebugName);
 }
 
 void CommandQueueTransfer::uploadToBuffer(const DataBuffer& dstBuffer,

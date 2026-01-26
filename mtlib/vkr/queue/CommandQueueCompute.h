@@ -25,7 +25,8 @@ namespace mt
 
     //  Начать заполнение буфера команд.
     //  Более детально смотри CommandQueue::startCommands
-    std::unique_ptr<CommandProducerCompute> startCommands();
+    std::unique_ptr<CommandProducerCompute> startCommands(
+                                            const char* producerDebugName = "");
 
     //  Отправить собранный в продюсере буфер команд на исполнение и
     //    финализировать работу с продюсером.

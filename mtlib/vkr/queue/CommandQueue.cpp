@@ -98,10 +98,11 @@ SyncPoint CommandQueue::createSyncPoint()
   return SyncPoint(*_semaphore, _lastSemaphoreValue);
 }
 
-std::unique_ptr<CommandProducer> CommandQueue::startCommands()
+std::unique_ptr<CommandProducer> CommandQueue::startCommands(
+                                                  const char* producerDebugName)
 {
   std::lock_guard lock(commonMutex);
-  return std::make_unique<CommandProducer>(commonPoolSet);
+  return std::make_unique<CommandProducer>(commonPoolSet, producerDebugName);
 }
 
 void CommandQueue::submitCommands(std::unique_ptr<CommandProducer> producer)

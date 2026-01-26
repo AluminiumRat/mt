@@ -12,8 +12,9 @@
 
 using namespace mt;
 
-CommandProducerGraphic::CommandProducerGraphic(CommandPoolSet& poolSet) :
-  CommandProducerCompute(poolSet),
+CommandProducerGraphic::CommandProducerGraphic( CommandPoolSet& poolSet,
+                                                const char* debugName) :
+  CommandProducerCompute(poolSet, debugName),
   _currentPass(nullptr)
 {
 }
@@ -30,6 +31,8 @@ void CommandProducerGraphic::finalizeCommands() noexcept
     Log::warning() << "CommandProducerGraphic::finalizeCommands: current pass is not finished";
     _endPass();
   }
+
+  CommandProducerCompute::finalizeCommands();
 }
 
 void CommandProducerGraphic::_beginPass(RenderPass& renderPass)

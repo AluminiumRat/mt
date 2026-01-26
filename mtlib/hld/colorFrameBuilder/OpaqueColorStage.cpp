@@ -31,37 +31,34 @@ void OpaqueColorStage::draw(CommandProducerGraphic& commandProducer,
   _drawCommands.clear();
   _commandMemoryPool.reset();
 
-  commandProducer.beginDebugLabel(stageName);
-    _initBuffersLayout(commandProducer);
+  _initBuffersLayout(commandProducer);
 
-    if(_frameBuffer == nullptr) _buildFrameBuffer();
+  if(_frameBuffer == nullptr) _buildFrameBuffer();
 
-    for(const Drawable* drawable : drawPlan.stagePlan(_stageIndex))
-    {
-      MT_ASSERT(drawable->drawType() == Drawable::COMMANDS_DRAW);
-      drawable->addToCommandList( _drawCommands,
-                                  _frameTypeIndex,
-                                  _stageIndex,
-                                  nullptr);
-    }
+  for(const Drawable* drawable : drawPlan.stagePlan(_stageIndex))
+  {
+    MT_ASSERT(drawable->drawType() == Drawable::COMMANDS_DRAW);
+    drawable->addToCommandList( _drawCommands,
+                                _frameTypeIndex,
+                                _stageIndex,
+                                nullptr);
+  }
 
-    CommandProducerGraphic::RenderPass renderPass(commandProducer,
-                                                  *_frameBuffer);
+  CommandProducerGraphic::RenderPass renderPass(commandProducer,
+                                                *_frameBuffer);
 
-    commandProducer.bindDescriptorSetGraphic(
-                                            commonDescriptorSet,
-                                            (uint32_t)DescriptorSetType::COMMON,
-                                            commonSetPipelineLayout);
+  commandProducer.bindDescriptorSetGraphic(
+                                          commonDescriptorSet,
+                                          (uint32_t)DescriptorSetType::COMMON,
+                                          commonSetPipelineLayout);
 
-    _drawCommands.draw( commandProducer,
-                        DrawCommandList::BY_GROUP_INDEX_SORTING);
+  _drawCommands.draw( commandProducer,
+                      DrawCommandList::BY_GROUP_INDEX_SORTING);
 
-    commandProducer.unbindDescriptorSetGraphic(
-                                          (uint32_t)DescriptorSetType::COMMON);
+  commandProducer.unbindDescriptorSetGraphic(
+                                        (uint32_t)DescriptorSetType::COMMON);
 
-    renderPass.endPass();
-
-  commandProducer.endDebugLabel();
+  renderPass.endPass();
 }
 
 void OpaqueColorStage::_buildFrameBuffer()

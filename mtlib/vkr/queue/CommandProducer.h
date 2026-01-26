@@ -47,7 +47,10 @@ namespace mt
     using MultipleImageUsage = std::span<const ImageUsage>;
 
   public:
-    CommandProducer(CommandPoolSet& poolSet);
+    //  Если debugName - не пустая строка, то все команды продюсера
+    //  будут обернуты в vkCmdBeginDebugUtilsLabelEXT и
+    //  vkCmdEndDebugUtilsLabelEXT
+    CommandProducer(CommandPoolSet& poolSet, const char* debugName);
     CommandProducer(const CommandProducer&) = delete;
     CommandProducer& operator = (const CommandProducer&) = delete;
     virtual ~CommandProducer() noexcept;
@@ -184,12 +187,15 @@ namespace mt
     std::vector<CommandBuffer*> _commandSequence;
     //  Текущий заполняемый буфер команд
     CommandBuffer* _currentPrimaryBuffer;
-    //  Зарезервированный, но ещё не, использованный буфер для согласования
+    //  Зарезервированный, но ещё не использованный буфер для согласования
     CommandBuffer* _cachedMatchingBuffer;
     //  Буфер для предварительных настроек. Создается в самом начале очереди
     //  и предназначен для команд команд загрузки/копирования, которые не могут
     //  быть выполнены внутри рендер пасса
     CommandBuffer* _preparationBuffer;
+
+    //  Для дебажных целей
+    std::string _debugName;
 
     bool _isFinalized;
   };

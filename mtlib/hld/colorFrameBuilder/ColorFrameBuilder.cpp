@@ -61,7 +61,8 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
   {
     //  Opaque проход
     std::unique_ptr<CommandProducerGraphic> opaqueProducer =
-                                        _device.graphicQueue()->startCommands();
+                                  _device.graphicQueue()->startCommands(
+                                                  OpaqueColorStage::stageName);
 
     Ref<DescriptorSet> commonSet = _buildCommonSet( *opaqueProducer,
                                                     viewCamera,
@@ -78,19 +79,17 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
   {
     //  Сборка конечного кадра
     std::unique_ptr<CommandProducerGraphic> finalizeProducer =
-                                        _device.graphicQueue()->startCommands();
-    finalizeProducer->beginDebugLabel("LDRStage");
+                              _device.graphicQueue()->startCommands("LDRStage");
 
-      CommandProducerGraphic::RenderPass renderPass(*finalizeProducer, target);
-        if(imGuiDraw)
-        {
-          finalizeProducer->beginDebugLabel("ImGui");
-          imGuiDraw(*finalizeProducer);
-          finalizeProducer->endDebugLabel();
-        }
-      renderPass.endPass();
+    CommandProducerGraphic::RenderPass renderPass(*finalizeProducer, target);
+      if(imGuiDraw)
+      {
+        finalizeProducer->beginDebugLabel("ImGui");
+        imGuiDraw(*finalizeProducer);
+        finalizeProducer->endDebugLabel();
+      }
+    renderPass.endPass();
 
-    finalizeProducer->endDebugLabel();
     _device.graphicQueue()->submitCommands(std::move(finalizeProducer));
   }
 }

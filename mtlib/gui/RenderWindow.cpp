@@ -97,7 +97,6 @@ void RenderWindow::draw()
 
   std::unique_ptr<CommandProducerGraphic> producer =
                                         _device.graphicQueue()->startCommands();
-  producer->beginDebugLabel(name().c_str());
   producer->imageBarrier( *frame.image(),
                           ImageSlice(*frame.image()),
                           VK_IMAGE_LAYOUT_UNDEFINED,
@@ -119,7 +118,6 @@ void RenderWindow::draw()
                           VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                           VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                           VK_ACCESS_NONE);
-  producer->endDebugLabel();
   _device.graphicQueue()->submitCommands(std::move(producer));
   frame.present();
 }
@@ -175,7 +173,7 @@ Ref<FrameBuffer> RenderWindow::_createFrameBuffer(Image& targetColorBuffer)
 void RenderWindow::drawImplementation(FrameBuffer& frameBuffer)
 {
   std::unique_ptr<CommandProducerGraphic> producer =
-                                        _device.graphicQueue()->startCommands();
+              _device.graphicQueue()->startCommands("RenderWindow: empty pass");
 
   CommandProducerGraphic::RenderPass renderPass(*producer, frameBuffer);
   renderPass.endPass();

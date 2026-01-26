@@ -8,7 +8,10 @@ namespace mt
   class CommandProducerTransfer : public CommandProducer
   {
   public:
-    CommandProducerTransfer(CommandPoolSet& poolSet);
+    //  Если debugName - не пустая строка, то все команды продюсера
+    //  будут обернуты в vkCmdBeginDebugUtilsLabelEXT и
+    //  vkCmdEndDebugUtilsLabelEXT
+    CommandProducerTransfer(CommandPoolSet& poolSet, const char* debugName);
     CommandProducerTransfer(const CommandProducerTransfer&) = delete;
     CommandProducerTransfer& operator = (
                                       const CommandProducerTransfer&) = delete;

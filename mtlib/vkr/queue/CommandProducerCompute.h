@@ -9,7 +9,10 @@ namespace mt
   class CommandProducerCompute : public CommandProducerTransfer
   {
   public:
-    CommandProducerCompute(CommandPoolSet& poolSet);
+    //  Если debugName - не пустая строка, то все команды продюсера
+    //  будут обернуты в vkCmdBeginDebugUtilsLabelEXT и
+    //  vkCmdEndDebugUtilsLabelEXT
+    CommandProducerCompute(CommandPoolSet& poolSet, const char* debugName);
     CommandProducerCompute(const CommandProducerCompute&) = delete;
     CommandProducerCompute& operator = (const CommandProducerCompute&) = delete;
     virtual ~CommandProducerCompute() noexcept = default;

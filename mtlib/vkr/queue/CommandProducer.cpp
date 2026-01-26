@@ -13,7 +13,8 @@
 
 using namespace mt;
 
-CommandProducer::CommandProducer(CommandPoolSet& poolSet) :
+CommandProducer::CommandProducer( CommandPoolSet& poolSet,
+                                  const char* debugName) :
   _commandPoolSet(poolSet),
   _queue(_commandPoolSet.queue()),
   _commandPool(nullptr),
@@ -21,6 +22,7 @@ CommandProducer::CommandProducer(CommandPoolSet& poolSet) :
   _preparationBuffer(nullptr),
   _cachedMatchingBuffer(nullptr),
   _descriptorPool(nullptr),
+  _debugName(debugName),
   _isFinalized(false)
 {
   try
@@ -29,6 +31,21 @@ CommandProducer::CommandProducer(CommandPoolSet& poolSet) :
     _descriptorPool = &_commandPool->descriptorPool();
     _uniformMemorySession.emplace(_commandPool->memoryPool());
     _commandSequence.reserve(1024);
+
+    //  Добавляем дебажную информацию в очередь. Используем подготовительный
+    //  буфер, чтобы гарантировать, что команда окажется в самом начале
+    //  первого буфера (поэтому не используем beginDebugLabel)
+    if(!_debugName.empty() && VKRLib::instance().isDebugEnabled())
+    {
+      VkDebugUtilsLabelEXT labelInfo{};
+      labelInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+      labelInfo.pLabelName = _debugName.c_str();
+
+      CommandBuffer& buffer = getOrCreatePreparationBuffer();
+      Device& device = _queue.device();
+      device.extFunctions().vkCmdBeginDebugUtilsLabelEXT( buffer.handle(),
+                                                          &labelInfo);
+    }
   }
   catch (std::exception& error)
   {
@@ -39,6 +56,17 @@ CommandProducer::CommandProducer(CommandPoolSet& poolSet) :
 
 void CommandProducer::finalizeCommands() noexcept
 {
+  //  Закрываем дебажную информацию в очереди команд
+  if(!_debugName.empty() && VKRLib::instance().isDebugEnabled())
+  {
+    MT_ASSERT(!_commandSequence.empty());
+
+    CommandBuffer* buffer = _commandSequence.back();
+    MT_ASSERT(buffer->isBufferInProcess());
+
+    Device& device = _queue.device();
+    device.extFunctions().vkCmdEndDebugUtilsLabelEXT(buffer->handle());
+  }
 }
 
 std::optional<CommandProducer::FinalizeResult>

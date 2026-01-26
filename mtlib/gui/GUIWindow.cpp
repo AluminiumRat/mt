@@ -191,7 +191,7 @@ void GUIWindow::guiImplementation()
 void GUIWindow::drawImplementation(FrameBuffer& frameBuffer)
 {
   std::unique_ptr<CommandProducerGraphic> commandProducer =
-                                      device().graphicQueue()->startCommands();
+                              device().graphicQueue()->startCommands("ImGui");
 
   CommandProducerGraphic::RenderPass renderPass(*commandProducer, frameBuffer);
   drawGUI(*commandProducer);
@@ -202,8 +202,6 @@ void GUIWindow::drawImplementation(FrameBuffer& frameBuffer)
 
 void GUIWindow::drawGUI(CommandProducerGraphic& commandProducer)
 {
-  commandProducer.beginDebugLabel("ImGui");
-
   ImguiContextSetter setter(*_imguiContext, *this);
 
   ImGui::Render();
@@ -216,8 +214,6 @@ void GUIWindow::drawGUI(CommandProducerGraphic& commandProducer)
     {
       ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer.handle());
     });
-
-  commandProducer.endDebugLabel();
 }
 
 void GUIWindow::applyConfiguration(const WindowConfiguration& configuration)

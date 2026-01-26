@@ -11,8 +11,10 @@ CommandQueueCompute::CommandQueueCompute( Device& device,
 {
 }
 
-std::unique_ptr<CommandProducerCompute> CommandQueueCompute::startCommands()
+std::unique_ptr<CommandProducerCompute> CommandQueueCompute::startCommands(
+                                                  const char* producerDebugName)
 {
   std::lock_guard lock(commonMutex);
-  return std::make_unique<CommandProducerCompute>(commonPoolSet);
+  return std::make_unique<CommandProducerCompute>(commonPoolSet,
+                                                  producerDebugName);
 }
