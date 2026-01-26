@@ -20,7 +20,6 @@ namespace mt
     VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
   };
 
-
   //  Загрузить настройки техники из отдельной YAML ноды
   static void loadConfigurator( TechniqueConfigurator& target,
                                 YAML::Node node,
@@ -177,6 +176,15 @@ namespace mt
 
     std::string pipeline = passNode["pipeline"].as<std::string>("GRAPHIC");
     target.setPipelineType(pipelineMap[pipeline]);
+
+    std::string frameType = passNode["frameType"].as<std::string>("");
+    target.setFrameType(frameType.c_str());
+
+    std::string stageName = passNode["stageName"].as<std::string>("");
+    target.setStageName(stageName.c_str());
+
+    int32_t layer = passNode["layre"].as<int>(0);
+    target.setLayer(layer);
 
     loadSelectionsList(passNode, target);
     loadShaders(passNode, target);

@@ -46,6 +46,24 @@ namespace mt
     inline AbstractPipeline::Type pipelineType() const noexcept;
     inline void setPipelineType(AbstractPipeline::Type newValue) noexcept;
 
+    //  Тип фрэйма, на котором используется проход отрисовки
+    //  Используется в библиотеке hld для автоматической настройки Drawable-ов
+    //  Если автонастройка не нужна, можно не настраивать это свойство
+    inline const std::string& frameType() const noexcept;
+    inline void setFrameType(const char* newValue);
+
+    //  Имя стадии, на которой используется проход отрисовки
+    //  Используется в библиотеке hld для автоматической настройки Drawable-ов
+    //  Если автонастройка не нужна, можно не настраивать это свойство
+    inline const std::string& stageName() const noexcept;
+    inline void setStageName(const char* newValue);
+
+    //  Номер слоя при отрисовке внутри одной стадии
+    //  Используется в библиотеке hld для автоматической настройки Drawable-ов
+    //  Если автонастройка не нужна, можно не настраивать это свойство
+    inline int32_t layer() const noexcept;
+    inline void setLayer(int32_t newValue);
+
     inline const Shaders& shaders() const noexcept;
     inline void setShaders(std::span<const ShaderInfo> newShaders);
 
@@ -219,6 +237,9 @@ namespace mt
   private:
     std::string _name;
     AbstractPipeline::Type _pipelineType;
+    std::string _frameType;
+    std::string _stageName;
+    int32_t _layer;
     std::vector<ShaderInfo> _shaders;
     std::vector<std::string> _selections;
 
@@ -246,6 +267,36 @@ namespace mt
                                       AbstractPipeline::Type newValue) noexcept
   {
     _pipelineType = newValue;
+  }
+
+  inline const std::string& PassConfigurator::frameType() const noexcept
+  {
+    return _frameType;
+  }
+
+  inline void  PassConfigurator::setFrameType(const char* newValue)
+  {
+    _frameType = newValue;
+  }
+
+  inline const std::string& PassConfigurator::stageName() const noexcept
+  {
+    return _stageName;
+  }
+
+  inline void  PassConfigurator::setStageName(const char* newValue)
+  {
+    _stageName = newValue;
+  }
+
+  inline int32_t  PassConfigurator::layer() const noexcept
+  {
+    return _layer;
+  }
+
+  inline void  PassConfigurator::setLayer(int32_t newValue)
+  {
+    _layer = newValue;
   }
 
   inline const PassConfigurator::Shaders&

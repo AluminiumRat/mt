@@ -15,6 +15,9 @@ using namespace mt;
 PassConfigurator::PassConfigurator(const char* name) :
   _name(name),
   _pipelineType(AbstractPipeline::GRAPHIC_PIPELINE),
+  _frameType(""),
+  _stageName(""),
+  _layer(0),
   _topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST),
   _rasterizationState{},
   _depthStencilState{},
@@ -55,6 +58,9 @@ void PassConfigurator::processShaders(ConfigurationBuildContext& context) const
 
   context.currentPass->pipelineType = _pipelineType;
   context.currentPass->name = _name;
+  context.currentPass->frameType = _frameType;
+  context.currentPass->stageName = _stageName;
+  context.currentPass->layer = _layer;
 
   _processSelections(context);
 

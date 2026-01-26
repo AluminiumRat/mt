@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <string>
+#include <vector>
 
 #include <util/Ref.h>
 #include <vkr/pipeline/AbstractPipeline.h>
@@ -17,6 +18,11 @@ namespace mt
     std::string name;
 
     AbstractPipeline::Type pipelineType = AbstractPipeline::GRAPHIC_PIPELINE;
+
+    //  Дополнительные данные для автонастройки Drawable-ов в библиотеке hld
+    std::string frameType;
+    std::string stageName;
+    int32_t layer = 0;;
 
     //  Различные варианты собранных пайплайнов для разных значений селекшенов
     std::vector<ConstRef<GraphicPipeline>> graphicPipelineVariants;
