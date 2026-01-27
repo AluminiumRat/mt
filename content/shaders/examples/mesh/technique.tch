@@ -6,6 +6,9 @@ defaultSamplers:
 
 passes:
   RenderPass :
+    frameType: ColorFrame
+    stageName: TestDrawStage
+
     shaders:
       VERTEX : examples/mesh/shader.vert
       FRAGMENT : examples/mesh/shader.frag

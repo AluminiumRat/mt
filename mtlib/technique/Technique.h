@@ -13,6 +13,7 @@
 #include <technique/TechniqueVolatileContext.h>
 #include <technique/UniformVariable.h>
 #include <util/Ref.h>
+#include <util/Signal.h>
 #include <util/SpinLock.h>
 #include <vkr/pipeline/DescriptorPool.h>
 #include <vkr/pipeline/DescriptorSet.h>
@@ -119,6 +120,9 @@ namespace mt
 
     inline const TechniqueConfigurator& configurator() const noexcept;
     inline const TechniqueConfiguration* configuration() const noexcept;
+
+  public:
+    Signal<> configurationUpdatedSignal;
 
   private:
     friend class TechniqueConfigurator;

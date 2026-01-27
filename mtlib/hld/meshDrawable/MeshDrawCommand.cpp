@@ -8,8 +8,7 @@ using namespace mt;
 void MeshDrawCommand::draw( CommandProducerGraphic& producer,
                             std::span<const CommandPtr> commands)
 {
-  const Technique* technique = _drawable.asset().technique();
-  if(technique == nullptr || !technique->isReady()) return;
+  if(!_technique.isReady()) return;
 
   size_t commandProcessed = 0;
   while(commandProcessed != commands.size())
@@ -17,22 +16,20 @@ void MeshDrawCommand::draw( CommandProducerGraphic& producer,
     size_t chunkSize = commands.size() - commandProcessed;
     chunkSize = std::min(chunkSize, _maxInstances);
     _processChunk(producer,
-                  *technique,
                   commands.subspan(commandProcessed, chunkSize));
     commandProcessed += chunkSize;
   }
 }
 
 void MeshDrawCommand::_processChunk(CommandProducerGraphic& producer,
-                                    const Technique& technique,
                                     std::span<const CommandPtr> commands)
 {
   TechniqueVolatileContext volatileContext =
-                                      technique.createVolatileContext(producer);
+                                    _technique.createVolatileContext(producer);
 
   updateInstanceData(volatileContext, commands);
 
-  Technique::Bind bind(technique, _pass, producer, &volatileContext);
+  Technique::Bind bind(_technique, _pass, producer, &volatileContext);
   if (!bind.isValid()) return;
 
   producer.draw(_vertexCount, (uint32_t)commands.size());
@@ -51,9 +48,7 @@ void MeshDrawCommand::_updatePositionMatrix(
                                       TechniqueVolatileContext& volatileContext,
                                       std::span<const CommandPtr> commands)
 {
-  const UniformVariable* matrixUniform =
-                                      _drawable.asset().positionMatrixUniform();
-  if(matrixUniform == nullptr || !matrixUniform->isActive()) return;
+  if(!_positionMatrix.isActive()) return;
 
   size_t arraySize = commands.size();
   size_t dataSize = arraySize * sizeof(glm::mat4);
@@ -65,18 +60,16 @@ void MeshDrawCommand::_updatePositionMatrix(
     positionMatrices[i] = meshCommand._drawable.positionMatrix();
   }
 
-  matrixUniform->setValue(volatileContext,
-                          UniformVariable::ValueRef{.data = positionMatrices,
-                                                    .dataSize = dataSize});
+  _positionMatrix.setValue( volatileContext,
+                            UniformVariable::ValueRef{.data = positionMatrices,
+                                                      .dataSize = dataSize});
 }
 
 void MeshDrawCommand::_updatePrevPositionMatrix(
                                       TechniqueVolatileContext& volatileContext,
                                       std::span<const CommandPtr> commands)
 {
-  const UniformVariable* matrixUniform =
-                                  _drawable.asset().prevPositionMatrixUniform();
-  if(matrixUniform == nullptr || !matrixUniform->isActive()) return;
+  if(!_prevPositionMatrix.isActive()) return;
 
   size_t arraySize = commands.size();
   size_t dataSize = arraySize * sizeof(glm::mat4);
@@ -88,18 +81,17 @@ void MeshDrawCommand::_updatePrevPositionMatrix(
     positionMatrices[i] = meshCommand._drawable.prevPositionMatrix();
   }
 
-  matrixUniform->setValue(volatileContext,
-                          UniformVariable::ValueRef{.data = positionMatrices,
-                                                    .dataSize = dataSize});
+  _prevPositionMatrix.setValue( volatileContext,
+                                UniformVariable::ValueRef{
+                                                        .data = positionMatrices,
+                                                        .dataSize = dataSize});
 }
 
 void MeshDrawCommand::_updateBivecMatrix(
                                       TechniqueVolatileContext& volatileContext,
                                       std::span<const CommandPtr> commands)
 {
-  const UniformVariable* matrixUniform =
-                                      _drawable.asset().bivecMatrixUniform();
-  if (matrixUniform == nullptr || !matrixUniform->isActive()) return;
+  if (!_bivecMatrix.isActive()) return;
 
   size_t arraySize = commands.size();
   size_t dataSize = arraySize * sizeof(glm::mat3x4);
@@ -111,7 +103,7 @@ void MeshDrawCommand::_updateBivecMatrix(
     bivecMatrices[i] = meshCommand._drawable.bivecMatrix();
   }
 
-  matrixUniform->setValue(volatileContext,
-                          UniformVariable::ValueRef{.data = bivecMatrices,
-                                                    .dataSize = dataSize});
+  _bivecMatrix.setValue(volatileContext,
+                        UniformVariable::ValueRef{.data = bivecMatrices,
+                                                  .dataSize = dataSize});
 }

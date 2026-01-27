@@ -5,7 +5,10 @@ defaultSamplers:
     mipmapMode: LINEAR
 
 passes:
-  RenderPass :
+  OpaquePass :
+    frameType: ColorFrame
+    stageName: OpaqueColorStage
+
     shaders:
       VERTEX : lib/opaqueMesh/opaqueMesh.vert
       FRAGMENT : lib/opaqueMesh/opaqueMesh.frag

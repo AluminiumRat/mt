@@ -56,6 +56,7 @@ void Technique::updateConfiguration()
   ConstRef<TechniqueConfiguration> newConfiguration =
                                                 _configurator->configuration();
   if(newConfiguration != nullptr) _setConfiguration(*newConfiguration);
+  configurationUpdatedSignal.emit();
 }
 
 void Technique::_setConfiguration(const TechniqueConfiguration & configuration)

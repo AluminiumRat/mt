@@ -36,6 +36,18 @@ void TestWindow::_setupMeshAsset()
   configurator->rebuildConfiguration();
   std::unique_ptr<Technique> technique(new Technique(*configurator));
 
+  //  Создаем текстуру
+  Ref<Image> image = loadDDS( "examples/image.dds",
+                              device(),
+                              nullptr,
+                              false);
+  Ref<ImageView> imageView(new ImageView( *image,
+                                          ImageSlice(*image),
+                                          VK_IMAGE_VIEW_TYPE_2D));
+  technique->getOrCreateResourceBinding("colorTexture").setImage(imageView);
+
+  _meshAsset->addTechnique(std::move(technique));
+
   //  Создаем вершинный буфер
   glm::vec4 positions[36] = { {-1.0f, -1.0f, -1.0f, 1.0f},
                               {-1.0f,  1.0f, -1.0f, 1.0f},
@@ -87,31 +99,11 @@ void TestWindow::_setupMeshAsset()
                                           0,
                                           sizeof(positions),
                                           positions);
-  technique->getOrCreateResourceBinding("vertices").setBuffer(positionsBuffer);
 
-  //  Создаем текстуру
-  Ref<Image> image = loadDDS( "examples/image.dds",
-                              device(),
-                              nullptr,
-                              false);
-  Ref<ImageView> imageView(new ImageView( *image,
-                                          ImageSlice(*image),
-                                          VK_IMAGE_VIEW_TYPE_2D));
-  technique->getOrCreateResourceBinding("colorTexture").setImage(imageView);
-
-  //  Конфигурация ассета
-  MeshAsset::Configuration meshConfig{};
-  meshConfig.passes.push_back(MeshAsset::PassConfig{
-                                        .frameTypeName = colorFrameType,
-                                        .stageName = TestDrawStage::stageName,
-                                        .layer = 0,
-                                        .passName = "RenderPass"});
-  meshConfig.vertexCount = sizeof(positions) / sizeof(positions[0]);
-  meshConfig.maxInstancesCount = 2;
-
-  meshConfig.boundingBox = AABB(-1, -1, -1, 1, 1, 1);
-
-  _meshAsset->setConfiguration(meshConfig, std::move(technique));
+  _meshAsset->setCommonBuffer("vertices", *positionsBuffer);
+  _meshAsset->setVertexCount(sizeof(positions) / sizeof(positions[0]));
+  _meshAsset->setBound(AABB(-1, -1, -1, 1, 1, 1));
+  _meshAsset->setMaxInstancesCount(2);
 }
 
 void TestWindow::_fillScene()

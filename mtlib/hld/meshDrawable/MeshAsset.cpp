@@ -1,105 +1,216 @@
-﻿#include <algorithm>
-#include <stdexcept>
+﻿#include <stdexcept>
 
-#include <hld/drawCommand/DrawCommand.h>
 #include <hld/meshDrawable/MeshAsset.h>
 #include <hld/HLDLib.h>
+#include <util/Abort.h>
+#include <util/Log.h>
 
 using namespace mt;
 
 MeshAsset::MeshAsset(const char* debugName) :
   _debugName(debugName),
+  _onTechniqueUpdatedSlot(*this, &MeshAsset::_rebuildDrawMap),
+  _usesBivecMatrix(false),
+  _usesPrevMatrix(false),
   _vertexCount(0),
   _maxInstancesCount(1),
-  _positionMatrixUniform(nullptr),
-  _prevPositionMatrixUniform(nullptr),
-  _bivecMatrixUniform(nullptr)
+  _bound(0,0,0,0,0,0)
 {
 }
 
-void MeshAsset::_clearConfiguration() noexcept
+MeshAsset::~MeshAsset()
 {
-  _positionMatrixUniform = nullptr;
-  _prevPositionMatrixUniform = nullptr;
-  _bivecMatrixUniform = nullptr;
-  _technique.reset();
-  _vertexCount = 0;
-  _maxInstancesCount = 1;
-  _boundingBox.invalidate();
+  for(std::unique_ptr<Technique>& technique : _techniques)
+  {
+    technique->configurationUpdatedSignal.removeSlot(_onTechniqueUpdatedSlot);
+  }
+}
+
+void MeshAsset::clear() noexcept
+{
   _availableStages.clear();
   _drawMap.clear();
+  _commonBuffers.clear();
+
+  for (std::unique_ptr<Technique>& technique : _techniques)
+  {
+    technique->configurationUpdatedSignal.removeSlot(_onTechniqueUpdatedSlot);
+  }
+  _techniques.clear();
+
+  _usesBivecMatrix = false;
+  _usesPrevMatrix = false;
+  _vertexCount = 0;
+  _maxInstancesCount = 1;
+  _bound = AABB(0, 0, 0, 0, 0, 0);
+
+  techniquesChanged.emit();
+  boundChanged.emit();
 }
 
-void MeshAsset::setConfiguration( const Configuration& configuration,
-                                  std::unique_ptr<Technique> technique)
+void MeshAsset::addTechnique(std::unique_ptr<Technique> technique)
+{
+  std::string techniqueName = technique->debugName();
+
+  try
+  {
+    Technique* techniquePtr = technique.get();
+    _techniques.push_back(std::move(technique));
+
+    techniquePtr->configurationUpdatedSignal.addSlot(_onTechniqueUpdatedSlot);
+
+    for(BufferInfo& bufferInfo : _commonBuffers)
+    {
+      ResourceBinding& binding = 
+              techniquePtr->getOrCreateResourceBinding(bufferInfo.name.c_str());
+      binding.setBuffer(bufferInfo.buffer);
+    }
+
+    _rebuildDrawMap();
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << _debugName << ": unable to add technique " << techniqueName << ": " << error.what();
+    clear();
+    throw error;
+  }
+
+  techniquesChanged.emit();
+}
+
+void MeshAsset::addTechniques(std::span<std::unique_ptr<Technique>> techniques)
 {
   try
   {
-    _clearConfiguration();
-
-    _technique = std::move(technique);
-
-    if(_technique != nullptr)
+    for(std::unique_ptr<Technique>& technique : techniques)
     {
-      _positionMatrixUniform =
-                &_technique->getOrCreateUniform("transformData.positionMatrix");
-      _prevPositionMatrixUniform =
-            &_technique->getOrCreateUniform("transformData.prevPositionMatrix");
-      _bivecMatrixUniform =
-                  &_technique->getOrCreateUniform("transformData.bivecMatrix");
+      Technique* techniquePtr = technique.get();
+      _techniques.push_back(std::move(technique));
 
-      _vertexCount = configuration.vertexCount;
-      _maxInstancesCount = configuration.maxInstancesCount;
-      if(_maxInstancesCount == 0) throw std::runtime_error(_debugName + ": maxInstancesCount is 0");
+      techniquePtr->configurationUpdatedSignal.addSlot(_onTechniqueUpdatedSlot);
 
-      _boundingBox = configuration.boundingBox;
-      if(!_boundingBox.valid()) _boundingBox = AABB(0, 0, 0, 0, 0, 0);
-
-      for(const PassConfig& passConfig : configuration.passes)
+      for(BufferInfo& bufferInfo : _commonBuffers)
       {
-        FrameTypeIndex frameTypeIndex =
-                HLDLib::instance().getFrameTypeIndex(passConfig.frameTypeName);
-        StageIndex stageIndex =
-                        HLDLib::instance().getStageIndex(passConfig.stageName);
-        TechniquePass& pass =
-                      _technique->getOrCreatePass(passConfig.passName.c_str());
-        _addPass(frameTypeIndex, stageIndex, passConfig.layer, pass);
+        ResourceBinding& binding = 
+              techniquePtr->getOrCreateResourceBinding(bufferInfo.name.c_str());
+        binding.setBuffer(bufferInfo.buffer);
       }
     }
 
-    _configurationUpdated.emit();
+    _rebuildDrawMap();
   }
-  catch(...)
+  catch(std::exception& error)
   {
-    _clearConfiguration();
-    _configurationUpdated.emit();
-    throw;
+    Log::error() << _debugName << ": unable to add techniques: " << error.what();
+    clear();
+    throw error;
+  }
+
+  techniquesChanged.emit();
+}
+
+void MeshAsset::deleteTechnique(const Technique& technique) noexcept
+{
+  try
+  {
+    for(Techniques::iterator iTechnique = _techniques.begin();
+        iTechnique != _techniques.end();
+        iTechnique++)
+    {
+      if(iTechnique->get() == &technique)
+      {
+        (*iTechnique)->configurationUpdatedSignal.removeSlot(
+                                                      _onTechniqueUpdatedSlot);
+        _techniques.erase(iTechnique);
+        break;
+      }
+    }
+
+    _rebuildDrawMap();
+  }
+  catch (std::exception& error)
+  {
+    Log::error() << _debugName << ": unable to delete technique: " << error.what();
+    Abort(error.what());
+  }
+
+  techniquesChanged.emit();
+}
+
+void MeshAsset::_rebuildDrawMap()
+{
+  try
+  {
+    _availableStages.clear();
+    _drawMap.clear();
+    _usesBivecMatrix = false;
+    _usesPrevMatrix = false;
+
+    for (std::unique_ptr<Technique>& technique : _techniques)
+    {
+      _updateDrawmapFromTechnique(*technique);
+    }
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << _debugName << ": unable to rebuild drawmap: " << error.what();
+    clear();
+    throw error;
   }
 }
 
-void MeshAsset::_addPass( FrameTypeIndex frameTypeIndex,
-                          StageIndex stageIndex,
-                          int32_t layer,
-                          TechniquePass& pass)
+void MeshAsset::_updateDrawmapFromTechnique(Technique& technique)
 {
-  _addAvailableStage(frameTypeIndex, stageIndex);
+  const TechniqueConfiguration* configuration = technique.configuration();
+  if (configuration == nullptr) return;
 
-  if(_drawMap.size() <= frameTypeIndex) _drawMap.resize(frameTypeIndex + 1);
-  FrameStages& stages = _drawMap[frameTypeIndex];
+  UniformVariable& positionMatrix =
+                  technique.getOrCreateUniform("transformData.positionMatrix");
 
-  if(stages.size() <= stageIndex) stages.resize(stageIndex + 1);
-  StagePasses& passes = stages[stageIndex];
+  UniformVariable& prevPositionMatrix =
+              technique.getOrCreateUniform("transformData.prevPositionMatrix");
+  _usesPrevMatrix |= prevPositionMatrix.isActive();
 
-  PassInfo newPass{};
-  newPass.layer = layer;
-  newPass.pass = &pass;
-  if(_maxInstancesCount > 1)
+  UniformVariable& bivecMatrix =
+                      technique.getOrCreateUniform("transformData.bivecMatrix");
+  _usesBivecMatrix |= bivecMatrix.isActive();
+
+  //  Обходим все проходы в технике и добавляем их в _drawMap
+  for(const PassConfiguration& passConfig : configuration->_passes)
   {
-    newPass.commandGroup = HLDLib::instance().allocateDrawCommandGroup();
-  }
-  else newPass.commandGroup = DrawCommand::noGroup;
+    //  Если для прохода не указаны фрэйм и стадия, то мы не можем его
+    //  использовать
+    if(passConfig.frameType.empty() || passConfig.stageName.empty()) continue;
 
-  passes.push_back(newPass);
+    FrameTypeIndex frameTypeIndex =
+                    HLDLib::instance().getFrameTypeIndex(passConfig.frameType);
+    StageIndex stageIndex =
+                        HLDLib::instance().getStageIndex(passConfig.stageName);
+
+    //  Заполняем информацию об новом проходе отрисовки
+    PassInfo newPassInfo{};
+    newPassInfo.layer = passConfig.layer;
+    if (_maxInstancesCount > 1)
+    {
+      newPassInfo.commandGroup = HLDLib::instance().allocateDrawCommandGroup();
+    }
+    else newPassInfo.commandGroup = DrawCommand::noGroup;
+    newPassInfo.technique = &technique;
+    newPassInfo.pass = &technique.getOrCreatePass(passConfig.name.c_str());
+    newPassInfo.positionMatrix = &positionMatrix;
+    newPassInfo.prevPositionMatrix = &prevPositionMatrix;
+    newPassInfo.bivecMatrix = &bivecMatrix;
+
+    //  Ищем место в _drawMap и вставляем туда новый проход отрисовки
+    if (_drawMap.size() <= frameTypeIndex) _drawMap.resize(frameTypeIndex + 1);
+    FrameStages& stages = _drawMap[frameTypeIndex];
+    if (stages.size() <= stageIndex) stages.resize(stageIndex + 1);
+    StagePasses& passes = stages[stageIndex];
+    passes.push_back(newPassInfo);
+
+    //  Делаем отметку о новой доступной стадии отрисовки
+    _addAvailableStage(frameTypeIndex, stageIndex);
+  }
 }
 
 void MeshAsset::_addAvailableStage( FrameTypeIndex frameTypeIndex,
@@ -116,5 +227,41 @@ void MeshAsset::_addAvailableStage( FrameTypeIndex frameTypeIndex,
                 stageIndex) == stages.end())
   {
     stages.push_back(stageIndex);
+  }
+}
+
+void MeshAsset::setCommonBuffer(const char* bufferName,
+                                const DataBuffer& buffer)
+{
+  try
+  {
+    //  Проверяем, есть ли уже буфер с таким именем, и если нет, то добавляем
+    //  в список
+    bool exists = false;
+    for(BufferInfo& bufferInfo : _commonBuffers)
+    {
+      if(bufferInfo.name == bufferName)
+      {
+        exists = true;
+        break;
+      }
+    }
+    if(!exists) _commonBuffers.push_back(BufferInfo{
+                                                  .name = bufferName,
+                                                  .buffer = ConstRef(&buffer)});
+
+    //  Обходим все техники и выставляем буфер
+    for(std::unique_ptr<Technique>& technique : _techniques)
+    {
+      ResourceBinding& binding =
+                              technique->getOrCreateResourceBinding(bufferName);
+      binding.setBuffer(&buffer);
+    }
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << _debugName << ": unable to add buffer " << bufferName << ": " << error.what();
+    clear();
+    throw error;
   }
 }

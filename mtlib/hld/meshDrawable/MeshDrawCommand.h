@@ -1,18 +1,26 @@
 ﻿#pragma once
 
+#include <cstdint>
+
 #include <hld/drawCommand/DrawCommand.h>
-#include <util/Ref.h>
 
 namespace mt
 {
   class MeshDrawable;
   class Technique;
+  class TechniquePass;
+  class TechniqueVolatileContext;
+  class UniformVariable;
 
   class MeshDrawCommand : public DrawCommand
   {
   public:
     inline MeshDrawCommand( const MeshDrawable& drawable,
+                            const Technique& technique,
                             const TechniquePass& pass,
+                            const UniformVariable& positionMatrix,
+                            const UniformVariable& prevPositionMatrix,
+                            const UniformVariable& bivecMatrix,
                             uint32_t vertexCount,
                             uint32_t maxInstances,
                             Group groupIndex,
@@ -31,7 +39,6 @@ namespace mt
 
   private:
     void _processChunk( CommandProducerGraphic& producer,
-                        const Technique& technique,
                         std::span<const CommandPtr> commands);
     void _updatePositionMatrix( TechniqueVolatileContext& volatileContext,
                                 std::span<const CommandPtr> commands);
@@ -42,21 +49,34 @@ namespace mt
 
   private:
     const MeshDrawable& _drawable;
+    const Technique& _technique;
     const TechniquePass& _pass;
+    const UniformVariable& _positionMatrix;
+    const UniformVariable& _prevPositionMatrix;
+    const UniformVariable& _bivecMatrix;
     uint32_t _vertexCount;
     size_t _maxInstances;
   };
 
-  inline MeshDrawCommand::MeshDrawCommand(const MeshDrawable& drawable,
-                                          const TechniquePass& pass,
-                                          uint32_t vertexCount,
-                                          uint32_t maxInstances,
-                                          Group groupIndex,
-                                          int32_t layer,
-                                          float distance) :
+  inline MeshDrawCommand::MeshDrawCommand(
+                                      const MeshDrawable& drawable,
+                                      const Technique& technique,
+                                      const TechniquePass& pass,
+                                      const UniformVariable& positionMatrix,
+                                      const UniformVariable& prevPositionMatrix,
+                                      const UniformVariable& bivecMatrix,
+                                      uint32_t vertexCount,
+                                      uint32_t maxInstances,
+                                      Group groupIndex,
+                                      int32_t layer,
+                                      float distance) :
     DrawCommand(groupIndex, layer, distance),
     _drawable(drawable),
+    _technique(technique),
     _pass(pass),
+    _positionMatrix(positionMatrix),
+    _prevPositionMatrix(prevPositionMatrix),
+    _bivecMatrix(bivecMatrix),
     _vertexCount(vertexCount),
     _maxInstances(maxInstances)
   {

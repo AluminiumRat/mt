@@ -12,14 +12,15 @@ MeshDrawable::MeshDrawable(const MeshAsset& asset) :
   _prevPositionMatrix(1),
   _bivecMatrix(1)
 {
-  asset.addUpdateConfigurationSlot(_onAssetUpdatedSlot).release();
+  asset.techniquesChanged.addSlot(_onAssetUpdatedSlot);
+  asset.boundChanged.addSlot(_onAssetUpdatedSlot);
   _asset = &asset;
 }
 
 MeshDrawable::~MeshDrawable() noexcept
 {
-  _asset->removeUpdateConfigurationSlot(_onAssetUpdatedSlot);
-  _asset = nullptr;
+  _asset->techniquesChanged.removeSlot(_onAssetUpdatedSlot);
+  _asset->boundChanged.removeSlot(_onAssetUpdatedSlot);
 }
 
 void MeshDrawable::setPositionMatrix(const glm::mat4& newValue)
@@ -36,8 +37,7 @@ void MeshDrawable::setPrevPositionMatrix(const glm::mat4& newValue)
 
 void MeshDrawable::_updateBivecMatrix() noexcept
 {
-  const UniformVariable* bivecMatrixUniform = _asset->bivecMatrixUniform();
-  if(bivecMatrixUniform == nullptr || !bivecMatrixUniform->isActive()) return;
+  if(!_asset->usesBivecMatrix()) return;
 
   _bivecMatrix = _positionMatrix;
   _bivecMatrix = glm::inverse(_bivecMatrix);
@@ -46,7 +46,7 @@ void MeshDrawable::_updateBivecMatrix() noexcept
 
 void MeshDrawable::_updateBoundingBox() noexcept
 {
-  setBoundingBox(_asset->boundingBox().translated(_positionMatrix));
+  setBoundingBox(_asset->bound().translated(_positionMatrix));
 }
 
 void MeshDrawable::onAssetUpdated()
@@ -58,7 +58,6 @@ void MeshDrawable::onAssetUpdated()
 void MeshDrawable::addToDrawPlan( DrawPlan& plan,
                                   FrameTypeIndex frameTypeIndex) const
 {
-  if(_asset == nullptr) return;
   const MeshAsset::StageIndices& stages =
                                         _asset->availableStages(frameTypeIndex);
   for(StageIndex stage : stages) plan.addDrawable(*this, stage);
@@ -69,14 +68,15 @@ void MeshDrawable::addToCommandList(DrawCommandList& commandList,
                                     StageIndex stage,
                                     const void* extraData) const
 {
-  if(_asset == nullptr) return;
-  if(_asset->technique() == nullptr) return;
-
   const MeshAsset::StagePasses& passes = _asset->passes(frame, stage);
   for(const MeshAsset::PassInfo pass : passes)
   {
     commandList.createCommand<MeshDrawCommand>( *this,
+                                                *pass.technique,
                                                 *pass.pass,
+                                                *pass.positionMatrix,
+                                                *pass.prevPositionMatrix,
+                                                *pass.bivecMatrix,
                                                 _asset->vertexCount(),
                                                 _asset->maxInstancesCount(),
                                                 pass.commandGroup,
