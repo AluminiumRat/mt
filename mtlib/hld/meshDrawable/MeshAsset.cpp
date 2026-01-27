@@ -188,7 +188,7 @@ void MeshAsset::_updateDrawmapFromTechnique(Technique& technique)
                         HLDLib::instance().getStageIndex(passConfig.stageName);
 
     //  Заполняем информацию об новом проходе отрисовки
-    PassInfo newPassInfo{};
+    MeshDrawInfo newPassInfo{};
     newPassInfo.layer = passConfig.layer;
     if (_maxInstancesCount > 1)
     {

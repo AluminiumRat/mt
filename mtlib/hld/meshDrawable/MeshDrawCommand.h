@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include <hld/drawCommand/DrawCommand.h>
+#include <hld/meshDrawable/MeshDrawInfo.h>
 
 namespace mt
 {
@@ -16,15 +17,9 @@ namespace mt
   {
   public:
     inline MeshDrawCommand( const MeshDrawable& drawable,
-                            const Technique& technique,
-                            const TechniquePass& pass,
-                            const UniformVariable& positionMatrix,
-                            const UniformVariable& prevPositionMatrix,
-                            const UniformVariable& bivecMatrix,
+                            const MeshDrawInfo& drawInfo,
                             uint32_t vertexCount,
                             uint32_t maxInstances,
-                            Group groupIndex,
-                            int32_t layer,
                             float distance);
     MeshDrawCommand(const MeshDrawCommand&) = delete;
     MeshDrawCommand& operator = (const MeshDrawCommand&) = delete;
@@ -49,34 +44,19 @@ namespace mt
 
   private:
     const MeshDrawable& _drawable;
-    const Technique& _technique;
-    const TechniquePass& _pass;
-    const UniformVariable& _positionMatrix;
-    const UniformVariable& _prevPositionMatrix;
-    const UniformVariable& _bivecMatrix;
+    const MeshDrawInfo& _drawInfo;
     uint32_t _vertexCount;
     size_t _maxInstances;
   };
 
-  inline MeshDrawCommand::MeshDrawCommand(
-                                      const MeshDrawable& drawable,
-                                      const Technique& technique,
-                                      const TechniquePass& pass,
-                                      const UniformVariable& positionMatrix,
-                                      const UniformVariable& prevPositionMatrix,
-                                      const UniformVariable& bivecMatrix,
-                                      uint32_t vertexCount,
-                                      uint32_t maxInstances,
-                                      Group groupIndex,
-                                      int32_t layer,
-                                      float distance) :
-    DrawCommand(groupIndex, layer, distance),
+  inline MeshDrawCommand::MeshDrawCommand(const MeshDrawable& drawable,
+                                          const MeshDrawInfo& drawInfo,
+                                          uint32_t vertexCount,
+                                          uint32_t maxInstances,
+                                          float distance) :
+    DrawCommand(drawInfo.commandGroup, drawInfo.layer, distance),
     _drawable(drawable),
-    _technique(technique),
-    _pass(pass),
-    _positionMatrix(positionMatrix),
-    _prevPositionMatrix(prevPositionMatrix),
-    _bivecMatrix(bivecMatrix),
+    _drawInfo(drawInfo),
     _vertexCount(vertexCount),
     _maxInstances(maxInstances)
   {

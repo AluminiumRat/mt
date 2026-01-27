@@ -69,18 +69,12 @@ void MeshDrawable::addToCommandList(DrawCommandList& commandList,
                                     const void* extraData) const
 {
   const MeshAsset::StagePasses& passes = _asset->passes(frame, stage);
-  for(const MeshAsset::PassInfo pass : passes)
+  for(const MeshDrawInfo& drawInfo : passes)
   {
     commandList.createCommand<MeshDrawCommand>( *this,
-                                                *pass.technique,
-                                                *pass.pass,
-                                                *pass.positionMatrix,
-                                                *pass.prevPositionMatrix,
-                                                *pass.bivecMatrix,
+                                                drawInfo,
                                                 _asset->vertexCount(),
                                                 _asset->maxInstancesCount(),
-                                                pass.commandGroup,
-                                                pass.layer,
                                                 0.0f);
   }
 }

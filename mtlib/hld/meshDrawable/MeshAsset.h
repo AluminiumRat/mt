@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <hld/drawCommand/DrawCommand.h>
+#include <hld/meshDrawable/MeshDrawInfo.h>
 #include <hld/FrameTypeIndex.h>
 #include <hld/StageIndex.h>
 #include <technique/Technique.h>
@@ -26,23 +27,9 @@ namespace mt
     //  Набор доступных стадий для одного отдельного фрэйм-типа
     using StageIndices = std::vector<StageIndex>;
 
-    //  Информация об отдельном проходе отрисовки меша
-    struct PassInfo
-    {
-      int32_t layer;
-      DrawCommand::Group commandGroup;
-
-      Technique* technique;
-      TechniquePass* pass;
-
-      const UniformVariable* positionMatrix;
-      const UniformVariable* prevPositionMatrix;
-      const UniformVariable* bivecMatrix;
-    };
-
     //  Информация обо всех проходах отрисовки для одной отдельной стадии
     //    одного отдельного фрэйм-типа
-    using StagePasses = std::vector<PassInfo>;
+    using StagePasses = std::vector<MeshDrawInfo>;
 
   public:
     explicit MeshAsset(const char* debugName);
