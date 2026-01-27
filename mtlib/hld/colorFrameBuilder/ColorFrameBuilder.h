@@ -4,6 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <hld/colorFrameBuilder/ColorFrameCommonSet.h>
 #include <hld/colorFrameBuilder/OpaqueColorStage.h>
 #include <hld/drawCommand/CommandMemoryPool.h>
 #include <hld/DrawPlan.h>
@@ -27,8 +28,6 @@ namespace mt
   {
   public:
     static constexpr const char* frameTypeName = "ColorFrame";
-    static constexpr uint32_t cameraBufferBinding = 0;
-    static constexpr uint32_t illuminationBufferBinding = 1;
 
     static constexpr VkFormat hdrFormat = VK_FORMAT_B10G11R11_UFLOAT_PACK32;
     static constexpr VkFormat depthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
@@ -52,22 +51,17 @@ namespace mt
 
   private:
     void _updateBuffers(FrameBuffer& targetFrameBuffer);
-    Ref<DescriptorSet> _buildCommonSet( CommandProducerGraphic& commandProducer,
-                                        const Camera& camera,
-                                        const GlobalLight& illumination);
 
   private:
     Device& _device;
 
     DrawPlan _drawPlan;
 
-    ConstRef<DescriptorSetLayout> _commonSetLayout;
-    ConstRef<PipelineLayout> _commonSetPipelineLayout;
-    ConstRef<DataBuffer> _cameraBuffer;
-
     FrameTypeIndex _frameTypeIndex;
     Ref<Image> _hdrBuffer;
     Ref<Image> _depthBuffer;
+
+    ColorFrameCommonSet _commonSet;
 
     OpaqueColorStage _opaqueColorStage;
   };

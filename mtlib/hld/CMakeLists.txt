@@ -9,6 +9,7 @@ include_directories(..
 
 set(SOURCES
     "colorFrameBuilder/ColorFrameBuilder.cpp"
+    "colorFrameBuilder/ColorFrameCommonSet.cpp"
     "colorFrameBuilder/GlobalLight.cpp"
     "colorFrameBuilder/OpaqueColorStage.cpp"
     "drawCommand/CommandMemoryPool.cpp"

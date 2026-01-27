@@ -30,9 +30,7 @@ namespace mt
 
     void draw(CommandProducerGraphic& commandProducer,
               const DrawPlan& drawPlan,
-              const FrameBuildContext& frameContext,
-              const DescriptorSet& commonDescriptorSet,
-              const PipelineLayout& commonSetPipelineLayout);
+              const FrameBuildContext& frameContext);
 
     inline void setHdrBuffer(Image& newBuffer) noexcept;
     inline void setDepthBuffer(Image& newBuffer) noexcept;

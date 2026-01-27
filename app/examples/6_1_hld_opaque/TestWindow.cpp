@@ -122,7 +122,6 @@ void TestWindow::_fillScene()
 
 void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
 {
-  _illumination.update();
   _frameBuilder.draw( frameBuffer,
                       _scene,
                       _camera,

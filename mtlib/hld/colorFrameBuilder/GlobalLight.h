@@ -19,7 +19,6 @@ namespace mt
       alignas(16) glm::vec3 toSunDirection;
       alignas(16) glm::vec3 directLightIrradiance;
     };
-    static constexpr size_t uniformBufferSize = sizeof(UniformBufferData);
 
   public:
     explicit GlobalLight(Device& device);
@@ -39,21 +38,14 @@ namespace mt
     inline const glm::vec3& directLightIrradiance() noexcept;
     inline void setDirectLightIrradiance(const glm::vec3& newValue) noexcept;
 
-    //  Обновить данные GPU ресурсов.
-    virtual void update();
-
-    //  Юниформ буфер с данными UniformBufferData
-    //  Буфером владеет device.primaryQueue
-    inline const DataBuffer& uniformBuffer() const noexcept;
+    //  Данные, которые должны быть отправлены в юниформ буфер
+    inline UniformBufferData uniformData() const noexcept;
 
   private:
     Device& _device;
 
     glm::vec3 _sunDirection;
     glm::vec3 _directLightIrradiance;
-
-    Ref<DataBuffer> _uniformBuffer;
-    bool _needUpdateUniformBuffer;
   };
 
   inline const glm::vec3& GlobalLight::sunDirection() noexcept
@@ -63,9 +55,7 @@ namespace mt
 
   inline void GlobalLight::setSunDirection(const glm::vec3& newValue) noexcept
   {
-    if(_sunDirection == newValue) return;
     _sunDirection = glm::normalize(newValue);
-    _needUpdateUniformBuffer = true;
   }
 
   inline const glm::vec3& GlobalLight::directLightIrradiance() noexcept
@@ -76,14 +66,16 @@ namespace mt
   inline void GlobalLight::setDirectLightIrradiance(
                                             const glm::vec3& newValue) noexcept
   {
-    if(_directLightIrradiance == newValue) return;
     _directLightIrradiance = newValue;
-    _needUpdateUniformBuffer = true;
   }
 
-  inline const DataBuffer& GlobalLight::uniformBuffer() const noexcept
+  inline GlobalLight::UniformBufferData
+                                      GlobalLight::uniformData() const noexcept
   {
-    MT_ASSERT(_uniformBuffer != nullptr);
-    return *_uniformBuffer;
+    UniformBufferData bufferData{};
+    bufferData.fromSunDirection = -_sunDirection;
+    bufferData.toSunDirection = _sunDirection;
+    bufferData.directLightIrradiance = _directLightIrradiance;
+    return bufferData;
   }
 };

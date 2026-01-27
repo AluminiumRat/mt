@@ -4,14 +4,10 @@
 #include <lib/cameraData.inl>
 #include <lib/globalLightData.inl>
 
-layout (set = COMMON, binding = 0) uniform CameraDataBlock
+layout (set = COMMON, binding = 0) uniform CommonData
 {
-  CameraData value;
-} cameraData;
-
-layout (set = COMMON, binding = 1) uniform GlobalLightDataBlock
-{
-  GlobaLightData value;
-} globalLightData;
+  CameraData cameraData;
+  GlobaLightData lightData;
+} commonData;
 
 #endif

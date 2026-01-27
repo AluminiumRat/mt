@@ -20,9 +20,7 @@ OpaqueColorStage::OpaqueColorStage(Device& device) :
 
 void OpaqueColorStage::draw(CommandProducerGraphic& commandProducer,
                             const DrawPlan& drawPlan,
-                            const FrameBuildContext& frameContext,
-                            const DescriptorSet& commonDescriptorSet,
-                            const PipelineLayout& commonSetPipelineLayout)
+                            const FrameBuildContext& frameContext)
 {
   MT_ASSERT(_hdrBuffer != nullptr);
   MT_ASSERT(_depthBuffer != nullptr);
@@ -46,16 +44,8 @@ void OpaqueColorStage::draw(CommandProducerGraphic& commandProducer,
   CommandProducerGraphic::RenderPass renderPass(commandProducer,
                                                 *_frameBuffer);
 
-  commandProducer.bindDescriptorSetGraphic(
-                                          commonDescriptorSet,
-                                          (uint32_t)DescriptorSetType::COMMON,
-                                          commonSetPipelineLayout);
-
   _drawCommands.draw( commandProducer,
                       DrawCommandList::BY_GROUP_INDEX_SORTING);
-
-  commandProducer.unbindDescriptorSetGraphic(
-                                        (uint32_t)DescriptorSetType::COMMON);
 
   renderPass.endPass();
 }

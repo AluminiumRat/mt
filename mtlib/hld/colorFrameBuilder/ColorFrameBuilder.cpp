@@ -14,34 +14,9 @@ using namespace mt;
 ColorFrameBuilder::ColorFrameBuilder(Device& device) :
   _device(device),
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(frameTypeName)),
+  _commonSet(device),
   _opaqueColorStage(device)
 {
-  VkDescriptorSetLayoutBinding commonSetBindings[2];
-  commonSetBindings[cameraBufferBinding] = {};
-  commonSetBindings[cameraBufferBinding].binding = 0;
-  commonSetBindings[cameraBufferBinding].descriptorType =
-                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  commonSetBindings[cameraBufferBinding].descriptorCount = 1;
-  commonSetBindings[cameraBufferBinding].stageFlags =
-                    VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT;
-
-  commonSetBindings[illuminationBufferBinding] = {};
-  commonSetBindings[illuminationBufferBinding].binding = 1;
-  commonSetBindings[illuminationBufferBinding].descriptorType =
-                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  commonSetBindings[illuminationBufferBinding].descriptorCount = 1;
-  commonSetBindings[illuminationBufferBinding].stageFlags =
-                    VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT;
-
-  _commonSetLayout = new DescriptorSetLayout(_device, commonSetBindings);
-
-  _commonSetPipelineLayout = new PipelineLayout(_device,
-                                                std::span(&_commonSetLayout,
-                                                          1));
-  _cameraBuffer = new DataBuffer( _device,
-                                  sizeof(Camera::ShaderData),
-                                  DataBuffer::UNIFORM_BUFFER,
-                                  "CameraData");
 }
 
 void ColorFrameBuilder::draw( FrameBuffer& target,
@@ -60,7 +35,11 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
 
   {
     //  Подготовительные работы
+    std::unique_ptr<CommandProducerGraphic> prepareProducer =
+                                        _device.graphicQueue()->startCommands();
     _updateBuffers(target);
+    _commonSet.update(*prepareProducer, frameContext, illumination);
+    _device.graphicQueue()->submitCommands(std::move(prepareProducer));
   }
 
   {
@@ -68,17 +47,12 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
     std::unique_ptr<CommandProducerGraphic> opaqueProducer =
                                   _device.graphicQueue()->startCommands(
                                                   OpaqueColorStage::stageName);
-
-    Ref<DescriptorSet> commonSet = _buildCommonSet( *opaqueProducer,
-                                                    viewCamera,
-                                                    illumination);
-
-    _opaqueColorStage.draw( *opaqueProducer,
-                            _drawPlan,
-                            frameContext,
-                            *commonSet,
-                            *_commonSetPipelineLayout);
-
+    {
+      ColorFrameCommonSet::Bind(_commonSet, *opaqueProducer);
+      _opaqueColorStage.draw( *opaqueProducer,
+                              _drawPlan,
+                              frameContext);
+    }
     _device.graphicQueue()->submitCommands(std::move(opaqueProducer));
   }
 
@@ -136,28 +110,4 @@ void ColorFrameBuilder::_updateBuffers( FrameBuffer& targetFrameBuffer)
                               "DepthBuffer");
     _opaqueColorStage.setDepthBuffer(*_depthBuffer);
   }
-}
-
-Ref<DescriptorSet> ColorFrameBuilder::_buildCommonSet(
-                                        CommandProducerGraphic& commandProducer,
-                                        const Camera& camera,
-                                        const GlobalLight& illumination)
-{
-  Camera::ShaderData cameraData = camera.makeShaderData();
-  UniformMemoryPool::MemoryInfo uploadedCameraData =
-                      commandProducer.uniformMemorySession().write(cameraData);
-  commandProducer.copyFromBufferToBuffer( *uploadedCameraData.buffer,
-                                          *_cameraBuffer,
-                                          uploadedCameraData.offset,
-                                          0,
-                                          sizeof(Camera::ShaderData));
-
-  Ref<DescriptorSet> commonDescriptorSet =
-                commandProducer.descriptorPool().allocateSet(*_commonSetLayout);
-  commonDescriptorSet->attachUniformBuffer(*_cameraBuffer, cameraBufferBinding);
-  commonDescriptorSet->attachUniformBuffer( illumination.uniformBuffer(),
-                                            illuminationBufferBinding);
-  commonDescriptorSet->finalize();
-
-  return commonDescriptorSet;
 }
