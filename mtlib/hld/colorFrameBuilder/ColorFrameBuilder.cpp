@@ -1,6 +1,7 @@
 ﻿#include <hld/colorFrameBuilder/ColorFrameBuilder.h>
 #include <hld/colorFrameBuilder/GlobalLight.h>
 #include <hld/drawScene/DrawScene.h>
+#include <hld/FrameBuildContext.h>
 #include <hld/HLDLib.h>
 #include <technique/DescriptorSetType.h>
 #include <util/Camera.h>
@@ -13,7 +14,7 @@ using namespace mt;
 ColorFrameBuilder::ColorFrameBuilder(Device& device) :
   _device(device),
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(frameTypeName)),
-  _opaqueColorStage(device, _frameTypeIndex)
+  _opaqueColorStage(device)
 {
   VkDescriptorSetLayoutBinding commonSetBindings[2];
   commonSetBindings[cameraBufferBinding] = {};
@@ -49,9 +50,13 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
                               const GlobalLight& illumination,
                               const ExtraDraw& imGuiDraw)
 {
-  _drawPlan.clear();
+  FrameBuildContext frameContext{};
+  frameContext.frameType = _frameTypeIndex;
+  frameContext.viewCamera = &viewCamera;
+  frameContext.drawScene = &scene;
 
-  scene.fillDrawPlan(_drawPlan, viewCamera, _frameTypeIndex);
+  _drawPlan.clear();
+  scene.fillDrawPlan(_drawPlan, frameContext);
 
   {
     //  Подготовительные работы
@@ -70,6 +75,7 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
 
     _opaqueColorStage.draw( *opaqueProducer,
                             _drawPlan,
+                            frameContext,
                             *commonSet,
                             *_commonSetPipelineLayout);
 

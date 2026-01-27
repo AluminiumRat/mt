@@ -14,6 +14,7 @@ namespace mt
   class DescriptorSet;
   class Device;
   class DrawPlan;
+  struct FrameBuildContext;
   class PipelineLayout;
 
   class OpaqueColorStage
@@ -22,13 +23,14 @@ namespace mt
     static constexpr const char* stageName = "OpaqueColorStage";
 
   public:
-    OpaqueColorStage(Device& device, FrameTypeIndex frameTypeIndex);
+    explicit OpaqueColorStage(Device& device);
     OpaqueColorStage(const OpaqueColorStage&) = delete;
     OpaqueColorStage& operator = (const OpaqueColorStage&) = delete;
     virtual ~OpaqueColorStage() noexcept = default;
 
     void draw(CommandProducerGraphic& commandProducer,
               const DrawPlan& drawPlan,
+              const FrameBuildContext& frameContext,
               const DescriptorSet& commonDescriptorSet,
               const PipelineLayout& commonSetPipelineLayout);
 
@@ -42,7 +44,6 @@ namespace mt
   private:
     Device& _device;
 
-    FrameTypeIndex _frameTypeIndex;
     StageIndex _stageIndex;
 
     Ref<Image> _hdrBuffer;

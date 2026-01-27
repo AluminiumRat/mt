@@ -12,6 +12,7 @@ namespace mt
 {
   class DrawPlan;
   class Camera;
+  struct FrameBuildContext;
 
   class DrawScene
   {
@@ -25,8 +26,7 @@ namespace mt
     inline void unregisterDrawable(Drawable& drawable);
 
     virtual void fillDrawPlan(DrawPlan& plan,
-                              const Camera& camera,
-                              FrameTypeIndex frameTypeIndex) const;
+                              const FrameBuildContext& frameContext) const;
 
   private:
     using Drawables = std::vector<Drawable*>;

@@ -26,11 +26,12 @@ namespace mt
 
     inline const MeshAsset& asset() const noexcept;
 
-    virtual void addToDrawPlan( DrawPlan& plan,
-                                FrameTypeIndex frameTypeIndex) const override;
+    virtual void addToDrawPlan(
+                          DrawPlan& plan,
+                          const FrameBuildContext& frameContext) const override;
 
     virtual void addToCommandList(DrawCommandList& commandList,
-                                  FrameTypeIndex frame,
+                                  const FrameBuildContext& frameContext,
                                   StageIndex stage,
                                   const void* extraData) const override;
 

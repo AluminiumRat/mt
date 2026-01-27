@@ -8,14 +8,14 @@ Drawable::Drawable(DrawType drawType) noexcept :
 }
 
 void Drawable::draw(CommandProducerGraphic& commandProducer,
-                    FrameTypeIndex frame,
+                    const FrameBuildContext& frameContext,
                     StageIndex stage,
                     const void* extraData) const
 {
 }
 
 void Drawable::addToCommandList(DrawCommandList& commandList,
-                                FrameTypeIndex frame,
+                                const FrameBuildContext& frameContext,
                                 StageIndex stage,
                                 const void* extraData) const
 {

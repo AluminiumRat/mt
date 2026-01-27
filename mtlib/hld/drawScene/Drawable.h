@@ -9,6 +9,7 @@ namespace mt
   class Drawable3D;
   class DrawCommandList;
   class DrawPlan;
+  struct FrameBuildContext;
 
   //  Какой-то объект, который может быть добавлен в план по отрисовке кадра а
   //    после обработан на одной или нескольких стадиях рендера
@@ -40,7 +41,7 @@ namespace mt
     inline DrawType drawType() const noexcept;
 
     virtual void addToDrawPlan( DrawPlan& plan,
-                                FrameTypeIndex frameTypeIndex) const = 0;
+                                const FrameBuildContext& frameContext) const = 0;
 
     //  Отрисовать объект непосредственно в CommandProducerGraphic
     //  Можно использовать, когда не нужна группировка и сортировка команд
@@ -49,7 +50,7 @@ namespace mt
     //    случае поведение метода не определено
     //  extraData - дополнительные данные для специализированных стадий.
     virtual void draw(CommandProducerGraphic& commandProducer,
-                      FrameTypeIndex frame,
+                      const FrameBuildContext& frameContext,
                       StageIndex stage,
                       const void* extraData) const;
 
@@ -60,7 +61,7 @@ namespace mt
     //    случае поведение метода не определено
     //  extraData - дополнительные данные для специализированных стадий.
     virtual void addToCommandList(DrawCommandList& commandList,
-                                  FrameTypeIndex frame,
+                                  const FrameBuildContext& frameContext,
                                   StageIndex stage,
                                   const void* extraData) const;
 

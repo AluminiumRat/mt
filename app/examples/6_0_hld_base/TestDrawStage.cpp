@@ -2,6 +2,7 @@
 
 #include <hld/drawScene/Drawable.h>
 #include <hld/DrawPlan.h>
+#include <hld/FrameBuildContext.h>
 #include <hld/HLDLib.h>
 #include <technique/DescriptorSetType.h>
 #include <util/Camera.h>
@@ -12,9 +13,8 @@
 
 using namespace mt;
 
-TestDrawStage::TestDrawStage(Device& device, FrameTypeIndex frameTypeIndex) :
+TestDrawStage::TestDrawStage(Device& device) :
   _stageIndex(HLDLib::instance().getStageIndex(stageName)),
-  _frameTypeIndex(frameTypeIndex),
   _commandMemoryPool(4 * 1024),
   _drawCommands(_commandMemoryPool),
   _lastFrameCommandsCount(0)
@@ -54,13 +54,13 @@ void TestDrawStage::_createCommonSet(Device& device)
 
 void TestDrawStage::draw( CommandProducerGraphic& commandProducer,
                           const DrawPlan& drawPlan,
-                          const Camera& camera)
+                          const FrameBuildContext& frameContext)
 {
-  _updateCommonSet(commandProducer, camera);
+  _updateCommonSet(commandProducer, *frameContext.viewCamera);
   commandProducer.bindDescriptorSetGraphic( *_commonDescriptorSet,
                                             (uint32_t)DescriptorSetType::COMMON,
                                             *_pipelineLayout);
-  _processDrawables(commandProducer, drawPlan);
+  _processDrawables(commandProducer, drawPlan, frameContext);
 
   commandProducer.unbindDescriptorSetGraphic(
                                           (uint32_t)DescriptorSetType::COMMON);
@@ -80,7 +80,8 @@ void TestDrawStage::_updateCommonSet( CommandProducerGraphic& commandProducer,
 }
 
 void TestDrawStage::_processDrawables(CommandProducerGraphic& commandProducer,
-                                      const DrawPlan& drawPlan)
+                                      const DrawPlan& drawPlan,
+                                      const FrameBuildContext& frameContext)
 {
   _drawCommands.clear();
   _commandMemoryPool.reset();
@@ -89,7 +90,7 @@ void TestDrawStage::_processDrawables(CommandProducerGraphic& commandProducer,
   {
     MT_ASSERT(drawable->drawType() == Drawable::COMMANDS_DRAW);
     drawable->addToCommandList( _drawCommands,
-                                _frameTypeIndex,
+                                frameContext,
                                 _stageIndex,
                                 nullptr);
   }

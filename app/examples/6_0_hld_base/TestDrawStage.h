@@ -21,14 +21,14 @@ namespace mt
     static constexpr const char* stageName = "TestDrawStage";
 
   public:
-    TestDrawStage(Device& device, FrameTypeIndex frameTypeIndex);
+    explicit TestDrawStage(Device& device);
     TestDrawStage(const TestDrawStage&) = delete;
     TestDrawStage& operator = (const TestDrawStage&) = delete;
     ~TestDrawStage() noexcept = default;
 
     void draw(CommandProducerGraphic& commandProducer,
               const DrawPlan& drawPlan,
-              const Camera& camera);
+              const FrameBuildContext& frameContext);
 
     //  Добавить в текущий контекст ImGui виджеты со статистикой последнего кадра
     void makeImGui() const;
@@ -38,11 +38,11 @@ namespace mt
     void _updateCommonSet(CommandProducerGraphic& commandProducer,
                           const Camera& camera);
     void _processDrawables( CommandProducerGraphic& commandProducer,
-                            const DrawPlan& drawPlan);
+                            const DrawPlan& drawPlan,
+                            const FrameBuildContext& frameContext);
 
   private:
     StageIndex _stageIndex;
-    FrameTypeIndex _frameTypeIndex;
 
     Ref<DescriptorSet> _commonDescriptorSet;
     Ref<DataBuffer> _commonUniformBuffer;

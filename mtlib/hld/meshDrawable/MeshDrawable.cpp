@@ -2,6 +2,8 @@
 #include <hld/meshDrawable/MeshDrawable.h>
 #include <hld/meshDrawable/MeshDrawCommand.h>
 #include <hld/DrawPlan.h>
+#include <hld/FrameBuildContext.h>
+#include <util/Camera.h>
 
 using namespace mt;
 
@@ -56,24 +58,32 @@ void MeshDrawable::onAssetUpdated()
 }
 
 void MeshDrawable::addToDrawPlan( DrawPlan& plan,
-                                  FrameTypeIndex frameTypeIndex) const
+                                  const FrameBuildContext& frameContext) const
 {
   const MeshAsset::StageIndices& stages =
-                                        _asset->availableStages(frameTypeIndex);
+                              _asset->availableStages(frameContext.frameType);
   for(StageIndex stage : stages) plan.addDrawable(*this, stage);
 }
 
 void MeshDrawable::addToCommandList(DrawCommandList& commandList,
-                                    FrameTypeIndex frame,
+                                    const FrameBuildContext& frameContext,
                                     StageIndex stage,
                                     const void* extraData) const
 {
-  const MeshAsset::StagePasses& passes = _asset->passes(frame, stage);
+  const MeshAsset::StagePasses& passes = _asset->passes(frameContext.frameType,
+                                                        stage);
+  if(passes.empty()) return;
+
+  glm::vec3 meshPosition = _positionMatrix[3];
+  glm::vec3 cameraToMesh = meshPosition - frameContext.viewCamera->eyePoint();
+  float distance = glm::dot(frameContext.viewCamera->frontVector(),
+                            cameraToMesh);
+
   for(const MeshDrawInfo& drawInfo : passes)
   {
     commandList.createCommand<MeshDrawCommand>( *this,
                                                 drawInfo,
                                                 _asset->vertexCount(),
-                                                0.0f);
+                                                distance);
   }
 }

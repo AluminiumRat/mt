@@ -10,10 +10,8 @@
 
 using namespace mt;
 
-OpaqueColorStage::OpaqueColorStage( Device& device,
-                                    FrameTypeIndex frameTypeIndex) :
+OpaqueColorStage::OpaqueColorStage(Device& device) :
   _device(device),
-  _frameTypeIndex(frameTypeIndex),
   _stageIndex(HLDLib::instance().getStageIndex(stageName)),
   _commandMemoryPool(4 * 1024),
   _drawCommands(_commandMemoryPool)
@@ -22,6 +20,7 @@ OpaqueColorStage::OpaqueColorStage( Device& device,
 
 void OpaqueColorStage::draw(CommandProducerGraphic& commandProducer,
                             const DrawPlan& drawPlan,
+                            const FrameBuildContext& frameContext,
                             const DescriptorSet& commonDescriptorSet,
                             const PipelineLayout& commonSetPipelineLayout)
 {
@@ -39,7 +38,7 @@ void OpaqueColorStage::draw(CommandProducerGraphic& commandProducer,
   {
     MT_ASSERT(drawable->drawType() == Drawable::COMMANDS_DRAW);
     drawable->addToCommandList( _drawCommands,
-                                _frameTypeIndex,
+                                frameContext,
                                 _stageIndex,
                                 nullptr);
   }

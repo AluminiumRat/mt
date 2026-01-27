@@ -2,6 +2,7 @@
 
 #include <ddsSupport/ddsSupport.h>
 #include <gui/ImGuiRAII.h>
+#include <hld/FrameBuildContext.h>
 #include <hld/HLDLib.h>
 #include <technique/TechniqueLoader.h>
 #include <vkr/image/ImageView.h>
@@ -20,7 +21,7 @@ TestWindow::TestWindow(Device& device) :
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(colorFrameType)),
   _cameraManipulator(CameraManipulator::APPLICATION_WINDOW_LOCATION),
   _meshAsset(new MeshAsset("Test mesh")),
-  _drawStage(device, _frameTypeIndex)
+  _drawStage(device)
 {
   _cameraManipulator.setCamera(&_camera);
 
@@ -123,16 +124,20 @@ void TestWindow::_fillScene()
 
 void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
 {
-  _drawPlan.clear();
+  FrameBuildContext frameContext{};
+  frameContext.frameType = _frameTypeIndex;
+  frameContext.viewCamera = &_camera;
+  frameContext.drawScene = &_scene;
 
-  _scene.fillDrawPlan(_drawPlan, _camera, _frameTypeIndex);
+  _drawPlan.clear();
+  _scene.fillDrawPlan(_drawPlan, frameContext);
 
   std::unique_ptr<CommandProducerGraphic> commandProducer =
                         device().graphicQueue()->startCommands(colorFrameType);
 
   CommandProducerGraphic::RenderPass renderPass(*commandProducer, frameBuffer);
 
-  _drawStage.draw(*commandProducer, _drawPlan, _camera);
+  _drawStage.draw(*commandProducer, _drawPlan, frameContext);
   drawGUI(*commandProducer);
 
   renderPass.endPass();
