@@ -103,7 +103,6 @@ void TestWindow::_setupMeshAsset()
   _meshAsset->setCommonBuffer("vertices", *positionsBuffer);
   _meshAsset->setVertexCount(sizeof(positions) / sizeof(positions[0]));
   _meshAsset->setBound(AABB(-1, -1, -1, 1, 1, 1));
-  _meshAsset->setMaxInstancesCount(2);
 }
 
 void TestWindow::_fillScene()

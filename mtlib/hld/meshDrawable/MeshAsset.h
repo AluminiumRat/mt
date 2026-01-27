@@ -71,10 +71,6 @@ namespace mt
     inline uint32_t vertexCount() const noexcept;
     inline void setVertexCount(uint32_t newValue);
 
-    //  Какое максимальное количество инстансов поддерживают техники отрисовки
-    inline uint32_t maxInstancesCount() const noexcept;
-    inline void setMaxInstancesCount(uint32_t newValue);
-
     inline const AABB& bound() const noexcept;
     inline void setBound(const AABB& newValue);
 
@@ -140,7 +136,6 @@ namespace mt
     CommonBuffers _commonBuffers;
 
     uint32_t _vertexCount;
-    uint32_t _maxInstancesCount;
 
     AABB _bound;
   };
@@ -191,19 +186,6 @@ namespace mt
   inline void MeshAsset::setVertexCount(uint32_t newValue)
   {
     _vertexCount = newValue;
-  }
-
-  inline uint32_t MeshAsset::maxInstancesCount() const noexcept
-  {
-    return _maxInstancesCount;
-  }
-
-  inline void MeshAsset::setMaxInstancesCount(uint32_t newValue)
-  {
-    MT_ASSERT(newValue != 0);
-    if(_maxInstancesCount == newValue) return;
-    _maxInstancesCount = newValue;
-    _rebuildDrawMap();
   }
 
   inline const AABB& MeshAsset::bound() const noexcept

@@ -24,5 +24,7 @@ namespace mt
     const UniformVariable* positionMatrix;
     const UniformVariable* prevPositionMatrix;
     const UniformVariable* bivecMatrix;
+
+    uint32_t maxInstances;
   };
 }

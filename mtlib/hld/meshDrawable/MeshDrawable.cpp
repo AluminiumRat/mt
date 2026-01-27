@@ -74,7 +74,6 @@ void MeshDrawable::addToCommandList(DrawCommandList& commandList,
     commandList.createCommand<MeshDrawCommand>( *this,
                                                 drawInfo,
                                                 _asset->vertexCount(),
-                                                _asset->maxInstancesCount(),
                                                 0.0f);
   }
 }

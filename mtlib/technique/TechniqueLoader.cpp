@@ -186,6 +186,10 @@ namespace mt
     int32_t layer = passNode["layre"].as<int>(0);
     target.setLayer(layer);
 
+    int maxInstances = passNode["maxInstances"].as<int>(1);
+    if(maxInstances <= 0) throw std::runtime_error(target.name() + ": wrong maxInstances value");
+    target.setMaxInstances((uint32_t)maxInstances);
+
     loadSelectionsList(passNode, target);
     loadShaders(passNode, target);
     if (target.pipelineType() == AbstractPipeline::GRAPHIC_PIPELINE)

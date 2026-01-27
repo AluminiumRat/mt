@@ -61,6 +61,7 @@ void PassConfigurator::processShaders(ConfigurationBuildContext& context) const
   context.currentPass->frameType = _frameType;
   context.currentPass->stageName = _stageName;
   context.currentPass->layer = _layer;
+  context.currentPass->maxInstances = _maxInstances;
 
   _processSelections(context);
 

@@ -22,7 +22,8 @@ namespace mt
     //  Дополнительные данные для автонастройки Drawable-ов в библиотеке hld
     std::string frameType;
     std::string stageName;
-    int32_t layer = 0;;
+    int32_t layer = 0;
+    uint32_t maxInstances = 1;
 
     //  Различные варианты собранных пайплайнов для разных значений селекшенов
     std::vector<ConstRef<GraphicPipeline>> graphicPipelineVariants;

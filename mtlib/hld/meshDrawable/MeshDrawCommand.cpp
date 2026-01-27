@@ -14,7 +14,7 @@ void MeshDrawCommand::draw( CommandProducerGraphic& producer,
   while(commandProcessed != commands.size())
   {
     size_t chunkSize = commands.size() - commandProcessed;
-    chunkSize = std::min(chunkSize, _maxInstances);
+    chunkSize = std::min(chunkSize, (size_t)_drawInfo.maxInstances);
     _processChunk(producer,
                   commands.subspan(commandProcessed, chunkSize));
     commandProcessed += chunkSize;

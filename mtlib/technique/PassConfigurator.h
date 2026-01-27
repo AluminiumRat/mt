@@ -64,6 +64,12 @@ namespace mt
     inline int32_t layer() const noexcept;
     inline void setLayer(int32_t newValue);
 
+    //  Максимальное количество инстансов, которое поддерживается шейдерами
+    //  Используется в библиотеке hld для автоматической настройки Drawable-ов
+    //  Если автонастройка не нужна, можно не настраивать это свойство
+    inline uint32_t maxInstances() const noexcept;
+    inline void setMaxInstances(uint32_t newValue);
+
     inline const Shaders& shaders() const noexcept;
     inline void setShaders(std::span<const ShaderInfo> newShaders);
 
@@ -240,6 +246,7 @@ namespace mt
     std::string _frameType;
     std::string _stageName;
     int32_t _layer;
+    uint32_t _maxInstances;
     std::vector<ShaderInfo> _shaders;
     std::vector<std::string> _selections;
 
@@ -297,6 +304,17 @@ namespace mt
   inline void  PassConfigurator::setLayer(int32_t newValue)
   {
     _layer = newValue;
+  }
+
+  inline uint32_t PassConfigurator::maxInstances() const noexcept
+  {
+    return _maxInstances;
+  }
+
+  inline void PassConfigurator::setMaxInstances(uint32_t newValue)
+  {
+    MT_ASSERT(newValue != 0);
+    _maxInstances = newValue;
   }
 
   inline const PassConfigurator::Shaders&

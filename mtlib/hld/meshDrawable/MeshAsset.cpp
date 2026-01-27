@@ -13,7 +13,6 @@ MeshAsset::MeshAsset(const char* debugName) :
   _usesBivecMatrix(false),
   _usesPrevMatrix(false),
   _vertexCount(0),
-  _maxInstancesCount(1),
   _bound(0,0,0,0,0,0)
 {
 }
@@ -41,7 +40,6 @@ void MeshAsset::clear() noexcept
   _usesBivecMatrix = false;
   _usesPrevMatrix = false;
   _vertexCount = 0;
-  _maxInstancesCount = 1;
   _bound = AABB(0, 0, 0, 0, 0, 0);
 
   techniquesChanged.emit();
@@ -190,7 +188,7 @@ void MeshAsset::_updateDrawmapFromTechnique(Technique& technique)
     //  Заполняем информацию об новом проходе отрисовки
     MeshDrawInfo newPassInfo{};
     newPassInfo.layer = passConfig.layer;
-    if (_maxInstancesCount > 1)
+    if (passConfig.maxInstances > 1)
     {
       newPassInfo.commandGroup = HLDLib::instance().allocateDrawCommandGroup();
     }
@@ -200,6 +198,7 @@ void MeshAsset::_updateDrawmapFromTechnique(Technique& technique)
     newPassInfo.positionMatrix = &positionMatrix;
     newPassInfo.prevPositionMatrix = &prevPositionMatrix;
     newPassInfo.bivecMatrix = &bivecMatrix;
+    newPassInfo.maxInstances = passConfig.maxInstances;
 
     //  Ищем место в _drawMap и вставляем туда новый проход отрисовки
     if (_drawMap.size() <= frameTypeIndex) _drawMap.resize(frameTypeIndex + 1);

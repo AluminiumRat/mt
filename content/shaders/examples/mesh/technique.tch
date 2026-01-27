@@ -8,6 +8,7 @@ passes:
   RenderPass :
     frameType: ColorFrame
     stageName: TestDrawStage
+    maxInstances: 2
 
     shaders:
       VERTEX : examples/mesh/shader.vert

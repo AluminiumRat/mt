@@ -19,7 +19,6 @@ namespace mt
     inline MeshDrawCommand( const MeshDrawable& drawable,
                             const MeshDrawInfo& drawInfo,
                             uint32_t vertexCount,
-                            uint32_t maxInstances,
                             float distance);
     MeshDrawCommand(const MeshDrawCommand&) = delete;
     MeshDrawCommand& operator = (const MeshDrawCommand&) = delete;
@@ -46,19 +45,16 @@ namespace mt
     const MeshDrawable& _drawable;
     const MeshDrawInfo& _drawInfo;
     uint32_t _vertexCount;
-    size_t _maxInstances;
   };
 
   inline MeshDrawCommand::MeshDrawCommand(const MeshDrawable& drawable,
                                           const MeshDrawInfo& drawInfo,
                                           uint32_t vertexCount,
-                                          uint32_t maxInstances,
                                           float distance) :
     DrawCommand(drawInfo.commandGroup, drawInfo.layer, distance),
     _drawable(drawable),
     _drawInfo(drawInfo),
-    _vertexCount(vertexCount),
-    _maxInstances(maxInstances)
+    _vertexCount(vertexCount)
   {
   }
 }

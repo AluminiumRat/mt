@@ -8,6 +8,7 @@ passes:
   OpaquePass :
     frameType: ColorFrame
     stageName: OpaqueColorStage
+    maxInstances: 32
 
     shaders:
       VERTEX : lib/opaqueMesh/opaqueMesh.vert
