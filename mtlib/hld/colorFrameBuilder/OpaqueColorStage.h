@@ -37,7 +37,6 @@ namespace mt
 
   private:
     void _buildFrameBuffer();
-    void _initBuffersLayout(CommandProducerGraphic& commandProducer);
 
   private:
     Device& _device;

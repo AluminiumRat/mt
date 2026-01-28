@@ -18,9 +18,11 @@ target_link_libraries(hld_opaque
                       ${Shaderc_LIBRARIES}
                       ${GLFW_PATH}/lib-vc2022/glfw3.lib
                       ${YamlCPP_LIBRARIES}
+                      asyncTask
                       ddsSupport
-                      util
-                      vkr
-                      technique
                       gui
-                      hld)
+                      util
+                      hld
+                      resourceManagement
+                      technique
+                      vkr)

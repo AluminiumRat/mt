@@ -6,6 +6,7 @@
 
 #include <hld/colorFrameBuilder/ColorFrameCommonSet.h>
 #include <hld/colorFrameBuilder/OpaqueColorStage.h>
+#include <hld/colorFrameBuilder/Posteffects.h>
 #include <hld/drawCommand/CommandMemoryPool.h>
 #include <hld/DrawPlan.h>
 #include <hld/FrameTypeIndex.h>
@@ -23,6 +24,7 @@ namespace mt
   class Device;
   class DrawScene;
   class GlobalLight;
+  class TechniqueManager;
 
   class ColorFrameBuilder
   {
@@ -37,7 +39,7 @@ namespace mt
                   std::function<void(CommandProducerGraphic& commandProducer)>;
 
   public:
-    explicit ColorFrameBuilder(Device& device);
+    ColorFrameBuilder(Device& device, TechniqueManager& techniqueManager);
     ColorFrameBuilder(const ColorFrameBuilder&) = delete;
     ColorFrameBuilder& operator = (const ColorFrameBuilder&) = delete;
     virtual ~ColorFrameBuilder() noexcept = default;
@@ -51,6 +53,8 @@ namespace mt
 
   private:
     void _updateBuffers(FrameBuffer& targetFrameBuffer);
+    void _initBuffersLayout(CommandProducerGraphic& commandProducer);
+    void _posteffectsPrepareLayouts(CommandProducerGraphic& commandProducer);
 
   private:
     Device& _device;
@@ -64,5 +68,6 @@ namespace mt
     ColorFrameCommonSet _commonSet;
 
     OpaqueColorStage _opaqueColorStage;
+    Posteffects _posteffects;
   };
 }

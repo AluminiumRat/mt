@@ -8,10 +8,12 @@ include_directories(..
                     ${VKMEMALLOC_PATH})
 
 set(SOURCES
+    "colorFrameBuilder/BrightnessPyramid.cpp"
     "colorFrameBuilder/ColorFrameBuilder.cpp"
     "colorFrameBuilder/ColorFrameCommonSet.cpp"
     "colorFrameBuilder/GlobalLight.cpp"
     "colorFrameBuilder/OpaqueColorStage.cpp"
+    "colorFrameBuilder/Posteffects.cpp"
     "drawCommand/CommandMemoryPool.cpp"
     "drawCommand/DrawCommandList.cpp"
     "drawScene/Drawable.cpp"

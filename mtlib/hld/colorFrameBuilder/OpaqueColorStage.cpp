@@ -28,8 +28,6 @@ void OpaqueColorStage::draw(CommandProducerGraphic& commandProducer,
   _drawCommands.clear();
   _commandMemoryPool.reset();
 
-  _initBuffersLayout(commandProducer);
-
   if(_frameBuffer == nullptr) _buildFrameBuffer();
 
   for(const Drawable* drawable : drawPlan.stagePlan(_stageIndex))
@@ -88,25 +86,3 @@ void OpaqueColorStage::_buildFrameBuffer()
                                   &depthAttachment);
 }
 
-void OpaqueColorStage::_initBuffersLayout(
-                                        CommandProducerGraphic& commandProducer)
-{
-  commandProducer.imageBarrier( *_hdrBuffer,
-                                ImageSlice(*_hdrBuffer),
-                                VK_IMAGE_LAYOUT_UNDEFINED,
-                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                0,
-                                0,
-                                0,
-                                0);
-
-  commandProducer.imageBarrier(
-                              *_depthBuffer,
-                              ImageSlice(*_depthBuffer),
-                              VK_IMAGE_LAYOUT_UNDEFINED,
-                              VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                              0,
-                              0,
-                              0,
-                              0);
-}

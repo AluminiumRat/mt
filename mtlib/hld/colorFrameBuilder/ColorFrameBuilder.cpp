@@ -11,11 +11,13 @@
 
 using namespace mt;
 
-ColorFrameBuilder::ColorFrameBuilder(Device& device) :
+ColorFrameBuilder::ColorFrameBuilder( Device& device,
+                                      TechniqueManager& techniqueManager) :
   _device(device),
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(frameTypeName)),
   _commonSet(device),
-  _opaqueColorStage(device)
+  _opaqueColorStage(device),
+  _posteffects(device, techniqueManager)
 {
 }
 
@@ -38,6 +40,7 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
     std::unique_ptr<CommandProducerGraphic> prepareProducer =
                                         _device.graphicQueue()->startCommands();
     _updateBuffers(target);
+    _initBuffersLayout(*prepareProducer);
     _commonSet.update(*prepareProducer, frameContext, illumination);
     _device.graphicQueue()->submitCommands(std::move(prepareProducer));
   }
@@ -61,7 +64,11 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
     std::unique_ptr<CommandProducerGraphic> finalizeProducer =
                               _device.graphicQueue()->startCommands("LDRStage");
 
+    _posteffectsPrepareLayouts(*finalizeProducer);
+    _posteffects.prepare(*finalizeProducer, frameContext);
+
     CommandProducerGraphic::RenderPass renderPass(*finalizeProducer, target);
+      _posteffects.makeLDR(*finalizeProducer, frameContext);
       if(imGuiDraw)
       {
         finalizeProducer->beginDebugLabel("ImGui");
@@ -82,7 +89,8 @@ void ColorFrameBuilder::_updateBuffers( FrameBuffer& targetFrameBuffer)
     _hdrBuffer = new Image( _device,
                             VK_IMAGE_TYPE_2D,
                             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-                              VK_IMAGE_USAGE_SAMPLED_BIT,
+                              VK_IMAGE_USAGE_SAMPLED_BIT |
+                              VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                             0,
                             hdrFormat,
                             glm::uvec3(targetFrameBuffer.extent(), 1),
@@ -92,6 +100,7 @@ void ColorFrameBuilder::_updateBuffers( FrameBuffer& targetFrameBuffer)
                             false,
                             "HDRBuffer");
     _opaqueColorStage.setHdrBuffer(*_hdrBuffer);
+    _posteffects.setHdrBuffer(*_hdrBuffer);
   }
 
   if (_depthBuffer == nullptr ||
@@ -110,4 +119,40 @@ void ColorFrameBuilder::_updateBuffers( FrameBuffer& targetFrameBuffer)
                               "DepthBuffer");
     _opaqueColorStage.setDepthBuffer(*_depthBuffer);
   }
+}
+
+void ColorFrameBuilder::_initBuffersLayout(
+                                        CommandProducerGraphic& commandProducer)
+{
+  commandProducer.imageBarrier( *_hdrBuffer,
+                                ImageSlice(*_hdrBuffer),
+                                VK_IMAGE_LAYOUT_UNDEFINED,
+                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                0,
+                                0,
+                                0,
+                                0);
+
+  commandProducer.imageBarrier(
+                              *_depthBuffer,
+                              ImageSlice(*_depthBuffer),
+                              VK_IMAGE_LAYOUT_UNDEFINED,
+                              VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                              0,
+                              0,
+                              0,
+                              0);
+}
+
+void ColorFrameBuilder::_posteffectsPrepareLayouts(
+                                        CommandProducerGraphic& commandProducer)
+{
+  commandProducer.imageBarrier( *_hdrBuffer,
+                                ImageSlice(*_hdrBuffer),
+                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                VK_ACCESS_TRANSFER_READ_BIT);
 }
