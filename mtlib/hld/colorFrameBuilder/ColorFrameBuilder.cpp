@@ -1,4 +1,5 @@
-﻿#include <hld/colorFrameBuilder/ColorFrameBuilder.h>
+﻿#include <gui/ImGuiRAII.h>
+#include <hld/colorFrameBuilder/ColorFrameBuilder.h>
 #include <hld/colorFrameBuilder/GlobalLight.h>
 #include <hld/drawScene/DrawScene.h>
 #include <hld/FrameBuildContext.h>
@@ -11,13 +12,12 @@
 
 using namespace mt;
 
-ColorFrameBuilder::ColorFrameBuilder( Device& device,
-                                      TechniqueManager& techniqueManager) :
+ColorFrameBuilder::ColorFrameBuilder(Device& device) :
   _device(device),
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(frameTypeName)),
   _commonSet(device),
   _opaqueColorStage(device),
-  _posteffects(device, techniqueManager)
+  _posteffects(device)
 {
 }
 
@@ -169,4 +169,16 @@ void ColorFrameBuilder::_posteffectsResolveLayouts(
                                 0,
                                 0,
                                 0);
+}
+
+void ColorFrameBuilder::makeGui()
+{
+  ImGui::SetNextWindowSizeConstraints(ImVec2(300, 300),
+                                      ImVec2(FLT_MAX, FLT_MAX));
+  ImGuiWindow window("Color frame");
+  if (window.visible())
+  {
+    _posteffects.makeGui();
+    window.end();
+  }
 }

@@ -16,12 +16,7 @@ TestWindow::TestWindow(Device& device) :
             std::nullopt,
             std::nullopt,
             VK_FORMAT_UNDEFINED),
-  _asyncQueue([&](const AsyncTaskQueue::Event& theEvent)
-              {
-                _asyncTaskGui.addEvent(theEvent);
-              }),
-  _techniqueManager(_fileWatcher, _asyncQueue),
-  _frameBuilder(device, _techniqueManager),
+  _frameBuilder(device),
   _cameraManipulator(CameraManipulator::APPLICATION_WINDOW_LOCATION),
   _meshAsset(new MeshAsset("Test mesh")),
   _illumination(device)
@@ -144,5 +139,5 @@ void TestWindow::guiImplementation()
   _cameraManipulator.update(ImVec2(0.0f, 0.0f),
                             ImVec2((float)size().x, (float)size().y));
 
-  _asyncTaskGui.makeImGUI();
+  _frameBuilder.makeGui();
 }

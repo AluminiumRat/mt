@@ -5,7 +5,8 @@ project(hld)
 include_directories(..
                     ${GLM_PATH}
                     ${Vulkan_INCLUDE_DIRS}
-                    ${VKMEMALLOC_PATH})
+                    ${VKMEMALLOC_PATH}
+                    ${IMGUI_PATH})
 
 set(SOURCES
     "colorFrameBuilder/BrightnessPyramid.cpp"

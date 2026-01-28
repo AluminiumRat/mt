@@ -39,7 +39,7 @@ namespace mt
                   std::function<void(CommandProducerGraphic& commandProducer)>;
 
   public:
-    ColorFrameBuilder(Device& device, TechniqueManager& techniqueManager);
+    explicit ColorFrameBuilder(Device& device);
     ColorFrameBuilder(const ColorFrameBuilder&) = delete;
     ColorFrameBuilder& operator = (const ColorFrameBuilder&) = delete;
     virtual ~ColorFrameBuilder() noexcept = default;
@@ -50,6 +50,9 @@ namespace mt
                       const Camera& viewCamera,
                       const GlobalLight& illumination,
                       const ExtraDraw& imGuiDraw);
+
+    //  Добавить окно с настройками в текущий контекст ImGui
+    void makeGui();
 
   private:
     void _updateBuffers(FrameBuffer& targetFrameBuffer);

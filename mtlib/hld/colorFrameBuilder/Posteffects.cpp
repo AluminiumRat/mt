@@ -1,4 +1,8 @@
-﻿#include <hld/colorFrameBuilder/ColorFrameBuilder.h>
+﻿#include <ImGui.h>
+
+#include <gui/ImGuiPropertyGrid.h>
+#include <gui/ImGuiRAII.h>
+#include <hld/colorFrameBuilder/ColorFrameBuilder.h>
 #include <hld/colorFrameBuilder/Posteffects.h>
 #include <hld/FrameBuildContext.h>
 #include <technique/TechniqueLoader.h>
@@ -7,9 +11,8 @@
 
 using namespace mt;
 
-Posteffects::Posteffects(Device& device, TechniqueManager& techniqueManager) :
+Posteffects::Posteffects(Device& device) :
   _device(device),
-  _techniqueManager(techniqueManager),
   _hdrBufferChanged(false),
   _brightnessPyramid(_device),
   _resolveConfigurator(new TechniqueConfigurator(device, "HDRResolve")),
@@ -18,10 +21,17 @@ Posteffects::Posteffects(Device& device, TechniqueManager& techniqueManager) :
   _hdrBufferBinding(_resolveTechnique.getOrCreateResourceBinding("hdrTexture")),
   _brightnessPyramidBinding(
             _resolveTechnique.getOrCreateResourceBinding("brightnessPyramid")),
-  _avgColorBinding(_resolveTechnique.getOrCreateResourceBinding("avgColor"))
+  _avgColorBinding(_resolveTechnique.getOrCreateResourceBinding("avgColor")),
+  _exposureUniform(_resolveTechnique.getOrCreateUniform("params.exposure")),
+  _exposure(1.0f),
+  _maxWhiteSqUniform(_resolveTechnique.getOrCreateUniform("params.maxWhiteSq")),
+  _maxWhite(5.0f)
 {
   loadConfigurator(*_resolveConfigurator, "posteffects/posteffects.tch");
   _resolveConfigurator->rebuildConfiguration();
+
+  _exposureUniform.setValue(_exposure);
+  _maxWhiteSqUniform.setValue(_maxWhite * _maxWhite);
 }
 
 void Posteffects::prepare(CommandProducerGraphic& commandProducer,
@@ -71,4 +81,25 @@ void Posteffects::_updateBindings()
   _avgColorBinding.setImage(avgColorView);
 
   _hdrBufferChanged = false;
+}
+
+void Posteffects::makeGui()
+{
+  ImGuiTreeNode node("Posteffects");
+  if(node.open())
+  {
+    ImGuiPropertyGrid grid("Posteffects");
+
+    grid.addRow("Exposure");
+    if(ImGui::InputFloat("#exposure", &_exposure))
+    {
+      _exposureUniform.setValue(_exposure);
+    }
+
+    grid.addRow("MaxWhite");
+    if(ImGui::InputFloat("#maxwhite", &_maxWhite))
+    {
+      _maxWhiteSqUniform.setValue(_maxWhite * _maxWhite);
+    }
+  }
 }

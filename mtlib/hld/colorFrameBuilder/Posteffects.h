@@ -17,7 +17,7 @@ namespace mt
   class Posteffects
   {
   public:
-    Posteffects(Device& device, TechniqueManager& techniqueManager);
+    explicit Posteffects(Device& device);
     Posteffects(const Posteffects&) = delete;
     Posteffects& operator = (const Posteffects&) = delete;
     ~Posteffects() noexcept= default;
@@ -37,12 +37,13 @@ namespace mt
 
     inline void setHdrBuffer(Image& newBuffer) noexcept;
 
+    void makeGui();
+
   private:
     void _updateBindings();
 
   private:
     Device& _device;
-    TechniqueManager& _techniqueManager;
 
     Ref<Image> _hdrBuffer;
     bool _hdrBufferChanged;
@@ -55,6 +56,12 @@ namespace mt
     ResourceBinding& _hdrBufferBinding;
     ResourceBinding& _brightnessPyramidBinding;
     ResourceBinding& _avgColorBinding;
+
+    UniformVariable& _exposureUniform;
+    float _exposure;
+
+    UniformVariable& _maxWhiteSqUniform;
+    float _maxWhite;
   };
 
   inline void Posteffects::setHdrBuffer(Image& newBuffer) noexcept

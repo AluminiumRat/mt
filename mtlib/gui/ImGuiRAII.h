@@ -145,6 +145,25 @@ namespace mt
     bool _active;
   };
 
+  //  RAII обертка вокруг ImGui::TreeNode и ImGui::TreePop()
+  class ImGuiTreeNode
+  {
+  public:
+    inline ImGuiTreeNode(const char* label) noexcept;
+    ImGuiTreeNode(const ImGuiTreeNode&) = delete;
+    ImGuiTreeNode& operator = (const ImGuiTreeNode&) = delete;
+    inline ~ImGuiTreeNode() noexcept;
+
+    //  Открыта или нет нода
+    inline bool open() const noexcept;
+
+    //  Закончить область действия до вызова деструктора
+    inline void pop() noexcept;
+
+  private:
+    bool _active;
+  };
+
   inline ImGuiWindow::ImGuiWindow(const char* name,
                                   bool* p_open,
                                   ImGuiWindowFlags flags) noexcept :
@@ -337,5 +356,30 @@ namespace mt
       ImGui::PopStyleColor();
       _active = false;
     }
+  }
+
+  inline ImGuiTreeNode::ImGuiTreeNode(const char* label) noexcept :
+    _active(false)
+  {
+    _active = ImGui::TreeNode(label);
+  }
+
+  inline ImGuiTreeNode::~ImGuiTreeNode() noexcept
+  {
+    pop();
+  }
+
+  inline void ImGuiTreeNode::pop() noexcept
+  {
+    if(_active)
+    {
+      ImGui::TreePop();
+      _active = false;
+    }
+  }
+
+  inline bool ImGuiTreeNode::open() const noexcept
+  {
+    return _active;
   }
 }
