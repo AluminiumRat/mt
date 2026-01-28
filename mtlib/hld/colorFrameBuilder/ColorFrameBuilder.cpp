@@ -67,6 +67,7 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
     _posteffectsPrepareLayouts(*finalizeProducer);
     _posteffects.prepare(*finalizeProducer, frameContext);
 
+    _posteffectsResolveLayouts(*finalizeProducer);
     CommandProducerGraphic::RenderPass renderPass(*finalizeProducer, target);
       _posteffects.makeLDR(*finalizeProducer, frameContext);
       if(imGuiDraw)
@@ -155,4 +156,17 @@ void ColorFrameBuilder::_posteffectsPrepareLayouts(
                                 VK_PIPELINE_STAGE_TRANSFER_BIT,
                                 VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                 VK_ACCESS_TRANSFER_READ_BIT);
+}
+
+void ColorFrameBuilder::_posteffectsResolveLayouts(
+                                        CommandProducerGraphic& commandProducer)
+{
+  commandProducer.imageBarrier( *_hdrBuffer,
+                                ImageSlice(*_hdrBuffer),
+                                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                0,
+                                0,
+                                0,
+                                0);
 }

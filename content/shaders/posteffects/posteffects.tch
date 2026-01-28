@@ -1,0 +1,17 @@
+defaultSamplers:
+  linearSampler:
+    magFilter: LINEAR
+    minFilter: LINEAR
+    mipmapMode: LINEAR
+
+passes:
+  ResolvePass :
+    shaders:
+      VERTEX : posteffects/posteffects.vert
+      FRAGMENT : posteffects/posteffects.frag
+
+    frameBuffer:
+      color: VK_FORMAT_B8G8R8A8_SRGB
+
+    graphicSettings:
+      topology: TRIANGLE_STRIP

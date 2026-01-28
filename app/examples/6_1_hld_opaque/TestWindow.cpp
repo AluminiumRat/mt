@@ -15,7 +15,7 @@ TestWindow::TestWindow(Device& device) :
             "Test window",
             std::nullopt,
             std::nullopt,
-            VK_FORMAT_D16_UNORM),
+            VK_FORMAT_UNDEFINED),
   _asyncQueue([&](const AsyncTaskQueue::Event& theEvent)
               {
                 _asyncTaskGui.addEvent(theEvent);
