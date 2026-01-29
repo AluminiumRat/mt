@@ -17,6 +17,7 @@ set(SOURCES
     "image/ImageSlice.cpp"
     "image/ImageView.cpp"
     "pipeline/AbstractPipeline.cpp"
+    "pipeline/ComputePipeline.cpp"
     "pipeline/DescriptorCounter.cpp"
     "pipeline/DescriptorPool.cpp"
     "pipeline/DescriptorSet.cpp"

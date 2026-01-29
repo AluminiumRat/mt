@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include <util/Ref.h>
 #include <vkr/pipeline/AbstractPipeline.h>
 
 namespace mt

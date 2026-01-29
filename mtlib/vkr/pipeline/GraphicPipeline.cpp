@@ -1,4 +1,5 @@
 ﻿#include <limits>
+#include <stdexcept>
 
 #include <util/Assert.h>
 
@@ -93,7 +94,7 @@ GraphicPipeline::GraphicPipeline(
                                 nullptr,
                                 &handle) != VK_SUCCESS)
   {
-    Abort("GraphicPipeline: Unable to create graphic pipeline");
+    throw std::runtime_error("GraphicPipeline: Unable to create graphic pipeline");
   }
   setHandle(handle);
 }
