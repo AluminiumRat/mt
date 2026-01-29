@@ -24,14 +24,14 @@ Posteffects::Posteffects(Device& device) :
   _avgColorBinding(_resolveTechnique.getOrCreateResourceBinding("avgColor")),
   _exposureUniform(_resolveTechnique.getOrCreateUniform("params.exposure")),
   _exposure(1.0f),
-  _maxWhiteSqUniform(_resolveTechnique.getOrCreateUniform("params.maxWhiteSq")),
-  _maxWhite(5.0f)
+  _maxWhiteUniform(_resolveTechnique.getOrCreateUniform("params.maxWhite")),
+  _maxWhite(3.0f)
 {
   loadConfigurator(*_resolveConfigurator, "posteffects/posteffects.tch");
   _resolveConfigurator->rebuildConfiguration();
 
   _exposureUniform.setValue(_exposure);
-  _maxWhiteSqUniform.setValue(_maxWhite * _maxWhite);
+  _maxWhiteUniform.setValue(_maxWhite);
 }
 
 void Posteffects::prepare(CommandProducerGraphic& commandProducer,
@@ -99,7 +99,7 @@ void Posteffects::makeGui()
     grid.addRow("MaxWhite");
     if(ImGui::InputFloat("#maxwhite", &_maxWhite))
     {
-      _maxWhiteSqUniform.setValue(_maxWhite * _maxWhite);
+      _maxWhiteUniform.setValue(_maxWhite);
     }
   }
 }

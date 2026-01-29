@@ -60,7 +60,7 @@ namespace mt
     UniformVariable& _exposureUniform;
     float _exposure;
 
-    UniformVariable& _maxWhiteSqUniform;
+    UniformVariable& _maxWhiteUniform;
     float _maxWhite;
   };
 

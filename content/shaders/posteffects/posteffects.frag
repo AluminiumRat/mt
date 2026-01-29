@@ -10,7 +10,7 @@ layout (set = STATIC, binding = 3) uniform sampler linearSampler;
 layout (set = STATIC, binding = 4) uniform Params
 {
   float exposure;
-  float maxWhiteSq;
+  float maxWhite;
 } params;
 
 layout(location = 0) in vec2 texCoord;
@@ -25,7 +25,8 @@ void main()
 
   outColor = texture( sampler2D(hdrTexture, linearSampler),
                       texCoord);
-  outColor.rgb = outColor.rgb * params.exposure / (avgLuminance + 0.001f);
 
-  outColor.rgb = reinhard(outColor.rgb, params.maxWhiteSq);
+  float maxWhite = params.maxWhite * avgLuminance;
+  outColor.rgb = reinhard(outColor.rgb, maxWhite * maxWhite + 0.001f);
+  outColor.rgb *= params.exposure;
 }
