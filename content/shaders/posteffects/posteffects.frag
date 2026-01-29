@@ -23,10 +23,15 @@ void main()
                               0).rgb;
   float avgLuminance = colorToLuminance(avgColor);
 
-  outColor = texture( sampler2D(hdrTexture, linearSampler),
-                      texCoord);
+  vec3 sourceColor = texture( sampler2D(hdrTexture, linearSampler),
+                              texCoord).rgb;
+  float sourceLuminance = colorToLuminance(sourceColor) + 0.001f;
 
   float maxWhite = params.maxWhite * avgLuminance;
-  outColor.rgb = reinhard(outColor.rgb, maxWhite * maxWhite + 0.001f);
-  outColor.rgb *= params.exposure;
+  float resultLuminance = reinhardEx( sourceLuminance,
+                                      maxWhite * maxWhite + 0.001f);
+
+  vec3 resultColor = params.exposure *
+                      resultLuminance / sourceLuminance * sourceColor;
+  outColor = vec4(resultColor, 1.0f);
 }
