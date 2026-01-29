@@ -20,7 +20,8 @@ namespace mt
   public:
     //  Максимальное количество дескриптер сетов, которые можно прибиндить к
     //  графическому пайплайну
-    static constexpr uint32_t maxDescriptorSetsNumber =
+    //  Нулевой слот ImageAccessMultiset используется для фрэймбуфера
+    static constexpr uint32_t maxGraphicDescriptorSetsNumber =
                                           ImageAccessMultiset::maxSetsCount - 1;
 
   public:

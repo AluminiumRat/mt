@@ -99,7 +99,7 @@ void CommandProducerGraphic::bindDescriptorSetGraphic(
                                             uint32_t setIndex,
                                             const PipelineLayout& layout)
 {
-  MT_ASSERT(setIndex < maxDescriptorSetsNumber);
+  MT_ASSERT(setIndex < maxGraphicDescriptorSetsNumber);
   MT_ASSERT(descriptorSet.isFinalized());
 
   lockResource(layout);
@@ -122,7 +122,7 @@ void CommandProducerGraphic::bindDescriptorSetGraphic(
 void CommandProducerGraphic::unbindDescriptorSetGraphic(
                                                     uint32_t setIndex) noexcept
 {
-  MT_ASSERT(setIndex < maxDescriptorSetsNumber);
+  MT_ASSERT(setIndex < maxGraphicDescriptorSetsNumber);
   _pipelineAccesses.setChild(nullptr, setIndex + 1);
 }
 
