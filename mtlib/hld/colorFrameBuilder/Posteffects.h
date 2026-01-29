@@ -57,8 +57,8 @@ namespace mt
     ResourceBinding& _brightnessPyramidBinding;
     ResourceBinding& _avgColorBinding;
 
-    UniformVariable& _exposureUniform;
-    float _exposure;
+    UniformVariable& _brightnessUniform;
+    float _brightness;
 
     UniformVariable& _maxWhiteUniform;
     float _maxWhite;

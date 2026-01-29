@@ -9,7 +9,7 @@ layout (set = STATIC, binding = 3) uniform sampler linearSampler;
 
 layout (set = STATIC, binding = 4) uniform Params
 {
-  float exposure;
+  float brightness;
   float maxWhite;
 } params;
 
@@ -31,7 +31,8 @@ void main()
   float resultLuminance = reinhardEx( sourceLuminance,
                                       maxWhite * maxWhite + 0.001f);
 
-  vec3 resultColor = params.exposure *
+  vec3 resultColor = params.brightness *
                       resultLuminance / sourceLuminance * sourceColor;
+
   outColor = vec4(resultColor, 1.0f);
 }

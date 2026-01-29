@@ -22,15 +22,15 @@ Posteffects::Posteffects(Device& device) :
   _brightnessPyramidBinding(
             _resolveTechnique.getOrCreateResourceBinding("brightnessPyramid")),
   _avgColorBinding(_resolveTechnique.getOrCreateResourceBinding("avgColor")),
-  _exposureUniform(_resolveTechnique.getOrCreateUniform("params.exposure")),
-  _exposure(1.0f),
+  _brightnessUniform(_resolveTechnique.getOrCreateUniform("params.brightness")),
+  _brightness(1.0f),
   _maxWhiteUniform(_resolveTechnique.getOrCreateUniform("params.maxWhite")),
-  _maxWhite(3.0f)
+  _maxWhite(2.0f)
 {
   loadConfigurator(*_resolveConfigurator, "posteffects/posteffects.tch");
   _resolveConfigurator->rebuildConfiguration();
 
-  _exposureUniform.setValue(_exposure);
+  _brightnessUniform.setValue(_brightness);
   _maxWhiteUniform.setValue(_maxWhite);
 }
 
@@ -90,10 +90,10 @@ void Posteffects::makeGui()
   {
     ImGuiPropertyGrid grid("Posteffects");
 
-    grid.addRow("Exposure");
-    if(ImGui::InputFloat("#exposure", &_exposure))
+    grid.addRow("brightness");
+    if(ImGui::InputFloat("#Brightness", &_brightness))
     {
-      _exposureUniform.setValue(_exposure);
+      _brightnessUniform.setValue(_brightness);
     }
 
     grid.addRow("MaxWhite");
