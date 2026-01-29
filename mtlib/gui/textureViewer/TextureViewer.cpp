@@ -472,7 +472,7 @@ void TextureViewer::_drawGeometry(CommandProducerGraphic& producer)
   {
   case FLAT_VIEW:
     {
-      Technique::Bind bind(*_viewTechnique, *_flatPass, producer);
+      Technique::BindGraphic bind(*_viewTechnique, *_flatPass, producer);
       if (bind.isValid())
       {
         producer.draw(4);
@@ -482,7 +482,7 @@ void TextureViewer::_drawGeometry(CommandProducerGraphic& producer)
     }
   case CUBEMAP_VIEW:
     {
-      Technique::Bind bind(*_viewTechnique, *_cubemapPass, producer);
+      Technique::BindGraphic bind(*_viewTechnique, *_cubemapPass, producer);
       if (bind.isValid())
       {
         producer.draw(36);
@@ -492,7 +492,7 @@ void TextureViewer::_drawGeometry(CommandProducerGraphic& producer)
   }
   case INV_CUBEMAP_VIEW:
     {
-      Technique::Bind bind(*_viewTechnique, *_invCubemapPass, producer);
+      Technique::BindGraphic bind(*_viewTechnique, *_invCubemapPass, producer);
       if (bind.isValid())
       {
         producer.draw(36);

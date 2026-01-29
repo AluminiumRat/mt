@@ -29,10 +29,10 @@ void MeshDrawCommand::_processChunk(CommandProducerGraphic& producer,
 
   updateInstanceData(volatileContext, commands);
 
-  Technique::Bind bind( *_drawInfo.technique,
-                        *_drawInfo.pass,
-                        producer,
-                        &volatileContext);
+  Technique::BindGraphic bind(*_drawInfo.technique,
+                              *_drawInfo.pass,
+                              producer,
+                              &volatileContext);
   if (!bind.isValid()) return;
 
   producer.draw(_vertexCount, (uint32_t)commands.size());

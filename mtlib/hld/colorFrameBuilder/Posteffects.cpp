@@ -46,7 +46,7 @@ void Posteffects::makeLDR(CommandProducerGraphic& commandProducer,
 {
   _updateBindings();
 
-  Technique::Bind bind(_resolveTechnique, _resolvePass, commandProducer);
+  Technique::BindGraphic bind(_resolveTechnique, _resolvePass, commandProducer);
   MT_ASSERT(bind.isValid())
 
   commandProducer.draw(4);

@@ -21,6 +21,7 @@
 namespace mt
 {
   class CommandProducer;
+  class CommandProducerCompute;
   class CommandProducerGraphic;
   class CommandProducerTransfer;
   class CommandQueueTransfer;
@@ -29,28 +30,54 @@ namespace mt
   class Technique
   {
   public:
-    //  RAII обертка вокруг биндинга техники к комманд продюсеру
+    //  RAII обертка вокруг биндинга графической техники к комманд продюсеру
     //  Автоматически анбиндит технику в деструкторе
-    class Bind
+    class BindGraphic
     {
     public:
-      inline Bind() noexcept;
-      inline Bind(const Technique& technique,
-                  const TechniquePass& pass,
-                  CommandProducerGraphic& producer,
-                  const TechniqueVolatileContext* volatileContext = nullptr);
-      Bind(const Bind&) = delete;
-      inline Bind(Bind&& other) noexcept;
-      Bind& operator = (const Bind&) = delete;
-      inline Bind& operator == (Bind&& other) noexcept;
-      inline ~Bind() noexcept;
+      inline BindGraphic() noexcept;
+      inline BindGraphic(
+                    const Technique& technique,
+                    const TechniquePass& pass,
+                    CommandProducerGraphic& producer,
+                    const TechniqueVolatileContext* volatileContext = nullptr);
+      BindGraphic(const BindGraphic&) = delete;
+      inline BindGraphic(BindGraphic&& other) noexcept;
+      BindGraphic& operator = (const BindGraphic&) = delete;
+      inline BindGraphic& operator == (BindGraphic&& other) noexcept;
+      inline ~BindGraphic() noexcept;
 
       inline void release() noexcept;
       inline bool isValid() const noexcept;
 
     private:
       const Technique* _technique;
-      CommandProducerGraphic* _graphicProducer;
+      CommandProducerGraphic* _producer;
+    };
+
+    //  RAII обертка вокруг биндинга компьют техники к комманд продюсеру
+    //  Автоматически анбиндит технику в деструкторе
+    class BindCompute
+    {
+    public:
+      inline BindCompute() noexcept;
+      inline BindCompute(
+                    const Technique& technique,
+                    const TechniquePass& pass,
+                    CommandProducerCompute& producer,
+                    const TechniqueVolatileContext* volatileContext = nullptr);
+      BindCompute(const BindCompute&) = delete;
+      inline BindCompute(BindCompute&& other) noexcept;
+      BindCompute& operator = (const BindCompute&) = delete;
+      inline BindCompute& operator == (BindCompute&& other) noexcept;
+      inline ~BindCompute() noexcept;
+
+      inline void release() noexcept;
+      inline bool isValid() const noexcept;
+
+    private:
+      const Technique* _technique;
+      CommandProducerCompute* _producer;
     };
 
   public:
@@ -86,17 +113,29 @@ namespace mt
     bool isReady(
               const TechniqueVolatileContext* volatileContext = nullptr) const;
 
-    //  Подключить пайплайн и все необходимые ресурсы к продюсеро
+    //  Подключить графический пайплайн и все необходимые ресурсы к продюсеру
     //  Возвращает false, если по какой-то причине подключить технику не
     //    получается. В этом случае причина отказа пишется в лог в виде
     //    Warning сообщения
-    //  ВНИМАНИЕ!!! Нельзя одновременно подключать несколько техник к одному
-    //    продюсеру.
+    //  ВНИМАНИЕ!!! Нельзя одновременно подключать несколько графических техник
+    //    к одному продюсеру.
     bool bindGraphic(
               CommandProducerGraphic& producer,
               const TechniquePass& pass,
               const TechniqueVolatileContext* volatileContext = nullptr) const;
     void unbindGraphic(CommandProducerGraphic& producer) const noexcept;
+
+    //  Подключить компьют пайплайн и все необходимые ресурсы к продюсеру
+    //  Возвращает false, если по какой-то причине подключить технику не
+    //    получается. В этом случае причина отказа пишется в лог в виде
+    //    Warning сообщения
+    //  ВНИМАНИЕ!!! Нельзя одновременно подключать несколько компьют техник
+    //    к одному продюсеру.
+    bool bindCompute(
+              CommandProducerCompute& producer,
+              const TechniquePass& pass,
+              const TechniqueVolatileContext* volatileContext = nullptr) const;
+    void unbindCompute(CommandProducerCompute& producer) const noexcept;
 
     Selection& getOrCreateSelection(const char* selectionName);
     Selection* getSelection(const char* selectionName) noexcept;
@@ -135,8 +174,9 @@ namespace mt
     void _bindResources(DescriptorSet& descriptorSet,
                         DescriptorSetType setType,
                         CommandProducerTransfer& commandProducer) const;
-    void _bindDescriptorsGraphic(
-                        CommandProducerGraphic& producer,
+    template<typename CommandProducerType>
+    void _bindDescriptors(
+                        CommandProducerType& producer,
                         const TechniqueVolatileContext* volatileContext) const;
     //  Определить по селекшенам, какой именно вариант пайплайны мы должны
     //  использовать
@@ -178,60 +218,120 @@ namespace mt
     mutable SpinLock _staticSetMutex;
   };
 
-  inline Technique::Bind::Bind() noexcept :
+  inline Technique::BindGraphic::BindGraphic() noexcept :
     _technique(nullptr),
-    _graphicProducer(nullptr)
+    _producer(nullptr)
   {
   }
 
-  inline Technique::Bind::Bind(
+  inline Technique::BindGraphic::BindGraphic(
                             const Technique& technique,
                             const TechniquePass& pass,
                             CommandProducerGraphic& producer,
                             const TechniqueVolatileContext* volatileContext) :
     _technique(nullptr),
-    _graphicProducer(nullptr)
+    _producer(nullptr)
   {
     if(technique.bindGraphic(producer, pass, volatileContext))
     {
       _technique = &technique;
-      _graphicProducer = &producer;
+      _producer = &producer;
     }
   }
 
-  inline Technique::Bind::Bind(Bind&& other) noexcept :
+  inline Technique::BindGraphic::BindGraphic(BindGraphic&& other) noexcept :
     _technique(other._technique),
-    _graphicProducer(other._graphicProducer)
+    _producer(other._producer)
   {
     other._technique = nullptr;
-    other._graphicProducer = nullptr;
+    other._producer = nullptr;
   }
 
-  inline Technique::Bind& Technique::Bind::operator == (Bind&& other) noexcept
+  inline Technique::BindGraphic& Technique::BindGraphic::operator == (
+                                                  BindGraphic&& other) noexcept
   {
     release();
     _technique = other._technique;
     other._technique = nullptr;
-    _graphicProducer = other._graphicProducer;
-    other._graphicProducer = nullptr;
+    _producer = other._producer;
+    other._producer = nullptr;
   }
 
-  inline Technique::Bind::~Bind() noexcept
+  inline Technique::BindGraphic::~BindGraphic() noexcept
   {
     release();
   }
 
-  inline void Technique::Bind::release() noexcept
+  inline void Technique::BindGraphic::release() noexcept
   {
     if(_technique != nullptr)
     {
-      _technique->unbindGraphic(*_graphicProducer);
+      _technique->unbindGraphic(*_producer);
       _technique = nullptr;
-      _graphicProducer = nullptr;
+      _producer = nullptr;
     }
   }
 
-  inline bool Technique::Bind::isValid() const noexcept
+  inline bool Technique::BindGraphic::isValid() const noexcept
+  {
+    return _technique != nullptr;
+  }
+
+  inline Technique::BindCompute::BindCompute() noexcept :
+    _technique(nullptr),
+    _producer(nullptr)
+  {
+  }
+
+  inline Technique::BindCompute::BindCompute(
+                            const Technique& technique,
+                            const TechniquePass& pass,
+                            CommandProducerCompute& producer,
+                            const TechniqueVolatileContext* volatileContext) :
+    _technique(nullptr),
+    _producer(nullptr)
+  {
+    if (technique.bindCompute(producer, pass, volatileContext))
+    {
+      _technique = &technique;
+      _producer = &producer;
+    }
+  }
+
+  inline Technique::BindCompute::BindCompute(BindCompute&& other) noexcept :
+    _technique(other._technique),
+    _producer(other._producer)
+  {
+    other._technique = nullptr;
+    other._producer = nullptr;
+  }
+
+  inline Technique::BindCompute& Technique::BindCompute::operator == (
+    BindCompute&& other) noexcept
+  {
+    release();
+    _technique = other._technique;
+    other._technique = nullptr;
+    _producer = other._producer;
+    other._producer = nullptr;
+  }
+
+  inline Technique::BindCompute::~BindCompute() noexcept
+  {
+    release();
+  }
+
+  inline void Technique::BindCompute::release() noexcept
+  {
+    if (_technique != nullptr)
+    {
+      _technique->unbindCompute(*_producer);
+      _technique = nullptr;
+      _producer = nullptr;
+    }
+  }
+
+  inline bool Technique::BindCompute::isValid() const noexcept
   {
     return _technique != nullptr;
   }

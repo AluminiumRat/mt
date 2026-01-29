@@ -5,6 +5,9 @@
 #include <util/Abort.h>
 #include <util/Assert.h>
 #include <util/Log.h>
+#include <vkr/pipeline/ComputePipeline.h>
+#include <vkr/pipeline/GraphicPipeline.h>
+#include <vkr/queue/CommandProducerCompute.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/queue/CommandQueueTransfer.h>
 #include <vkr/Device.h>
@@ -194,21 +197,23 @@ bool Technique::bindGraphic(
     Log::warning() << _debugName << ": pass " << pass.name() << " is not found";
     return false;
   }
-  if(_configuration->_passes[passIndex].pipelineType != AbstractPipeline::GRAPHIC_PIPELINE)
+  if(_configuration->_passes[passIndex].pipelineType !=
+                                            AbstractPipeline::GRAPHIC_PIPELINE)
   {
-    Log::warning() << _debugName << ": technique is not graphic";
+    Log::warning() << _debugName << ": pass " << pass.name() << " is not graphic";
     return false;
   }
 
   _updateStaticSet(producer);
-  _bindDescriptorsGraphic(producer, volatileContext);
+  _bindDescriptors(producer, volatileContext);
 
   uint32_t pipelineVariant = _getPipelineVariant(volatileContext, passIndex);
-  MT_ASSERT(pipelineVariant < _configuration->_passes[passIndex].graphicPipelineVariants.size());
+  MT_ASSERT(pipelineVariant < _configuration->_passes[passIndex].pipelineVariants.size());
 
-  producer.setGraphicPipeline(
-                  *_configuration->_passes[passIndex].
-                                      graphicPipelineVariants[pipelineVariant]);
+  const PassConfiguration& passConfig = _configuration->_passes[passIndex];
+  const GraphicPipeline& pipeline = static_cast<const GraphicPipeline&>(
+                                  *passConfig.pipelineVariants[pipelineVariant]);
+  producer.setGraphicPipeline(pipeline);
   return true;
 }
 
@@ -300,8 +305,27 @@ void Technique::_bindResources( DescriptorSet& descriptorSet,
   descriptorSet.finalize();
 }
 
-void Technique::_bindDescriptorsGraphic(
-                          CommandProducerGraphic& producer,
+//  Эта и следующая функции - вспомогательные обертки вокруг конкретных типов
+//  продюсеров. Нужны чтобы единообразно биндить сеты в
+//  Technique::_bindDescriptors
+static void bindSet(CommandProducerGraphic& producer,
+                    const DescriptorSet& descriptorSet,
+                    DescriptorSetType setType,
+                    const PipelineLayout& layout)
+{
+  producer.bindDescriptorSetGraphic(descriptorSet, uint32_t(setType), layout);
+}
+static void bindSet(CommandProducerCompute& producer,
+                    const DescriptorSet& descriptorSet,
+                    DescriptorSetType setType,
+                    const PipelineLayout& layout)
+{
+  producer.bindDescriptorSetCompute(descriptorSet, uint32_t(setType), layout);
+}
+
+template<typename CommandProducerType>
+void Technique::_bindDescriptors(
+                          CommandProducerType& producer,
                           const TechniqueVolatileContext* volatileContext) const
 {
   // Сначала биндим волатильный сет
@@ -323,9 +347,10 @@ void Technique::_bindDescriptorsGraphic(
         }
       }
       volatileContext->descriptorSet->finalize();
-      producer.bindDescriptorSetGraphic(*volatileContext->descriptorSet,
-                                        uint32_t(DescriptorSetType::VOLATILE),
-                                        *_configuration->pipelineLayout);
+      bindSet(producer,
+              *volatileContext->descriptorSet,
+              DescriptorSetType::VOLATILE,
+              *_configuration->pipelineLayout);
     }
     else
     {
@@ -334,9 +359,10 @@ void Technique::_bindDescriptorsGraphic(
         producer.descriptorPool().allocateSet(*_volatileSetDescription->layout);
       _bindResources(*volatileSet, DescriptorSetType::VOLATILE, producer);
 
-      producer.bindDescriptorSetGraphic(*volatileSet,
-                                        uint32_t(DescriptorSetType::VOLATILE),
-                                        *_configuration->pipelineLayout);
+      bindSet(producer,
+              *volatileSet,
+              DescriptorSetType::VOLATILE,
+              *_configuration->pipelineLayout);
     }
   }
 
@@ -345,9 +371,10 @@ void Technique::_bindDescriptorsGraphic(
   {
     std::lock_guard lock(_staticSetMutex);
     MT_ASSERT(_staticSet != nullptr);
-    producer.bindDescriptorSetGraphic(*_staticSet,
-                                      uint32_t(DescriptorSetType::STATIC),
-                                      *_configuration->pipelineLayout);
+    bindSet(producer,
+            *_staticSet,
+            DescriptorSetType::STATIC,
+            *_configuration->pipelineLayout);
   }
 }
 
@@ -442,6 +469,55 @@ void Technique::unbindGraphic(CommandProducerGraphic& producer) const noexcept
   if (_staticSetDescription != nullptr)
   {
     producer.unbindDescriptorSetGraphic(uint32_t(DescriptorSetType::STATIC));
+  }
+}
+
+bool Technique::bindCompute(
+                          CommandProducerCompute& producer,
+                          const TechniquePass& pass,
+                          const TechniqueVolatileContext* volatileContext) const
+{
+  if(_configuration == nullptr)
+  {
+    Log::warning() << _debugName << ": configuration is invalid or not builded";
+    return false;
+  }
+
+  uint32_t passIndex = static_cast<const TechniquePassImpl&>(pass).passIndex();
+  if(passIndex == TechniquePassImpl::NOT_PASS_INDEX)
+  {
+    Log::warning() << _debugName << ": pass " << pass.name() << " is not found";
+    return false;
+  }
+  if(_configuration->_passes[passIndex].pipelineType !=
+                                              AbstractPipeline::COMPUTE_PIPELINE)
+  {
+    Log::warning() << _debugName << ": pass " << pass.name() << " is not compute";
+    return false;
+  }
+
+  _updateStaticSet(producer);
+  _bindDescriptors(producer, volatileContext);
+
+  uint32_t pipelineVariant = _getPipelineVariant(volatileContext, passIndex);
+  MT_ASSERT(pipelineVariant < _configuration->_passes[passIndex].pipelineVariants.size());
+
+  const PassConfiguration& passConfig = _configuration->_passes[passIndex];
+  const ComputePipeline& pipeline = static_cast<const ComputePipeline&>(
+                                  *passConfig.pipelineVariants[pipelineVariant]);
+  producer.setComputePipeline(pipeline);
+  return true;
+}
+
+void Technique::unbindCompute(CommandProducerCompute& producer) const noexcept
+{
+  if(_volatileSetDescription != nullptr)
+  {
+    producer.unbindDescriptorSetCompute(uint32_t(DescriptorSetType::VOLATILE));
+  }
+  if (_staticSetDescription != nullptr)
+  {
+    producer.unbindDescriptorSetCompute(uint32_t(DescriptorSetType::STATIC));
   }
 }
 

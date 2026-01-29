@@ -157,7 +157,7 @@ void Project::BuildTextureTask::_buildSlice(uint32_t mipIndex,
   //  Рендерим полноэкранный квадрат в слайс
   mt::CommandProducerGraphic::RenderPass renderPass(*producer, *frameBuffer);
   mt::TechniquePass& techniquePass = _technique->getOrCreatePass("Pass");
-  mt::Technique::Bind bind(*_technique, techniquePass, *producer);
+  mt::Technique::BindGraphic bind(*_technique, techniquePass, *producer);
   if (bind.isValid())
   {
     producer->draw(4);

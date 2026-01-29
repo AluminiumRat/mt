@@ -7,6 +7,7 @@
 #include <technique/TechniqueConfiguration.h>
 #include <util/Abort.h>
 #include <util/Log.h>
+#include <vkr/pipeline/ComputePipeline.h>
 #include <vkr/pipeline/GraphicPipeline.h>
 #include <vkr/pipeline/ShaderModule.h>
 
@@ -130,14 +131,7 @@ void PassConfigurator::_processSelections(
 
   //  Выделим место под разные варианты шейдерных модулей и пайплайнов
   context.shaders[context.currentPassIndex].resize(variantsNumber);
-  if (_pipelineType == AbstractPipeline::COMPUTE_PIPELINE)
-  {
-    Abort("Not implemented");
-  }
-  else
-  {
-    context.currentPass->graphicPipelineVariants.resize(variantsNumber);
-  }
+  context.currentPass->pipelineVariants.resize(variantsNumber);
 }
 
 // Это рекурсивная функция, пребирающая все варианты селекшенов
@@ -517,7 +511,7 @@ void PassConfigurator::createPipelines(ConfigurationBuildContext& context) const
   MT_ASSERT(context.configuration->pipelineLayout != nullptr)
 
   for(uint32_t variant = 0;
-      variant < context.currentPass->graphicPipelineVariants.size();
+      variant < context.currentPass->pipelineVariants.size();
       variant++)
   {
     //  Формируем список шейдерных модулей, из которых состоит пайплайн
@@ -534,11 +528,14 @@ void PassConfigurator::createPipelines(ConfigurationBuildContext& context) const
     //  Создаем сам пайплайн
     if (_pipelineType == AbstractPipeline::COMPUTE_PIPELINE)
     {
-      Abort("Not implemented");
+      context.currentPass->pipelineVariants[variant] =
+                    ConstRef(new ComputePipeline(
+                                      shaders,
+                                      *context.configuration->pipelineLayout));
     }
     else
     {
-      context.currentPass->graphicPipelineVariants[variant] =
+      context.currentPass->pipelineVariants[variant] =
                     ConstRef(new GraphicPipeline(
                                       *_frameBufferFormat,
                                       shaders,

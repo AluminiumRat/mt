@@ -167,7 +167,7 @@ void TestWindow::_drawSimple(CommandProducerGraphic& commandProducer)
   _color.setValue(colorValue);
 
   //  Бинд техники и отрисовка
-  Technique::Bind bind(_technique, _pass, commandProducer);
+  Technique::BindGraphic bind(_technique, _pass, commandProducer);
   if (bind.isValid())
   {
     commandProducer.draw(3);
@@ -204,7 +204,10 @@ void TestWindow::_drawVolatileContext(
   _color.setValue(volatileContext, colorValue);
 
   //  Бинд техники и отрисовка
-  Technique::Bind bind(_technique, _pass, commandProducer, &volatileContext);
+  Technique::BindGraphic bind(_technique,
+                              _pass,
+                              commandProducer,
+                              &volatileContext);
   if(bind.isValid())
   {
     commandProducer.draw(3);

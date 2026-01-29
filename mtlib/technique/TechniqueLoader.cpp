@@ -183,7 +183,7 @@ namespace mt
     std::string stageName = passNode["stageName"].as<std::string>("");
     target.setStageName(stageName.c_str());
 
-    int32_t layer = passNode["layre"].as<int>(0);
+    int32_t layer = passNode["layer"].as<int>(0);
     target.setLayer(layer);
 
     int maxInstances = passNode["maxInstances"].as<int>(1);

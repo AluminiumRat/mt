@@ -5,8 +5,6 @@
 
 #include <util/Ref.h>
 #include <vkr/pipeline/AbstractPipeline.h>
-#include <vkr/pipeline/GraphicPipeline.h>
-#include <vkr/pipeline/PipelineLayout.h>
 
 namespace mt
 {
@@ -26,7 +24,10 @@ namespace mt
     uint32_t maxInstances = 1;
 
     //  Различные варианты собранных пайплайнов для разных значений селекшенов
-    std::vector<ConstRef<GraphicPipeline>> graphicPipelineVariants;
+    //  Если pipelineType = GRAPHIC_PIPELINE, то все пайплайны, которые тут
+    //    находятся - это mt::GraphicPipeline. Если pipelineType =
+    //    COMPUTE_PIPELINE, то все пайплайны - это mt::ComputePipeline
+    std::vector<ConstRef<AbstractPipeline>> pipelineVariants;
 
     PassConfiguration() noexcept = default;
     PassConfiguration(const PassConfiguration&) = default;
