@@ -1,20 +1,20 @@
-﻿#include <hld/colorFrameBuilder/BrightnessPyramid.h>
+﻿#include <hld/colorFrameBuilder/LuminancePyramid.h>
 #include <hld/colorFrameBuilder/ColorFrameBuilder.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 
 using namespace mt;
 
-BrightnessPyramid::BrightnessPyramid(Device& device) :
+LuminancePyramid::LuminancePyramid(Device& device) :
   _device(device)
 {
 }
 
-void BrightnessPyramid::update( CommandProducerGraphic& commandProducer,
+void LuminancePyramid::update( CommandProducerGraphic& commandProducer,
                                 Image& hdrBuffer)
 {
   try
   {
-    commandProducer.beginDebugLabel("BrightnessPyramid");
+    commandProducer.beginDebugLabel("LuminancePyramid");
 
     _createImage(hdrBuffer);
     _fillImage(commandProducer, hdrBuffer);
@@ -28,7 +28,7 @@ void BrightnessPyramid::update( CommandProducerGraphic& commandProducer,
   }
 }
 
-void BrightnessPyramid::_createImage(Image& hdrBuffer)
+void LuminancePyramid::_createImage(Image& hdrBuffer)
 {
   glm::uvec3 pyramidExtent = glm::max(glm::uvec3( hdrBuffer.extent().x / 2,
                                                   hdrBuffer.extent().y / 2,
@@ -49,11 +49,11 @@ void BrightnessPyramid::_createImage(Image& hdrBuffer)
                               1,
                               pyramidMips,
                               false,
-                              "BrightnessPyramid");
+                              "LuminancePyramid");
   }
 }
 
-void BrightnessPyramid::_fillImage( CommandProducerGraphic& commandProducer,
+void LuminancePyramid::_fillImage( CommandProducerGraphic& commandProducer,
                                     Image& hdrBuffer)
 {
   //  Переводим всю пирамиду в VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL

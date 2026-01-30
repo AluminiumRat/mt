@@ -9,13 +9,13 @@ namespace mt
   class Device;
 
   //  Создает текстуру с полным набором мипов из hdr буфера
-  class BrightnessPyramid
+  class LuminancePyramid
   {
   public:
-    BrightnessPyramid(Device& device);
-    BrightnessPyramid(const BrightnessPyramid&) = delete;
-    BrightnessPyramid& operator = (const BrightnessPyramid&) = delete;
-    ~BrightnessPyramid() noexcept = default;
+    LuminancePyramid(Device& device);
+    LuminancePyramid(const LuminancePyramid&) = delete;
+    LuminancePyramid& operator = (const LuminancePyramid&) = delete;
+    ~LuminancePyramid() noexcept = default;
 
     //  Построить пирамиду по hdr буферу
     //  hdrBuffer должен либо быть в лэйауте
@@ -39,7 +39,7 @@ namespace mt
     Ref<Image> _pyramidImage;
   };
 
-  inline Image* BrightnessPyramid::pyramidImage() const noexcept
+  inline Image* LuminancePyramid::pyramidImage() const noexcept
   {
     return _pyramidImage.get();
   }

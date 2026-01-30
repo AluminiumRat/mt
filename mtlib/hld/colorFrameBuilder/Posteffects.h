@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include <hld/colorFrameBuilder/BrightnessPyramid.h>
+#include <hld/colorFrameBuilder/LuminancePyramid.h>
 #include <technique/TechniqueConfigurator.h>
 #include <technique/Technique.h>
 #include <util/Ref.h>
@@ -48,13 +48,13 @@ namespace mt
     Ref<Image> _hdrBuffer;
     bool _hdrBufferChanged;
 
-    BrightnessPyramid _brightnessPyramid;
+    LuminancePyramid _luminancePyramid;
 
     Ref<TechniqueConfigurator> _resolveConfigurator;
     Technique _resolveTechnique;
     TechniquePass& _resolvePass;
     ResourceBinding& _hdrBufferBinding;
-    ResourceBinding& _brightnessPyramidBinding;
+    ResourceBinding& _luminancePyramidBinding;
     ResourceBinding& _avgColorBinding;
 
     UniformVariable& _brightnessUniform;

@@ -3,7 +3,7 @@
 #include "lib/color.inl"
 
 layout (set = STATIC, binding = 0) uniform texture2D hdrTexture;
-layout (set = STATIC, binding = 1) uniform texture2D brightnessPyramid;
+layout (set = STATIC, binding = 1) uniform texture2D luminancePyramid;
 layout (set = STATIC, binding = 2) uniform texture2D avgColor;
 layout (set = STATIC, binding = 3) uniform sampler linearSampler;
 

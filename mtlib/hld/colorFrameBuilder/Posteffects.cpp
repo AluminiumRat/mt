@@ -14,13 +14,13 @@ using namespace mt;
 Posteffects::Posteffects(Device& device) :
   _device(device),
   _hdrBufferChanged(false),
-  _brightnessPyramid(_device),
+  _luminancePyramid(_device),
   _resolveConfigurator(new TechniqueConfigurator(device, "HDRResolve")),
   _resolveTechnique(*_resolveConfigurator),
   _resolvePass(_resolveTechnique.getOrCreatePass("ResolvePass")),
   _hdrBufferBinding(_resolveTechnique.getOrCreateResourceBinding("hdrTexture")),
-  _brightnessPyramidBinding(
-            _resolveTechnique.getOrCreateResourceBinding("brightnessPyramid")),
+  _luminancePyramidBinding(
+            _resolveTechnique.getOrCreateResourceBinding("luminancePyramid")),
   _avgColorBinding(_resolveTechnique.getOrCreateResourceBinding("avgColor")),
   _brightnessUniform(_resolveTechnique.getOrCreateUniform("params.brightness")),
   _brightness(1.0f),
@@ -38,7 +38,7 @@ void Posteffects::prepare(CommandProducerGraphic& commandProducer,
                           const FrameBuildContext& frameContext)
 {
   MT_ASSERT(_hdrBuffer != nullptr);
-  _brightnessPyramid.update(commandProducer, *_hdrBuffer);
+  _luminancePyramid.update(commandProducer, *_hdrBuffer);
 }
 
 void Posteffects::makeLDR(CommandProducerGraphic& commandProducer,
@@ -55,7 +55,7 @@ void Posteffects::makeLDR(CommandProducerGraphic& commandProducer,
 void Posteffects::_updateBindings()
 {
   MT_ASSERT(_hdrBuffer != nullptr);
-  MT_ASSERT(_brightnessPyramid.pyramidImage() != nullptr);
+  MT_ASSERT(_luminancePyramid.pyramidImage() != nullptr);
 
   if(!_hdrBufferChanged) return;
 
@@ -64,11 +64,11 @@ void Posteffects::_updateBindings()
                                         VK_IMAGE_VIEW_TYPE_2D));
   _hdrBufferBinding.setImage(hdrView);
 
-  Image& pyramid = *_brightnessPyramid.pyramidImage();
-  Ref<ImageView> brightnessPyramidView( new ImageView(pyramid,
+  Image& pyramid = *_luminancePyramid.pyramidImage();
+  Ref<ImageView> luminancePyramidView( new ImageView(pyramid,
                                                       ImageSlice(pyramid),
                                                       VK_IMAGE_VIEW_TYPE_2D));
-  _brightnessPyramidBinding.setImage(brightnessPyramidView);
+  _luminancePyramidBinding.setImage(luminancePyramidView);
 
   Ref<ImageView> avgColorView(new ImageView(
                                           pyramid,
