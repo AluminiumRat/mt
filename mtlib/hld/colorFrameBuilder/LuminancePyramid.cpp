@@ -1,4 +1,6 @@
-﻿#include <hld/colorFrameBuilder/LuminancePyramid.h>
+﻿#include <bit>
+
+#include <hld/colorFrameBuilder/LuminancePyramid.h>
 #include <hld/colorFrameBuilder/ColorFrameBuilder.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 
@@ -30,10 +32,12 @@ void LuminancePyramid::update( CommandProducerGraphic& commandProducer,
 
 void LuminancePyramid::_createImage(Image& hdrBuffer)
 {
-  glm::uvec3 pyramidExtent = glm::max(glm::uvec3( hdrBuffer.extent().x / 2,
-                                                  hdrBuffer.extent().y / 2,
-                                                  1),
-                                      glm::uvec3(1));
+  //  Определяем размер нижнего мипа пирамиды. Это должна быть ближайшая снизу
+  //  степень двойки
+  glm::uvec2 sizeExp( std::bit_width(hdrBuffer.extent().x) - 1,
+                      std::bit_width(hdrBuffer.extent().y) - 1);
+  glm::uvec3 pyramidExtent = glm::uvec3( 1 << sizeExp.x, 1 << sizeExp.y, 1);
+
   if(_pyramidImage == nullptr || _pyramidImage->extent() != pyramidExtent)
   {
     uint32_t pyramidMips = Image::calculateMipNumber(pyramidExtent);
