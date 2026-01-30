@@ -1,0 +1,6 @@
+passes:
+  ComputePass :
+    pipeline: COMPUTE
+
+    shaders:
+      COMPUTE : examples/compute/compute.comp

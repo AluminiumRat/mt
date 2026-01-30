@@ -1,0 +1,23 @@
+#version 450
+
+layout( rgba8,
+        set = STATIC,
+        binding = 0) writeonly uniform image2D storageTexture;
+
+layout (local_size_x = 8,
+        local_size_y = 8,
+        local_size_z = 1) in;
+
+void main()
+{
+  uvec2 pixelCoord = gl_GlobalInvocationID.xy;
+  if(pixelCoord.x >= imageSize(storageTexture).x) return;
+  if(pixelCoord.y >= imageSize(storageTexture).y) return;
+
+  vec4 color = vec4(pixelCoord.x / 256.0f,
+                    pixelCoord.y / 256.0f,
+                    1.0f,
+                    1.0f);
+
+  imageStore(storageTexture, ivec2(pixelCoord), color);
+}
