@@ -11,7 +11,7 @@ ComputePipeline::ComputePipeline( std::span<const ShaderInfo> shaders,
   AbstractPipeline(COMPUTE_PIPELINE, layout)
 {
   VkShadersInfo vkShadersInfo = createVkShadersInfo(shaders);
-  MT_ASSERT(vkShadersInfo.size() != 1);
+  MT_ASSERT(vkShadersInfo.size() == 1);
 
   VkComputePipelineCreateInfo pipelineInfo{};
   pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;

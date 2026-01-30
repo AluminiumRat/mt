@@ -6,6 +6,7 @@
 #include <technique/ShaderCompilator.h>
 #include <util/Abort.h>
 #include <util/ContentLoader.h>
+#include <vkr/VKRLib.h>
 
 namespace fs = std::filesystem;
 
@@ -170,6 +171,8 @@ std::vector<char> ShaderCompilator::compile(
   options.AddMacroDefinition("COMMON", "0");
   options.AddMacroDefinition("STATIC", "1");
   options.AddMacroDefinition("VOLATILE", "2");
+  options.SetTargetEnvironment( shaderc_target_env_vulkan,
+                                VKRLib::instance().vulkanApiVersion());
   for (const Define& define : defines)
   {
     options.AddMacroDefinition(define.name, define.value);
