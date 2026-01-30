@@ -301,7 +301,7 @@ void VKRLib::_extendRequiredFeatures(
 {
   requiredFeatures.timelineSemaphore = VK_TRUE;
   requiredFeatures.runtimeDescriptorArray = VK_TRUE;
-  requiredFeatures.bufferDeviceAddress = VK_TRUE;
+  //requiredFeatures.bufferDeviceAddress = VK_TRUE;
 }
 
 std::set<std::string> VKRLib::_extendRequiredExtensions(
