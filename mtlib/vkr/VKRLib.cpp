@@ -296,6 +296,14 @@ void VKRLib::_extendRequiredFeatures(
   requiredFeatures.imageCubeArray = VK_TRUE;
 }
 
+void VKRLib::_extendRequiredFeatures(
+                      VkPhysicalDeviceVulkan12Features& requiredFeatures) const
+{
+  requiredFeatures.timelineSemaphore = VK_TRUE;
+  requiredFeatures.runtimeDescriptorArray = VK_TRUE;
+  requiredFeatures.bufferDeviceAddress = VK_TRUE;
+}
+
 std::set<std::string> VKRLib::_extendRequiredExtensions(
                             const std::vector<std::string>& requiredExtensions,
                             bool needPresent) const
@@ -313,6 +321,8 @@ std::set<std::string> VKRLib::_extendRequiredExtensions(
 bool VKRLib::_isDeviceSuitable(
                               const PhysicalDevice& device,
                               const VkPhysicalDeviceFeatures& requiredFeatures,
+                                const VkPhysicalDeviceVulkan12Features&
+                                                      requiredFeaturesVulkan12,
                               const std::set<std::string>& requiredExtensions,
                               QueuesConfiguration configuration,
                               const WindowSurface* testSurface)
@@ -340,12 +350,9 @@ bool VKRLib::_isDeviceSuitable(
     Log::info() << "Device " << device.properties().deviceName << " doesn't support all features";
     return false;
   }
-
-  // Обязательно должны поддерживаться таймлайн семафоры, на них построена
-  // синхронизация очередей
-  if (!device.areTimelineSemaphoresSupported())
+  if (!device.areFeaturesVulkan12Supported(requiredFeaturesVulkan12))
   {
-    Log::info() << "Device " << device.properties().deviceName << " doesn't support timeline semaphores";
+    Log::info() << "Device " << device.properties().deviceName << " doesn't support all vulkan 1.2 features";
     return false;
   }
 
@@ -378,6 +385,7 @@ bool VKRLib::_isDeviceSuitable(
 
 PhysicalDevice* VKRLib::getBestPhysicalDevice(
                       VkPhysicalDeviceFeatures requiredFeatures,
+                      VkPhysicalDeviceVulkan12Features requiredFeaturesVulkan12,
                       const std::vector<std::string>& requiredExtensions,
                       QueuesConfiguration configuration,
                       const WindowSurface* testSurface) const
@@ -389,6 +397,7 @@ PhysicalDevice* VKRLib::getBestPhysicalDevice(
 
   // Дополняем пользовательские фичи требованиями движка
   _extendRequiredFeatures(requiredFeatures);
+  _extendRequiredFeatures(requiredFeaturesVulkan12);
 
   // Выбираем видюху, которая имеет наибольший объем недоступной с CPU
   // памяти (дискретка). Если таких нет, то выбираем встройку
@@ -398,6 +407,7 @@ PhysicalDevice* VKRLib::getBestPhysicalDevice(
   {
     if(!_isDeviceSuitable(*device,
                           requiredFeatures,
+                          requiredFeaturesVulkan12,
                           extensions,
                           configuration,
                           testSurface))
@@ -433,29 +443,35 @@ PhysicalDevice* VKRLib::getBestPhysicalDevice(
 
 std::unique_ptr<Device> VKRLib::createDevice(
                             const VkPhysicalDeviceFeatures& requiredFeatures,
+                            const VkPhysicalDeviceVulkan12Features&
+                                                      requiredFeaturesVulkan12,
                             const std::vector<std::string>& requiredExtensions,
                             QueuesConfiguration configuration,
                             const WindowSurface* testSurface) const
 {
-  PhysicalDevice* physicalDevice = getBestPhysicalDevice( requiredFeatures,
-                                                          requiredExtensions,
-                                                          configuration,
-                                                          testSurface);
+  PhysicalDevice* physicalDevice = getBestPhysicalDevice(
+                                                      requiredFeatures,
+                                                      requiredFeaturesVulkan12,
+                                                      requiredExtensions,
+                                                      configuration,
+                                                      testSurface);
   if(physicalDevice == nullptr) return nullptr;
 
   return createDevice(*physicalDevice,
                       requiredFeatures,
+                      requiredFeaturesVulkan12,
                       requiredExtensions,
                       configuration,
                       testSurface);
 }
 
 std::unique_ptr<Device> VKRLib::createDevice(
-                              PhysicalDevice& physicalDevice,
-                              VkPhysicalDeviceFeatures requiredFeatures,
-                              const std::vector<std::string>& enabledExtensions,
-                              QueuesConfiguration configuration,
-                              const WindowSurface* testSurface) const
+                      PhysicalDevice& physicalDevice,
+                      VkPhysicalDeviceFeatures requiredFeatures,
+                      VkPhysicalDeviceVulkan12Features requiredFeaturesVulkan12,
+                      const std::vector<std::string>& enabledExtensions,
+                      QueuesConfiguration configuration,
+                      const WindowSurface* testSurface) const
 {
   // Формируем список расширений, которые должны поддерживаться устройством
   std::set<std::string> extensionsSet = _extendRequiredExtensions(
@@ -466,6 +482,7 @@ std::unique_ptr<Device> VKRLib::createDevice(
 
   // Дополняем пользовательские фичи требованиями движка
   _extendRequiredFeatures(requiredFeatures);
+  _extendRequiredFeatures(requiredFeaturesVulkan12);
 
   // Список лэйеров, включенных на устройстве
   std::vector<std::string> enabledLayers;
@@ -480,6 +497,7 @@ std::unique_ptr<Device> VKRLib::createDevice(
 
   return std::unique_ptr<Device>(new Device(physicalDevice,
                                             requiredFeatures,
+                                            requiredFeaturesVulkan12,
                                             extensions,
                                             enabledLayers,
                                             *queueSources));

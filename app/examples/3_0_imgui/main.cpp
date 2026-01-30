@@ -23,6 +23,7 @@ int main(int argc, char* argv[])
     std::unique_ptr<Device> device = guiLib.createDevice(
                                                       {},
                                                       {},
+                                                      {},
                                                       GRAPHICS_CONFIGURATION);
     TestWindow window1(*device, "Test window1");
     window1.loadConfiguration();

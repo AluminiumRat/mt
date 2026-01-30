@@ -37,6 +37,7 @@ namespace mt
     // Логическое устройство можно создать только через класс VKRLib
     Device( PhysicalDevice& physicalDevice,
             VkPhysicalDeviceFeatures requiredFeatures,
+            VkPhysicalDeviceVulkan12Features requiredFeaturesVulkan12,
             const std::vector<std::string>& requiredExtensions,
             const std::vector<std::string>& enabledLayers,
             const QueueSources& queueSources);
@@ -50,6 +51,8 @@ namespace mt
     inline VmaAllocator allocator() noexcept;
 
     inline const VkPhysicalDeviceFeatures& features() const noexcept;
+    inline const VkPhysicalDeviceVulkan12Features&
+                                            featuresVulkan12() const noexcept;
 
     inline PhysicalDevice& physicalDevice() const noexcept;
 
@@ -97,6 +100,7 @@ namespace mt
     VmaAllocator _allocator;
 
     VkPhysicalDeviceFeatures _features;
+    VkPhysicalDeviceVulkan12Features _featuresVulkan12;
 
     // Общий мьютекс для очередей. Добавлен так как очереди поддерживают
     // многопоток и под капотом могут взаимодействовать друг с другом.
@@ -121,6 +125,12 @@ namespace mt
   inline const VkPhysicalDeviceFeatures& Device::features() const noexcept
   {
     return _features;
+  }
+
+  inline const VkPhysicalDeviceVulkan12Features&
+                                      Device::featuresVulkan12() const noexcept
+  {
+    return _featuresVulkan12;
   }
 
   inline PhysicalDevice& Device::physicalDevice() const noexcept

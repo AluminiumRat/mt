@@ -154,7 +154,9 @@ void GUILib::saveConfiguration(const fs::path& file) const noexcept
 }
 
 std::unique_ptr<Device> GUILib::createDevice(
-                            VkPhysicalDeviceFeatures requiredFeatures,
+                            const VkPhysicalDeviceFeatures& requiredFeatures,
+                            const VkPhysicalDeviceVulkan12Features&
+                                                      requiredFeaturesVulkan12,
                             const std::vector<std::string>& requiredExtensions,
                             QueuesConfiguration configuration)
 {
@@ -166,6 +168,7 @@ std::unique_ptr<Device> GUILib::createDevice(
   {
     Win32WindowSurface testSurface(glfwGetWin32Window(testWindow));
     device = VKRLib::instance().createDevice( requiredFeatures,
+                                              requiredFeaturesVulkan12,
                                               requiredExtensions,
                                               configuration,
                                               &testSurface);

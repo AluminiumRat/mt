@@ -11,6 +11,7 @@ using namespace mt;
 
 Device::Device( PhysicalDevice& physicalDevice,
                 VkPhysicalDeviceFeatures requiredFeatures,
+                VkPhysicalDeviceVulkan12Features requiredFeaturesVulkan12,
                 const std::vector<std::string>& requiredExtensions,
                 const std::vector<std::string>& enabledLayers,
                 const QueueSources& queueSources) :
@@ -18,6 +19,7 @@ Device::Device( PhysicalDevice& physicalDevice,
   _handle(VK_NULL_HANDLE),
   _allocator(VK_NULL_HANDLE),
   _features(requiredFeatures),
+  _featuresVulkan12(requiredFeaturesVulkan12),
   _queuesByTypes{}
 {
   try
@@ -69,19 +71,11 @@ void Device::_createHandle( const std::vector<std::string>& requiredExtensions,
     }
   }
 
-  // Таймлайн семафоры обязаны быть включенными, на них работает синхронизация
-  // очередей
-  VkPhysicalDeviceTimelineSemaphoreFeatures semaphoreFeature{};
-  semaphoreFeature.sType =
-                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
-  semaphoreFeature.timelineSemaphore = VK_TRUE;
-
   // Обязательно включить synchronization2
   VkPhysicalDeviceSynchronization2Features synchronization2Feature{};
   synchronization2Feature.sType =
                   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
   synchronization2Feature.synchronization2 = VK_TRUE;
-  synchronization2Feature.pNext = &semaphoreFeature;
 
   // DynamicRendering нужен для графической конфигурации, сильно упрощает
   // работу с пайплайном
@@ -91,10 +85,14 @@ void Device::_createHandle( const std::vector<std::string>& requiredExtensions,
   dynamicRenderingFeature.dynamicRendering = VK_TRUE;
   dynamicRenderingFeature.pNext = &synchronization2Feature;
 
+  _featuresVulkan12.sType =
+                          VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+  _featuresVulkan12.pNext = &dynamicRenderingFeature;
+
   VkPhysicalDeviceFeatures2 features{};
   features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
   features.features = _features;
-  features.pNext = &dynamicRenderingFeature;
+  features.pNext = &_featuresVulkan12;
 
   VkDeviceCreateInfo createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

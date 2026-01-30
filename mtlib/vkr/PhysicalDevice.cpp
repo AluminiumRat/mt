@@ -8,7 +8,6 @@ using namespace mt;
 
 PhysicalDevice::PhysicalDevice(VkPhysicalDevice deviceHandle) :
   _handle(deviceHandle),
-  _timelineSemaphoreSupport(false),
   _synchronization2Support(false),
   _dynamicRenderingSupport(false)
 {
@@ -31,16 +30,10 @@ PhysicalDevice::PhysicalDevice(VkPhysicalDevice deviceHandle) :
 
 void PhysicalDevice::_getFeatures()
 {
-  // Сразу с фичами проверяем поддержку таймлайн семафоров
-  VkPhysicalDeviceTimelineSemaphoreFeatures semaphoreFeature{};
-  semaphoreFeature.sType =
-                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
-
-  // И поддержку synchronization2
+  // Сразу с фичами проверяем поддержку synchronization2
   VkPhysicalDeviceSynchronization2Features synchronization2Feature{};
   synchronization2Feature.sType =
                   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
-  synchronization2Feature.pNext = &semaphoreFeature;
 
   // И dynamic rendering
   VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature{};
@@ -48,13 +41,16 @@ void PhysicalDevice::_getFeatures()
               VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
   dynamicRenderingFeature.pNext = &synchronization2Feature;
 
+  _featuresVulkan12 = VkPhysicalDeviceVulkan12Features{};
+  _featuresVulkan12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+  _featuresVulkan12.pNext = &dynamicRenderingFeature;
+
   VkPhysicalDeviceFeatures2 features{};
   features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-  features.pNext = &dynamicRenderingFeature;
+  features.pNext = &_featuresVulkan12;
   vkGetPhysicalDeviceFeatures2(_handle, &features);
 
   _features = features.features;
-  _timelineSemaphoreSupport = semaphoreFeature.timelineSemaphore;
   _synchronization2Support = synchronization2Feature.synchronization2;
   _dynamicRenderingSupport = dynamicRenderingFeature.dynamicRendering;
 }
@@ -108,10 +104,10 @@ void PhysicalDevice::_fillMemoryInfo()
 bool PhysicalDevice::areFeaturesSupported(
                         const VkPhysicalDeviceFeatures& features) const noexcept
 {
-  bool featuresSupported = true;
+  #define VKR_CHECK_FEATURE(featureName) \
+    if(features.##featureName) featuresSupported &= bool(_features.##featureName);
 
-#define VKR_CHECK_FEATURE(featureName) \
-  if(features.##featureName) featuresSupported &= bool(_features.##featureName);
+  bool featuresSupported = true;
 
   VKR_CHECK_FEATURE(robustBufferAccess)
   VKR_CHECK_FEATURE(fullDrawIndexUint32)
@@ -168,6 +164,67 @@ bool PhysicalDevice::areFeaturesSupported(
   VKR_CHECK_FEATURE(sparseResidencyAliased)
   VKR_CHECK_FEATURE(variableMultisampleRate)
   VKR_CHECK_FEATURE(inheritedQueries)
+
+  #undef VKR_CHECK_FEATURE
+
+  return featuresSupported;
+}
+
+bool PhysicalDevice::areFeaturesVulkan12Supported(
+              const VkPhysicalDeviceVulkan12Features& features) const noexcept
+{
+  bool featuresSupported = true;
+
+  #define VKR_CHECK_FEATURE(featureName) \
+    if(features.##featureName) featuresSupported &= bool(_featuresVulkan12.##featureName);
+
+  VKR_CHECK_FEATURE(samplerMirrorClampToEdge)
+  VKR_CHECK_FEATURE(drawIndirectCount)
+  VKR_CHECK_FEATURE(storageBuffer8BitAccess)
+  VKR_CHECK_FEATURE(uniformAndStorageBuffer8BitAccess)
+  VKR_CHECK_FEATURE(storagePushConstant8)
+  VKR_CHECK_FEATURE(shaderBufferInt64Atomics)
+  VKR_CHECK_FEATURE(shaderSharedInt64Atomics)
+  VKR_CHECK_FEATURE(shaderFloat16)
+  VKR_CHECK_FEATURE(shaderInt8)
+  VKR_CHECK_FEATURE(descriptorIndexing)
+  VKR_CHECK_FEATURE(shaderInputAttachmentArrayDynamicIndexing)
+  VKR_CHECK_FEATURE(shaderUniformTexelBufferArrayDynamicIndexing)
+  VKR_CHECK_FEATURE(shaderStorageTexelBufferArrayDynamicIndexing)
+  VKR_CHECK_FEATURE(shaderUniformBufferArrayNonUniformIndexing)
+  VKR_CHECK_FEATURE(shaderSampledImageArrayNonUniformIndexing)
+  VKR_CHECK_FEATURE(shaderStorageBufferArrayNonUniformIndexing)
+  VKR_CHECK_FEATURE(shaderStorageImageArrayNonUniformIndexing)
+  VKR_CHECK_FEATURE(shaderInputAttachmentArrayNonUniformIndexing)
+  VKR_CHECK_FEATURE(shaderUniformTexelBufferArrayNonUniformIndexing)
+  VKR_CHECK_FEATURE(shaderStorageTexelBufferArrayNonUniformIndexing)
+  VKR_CHECK_FEATURE(descriptorBindingUniformBufferUpdateAfterBind)
+  VKR_CHECK_FEATURE(descriptorBindingSampledImageUpdateAfterBind)
+  VKR_CHECK_FEATURE(descriptorBindingStorageImageUpdateAfterBind)
+  VKR_CHECK_FEATURE(descriptorBindingStorageBufferUpdateAfterBind)
+  VKR_CHECK_FEATURE(descriptorBindingUniformTexelBufferUpdateAfterBind)
+  VKR_CHECK_FEATURE(descriptorBindingStorageTexelBufferUpdateAfterBind)
+  VKR_CHECK_FEATURE(descriptorBindingUpdateUnusedWhilePending)
+  VKR_CHECK_FEATURE(descriptorBindingPartiallyBound)
+  VKR_CHECK_FEATURE(descriptorBindingVariableDescriptorCount)
+  VKR_CHECK_FEATURE(runtimeDescriptorArray)
+  VKR_CHECK_FEATURE(samplerFilterMinmax)
+  VKR_CHECK_FEATURE(scalarBlockLayout)
+  VKR_CHECK_FEATURE(imagelessFramebuffer)
+  VKR_CHECK_FEATURE(uniformBufferStandardLayout)
+  VKR_CHECK_FEATURE(shaderSubgroupExtendedTypes)
+  VKR_CHECK_FEATURE(separateDepthStencilLayouts)
+  VKR_CHECK_FEATURE(hostQueryReset)
+  VKR_CHECK_FEATURE(timelineSemaphore)
+  VKR_CHECK_FEATURE(bufferDeviceAddress)
+  VKR_CHECK_FEATURE(bufferDeviceAddressCaptureReplay)
+  VKR_CHECK_FEATURE(bufferDeviceAddressMultiDevice)
+  VKR_CHECK_FEATURE(vulkanMemoryModel)
+  VKR_CHECK_FEATURE(vulkanMemoryModelDeviceScope)
+  VKR_CHECK_FEATURE(vulkanMemoryModelAvailabilityVisibilityChains)
+  VKR_CHECK_FEATURE(shaderOutputViewportIndex)
+  VKR_CHECK_FEATURE(shaderOutputLayer)
+  VKR_CHECK_FEATURE(subgroupBroadcastDynamicId)
 
 #undef VKR_CHECK_FEATURE
 

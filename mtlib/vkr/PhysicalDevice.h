@@ -42,7 +42,12 @@ namespace mt
     inline const VkPhysicalDeviceFeatures& features() const noexcept;
     bool areFeaturesSupported(
                       const VkPhysicalDeviceFeatures& features) const noexcept;
-    inline bool areTimelineSemaphoresSupported() const noexcept;
+
+    inline const VkPhysicalDeviceVulkan12Features&
+                                              featuresVulkan12() const noexcept;
+    bool areFeaturesVulkan12Supported(
+                const VkPhysicalDeviceVulkan12Features& features) const noexcept;
+
     inline bool isSynchronization2Supported() const noexcept;
     inline bool isDynamicRenderingSupported() const noexcept;
 
@@ -65,7 +70,7 @@ namespace mt
 
     VkPhysicalDeviceProperties _properties;
     VkPhysicalDeviceFeatures _features;
-    bool _timelineSemaphoreSupport;
+    VkPhysicalDeviceVulkan12Features _featuresVulkan12;
     bool _synchronization2Support;
     bool _dynamicRenderingSupport;
     MemoryInfo _memoryInfo;
@@ -89,9 +94,10 @@ namespace mt
     return _features;
   }
 
-  inline bool PhysicalDevice::areTimelineSemaphoresSupported() const noexcept
+  inline const VkPhysicalDeviceVulkan12Features&
+                              PhysicalDevice::featuresVulkan12() const noexcept
   {
-    return _timelineSemaphoreSupport;
+    return _featuresVulkan12;
   }
 
   inline bool PhysicalDevice::isSynchronization2Supported() const noexcept
