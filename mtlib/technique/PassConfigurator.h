@@ -70,6 +70,12 @@ namespace mt
     inline uint32_t maxInstances() const noexcept;
     inline void setMaxInstances(uint32_t newValue);
 
+    //  Максимальная длина рантайм массивив дескриптеров
+    //  Используется для текстурных массивов в шейдерах при включенной фиче
+    //    VkPhysicalDeviceVulkan12Features::runtimeDescriptorArray
+    inline uint32_t runtimeArrayMaxSize() const noexcept;
+    inline void setRuntimeArrayMaxSize(uint32_t newValue);
+
     inline const Shaders& shaders() const noexcept;
     inline void setShaders(std::span<const ShaderInfo> newShaders);
 
@@ -247,6 +253,7 @@ namespace mt
     std::string _stageName;
     int32_t _layer;
     uint32_t _maxInstances;
+    uint32_t _runtimeArrayMaxSize;
     std::vector<ShaderInfo> _shaders;
     std::vector<std::string> _selections;
 
@@ -315,6 +322,17 @@ namespace mt
   {
     MT_ASSERT(newValue != 0);
     _maxInstances = newValue;
+  }
+
+  inline uint32_t PassConfigurator::runtimeArrayMaxSize() const noexcept
+  {
+    return _runtimeArrayMaxSize;
+  }
+
+  inline void PassConfigurator::setRuntimeArrayMaxSize(uint32_t newValue)
+  {
+    MT_ASSERT(newValue != 0);
+    _runtimeArrayMaxSize = newValue;
   }
 
   inline const PassConfigurator::Shaders&

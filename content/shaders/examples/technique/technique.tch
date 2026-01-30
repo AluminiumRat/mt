@@ -80,6 +80,12 @@ passes:
     # Дефолт 1
     #maxInstances: 2
 
+    # Максимальная длина рантайм массивив дескриптеров
+    # Используется для текстурных массивов в шейдерах при включенной фиче
+    #   VkPhysicalDeviceVulkan12Features::runtimeDescriptorArray
+    # Дефолт 32
+    #runtimeArrayMaxSize: 32
+
     # Здесь должен быть список селекшенов, которые используются именно в
     #   этом проходе. Только имена.
     selections: [colorSelector]

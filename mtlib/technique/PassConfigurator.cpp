@@ -19,6 +19,8 @@ PassConfigurator::PassConfigurator(const char* name) :
   _frameType(""),
   _stageName(""),
   _layer(0),
+  _maxInstances(1),
+  _runtimeArrayMaxSize(32),
   _topology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST),
   _rasterizationState{},
   _depthStencilState{},
@@ -315,6 +317,14 @@ void PassConfigurator::_processBindings(
     newResource.writeAccess =
               reflectedBinding->resource_type & SPV_REFLECT_RESOURCE_FLAG_UAV;
     newResource.count = reflectedBinding->count;
+    if(newResource.count == 0)
+    {
+      //  Проверяем, возможно это динамический массив дескрипторов
+      if(reflectedBinding->type_description->op == SpvOpTypeRuntimeArray)
+      {
+        newResource.count = _runtimeArrayMaxSize;
+      }
+    }
     if( newResource.count > 1 &&
         newResource.type != VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE &&
         newResource.type != VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)

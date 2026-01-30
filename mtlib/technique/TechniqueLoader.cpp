@@ -190,6 +190,10 @@ namespace mt
     if(maxInstances <= 0) throw std::runtime_error(target.name() + ": wrong maxInstances value");
     target.setMaxInstances((uint32_t)maxInstances);
 
+    int runtimeArrayMaxSize = passNode["runtimeArrayMaxSize"].as<int>(32);
+    if (runtimeArrayMaxSize <= 0) throw std::runtime_error(target.name() + ": wrong runtimeArrayMaxSize value");
+    target.setRuntimeArrayMaxSize((uint32_t)runtimeArrayMaxSize);
+
     loadSelectionsList(passNode, target);
     loadShaders(passNode, target);
     if (target.pipelineType() == AbstractPipeline::GRAPHIC_PIPELINE)
