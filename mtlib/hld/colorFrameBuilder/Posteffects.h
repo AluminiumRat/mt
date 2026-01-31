@@ -1,10 +1,11 @@
 ﻿#pragma once
 
+#include <hld/colorFrameBuilder/Bloom.h>
 #include <hld/colorFrameBuilder/LuminancePyramid.h>
 #include <technique/TechniqueConfigurator.h>
 #include <technique/Technique.h>
 #include <util/Ref.h>
-#include <vkr/image/Image.h>
+#include <vkr/image/ImageView.h>
 
 namespace mt
 {
@@ -35,7 +36,7 @@ namespace mt
     void makeLDR( CommandProducerGraphic& commandProducer,
                   const FrameBuildContext& frameContext);
 
-    inline void setHdrBuffer(Image& newBuffer) noexcept;
+    inline void setHdrBuffer(ImageView& newBuffer) noexcept;
 
     void makeGui();
 
@@ -45,9 +46,10 @@ namespace mt
   private:
     Device& _device;
 
-    Ref<Image> _hdrBuffer;
+    Ref<ImageView> _hdrBuffer;
     bool _hdrBufferChanged;
 
+    Bloom _bloom;
     LuminancePyramid _luminancePyramid;
 
     Ref<TechniqueConfigurator> _resolveConfigurator;
@@ -56,6 +58,7 @@ namespace mt
     ResourceBinding& _hdrBufferBinding;
     ResourceBinding& _luminancePyramidBinding;
     ResourceBinding& _avgColorBinding;
+    ResourceBinding& _bloomTextureBinding;
 
     UniformVariable& _brightnessUniform;
     float _brightness;
@@ -64,10 +67,11 @@ namespace mt
     float _maxWhite;
   };
 
-  inline void Posteffects::setHdrBuffer(Image& newBuffer) noexcept
+  inline void Posteffects::setHdrBuffer(ImageView& newBuffer) noexcept
   {
     if(_hdrBuffer == &newBuffer) return;
     _hdrBuffer = &newBuffer;
+    _bloom.setSourceImage(newBuffer);
     _hdrBufferChanged = true;
   }
 }

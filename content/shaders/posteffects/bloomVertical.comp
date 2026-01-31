@@ -1,0 +1,47 @@
+#version 450
+
+#include "posteffects/bloom.inl"
+
+#define GROUP_SIZE 320
+
+layout (local_size_x = 1,
+        local_size_y = GROUP_SIZE,
+        local_size_z = 1) in;
+
+shared vec3 textels[GROUP_SIZE];
+
+void main()
+{
+  ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
+  if(pixelCoord.y >= params.targetSize.y) return;
+
+  //  Берем цвет, который получили после горизонтального размытия
+  vec3 myColor = imageLoad(targetImage, pixelCoord).rgb;
+
+  //  На каком расстоянии находится сосед, с которым смешиваем
+  //  цвета. Разлет будет увеличиваться на каждом шаге
+  int neighborShift = 1;
+
+  for(int step = 0; step < BLOOR_STEPS; step++)
+  {
+    //  Сохраняем текущий цвет пикселя в общей памяти, чтобы соседи могли
+    //  смешать с ним свои цветаю
+    textels[pixelCoord.y] = myColor * NEIGHBOR_WEIGHT;
+
+    //  Ждем, когда соседи тоже сохранят свой цвет в общей памяти
+    barrier();
+
+    //  Считываем цвета соседей и смешиваем их со своим
+    //  Координаты текселей, с которыми будем смешивать текущий
+    int upNeighbor = max(pixelCoord.y - neighborShift, 0);
+    int downNeighbor = min( pixelCoord.y + neighborShift,
+                            params.targetSize.y - 1);
+    myColor = myColor * CENTER_WEIGHT +
+                              textels[upNeighbor] + textels[downNeighbor];
+    neighborShift *= 2;
+  }
+
+  myColor *= params.intensity;
+
+  imageStore(targetImage, pixelCoord, vec4(myColor, 1.0f));
+}

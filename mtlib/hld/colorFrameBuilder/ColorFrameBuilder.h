@@ -12,6 +12,7 @@
 #include <hld/FrameTypeIndex.h>
 #include <util/Ref.h>
 #include <vkr/image/Image.h>
+#include <vkr/image/ImageView.h>
 #include <vkr/pipeline/DescriptorSet.h>
 #include <vkr/pipeline/PipelineLayout.h>
 #include <vkr/DataBuffer.h>
@@ -67,7 +68,9 @@ namespace mt
 
     FrameTypeIndex _frameTypeIndex;
     Ref<Image> _hdrBuffer;
+    Ref<ImageView> _hdrBufferView;
     Ref<Image> _depthBuffer;
+    Ref<ImageView> _depthBufferView;
 
     ColorFrameCommonSet _commonSet;
 

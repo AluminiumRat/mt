@@ -5,7 +5,7 @@
 #include <hld/FrameTypeIndex.h>
 #include <hld/StageIndex.h>
 #include <util/Ref.h>
-#include <vkr/image/Image.h>
+#include <vkr/image/ImageView.h>
 #include <vkr/FrameBuffer.h>
 
 namespace mt
@@ -32,8 +32,8 @@ namespace mt
               const DrawPlan& drawPlan,
               const FrameBuildContext& frameContext);
 
-    inline void setHdrBuffer(Image& newBuffer) noexcept;
-    inline void setDepthBuffer(Image& newBuffer) noexcept;
+    inline void setHdrBuffer(ImageView& newBuffer) noexcept;
+    inline void setDepthBuffer(ImageView& newBuffer) noexcept;
 
   private:
     void _buildFrameBuffer();
@@ -43,22 +43,22 @@ namespace mt
 
     StageIndex _stageIndex;
 
-    Ref<Image> _hdrBuffer;
-    Ref<Image> _depthBuffer;
+    Ref<ImageView> _hdrBuffer;
+    Ref<ImageView> _depthBuffer;
     Ref<FrameBuffer> _frameBuffer;
 
     CommandMemoryPool _commandMemoryPool;
     DrawCommandList _drawCommands;
   };
 
-  inline void OpaqueColorStage::setHdrBuffer(Image& newBuffer) noexcept
+  inline void OpaqueColorStage::setHdrBuffer(ImageView& newBuffer) noexcept
   {
     if(_hdrBuffer == &newBuffer) return;
     _hdrBuffer = &newBuffer;
     _frameBuffer = nullptr;
   }
 
-  inline void OpaqueColorStage::setDepthBuffer(Image& newBuffer) noexcept
+  inline void OpaqueColorStage::setDepthBuffer(ImageView& newBuffer) noexcept
   {
     if(_depthBuffer == &newBuffer) return;
     _depthBuffer = &newBuffer;

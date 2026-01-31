@@ -1,11 +1,8 @@
 ﻿#include <hld/colorFrameBuilder/OpaqueColorStage.h>
-#include <hld/drawCommand/DrawCommandList.h>
 #include <hld/drawScene/Drawable.h>
 #include <hld/DrawPlan.h>
 #include <hld/HLDLib.h>
-#include <technique/DescriptorSetType.h>
 #include <util/Assert.h>
-#include <vkr/image/ImageView.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 
 using namespace mt;
@@ -50,33 +47,14 @@ void OpaqueColorStage::draw(CommandProducerGraphic& commandProducer,
 
 void OpaqueColorStage::_buildFrameBuffer()
 {
-  Ref<ImageView> colorTarget(
-                            new ImageView(*_hdrBuffer,
-                                          ImageSlice( VK_IMAGE_ASPECT_COLOR_BIT,
-                                                      0,
-                                                      1,
-                                                      0,
-                                                      1),
-                                          VK_IMAGE_VIEW_TYPE_2D));
   FrameBuffer::ColorAttachmentInfo colorAttachment = {
-                    .target = colorTarget.get(),
+                    .target = _hdrBuffer.get(),
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                     .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
                     .clearValue = VkClearColorValue{0.0f, 0.0f, 0.0f, 1.0f}};
 
-
-  Ref<ImageView> depthTarget(
-                        new ImageView(*_depthBuffer,
-                                      ImageSlice( VK_IMAGE_ASPECT_DEPTH_BIT |
-                                                    VK_IMAGE_ASPECT_STENCIL_BIT,
-                                                  0,
-                                                  1,
-                                                  0,
-                                                  1),
-                                      VK_IMAGE_VIEW_TYPE_2D));
-
   FrameBuffer::DepthStencilAttachmentInfo depthAttachment = {
-                                        .target = depthTarget.get(),
+                                        .target = _depthBuffer.get(),
                                         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                                         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
                                         .clearValue = { .depth = 0,

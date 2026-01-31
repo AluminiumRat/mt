@@ -21,7 +21,8 @@ namespace mt
     //  hdrBuffer должен либо быть в лэйауте
     //    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, либо быть со включенным
     //    автоконтролем лэйаутов
-    void update(CommandProducerGraphic& commandProducer, Image& hdrBuffer);
+    void update(CommandProducerGraphic& commandProducer,
+                const Image& hdrBuffer);
 
     //  image, в котором была построена пирамида
     //  Возвращает nullptr, если update ещё не был вызван, либо последний
@@ -31,8 +32,9 @@ namespace mt
     inline Image* pyramidImage() const noexcept;
 
   private:
-    void _createImage(Image& hdrBuffer);
-    void _fillImage(CommandProducerGraphic& commandProducer, Image& hdrBuffer);
+    void _createImage(const Image& hdrBuffer);
+    void _fillImage(CommandProducerGraphic& commandProducer,
+                    const Image& hdrBuffer);
 
   private:
     Device& _device;

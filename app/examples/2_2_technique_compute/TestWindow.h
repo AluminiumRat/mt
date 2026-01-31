@@ -3,9 +3,6 @@
 #include <gui/RenderWindow.h>
 #include <technique/Technique.h>
 #include <util/Ref.h>
-#include <vkr/image/ImageView.h>
-#include <vkr/DataBuffer.h>
-#include <vkr/Sampler.h>
 
 namespace mt
 {

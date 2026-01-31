@@ -5,9 +5,10 @@
 layout (set = STATIC, binding = 0) uniform texture2D hdrTexture;
 layout (set = STATIC, binding = 1) uniform texture2D luminancePyramid;
 layout (set = STATIC, binding = 2) uniform texture2D avgColor;
-layout (set = STATIC, binding = 3) uniform sampler linearSampler;
+layout (set = STATIC, binding = 3) uniform texture2D bloomTexture;
+layout (set = STATIC, binding = 4) uniform sampler linearSampler;
 
-layout (set = STATIC, binding = 4) uniform Params
+layout (set = STATIC, binding = 5) uniform Params
 {
   float brightness;
   float maxWhite;
@@ -25,6 +26,9 @@ void main()
 
   vec3 sourceColor = texture( sampler2D(hdrTexture, linearSampler),
                               texCoord).rgb;
+  sourceColor += texture( sampler2D(bloomTexture, linearSampler),
+                                    texCoord).rgb;
+
   float sourceLuminance = colorToLuminance(sourceColor) + 0.001f;
 
   float maxWhite = params.maxWhite * avgLuminance;

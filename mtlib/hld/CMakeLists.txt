@@ -9,6 +9,7 @@ include_directories(..
                     ${IMGUI_PATH})
 
 set(SOURCES
+    "colorFrameBuilder/Bloom.cpp"
     "colorFrameBuilder/ColorFrameBuilder.cpp"
     "colorFrameBuilder/ColorFrameCommonSet.cpp"
     "colorFrameBuilder/GlobalLight.cpp"

@@ -100,8 +100,11 @@ void ColorFrameBuilder::_updateBuffers( FrameBuffer& targetFrameBuffer)
                             1,
                             false,
                             "HDRBuffer");
-    _opaqueColorStage.setHdrBuffer(*_hdrBuffer);
-    _posteffects.setHdrBuffer(*_hdrBuffer);
+    _hdrBufferView = new ImageView( *_hdrBuffer,
+                                    ImageSlice(*_hdrBuffer),
+                                    VK_IMAGE_VIEW_TYPE_2D);
+    _opaqueColorStage.setHdrBuffer(*_hdrBufferView);
+    _posteffects.setHdrBuffer(*_hdrBufferView);
   }
 
   if (_depthBuffer == nullptr ||
@@ -118,7 +121,10 @@ void ColorFrameBuilder::_updateBuffers( FrameBuffer& targetFrameBuffer)
                               1,
                               false,
                               "DepthBuffer");
-    _opaqueColorStage.setDepthBuffer(*_depthBuffer);
+    _depthBufferView = new ImageView( *_depthBuffer,
+                                      ImageSlice(*_depthBuffer),
+                                      VK_IMAGE_VIEW_TYPE_2D);
+    _opaqueColorStage.setDepthBuffer(*_depthBufferView);
   }
 }
 

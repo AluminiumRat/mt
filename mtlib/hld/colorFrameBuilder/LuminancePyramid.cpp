@@ -1,7 +1,6 @@
 ﻿#include <bit>
 
 #include <hld/colorFrameBuilder/LuminancePyramid.h>
-#include <hld/colorFrameBuilder/ColorFrameBuilder.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 
 using namespace mt;
@@ -11,8 +10,8 @@ LuminancePyramid::LuminancePyramid(Device& device) :
 {
 }
 
-void LuminancePyramid::update( CommandProducerGraphic& commandProducer,
-                                Image& hdrBuffer)
+void LuminancePyramid::update(CommandProducerGraphic& commandProducer,
+                              const Image& hdrBuffer)
 {
   try
   {
@@ -30,7 +29,7 @@ void LuminancePyramid::update( CommandProducerGraphic& commandProducer,
   }
 }
 
-void LuminancePyramid::_createImage(Image& hdrBuffer)
+void LuminancePyramid::_createImage(const Image& hdrBuffer)
 {
   //  Определяем размер нижнего мипа пирамиды. Это должна быть ближайшая снизу
   //  степень двойки
@@ -47,7 +46,7 @@ void LuminancePyramid::_createImage(Image& hdrBuffer)
                                 VK_IMAGE_USAGE_TRANSFER_DST_BIT |
                                 VK_IMAGE_USAGE_SAMPLED_BIT,
                               0,
-                              ColorFrameBuilder::hdrFormat,
+                              hdrBuffer.format(),
                               pyramidExtent,
                               VK_SAMPLE_COUNT_1_BIT,
                               1,
@@ -57,8 +56,8 @@ void LuminancePyramid::_createImage(Image& hdrBuffer)
   }
 }
 
-void LuminancePyramid::_fillImage( CommandProducerGraphic& commandProducer,
-                                    Image& hdrBuffer)
+void LuminancePyramid::_fillImage(CommandProducerGraphic& commandProducer,
+                                  const Image& hdrBuffer)
 {
   //  Переводим всю пирамиду в VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
   commandProducer.imageBarrier( *_pyramidImage,
