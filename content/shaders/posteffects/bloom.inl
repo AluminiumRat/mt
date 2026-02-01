@@ -18,9 +18,9 @@ layout (set = STATIC,
 } params;
 
 //  Сколько шагов смешивания будет производиться
-#define BLOOR_STEPS 4
+#define BLOOR_STEPS 5
 
 //  Вес центральной точки при размытии
-#define CENTER_WEIGHT 0.45f
+#define CENTER_WEIGHT 0.5f
 //  Вес каждого из соседей при размытии
-#define NEIGHBOR_WEIGHT 0.275f
+#define NEIGHBOR_WEIGHT 0.25f

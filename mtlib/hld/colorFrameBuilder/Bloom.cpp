@@ -11,7 +11,7 @@ using namespace mt;
 Bloom::Bloom(Device& device) :
   _device(device),
   _treshold(1.0f),
-  _intensity(0.05f),
+  _intensity(0.1f),
   _sourceImageChanged(false),
   _techniqueConfigurator(new TechniqueConfigurator(device, "Bloom technique")),
   _bloorTechnique(*_techniqueConfigurator),
