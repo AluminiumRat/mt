@@ -58,8 +58,7 @@ namespace mt
   private:
     void _updateBuffers(FrameBuffer& targetFrameBuffer);
     void _initBuffersLayout(CommandProducerGraphic& commandProducer);
-    void _posteffectsPrepareLayouts(CommandProducerGraphic& commandProducer);
-    void _posteffectsResolveLayouts(CommandProducerGraphic& commandProducer);
+    void _posteffectsLayouts(CommandProducerGraphic& commandProducer);
 
   private:
     Device& _device;

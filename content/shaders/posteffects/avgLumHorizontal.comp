@@ -1,0 +1,70 @@
+#version 450
+//  Поиск среднего значения яркости для изображения. Горизонтальный проход.
+//  В этом проходе находим среднюю яркость для группы из 4 строк исходного 
+//    изображения и складываем в промежуточную текстуру
+
+#include "lib/color.inl"
+#include "posteffects/avgLum.inl"
+
+#define GROUP_SIZE 1024
+
+layout (local_size_x = GROUP_SIZE,
+        local_size_y = 1,
+        local_size_z = 1) in;
+
+//  Здесь даунсэмплим исходное изображение в 4 раза и вычисляем первоначальную
+//  яркость
+float getSourceLuminance()
+{
+  vec2 sourceStartTexel = gl_GlobalInvocationID.xy * 4 + vec2(0.5f, 0.5f);
+  vec2 sourceStartUV = sourceStartTexel * params.invSourceSize;
+  vec2 step = params.invSourceSize;
+
+  float avgLum = 0;
+  for(float i = 0; i < 4; i++)
+  {
+    for(float j = 0; j < 4; j++)
+    {
+      vec2 uvCoord = sourceStartUV + step * vec2(i, j);
+      vec3 sourceColor = textureLod(sampler2D(sourceImage, linearSampler),
+                                    uvCoord,
+                                    0).rgb;
+      avgLum += colorToLuminance(sourceColor);
+    }
+  }
+  return avgLum / 16.0f;
+}
+
+//  shared memory, предназначенная для обмена данными между пикселями
+//  обрабатываемой строки. Сюда скидываем промежуточные значения яркости
+shared float avgLum[GROUP_SIZE];
+
+void main()
+{
+  ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
+  if(pixelCoord.x >= params.areaSize.x) return;
+
+  //  Берем яркость из исходной картинки
+  float luminance = getSourceLuminance();
+
+  //  Размер куска, для которого мы производим усреднение на конкретном
+  //  шаге
+  int mipSize = params.areaSize.x;
+  while(mipSize != 1)
+  {
+    //  Сохраняем среднюю яркость предыдущего мипа, чтобы её можно было
+    //  использовать в следующем мипе
+    avgLum[pixelCoord.x] = luminance;
+    barrier();
+
+    //  Отсекаем ненужные вычисления
+    mipSize /= 2;
+    if(pixelCoord.x >= mipSize) return;
+
+    //  Усредняем значения из предыдущего мипа
+    luminance += avgLum[pixelCoord.x + mipSize];
+    luminance /= 2.0f;
+  }
+
+  imageStore(intermediateImage, pixelCoord, vec4(luminance));
+}

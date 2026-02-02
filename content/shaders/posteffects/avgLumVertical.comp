@@ -1,0 +1,45 @@
+#version 450
+//  Поиск среднего значения яркости для изображения. Вертикальный проход.
+//  В этом проходе считываем средные яркости строк из промежуточной текстуры
+//  и находим среднее значение
+
+#include "posteffects/avgLum.inl"
+
+#define GROUP_SIZE 512
+
+layout (local_size_x = 1,
+        local_size_y = GROUP_SIZE,
+        local_size_z = 1) in;
+
+//  shared memory, предназначенная для обмена данными между пикселями
+//  обрабатываемого столбца. Сюда скидываем промежуточные значения яркости
+shared float avgLum[GROUP_SIZE];
+
+void main()
+{
+  ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
+  if(pixelCoord.y >= params.areaSize.y) return;
+
+  //  Берем яркость строки, которую получили на горизонтальном проходе
+  float luminance = imageLoad(intermediateImage, pixelCoord).r;
+
+  //  Размер куска, для которого мы производим усреднение на конкретном шаге
+  int mipSize = params.areaSize.y;
+  while(mipSize != 1)
+  {
+    //  Сохраняем среднюю яркость предыдущего мипа, чтобы её можно было
+    //  использовать в следующем мипе
+    avgLum[pixelCoord.y] = luminance;
+    barrier();
+
+    //  Отсекаем ненужные вычисления
+    mipSize /= 2;
+    if(pixelCoord.y >= mipSize) return;
+
+    //  Усредняем значения из предыдущего мипа
+    luminance += avgLum[pixelCoord.y + mipSize];
+    luminance /= 2.0f;
+  }
+
+  avgLumBuffer.value = luminance;
+}

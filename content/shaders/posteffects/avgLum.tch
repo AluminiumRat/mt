@@ -1,0 +1,16 @@
+defaultSamplers:
+  linearSampler:
+    magFilter: LINEAR
+    minFilter: LINEAR
+    mipmapMode: LINEAR
+
+passes:
+  Horizontal :
+    pipeline: COMPUTE
+    shaders:
+      COMPUTE : posteffects/avgLumHorizontal.comp
+
+  Vertical :
+    pipeline: COMPUTE
+    shaders:
+      COMPUTE : posteffects/avgLumVertical.comp

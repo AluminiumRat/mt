@@ -63,11 +63,10 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
     //  Сборка конечного кадра
     std::unique_ptr<CommandProducerGraphic> finalizeProducer =
                               _device.graphicQueue()->startCommands("LDRStage");
+    _posteffectsLayouts(*finalizeProducer);
 
-    _posteffectsPrepareLayouts(*finalizeProducer);
     _posteffects.prepare(*finalizeProducer, frameContext);
 
-    _posteffectsResolveLayouts(*finalizeProducer);
     CommandProducerGraphic::RenderPass renderPass(*finalizeProducer, target);
       _posteffects.makeLDR(*finalizeProducer, frameContext);
       if(imGuiDraw)
@@ -151,30 +150,17 @@ void ColorFrameBuilder::_initBuffersLayout(
                               0);
 }
 
-void ColorFrameBuilder::_posteffectsPrepareLayouts(
+void ColorFrameBuilder::_posteffectsLayouts(
                                         CommandProducerGraphic& commandProducer)
 {
   commandProducer.imageBarrier( *_hdrBuffer,
                                 ImageSlice(*_hdrBuffer),
                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                VK_ACCESS_TRANSFER_READ_BIT);
-}
-
-void ColorFrameBuilder::_posteffectsResolveLayouts(
-                                        CommandProducerGraphic& commandProducer)
-{
-  commandProducer.imageBarrier( *_hdrBuffer,
-                                ImageSlice(*_hdrBuffer),
-                                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                0,
-                                0,
-                                0,
-                                0);
+                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                VK_ACCESS_SHADER_READ_BIT);
 }
 
 void ColorFrameBuilder::makeGui()

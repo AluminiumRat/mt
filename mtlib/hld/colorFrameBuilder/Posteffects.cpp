@@ -13,15 +13,14 @@ using namespace mt;
 Posteffects::Posteffects(Device& device) :
   _device(device),
   _hdrBufferChanged(false),
+  _avgLum(device),
   _bloom(device),
-  _luminancePyramid(_device),
   _resolveConfigurator(new TechniqueConfigurator(device, "HDRResolve")),
   _resolveTechnique(*_resolveConfigurator),
   _resolvePass(_resolveTechnique.getOrCreatePass("ResolvePass")),
   _hdrBufferBinding(_resolveTechnique.getOrCreateResourceBinding("hdrTexture")),
-  _luminancePyramidBinding(
-            _resolveTechnique.getOrCreateResourceBinding("luminancePyramid")),
-  _avgColorBinding(_resolveTechnique.getOrCreateResourceBinding("avgColor")),
+  _avgLuminanceBinding(
+                  _resolveTechnique.getOrCreateResourceBinding("avgLuminance")),
   _bloomTextureBinding(
                   _resolveTechnique.getOrCreateResourceBinding("bloomTexture")),
   _brightnessUniform(_resolveTechnique.getOrCreateUniform("params.brightness")),
@@ -40,7 +39,7 @@ void Posteffects::prepare(CommandProducerGraphic& commandProducer,
                           const FrameBuildContext& frameContext)
 {
   MT_ASSERT(_hdrBuffer != nullptr);
-  _luminancePyramid.update(commandProducer, _hdrBuffer->image());
+  _avgLum.update(commandProducer);
   _bloom.update(commandProducer);
 }
 
@@ -58,32 +57,17 @@ void Posteffects::makeLDR(CommandProducerGraphic& commandProducer,
 void Posteffects::_updateBindings()
 {
   MT_ASSERT(_hdrBuffer != nullptr);
-  MT_ASSERT(_luminancePyramid.pyramidImage() != nullptr);
+  MT_ASSERT(_bloom.bloomImage() != nullptr);
 
   if(!_hdrBufferChanged) return;
 
   _hdrBufferBinding.setImage(_hdrBuffer);
-
-  Image& pyramid = *_luminancePyramid.pyramidImage();
-  Ref<ImageView> luminancePyramidView( new ImageView(pyramid,
-                                                      ImageSlice(pyramid),
-                                                      VK_IMAGE_VIEW_TYPE_2D));
-  _luminancePyramidBinding.setImage(luminancePyramidView);
-
-  Ref<ImageView> avgColorView(new ImageView(
-                                          pyramid,
-                                          ImageSlice( VK_IMAGE_ASPECT_COLOR_BIT,
-                                                      pyramid.mipmapCount() - 1,
-                                                      1,
-                                                      0,
-                                                      1),
-                                          VK_IMAGE_VIEW_TYPE_2D));
-  _avgColorBinding.setImage(avgColorView);
+  _avgLuminanceBinding.setBuffer(&_avgLum.resultBuffer());
 
   Ref<ImageView> bloomTextureView(new ImageView(
-                                          *_bloom.bloomImage(),
-                                          ImageSlice(*_bloom.bloomImage()),
-                                          VK_IMAGE_VIEW_TYPE_2D));
+                                              *_bloom.bloomImage(),
+                                              ImageSlice(*_bloom.bloomImage()),
+                                              VK_IMAGE_VIEW_TYPE_2D));
   _bloomTextureBinding.setImage(bloomTextureView);
 
   _hdrBufferChanged = false;
