@@ -22,14 +22,15 @@ ColorFrameCommonSet::ColorFrameCommonSet(Device& device) :
 
 void ColorFrameCommonSet::_createLayouts()
 {
+  static constexpr VkShaderStageFlags allStages = VK_SHADER_STAGE_ALL_GRAPHICS |
+                                                  VK_SHADER_STAGE_COMPUTE_BIT;
+
   VkDescriptorSetLayoutBinding commonSetBindings[1];
-  commonSetBindings[uniformBufferBinding] = {};
-  commonSetBindings[uniformBufferBinding].binding = 0;
-  commonSetBindings[uniformBufferBinding].descriptorType =
-                                              VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  commonSetBindings[uniformBufferBinding].descriptorCount = 1;
-  commonSetBindings[uniformBufferBinding].stageFlags =
-                    VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT;
+  commonSetBindings[0] = {};
+  commonSetBindings[0].binding = uniformBufferBinding;
+  commonSetBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  commonSetBindings[0].descriptorCount = 1;
+  commonSetBindings[0].stageFlags = allStages;
 
   _setLayout = new DescriptorSetLayout(_device, commonSetBindings);
 
