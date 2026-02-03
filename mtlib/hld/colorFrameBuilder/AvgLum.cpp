@@ -1,5 +1,4 @@
 ﻿#include <hld/colorFrameBuilder/AvgLum.h>
-#include <technique/TechniqueLoader.h>
 #include <util/floorPow.h>
 #include <vkr/queue/CommandProducerCompute.h>
 #include <vkr/Device.h>
@@ -24,9 +23,10 @@ AvgLum::AvgLum(Device& device) :
   _invSourceSizeUniform(_technique.getOrCreateUniform("params.invSourceSize")),
   _areaSizeUniform(_technique.getOrCreateUniform("params.areaSize"))
 {
-  loadConfigurator( *_techniqueConfigurator, "posteffects/avgLum.tch");
-  _techniqueConfigurator->rebuildConfiguration();
   _resultBufferBinding.setBuffer(_resultBuffer);
+
+  Ref<Sampler> sampler(new Sampler(_device));
+  _technique.getOrCreateResourceBinding("linearSampler").setSampler(sampler);
 }
 
 void AvgLum::update(CommandProducerCompute& commandProducer)
@@ -35,21 +35,63 @@ void AvgLum::update(CommandProducerCompute& commandProducer)
 
   commandProducer.beginDebugLabel("AvgLum");
 
-  if(_sourceImageChanged) _updateBindings(commandProducer);
+  if(_sourceImageChanged)
+  {
+    _workAreaSize = _sourceImage->extent();
+    _workAreaSize = floorPow(_workAreaSize);
+    _workAreaSize /= 4;
+    _workAreaSize = glm::max(_workAreaSize, glm::uvec2(1, 1));
+
+    _updateTechnique();
+    _updateBindings(commandProducer);
+  }
+
   _average(commandProducer);
 
   commandProducer.endDebugLabel();
+}
+
+void AvgLum::_updateTechnique()
+{
+  //  Технику нужно пересобирать каждый раз при изменении размеров размываемой
+  //  картинки. Это необходимо из-за настройки размеров групп для шейдеров.
+  //  Настройка производится через константы специализации.
+  _techniqueConfigurator->clear();
+
+  TechniqueConfigurator::Passes passes;
+  {
+    //  Горизонтальный проход
+    std::unique_ptr<PassConfigurator> horizontalPass(
+                                          new PassConfigurator("Horizontal"));
+    horizontalPass->setPipelineType(AbstractPipeline::COMPUTE_PIPELINE);
+    PassConfigurator::ShaderInfo shaders[1] =
+                                {{.stage = VK_SHADER_STAGE_COMPUTE_BIT,
+                                  .file = "posteffects/avgLumHorizontal.comp"}};
+    shaders[0].constants.addConstant("GROUP_SIZE", uint32_t(_workAreaSize.x));
+    horizontalPass->setShaders(shaders);
+    passes.push_back(std::move(horizontalPass));
+  }
+  {
+    //  Вертикальный проход
+    std::unique_ptr<PassConfigurator> verticalPass(
+                                          new PassConfigurator("Vertical"));
+    verticalPass->setPipelineType(AbstractPipeline::COMPUTE_PIPELINE);
+    PassConfigurator::ShaderInfo shaders[1] =
+                                  {{.stage = VK_SHADER_STAGE_COMPUTE_BIT,
+                                    .file = "posteffects/avgLumVertical.comp"}};
+    shaders[0].constants.addConstant("GROUP_SIZE", uint32_t(_workAreaSize.y));
+    verticalPass->setShaders(shaders);
+    passes.push_back(std::move(verticalPass));
+  }
+
+  _techniqueConfigurator->setPasses(std::move(passes));
+  _techniqueConfigurator->rebuildConfiguration();
 }
 
 void AvgLum::_updateBindings(CommandProducerCompute& commandProducer)
 {
   _sourceImageBinding.setImage(_sourceImage);
   _invSourceSizeUniform.setValue(1.0f / glm::vec2(_sourceImage->extent()));
-
-  _workAreaSize = _sourceImage->extent();
-  _workAreaSize = floorPow(_workAreaSize);
-  _workAreaSize /= 4;
-  _workAreaSize = glm::max(_workAreaSize, glm::uvec2(1, 1));
 
   _areaSizeUniform.setValue(glm::uvec2(_workAreaSize));
 

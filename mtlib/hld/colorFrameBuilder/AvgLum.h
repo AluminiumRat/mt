@@ -32,6 +32,7 @@ namespace mt
     inline const DataBuffer& resultBuffer() const noexcept;
 
   private:
+    void _updateTechnique();
     void _updateBindings(CommandProducerCompute& commandProducer);
     void _average(CommandProducerCompute& commandProducer);
 
