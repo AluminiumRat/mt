@@ -2,7 +2,6 @@
 
 #include <gui/ImGuiPropertyGrid.h>
 #include <hld/colorFrameBuilder/Bloom.h>
-#include <technique/TechniqueLoader.h>
 #include <vkr/queue/CommandProducerCompute.h>
 #include <vkr/Device.h>
 
@@ -13,6 +12,7 @@ Bloom::Bloom(Device& device) :
   _treshold(1.0f),
   _intensity(0.1f),
   _sourceImageChanged(false),
+  _bloomImageSize(1),
   _techniqueConfigurator(new TechniqueConfigurator(device, "Bloom technique")),
   _bloorTechnique(*_techniqueConfigurator),
   _horizontalPass(_bloorTechnique.getOrCreatePass("Horizontal")),
@@ -27,11 +27,12 @@ Bloom::Bloom(Device& device) :
   _tresholdUniform(_bloorTechnique.getOrCreateUniform("params.threshold")),
   _intensityUniform(_bloorTechnique.getOrCreateUniform("params.intensity"))
 {
-  loadConfigurator( *_techniqueConfigurator, "posteffects/bloom.tch");
-  _techniqueConfigurator->rebuildConfiguration();
-
   _tresholdUniform.setValue(_treshold);
   _intensityUniform.setValue(_intensity);
+
+  Ref<Sampler> sampler(new Sampler(_device));
+  _bloorTechnique.getOrCreateResourceBinding("linearSampler").setSampler(
+                                                                      sampler);
 }
 
 void Bloom::update(CommandProducerCompute& commandProducer)
@@ -42,7 +43,16 @@ void Bloom::update(CommandProducerCompute& commandProducer)
   {
     commandProducer.beginDebugLabel("Bloom");
 
-    if(_sourceImageChanged) _updateBindings();
+    if(_sourceImageChanged)
+    {
+      _bloomImageSize = _sourceImage->extent();
+      _bloomImageSize /= 4;
+      _bloomImageSize = glm::max(_bloomImageSize, glm::uvec2(1, 1));
+
+      _updateTechnique();
+      _updateBindings();
+    }
+
     _bloor(commandProducer);
 
     commandProducer.endDebugLabel();
@@ -54,16 +64,49 @@ void Bloom::update(CommandProducerCompute& commandProducer)
   }
 }
 
+void Bloom::_updateTechnique()
+{
+  //  Технику нужно пересобирать каждый раз при изменении размеров размываемой
+  //  картинки. Это необходимо из-за настройки размеров групп для шейдеров.
+  //  Настройка производится через константы специализации.
+  _techniqueConfigurator->clear();
+
+  TechniqueConfigurator::Passes passes;
+  {
+    //  Горизонтальный проход
+    std::unique_ptr<PassConfigurator> horizontalPass(
+                                          new PassConfigurator("Horizontal"));
+    horizontalPass->setPipelineType(AbstractPipeline::COMPUTE_PIPELINE);
+    PassConfigurator::ShaderInfo shaders[1] =
+                                {{.stage = VK_SHADER_STAGE_COMPUTE_BIT,
+                                  .file = "posteffects/bloomHorizontal.comp"}};
+    shaders[0].constants.addConstant("GROUP_SIZE", uint32_t(_bloomImageSize.x));
+    horizontalPass->setShaders(shaders);
+    passes.push_back(std::move(horizontalPass));
+  }
+  {
+    //  Вертикальный проход
+    std::unique_ptr<PassConfigurator> verticalPass(
+                                          new PassConfigurator("Vertical"));
+    verticalPass->setPipelineType(AbstractPipeline::COMPUTE_PIPELINE);
+    PassConfigurator::ShaderInfo shaders[1] =
+                                  {{.stage = VK_SHADER_STAGE_COMPUTE_BIT,
+                                    .file = "posteffects/bloomVertical.comp"}};
+    shaders[0].constants.addConstant("GROUP_SIZE", uint32_t(_bloomImageSize.y));
+    verticalPass->setShaders(shaders);
+    passes.push_back(std::move(verticalPass));
+  }
+
+  _techniqueConfigurator->setPasses(std::move(passes));
+  _techniqueConfigurator->rebuildConfiguration();
+}
+
 void Bloom::_updateBindings()
 {
   _sourceImageBinding.setImage(_sourceImage);
   _invSourceSizeUniform.setValue(1.0f / glm::vec2(_sourceImage->extent()));
 
-  glm::uvec3 bloomImageExtent = _sourceImage->extent();
-  bloomImageExtent /= 4;
-  bloomImageExtent = glm::max(bloomImageExtent, glm::uvec3(1, 1, 1));
-
-  _targetSizeUniform.setValue(glm::uvec2(bloomImageExtent));
+  _targetSizeUniform.setValue(glm::uvec2(_bloomImageSize));
 
   _bloomImage = new Image(_device,
                           VK_IMAGE_TYPE_2D,
@@ -71,7 +114,7 @@ void Bloom::_updateBindings()
                             VK_IMAGE_USAGE_SAMPLED_BIT,
                           0,
                           _sourceImage->image().format(),
-                          bloomImageExtent,
+                          glm::uvec3(_bloomImageSize, 1),
                           VK_SAMPLE_COUNT_1_BIT,
                           1,
                           1,

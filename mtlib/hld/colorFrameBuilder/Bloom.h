@@ -43,6 +43,7 @@ namespace mt
     void makeGui();
 
   private:
+    void _updateTechnique();
     void _updateBindings();
     void _bloor(CommandProducerCompute& commandProducer);
 
@@ -56,6 +57,7 @@ namespace mt
     bool _sourceImageChanged;
 
     Ref<Image> _bloomImage;
+    glm::uvec2 _bloomImageSize;
 
     Ref<TechniqueConfigurator> _techniqueConfigurator;
     Technique _bloorTechnique;
