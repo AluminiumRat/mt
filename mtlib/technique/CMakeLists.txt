@@ -16,6 +16,7 @@ set(SOURCES
     "ResourceBinding.cpp"
     "Selection.cpp"
     "ShaderCompilator.cpp"
+    "SpecializationConstantSet.cpp"
     "Technique.cpp"
     "TechniqueConfigurator.cpp"
     "TechniqueLoader.cpp"

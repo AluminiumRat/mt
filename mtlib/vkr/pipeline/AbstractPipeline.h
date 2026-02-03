@@ -8,6 +8,7 @@
 
 #include <util/RefCounter.h>
 #include <vkr/pipeline/PipelineLayout.h>
+#include <vkr/pipeline/SpecializationInfo.h>
 
 namespace mt
 {
@@ -31,6 +32,7 @@ namespace mt
       const ShaderModule* module;     // Не должен быть nullptr
       VkShaderStageFlagBits stage;    // Должен указывать строго на 1 стадию
       std::string entryPoint;
+      SpecializationInfo specialization;
     };
 
   public:

@@ -210,6 +210,8 @@ void PassConfigurator::_processShader(const ShaderInfo& shaderRecord,
 
   // Ищем нужные нам данные в рефлексии
   _processShaderReflection(shaderRecord, reflectModule, context);
+  SpecializationInfo specialization = _createSpecialization(shaderRecord,
+                                                            reflectModule);
 
   // Создаем шейдерный модуль
   std::unique_ptr<ShaderModule> newShaderModule(
@@ -217,7 +219,9 @@ void PassConfigurator::_processShader(const ShaderInfo& shaderRecord,
                                                 *context.configuration->device,
                                                 spirData,
                                                 shaderFilename.c_str()));
+
   shaderSet.push_back(ShaderModuleInfo{ std::move(newShaderModule),
+                                        std::move(specialization),
                                         shaderRecord.stage});
 }
 
@@ -516,6 +520,34 @@ void PassConfigurator::_parseUniformBlockMember(
   target.variables.push_back(newUniform);
 }
 
+SpecializationInfo PassConfigurator::_createSpecialization(
+                                const ShaderInfo& shaderRecord,
+                                const SpvReflectShaderModule& reflection) const
+{
+  SpecializationInfo specialization;
+
+  for(uint32_t constantIndex = 0;
+      constantIndex < reflection.spec_constant_count;
+      constantIndex++)
+  {
+    SpvReflectSpecializationConstant& constReflection =
+                                      reflection.spec_constants[constantIndex];
+    if(constReflection.name == nullptr || constReflection.name[0] == 0)
+    {
+      continue;
+    }
+
+    std::span<const std::byte> constValue =
+                  shaderRecord.constants.getConstantData(constReflection.name);
+    if(constValue.empty()) continue;
+
+    specialization.addConstant(constReflection.constant_id, constValue);
+  }
+
+  return specialization;
+}
+
+
 void PassConfigurator::createPipelines(ConfigurationBuildContext& context) const
 {
   MT_ASSERT(context.configuration->pipelineLayout != nullptr)
@@ -530,9 +562,10 @@ void PassConfigurator::createPipelines(ConfigurationBuildContext& context) const
     for(ShaderModuleInfo& shader : shaderSet)
     {
       shaders.push_back(AbstractPipeline::ShaderInfo{
-                                          .module = shader.shaderModule.get(),
-                                          .stage = shader.stage,
-                                          .entryPoint = "main"});
+                            .module = shader.shaderModule.get(),
+                            .stage = shader.stage,
+                            .entryPoint = "main",
+                            .specialization = std::move(shader.specialization)});
     }
 
     //  Создаем сам пайплайн

@@ -10,6 +10,7 @@
 #include <vulkan/vulkan.h>
 
 #include <technique/TechniqueConfiguration.h>
+#include <technique/SpecializationConstantSet.h>
 #include <util/Assert.h>
 #include <vkr/pipeline/AbstractPipeline.h>
 #include <vkr/FrameBufferFormat.h>
@@ -32,6 +33,7 @@ namespace mt
     {
       VkShaderStageFlagBits stage;
       std::filesystem::path file;
+      SpecializationConstantSet constants;
     };
     using Shaders = std::vector<ShaderInfo>;
 
@@ -246,6 +248,10 @@ namespace mt
                             const SpvReflectBlockVariable& sourceMember,
                             std::string namePrefix,
                             uint32_t parentBlockOffset) const;
+    //  По рефлексии и настройкам прохода готовим константы специализации
+    SpecializationInfo _createSpecialization(
+                                const ShaderInfo& shaderRecord,
+                                const SpvReflectShaderModule& reflection) const;
   private:
     std::string _name;
     AbstractPipeline::Type _pipelineType;

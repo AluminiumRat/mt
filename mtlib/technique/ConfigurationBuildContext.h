@@ -10,6 +10,7 @@
 #include <technique/ShaderCompilator.h>
 #include <technique/TechniqueConfiguration.h>
 #include <vkr/pipeline/ShaderModule.h>
+#include <vkr/pipeline/SpecializationInfo.h>
 
 namespace mt
 {
@@ -22,6 +23,7 @@ namespace mt
   struct ShaderModuleInfo
   {
     std::unique_ptr<ShaderModule> shaderModule;
+    SpecializationInfo specialization;
     VkShaderStageFlagBits stage;
   };
   //  Набор шейдерных модулей для одного варианта пайплайна

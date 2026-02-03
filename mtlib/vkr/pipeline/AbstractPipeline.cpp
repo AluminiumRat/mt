@@ -38,6 +38,11 @@ AbstractPipeline::VkShadersInfo AbstractPipeline::createVkShadersInfo(
     shaderInfo.module = shader.module->handle();
     shaderInfo.pName = shader.entryPoint.c_str();
 
+    if(shader.specialization.vulkanInfo().mapEntryCount != 0)
+    {
+      shaderInfo.pSpecializationInfo = &shader.specialization.vulkanInfo();
+    }
+
     result.push_back(shaderInfo);
   }
 

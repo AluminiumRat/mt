@@ -25,6 +25,7 @@ set(SOURCES
     "pipeline/GraphicPipeline.cpp"
     "pipeline/PipelineLayout.cpp"
     "pipeline/ShaderModule.cpp"
+    "pipeline/SpecializationInfo.cpp"
     "queue/CommandBuffer.cpp"
     "queue/CommandPool.cpp"
     "queue/CommandPoolSet.cpp"
