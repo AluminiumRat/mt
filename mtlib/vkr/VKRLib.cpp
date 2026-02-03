@@ -326,7 +326,7 @@ bool VKRLib::_isDeviceSuitable(
   // Для начала проверяем, что карта может отрисовывать в окно
   if (testSurface != nullptr && !device.isSurfaceSuitable(*testSurface))
   {
-    Log::info() << "Device " << device.properties().deviceName << " is not suitable with window's surface";
+    Log::info() << "Device " << device.properties()._properties10.deviceName << " is not suitable with window's surface";
     return false;
   }
 
@@ -336,14 +336,14 @@ bool VKRLib::_isDeviceSuitable(
                         configuration,
                         testSurface).has_value())
   {
-    Log::info() << "Device " << device.properties().deviceName << " doesn't support all required queue types";
+    Log::info() << "Device " << device.properties()._properties10.deviceName << " doesn't support all required queue types";
     return false;
   }
 
   // Проверяем, что карта поддерживает все требуемые фичи
   if (!device.areFeaturesSupported(requiredFeatures))
   {
-    Log::info() << "Device " << device.properties().deviceName << " doesn't support all features";
+    Log::info() << "Device " << device.properties()._properties10.deviceName << " doesn't support all features";
     return false;
   }
 
@@ -352,7 +352,7 @@ bool VKRLib::_isDeviceSuitable(
   {
     if (!device.isExtensionSupported(extensionName.c_str()))
     {
-      Log::info() << "Device " << device.properties().deviceName << " doesn't support extension " << extensionName;
+      Log::info() << "Device " << device.properties()._properties10.deviceName << " doesn't support extension " << extensionName;
       return false;
     }
   }

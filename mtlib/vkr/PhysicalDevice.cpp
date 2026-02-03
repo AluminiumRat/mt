@@ -9,8 +9,7 @@ using namespace mt;
 PhysicalDevice::PhysicalDevice(VkPhysicalDevice deviceHandle) :
   _handle(deviceHandle)
 {
-  vkGetPhysicalDeviceProperties(_handle, &_properties);
-
+  _getProperties();
   _getFeatures();
 
   _fillMemoryInfo();
@@ -24,6 +23,32 @@ PhysicalDevice::PhysicalDevice(VkPhysicalDevice deviceHandle) :
   {
     _queuesInfo.emplace_back(*this, queueFamilyIndex);
   }
+}
+
+void PhysicalDevice::_getProperties()
+{
+  _properties._properties14 = VkPhysicalDeviceVulkan14Properties{};
+  _properties._properties14.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_PROPERTIES;
+
+  _properties._properties13 = VkPhysicalDeviceVulkan13Properties{};
+  _properties._properties13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES;
+  _properties._properties13.pNext = &_properties._properties14;
+
+  _properties._properties12 = VkPhysicalDeviceVulkan12Properties{};
+  _properties._properties12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES;
+  _properties._properties12.pNext = &_properties._properties13;
+
+  _properties._properties11 = VkPhysicalDeviceVulkan11Properties{};
+  _properties._properties11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES;
+  _properties._properties11.pNext = &_properties._properties12;
+
+  VkPhysicalDeviceProperties2 properties2{};
+  properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+  properties2.pNext = &_properties._properties11;
+
+  vkGetPhysicalDeviceProperties2(_handle, &properties2);
+
+  _properties._properties10 = properties2.properties;
 }
 
 void PhysicalDevice::_getFeatures()

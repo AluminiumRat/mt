@@ -80,7 +80,7 @@ void UniformMemoryPool::Session::finish() noexcept
 
 UniformMemoryPool::UniformMemoryPool( size_t initialSize, Device& device) :
   _device(device),
-  _granularity(device.physicalDevice().properties().
+  _granularity(device.physicalDevice().properties()._properties10.
                                         limits.minUniformBufferOffsetAlignment),
   _bufferSize(initialSize),
   _isSessionOpened(false)

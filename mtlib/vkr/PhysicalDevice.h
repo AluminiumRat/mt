@@ -27,6 +27,15 @@ namespace mt
       VkPhysicalDeviceVulkan14Features features14;
     };
 
+    struct Properties
+    {
+      VkPhysicalDeviceProperties _properties10;
+      VkPhysicalDeviceVulkan11Properties _properties11;
+      VkPhysicalDeviceVulkan12Properties _properties12;
+      VkPhysicalDeviceVulkan13Properties _properties13;
+      VkPhysicalDeviceVulkan14Properties _properties14;
+    };
+
   public:
     struct SwapChainSupport
     {
@@ -47,7 +56,7 @@ namespace mt
 
     inline VkPhysicalDevice handle() const noexcept;
 
-    inline const VkPhysicalDeviceProperties& properties() const noexcept;
+    inline const Properties& properties() const noexcept;
 
     inline const Features& features() const noexcept;
     bool areFeaturesSupported(const Features& features) const noexcept;
@@ -63,13 +72,14 @@ namespace mt
     inline bool isSurfaceSuitable(const WindowSurface& surface) const;
 
   private:
+    void _getProperties();
     void _getFeatures();
     void _fillMemoryInfo();
 
   private:
     VkPhysicalDevice _handle;
 
-    VkPhysicalDeviceProperties _properties;
+    Properties _properties;
     Features _features;
     MemoryInfo _memoryInfo;
     QueueFamiliesInfo _queuesInfo;
@@ -80,7 +90,7 @@ namespace mt
     return _handle;
   }
 
-  inline const VkPhysicalDeviceProperties&
+  inline const PhysicalDevice::Properties&
                                     PhysicalDevice::properties() const noexcept
   {
     return _properties;

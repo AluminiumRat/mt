@@ -103,7 +103,7 @@ inline void dumpPhysicalDevices(
   mt::Log::info() << "Devices: [" << phisicalDevices.size() << "]";
   for (mt::PhysicalDevice* device : phisicalDevices)
   {
-    mt::Log::info() << device->properties().deviceName;
+    mt::Log::info() << device->properties()._properties10.deviceName;
     if(dumpQueues) dumpQueueFamilies(*device, testsurface);
     if(dumpExtensions) dumpDeviceExtensions(*device);
     if(dumpMemory) dumpDeviceMemory(*device);
