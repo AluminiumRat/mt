@@ -10,8 +10,7 @@
 using namespace mt;
 
 Device::Device( PhysicalDevice& physicalDevice,
-                VkPhysicalDeviceFeatures requiredFeatures,
-                VkPhysicalDeviceVulkan12Features requiredFeaturesVulkan12,
+                const PhysicalDevice::Features& requiredFeatures,
                 const std::vector<std::string>& requiredExtensions,
                 const std::vector<std::string>& enabledLayers,
                 const QueueSources& queueSources) :
@@ -19,7 +18,6 @@ Device::Device( PhysicalDevice& physicalDevice,
   _handle(VK_NULL_HANDLE),
   _allocator(VK_NULL_HANDLE),
   _features(requiredFeatures),
-  _featuresVulkan12(requiredFeaturesVulkan12),
   _queuesByTypes{}
 {
   try
@@ -71,28 +69,21 @@ void Device::_createHandle( const std::vector<std::string>& requiredExtensions,
     }
   }
 
-  // Обязательно включить synchronization2
-  VkPhysicalDeviceSynchronization2Features synchronization2Feature{};
-  synchronization2Feature.sType =
-                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
-  synchronization2Feature.synchronization2 = VK_TRUE;
+  _features.features14.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES;
 
-  // DynamicRendering нужен для графической конфигурации, сильно упрощает
-  // работу с пайплайном
-  VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature{};
-  dynamicRenderingFeature.sType =
-          VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
-  dynamicRenderingFeature.dynamicRendering = VK_TRUE;
-  dynamicRenderingFeature.pNext = &synchronization2Feature;
+  _features.features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+  _features.features13.pNext = &_features.features14;
 
-  _featuresVulkan12.sType =
-                          VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-  _featuresVulkan12.pNext = &dynamicRenderingFeature;
+  _features.features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+  _features.features12.pNext = &_features.features13;
+
+  _features.features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+  _features.features11.pNext = &_features.features12;
 
   VkPhysicalDeviceFeatures2 features{};
   features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-  features.features = _features;
-  features.pNext = &_featuresVulkan12;
+  features.features = _features.features10;
+  features.pNext = &_features.features11;
 
   VkDeviceCreateInfo createInfo{};
   createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

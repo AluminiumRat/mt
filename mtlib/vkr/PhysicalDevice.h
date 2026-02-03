@@ -18,6 +18,16 @@ namespace mt
   class PhysicalDevice
   {
   public:
+    struct Features
+    {
+      VkPhysicalDeviceFeatures features10;
+      VkPhysicalDeviceVulkan11Features features11;
+      VkPhysicalDeviceVulkan12Features features12;
+      VkPhysicalDeviceVulkan13Features features13;
+      VkPhysicalDeviceVulkan14Features features14;
+    };
+
+  public:
     struct SwapChainSupport
     {
       VkSurfaceCapabilitiesKHR capabilities;
@@ -39,17 +49,8 @@ namespace mt
 
     inline const VkPhysicalDeviceProperties& properties() const noexcept;
 
-    inline const VkPhysicalDeviceFeatures& features() const noexcept;
-    bool areFeaturesSupported(
-                      const VkPhysicalDeviceFeatures& features) const noexcept;
-
-    inline const VkPhysicalDeviceVulkan12Features&
-                                              featuresVulkan12() const noexcept;
-    bool areFeaturesVulkan12Supported(
-                const VkPhysicalDeviceVulkan12Features& features) const noexcept;
-
-    inline bool isSynchronization2Supported() const noexcept;
-    inline bool isDynamicRenderingSupported() const noexcept;
+    inline const Features& features() const noexcept;
+    bool areFeaturesSupported(const Features& features) const noexcept;
 
     inline const MemoryInfo& memoryInfo() const noexcept;
 
@@ -69,10 +70,7 @@ namespace mt
     VkPhysicalDevice _handle;
 
     VkPhysicalDeviceProperties _properties;
-    VkPhysicalDeviceFeatures _features;
-    VkPhysicalDeviceVulkan12Features _featuresVulkan12;
-    bool _synchronization2Support;
-    bool _dynamicRenderingSupport;
+    Features _features;
     MemoryInfo _memoryInfo;
     QueueFamiliesInfo _queuesInfo;
   };
@@ -88,26 +86,10 @@ namespace mt
     return _properties;
   }
 
-  inline const VkPhysicalDeviceFeatures&
+  inline const PhysicalDevice::Features&
                                       PhysicalDevice::features() const noexcept
   {
     return _features;
-  }
-
-  inline const VkPhysicalDeviceVulkan12Features&
-                              PhysicalDevice::featuresVulkan12() const noexcept
-  {
-    return _featuresVulkan12;
-  }
-
-  inline bool PhysicalDevice::isSynchronization2Supported() const noexcept
-  {
-    return _synchronization2Support;
-  }
-
-  inline bool PhysicalDevice::isDynamicRenderingSupported() const noexcept
-  {
-    return _dynamicRenderingSupport;
   }
 
   inline const MemoryInfo& PhysicalDevice::memoryInfo() const noexcept

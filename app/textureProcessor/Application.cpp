@@ -14,7 +14,7 @@ Application::Application() :
           VK_API_VERSION_1_3,
           enableDebug,
           enableDebug),
-  _device(_guiLib.createDevice({}, {}, {}, mt::GRAPHICS_CONFIGURATION)),
+  _device(_guiLib.createDevice({}, {}, mt::GRAPHICS_CONFIGURATION)),
   _asyncQueue(( [&](const mt::AsyncTaskQueue::Event& theEvent)
                 {
                   _asyncTaskGui.addEvent(theEvent);
@@ -25,7 +25,6 @@ Application::Application() :
   _textureViewerManager(&_techniqueManager)
 {
   _instance = this;
-
   _guiLib.loadConfiguration("guiConfig.cfg");
 }
 

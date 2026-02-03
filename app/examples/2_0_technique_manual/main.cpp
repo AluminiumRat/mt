@@ -22,7 +22,6 @@ int main(int argc, char* argv[])
     std::unique_ptr<Device> device = guiLib.createDevice(
                                                       {},
                                                       {},
-                                                      {},
                                                       GRAPHICS_CONFIGURATION);
     TestWindow mainWindow(*device);
     while (!guiLib.shouldBeClosed())

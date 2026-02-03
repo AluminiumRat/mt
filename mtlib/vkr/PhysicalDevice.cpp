@@ -7,9 +7,7 @@
 using namespace mt;
 
 PhysicalDevice::PhysicalDevice(VkPhysicalDevice deviceHandle) :
-  _handle(deviceHandle),
-  _synchronization2Support(false),
-  _dynamicRenderingSupport(false)
+  _handle(deviceHandle)
 {
   vkGetPhysicalDeviceProperties(_handle, &_properties);
 
@@ -30,29 +28,28 @@ PhysicalDevice::PhysicalDevice(VkPhysicalDevice deviceHandle) :
 
 void PhysicalDevice::_getFeatures()
 {
-  // Сразу с фичами проверяем поддержку synchronization2
-  VkPhysicalDeviceSynchronization2Features synchronization2Feature{};
-  synchronization2Feature.sType =
-                  VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES;
+  _features.features14 = VkPhysicalDeviceVulkan14Features{};
+  _features.features14.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES;
 
-  // И dynamic rendering
-  VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature{};
-  dynamicRenderingFeature.sType =
-              VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
-  dynamicRenderingFeature.pNext = &synchronization2Feature;
+  _features.features13 = VkPhysicalDeviceVulkan13Features{};
+  _features.features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+  _features.features13.pNext = &_features.features14;
 
-  _featuresVulkan12 = VkPhysicalDeviceVulkan12Features{};
-  _featuresVulkan12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-  _featuresVulkan12.pNext = &dynamicRenderingFeature;
+  _features.features12 = VkPhysicalDeviceVulkan12Features{};
+  _features.features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+  _features.features12.pNext = &_features.features13;
+
+  _features.features11 = VkPhysicalDeviceVulkan11Features{};
+  _features.features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+  _features.features11.pNext = &_features.features12;
 
   VkPhysicalDeviceFeatures2 features{};
   features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-  features.pNext = &_featuresVulkan12;
+  features.pNext = &_features.features11;
+
   vkGetPhysicalDeviceFeatures2(_handle, &features);
 
-  _features = features.features;
-  _synchronization2Support = synchronization2Feature.synchronization2;
-  _dynamicRenderingSupport = dynamicRenderingFeature.dynamicRendering;
+  _features.features10 = features.features;
 }
 
 void PhysicalDevice::_fillMemoryInfo()
@@ -102,131 +99,176 @@ void PhysicalDevice::_fillMemoryInfo()
 }
 
 bool PhysicalDevice::areFeaturesSupported(
-                        const VkPhysicalDeviceFeatures& features) const noexcept
-{
-  #define VKR_CHECK_FEATURE(featureName) \
-    if(features.##featureName) featuresSupported &= bool(_features.##featureName);
-
-  bool featuresSupported = true;
-
-  VKR_CHECK_FEATURE(robustBufferAccess)
-  VKR_CHECK_FEATURE(fullDrawIndexUint32)
-  VKR_CHECK_FEATURE(imageCubeArray)
-  VKR_CHECK_FEATURE(independentBlend)
-  VKR_CHECK_FEATURE(geometryShader)
-  VKR_CHECK_FEATURE(tessellationShader)
-  VKR_CHECK_FEATURE(sampleRateShading)
-  VKR_CHECK_FEATURE(dualSrcBlend)
-  VKR_CHECK_FEATURE(logicOp)
-  VKR_CHECK_FEATURE(multiDrawIndirect)
-  VKR_CHECK_FEATURE(drawIndirectFirstInstance)
-  VKR_CHECK_FEATURE(depthClamp)
-  VKR_CHECK_FEATURE(depthBiasClamp)
-  VKR_CHECK_FEATURE(fillModeNonSolid)
-  VKR_CHECK_FEATURE(depthBounds)
-  VKR_CHECK_FEATURE(wideLines)
-  VKR_CHECK_FEATURE(largePoints)
-  VKR_CHECK_FEATURE(alphaToOne)
-  VKR_CHECK_FEATURE(multiViewport)
-  VKR_CHECK_FEATURE(samplerAnisotropy)
-  VKR_CHECK_FEATURE(textureCompressionETC2)
-  VKR_CHECK_FEATURE(textureCompressionASTC_LDR)
-  VKR_CHECK_FEATURE(textureCompressionBC)
-  VKR_CHECK_FEATURE(occlusionQueryPrecise)
-  VKR_CHECK_FEATURE(pipelineStatisticsQuery)
-  VKR_CHECK_FEATURE(vertexPipelineStoresAndAtomics)
-  VKR_CHECK_FEATURE(fragmentStoresAndAtomics)
-  VKR_CHECK_FEATURE(shaderTessellationAndGeometryPointSize)
-  VKR_CHECK_FEATURE(shaderImageGatherExtended)
-  VKR_CHECK_FEATURE(shaderStorageImageExtendedFormats)
-  VKR_CHECK_FEATURE(shaderStorageImageMultisample)
-  VKR_CHECK_FEATURE(shaderStorageImageReadWithoutFormat)
-  VKR_CHECK_FEATURE(shaderStorageImageWriteWithoutFormat)
-  VKR_CHECK_FEATURE(shaderUniformBufferArrayDynamicIndexing)
-  VKR_CHECK_FEATURE(shaderSampledImageArrayDynamicIndexing)
-  VKR_CHECK_FEATURE(shaderStorageBufferArrayDynamicIndexing)
-  VKR_CHECK_FEATURE(shaderStorageImageArrayDynamicIndexing)
-  VKR_CHECK_FEATURE(shaderClipDistance)
-  VKR_CHECK_FEATURE(shaderCullDistance)
-  VKR_CHECK_FEATURE(shaderFloat64)
-  VKR_CHECK_FEATURE(shaderInt64)
-  VKR_CHECK_FEATURE(shaderInt16)
-  VKR_CHECK_FEATURE(shaderResourceResidency)
-  VKR_CHECK_FEATURE(shaderResourceMinLod)
-  VKR_CHECK_FEATURE(sparseBinding)
-  VKR_CHECK_FEATURE(sparseResidencyBuffer)
-  VKR_CHECK_FEATURE(sparseResidencyImage2D)
-  VKR_CHECK_FEATURE(sparseResidencyImage3D)
-  VKR_CHECK_FEATURE(sparseResidency2Samples)
-  VKR_CHECK_FEATURE(sparseResidency4Samples)
-  VKR_CHECK_FEATURE(sparseResidency8Samples)
-  VKR_CHECK_FEATURE(sparseResidency16Samples)
-  VKR_CHECK_FEATURE(sparseResidencyAliased)
-  VKR_CHECK_FEATURE(variableMultisampleRate)
-  VKR_CHECK_FEATURE(inheritedQueries)
-
-  #undef VKR_CHECK_FEATURE
-
-  return featuresSupported;
-}
-
-bool PhysicalDevice::areFeaturesVulkan12Supported(
-              const VkPhysicalDeviceVulkan12Features& features) const noexcept
+                                      const Features& features) const noexcept
 {
   bool featuresSupported = true;
 
-  #define VKR_CHECK_FEATURE(featureName) \
-    if(features.##featureName) featuresSupported &= bool(_featuresVulkan12.##featureName);
+  #define VKR_CHECK_FEATURE_10(featureName) \
+    if(features.features10.##featureName) featuresSupported &= bool(_features.features10.##featureName);
 
-  VKR_CHECK_FEATURE(samplerMirrorClampToEdge)
-  VKR_CHECK_FEATURE(drawIndirectCount)
-  VKR_CHECK_FEATURE(storageBuffer8BitAccess)
-  VKR_CHECK_FEATURE(uniformAndStorageBuffer8BitAccess)
-  VKR_CHECK_FEATURE(storagePushConstant8)
-  VKR_CHECK_FEATURE(shaderBufferInt64Atomics)
-  VKR_CHECK_FEATURE(shaderSharedInt64Atomics)
-  VKR_CHECK_FEATURE(shaderFloat16)
-  VKR_CHECK_FEATURE(shaderInt8)
-  VKR_CHECK_FEATURE(descriptorIndexing)
-  VKR_CHECK_FEATURE(shaderInputAttachmentArrayDynamicIndexing)
-  VKR_CHECK_FEATURE(shaderUniformTexelBufferArrayDynamicIndexing)
-  VKR_CHECK_FEATURE(shaderStorageTexelBufferArrayDynamicIndexing)
-  VKR_CHECK_FEATURE(shaderUniformBufferArrayNonUniformIndexing)
-  VKR_CHECK_FEATURE(shaderSampledImageArrayNonUniformIndexing)
-  VKR_CHECK_FEATURE(shaderStorageBufferArrayNonUniformIndexing)
-  VKR_CHECK_FEATURE(shaderStorageImageArrayNonUniformIndexing)
-  VKR_CHECK_FEATURE(shaderInputAttachmentArrayNonUniformIndexing)
-  VKR_CHECK_FEATURE(shaderUniformTexelBufferArrayNonUniformIndexing)
-  VKR_CHECK_FEATURE(shaderStorageTexelBufferArrayNonUniformIndexing)
-  VKR_CHECK_FEATURE(descriptorBindingUniformBufferUpdateAfterBind)
-  VKR_CHECK_FEATURE(descriptorBindingSampledImageUpdateAfterBind)
-  VKR_CHECK_FEATURE(descriptorBindingStorageImageUpdateAfterBind)
-  VKR_CHECK_FEATURE(descriptorBindingStorageBufferUpdateAfterBind)
-  VKR_CHECK_FEATURE(descriptorBindingUniformTexelBufferUpdateAfterBind)
-  VKR_CHECK_FEATURE(descriptorBindingStorageTexelBufferUpdateAfterBind)
-  VKR_CHECK_FEATURE(descriptorBindingUpdateUnusedWhilePending)
-  VKR_CHECK_FEATURE(descriptorBindingPartiallyBound)
-  VKR_CHECK_FEATURE(descriptorBindingVariableDescriptorCount)
-  VKR_CHECK_FEATURE(runtimeDescriptorArray)
-  VKR_CHECK_FEATURE(samplerFilterMinmax)
-  VKR_CHECK_FEATURE(scalarBlockLayout)
-  VKR_CHECK_FEATURE(imagelessFramebuffer)
-  VKR_CHECK_FEATURE(uniformBufferStandardLayout)
-  VKR_CHECK_FEATURE(shaderSubgroupExtendedTypes)
-  VKR_CHECK_FEATURE(separateDepthStencilLayouts)
-  VKR_CHECK_FEATURE(hostQueryReset)
-  VKR_CHECK_FEATURE(timelineSemaphore)
-  VKR_CHECK_FEATURE(bufferDeviceAddress)
-  VKR_CHECK_FEATURE(bufferDeviceAddressCaptureReplay)
-  VKR_CHECK_FEATURE(bufferDeviceAddressMultiDevice)
-  VKR_CHECK_FEATURE(vulkanMemoryModel)
-  VKR_CHECK_FEATURE(vulkanMemoryModelDeviceScope)
-  VKR_CHECK_FEATURE(vulkanMemoryModelAvailabilityVisibilityChains)
-  VKR_CHECK_FEATURE(shaderOutputViewportIndex)
-  VKR_CHECK_FEATURE(shaderOutputLayer)
-  VKR_CHECK_FEATURE(subgroupBroadcastDynamicId)
+  VKR_CHECK_FEATURE_10(robustBufferAccess)
+  VKR_CHECK_FEATURE_10(fullDrawIndexUint32)
+  VKR_CHECK_FEATURE_10(imageCubeArray)
+  VKR_CHECK_FEATURE_10(independentBlend)
+  VKR_CHECK_FEATURE_10(geometryShader)
+  VKR_CHECK_FEATURE_10(tessellationShader)
+  VKR_CHECK_FEATURE_10(sampleRateShading)
+  VKR_CHECK_FEATURE_10(dualSrcBlend)
+  VKR_CHECK_FEATURE_10(logicOp)
+  VKR_CHECK_FEATURE_10(multiDrawIndirect)
+  VKR_CHECK_FEATURE_10(drawIndirectFirstInstance)
+  VKR_CHECK_FEATURE_10(depthClamp)
+  VKR_CHECK_FEATURE_10(depthBiasClamp)
+  VKR_CHECK_FEATURE_10(fillModeNonSolid)
+  VKR_CHECK_FEATURE_10(depthBounds)
+  VKR_CHECK_FEATURE_10(wideLines)
+  VKR_CHECK_FEATURE_10(largePoints)
+  VKR_CHECK_FEATURE_10(alphaToOne)
+  VKR_CHECK_FEATURE_10(multiViewport)
+  VKR_CHECK_FEATURE_10(samplerAnisotropy)
+  VKR_CHECK_FEATURE_10(textureCompressionETC2)
+  VKR_CHECK_FEATURE_10(textureCompressionASTC_LDR)
+  VKR_CHECK_FEATURE_10(textureCompressionBC)
+  VKR_CHECK_FEATURE_10(occlusionQueryPrecise)
+  VKR_CHECK_FEATURE_10(pipelineStatisticsQuery)
+  VKR_CHECK_FEATURE_10(vertexPipelineStoresAndAtomics)
+  VKR_CHECK_FEATURE_10(fragmentStoresAndAtomics)
+  VKR_CHECK_FEATURE_10(shaderTessellationAndGeometryPointSize)
+  VKR_CHECK_FEATURE_10(shaderImageGatherExtended)
+  VKR_CHECK_FEATURE_10(shaderStorageImageExtendedFormats)
+  VKR_CHECK_FEATURE_10(shaderStorageImageMultisample)
+  VKR_CHECK_FEATURE_10(shaderStorageImageReadWithoutFormat)
+  VKR_CHECK_FEATURE_10(shaderStorageImageWriteWithoutFormat)
+  VKR_CHECK_FEATURE_10(shaderUniformBufferArrayDynamicIndexing)
+  VKR_CHECK_FEATURE_10(shaderSampledImageArrayDynamicIndexing)
+  VKR_CHECK_FEATURE_10(shaderStorageBufferArrayDynamicIndexing)
+  VKR_CHECK_FEATURE_10(shaderStorageImageArrayDynamicIndexing)
+  VKR_CHECK_FEATURE_10(shaderClipDistance)
+  VKR_CHECK_FEATURE_10(shaderCullDistance)
+  VKR_CHECK_FEATURE_10(shaderFloat64)
+  VKR_CHECK_FEATURE_10(shaderInt64)
+  VKR_CHECK_FEATURE_10(shaderInt16)
+  VKR_CHECK_FEATURE_10(shaderResourceResidency)
+  VKR_CHECK_FEATURE_10(shaderResourceMinLod)
+  VKR_CHECK_FEATURE_10(sparseBinding)
+  VKR_CHECK_FEATURE_10(sparseResidencyBuffer)
+  VKR_CHECK_FEATURE_10(sparseResidencyImage2D)
+  VKR_CHECK_FEATURE_10(sparseResidencyImage3D)
+  VKR_CHECK_FEATURE_10(sparseResidency2Samples)
+  VKR_CHECK_FEATURE_10(sparseResidency4Samples)
+  VKR_CHECK_FEATURE_10(sparseResidency8Samples)
+  VKR_CHECK_FEATURE_10(sparseResidency16Samples)
+  VKR_CHECK_FEATURE_10(sparseResidencyAliased)
+  VKR_CHECK_FEATURE_10(variableMultisampleRate)
+  VKR_CHECK_FEATURE_10(inheritedQueries)
 
-#undef VKR_CHECK_FEATURE
+  #define VKR_CHECK_FEATURE_11(featureName) \
+    if(features.features11.##featureName) featuresSupported &= bool(_features.features11.##featureName);
+  VKR_CHECK_FEATURE_11(storageBuffer16BitAccess)
+  VKR_CHECK_FEATURE_11(uniformAndStorageBuffer16BitAccess)
+  VKR_CHECK_FEATURE_11(storagePushConstant16)
+  VKR_CHECK_FEATURE_11(storageInputOutput16)
+  VKR_CHECK_FEATURE_11(multiview)
+  VKR_CHECK_FEATURE_11(multiviewGeometryShader)
+  VKR_CHECK_FEATURE_11(multiviewTessellationShader)
+  VKR_CHECK_FEATURE_11(variablePointersStorageBuffer)
+  VKR_CHECK_FEATURE_11(variablePointers)
+  VKR_CHECK_FEATURE_11(protectedMemory)
+  VKR_CHECK_FEATURE_11(samplerYcbcrConversion)
+  VKR_CHECK_FEATURE_11(shaderDrawParameters)
+
+  #define VKR_CHECK_FEATURE_12(featureName) \
+    if(features.features12.##featureName) featuresSupported &= bool(_features.features12.##featureName);
+
+  VKR_CHECK_FEATURE_12(samplerMirrorClampToEdge)
+  VKR_CHECK_FEATURE_12(drawIndirectCount)
+  VKR_CHECK_FEATURE_12(storageBuffer8BitAccess)
+  VKR_CHECK_FEATURE_12(uniformAndStorageBuffer8BitAccess)
+  VKR_CHECK_FEATURE_12(storagePushConstant8)
+  VKR_CHECK_FEATURE_12(shaderBufferInt64Atomics)
+  VKR_CHECK_FEATURE_12(shaderSharedInt64Atomics)
+  VKR_CHECK_FEATURE_12(shaderFloat16)
+  VKR_CHECK_FEATURE_12(shaderInt8)
+  VKR_CHECK_FEATURE_12(descriptorIndexing)
+  VKR_CHECK_FEATURE_12(shaderInputAttachmentArrayDynamicIndexing)
+  VKR_CHECK_FEATURE_12(shaderUniformTexelBufferArrayDynamicIndexing)
+  VKR_CHECK_FEATURE_12(shaderStorageTexelBufferArrayDynamicIndexing)
+  VKR_CHECK_FEATURE_12(shaderUniformBufferArrayNonUniformIndexing)
+  VKR_CHECK_FEATURE_12(shaderSampledImageArrayNonUniformIndexing)
+  VKR_CHECK_FEATURE_12(shaderStorageBufferArrayNonUniformIndexing)
+  VKR_CHECK_FEATURE_12(shaderStorageImageArrayNonUniformIndexing)
+  VKR_CHECK_FEATURE_12(shaderInputAttachmentArrayNonUniformIndexing)
+  VKR_CHECK_FEATURE_12(shaderUniformTexelBufferArrayNonUniformIndexing)
+  VKR_CHECK_FEATURE_12(shaderStorageTexelBufferArrayNonUniformIndexing)
+  VKR_CHECK_FEATURE_12(descriptorBindingUniformBufferUpdateAfterBind)
+  VKR_CHECK_FEATURE_12(descriptorBindingSampledImageUpdateAfterBind)
+  VKR_CHECK_FEATURE_12(descriptorBindingStorageImageUpdateAfterBind)
+  VKR_CHECK_FEATURE_12(descriptorBindingStorageBufferUpdateAfterBind)
+  VKR_CHECK_FEATURE_12(descriptorBindingUniformTexelBufferUpdateAfterBind)
+  VKR_CHECK_FEATURE_12(descriptorBindingStorageTexelBufferUpdateAfterBind)
+  VKR_CHECK_FEATURE_12(descriptorBindingUpdateUnusedWhilePending)
+  VKR_CHECK_FEATURE_12(descriptorBindingPartiallyBound)
+  VKR_CHECK_FEATURE_12(descriptorBindingVariableDescriptorCount)
+  VKR_CHECK_FEATURE_12(runtimeDescriptorArray)
+  VKR_CHECK_FEATURE_12(samplerFilterMinmax)
+  VKR_CHECK_FEATURE_12(scalarBlockLayout)
+  VKR_CHECK_FEATURE_12(imagelessFramebuffer)
+  VKR_CHECK_FEATURE_12(uniformBufferStandardLayout)
+  VKR_CHECK_FEATURE_12(shaderSubgroupExtendedTypes)
+  VKR_CHECK_FEATURE_12(separateDepthStencilLayouts)
+  VKR_CHECK_FEATURE_12(hostQueryReset)
+  VKR_CHECK_FEATURE_12(timelineSemaphore)
+  VKR_CHECK_FEATURE_12(bufferDeviceAddress)
+  VKR_CHECK_FEATURE_12(bufferDeviceAddressCaptureReplay)
+  VKR_CHECK_FEATURE_12(bufferDeviceAddressMultiDevice)
+  VKR_CHECK_FEATURE_12(vulkanMemoryModel)
+  VKR_CHECK_FEATURE_12(vulkanMemoryModelDeviceScope)
+  VKR_CHECK_FEATURE_12(vulkanMemoryModelAvailabilityVisibilityChains)
+  VKR_CHECK_FEATURE_12(shaderOutputViewportIndex)
+  VKR_CHECK_FEATURE_12(shaderOutputLayer)
+  VKR_CHECK_FEATURE_12(subgroupBroadcastDynamicId)
+
+  #define VKR_CHECK_FEATURE_13(featureName) \
+    if(features.features13.##featureName) featuresSupported &= bool(_features.features13.##featureName);
+  VKR_CHECK_FEATURE_13(robustImageAccess)
+  VKR_CHECK_FEATURE_13(inlineUniformBlock)
+  VKR_CHECK_FEATURE_13(descriptorBindingInlineUniformBlockUpdateAfterBind)
+  VKR_CHECK_FEATURE_13(pipelineCreationCacheControl)
+  VKR_CHECK_FEATURE_13(privateData)
+  VKR_CHECK_FEATURE_13(shaderDemoteToHelperInvocation)
+  VKR_CHECK_FEATURE_13(shaderTerminateInvocation)
+  VKR_CHECK_FEATURE_13(subgroupSizeControl)
+  VKR_CHECK_FEATURE_13(computeFullSubgroups)
+  VKR_CHECK_FEATURE_13(synchronization2)
+  VKR_CHECK_FEATURE_13(textureCompressionASTC_HDR)
+  VKR_CHECK_FEATURE_13(shaderZeroInitializeWorkgroupMemory)
+  VKR_CHECK_FEATURE_13(dynamicRendering)
+  VKR_CHECK_FEATURE_13(shaderIntegerDotProduct)
+  VKR_CHECK_FEATURE_13(maintenance4)
+
+  #define VKR_CHECK_FEATURE_14(featureName) \
+    if(features.features14.##featureName) featuresSupported &= bool(_features.features14.##featureName);
+  VKR_CHECK_FEATURE_14(globalPriorityQuery)
+  VKR_CHECK_FEATURE_14(shaderSubgroupRotate)
+  VKR_CHECK_FEATURE_14(shaderSubgroupRotateClustered)
+  VKR_CHECK_FEATURE_14(shaderFloatControls2)
+  VKR_CHECK_FEATURE_14(shaderExpectAssume)
+  VKR_CHECK_FEATURE_14(rectangularLines)
+  VKR_CHECK_FEATURE_14(bresenhamLines)
+  VKR_CHECK_FEATURE_14(smoothLines)
+  VKR_CHECK_FEATURE_14(stippledRectangularLines)
+  VKR_CHECK_FEATURE_14(stippledBresenhamLines)
+  VKR_CHECK_FEATURE_14(stippledSmoothLines)
+  VKR_CHECK_FEATURE_14(vertexAttributeInstanceRateDivisor)
+  VKR_CHECK_FEATURE_14(vertexAttributeInstanceRateZeroDivisor)
+  VKR_CHECK_FEATURE_14(indexTypeUint8)
+  VKR_CHECK_FEATURE_14(dynamicRenderingLocalRead)
+  VKR_CHECK_FEATURE_14(maintenance5)
+  VKR_CHECK_FEATURE_14(maintenance6)
+  VKR_CHECK_FEATURE_14(pipelineProtectedAccess)
+  VKR_CHECK_FEATURE_14(pipelineRobustness)
+  VKR_CHECK_FEATURE_14(hostImageCopy)
+  VKR_CHECK_FEATURE_14(pushDescriptor)
 
   return featuresSupported;
 }

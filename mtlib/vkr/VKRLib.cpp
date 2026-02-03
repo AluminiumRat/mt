@@ -289,19 +289,17 @@ std::vector<VkExtensionProperties> VKRLib::availableExtensions()
 }
 
 void VKRLib::_extendRequiredFeatures(
-                              VkPhysicalDeviceFeatures& requiredFeatures) const
+                              PhysicalDevice::Features& requiredFeatures) const
 {
-  requiredFeatures.samplerAnisotropy = VK_TRUE;
-  requiredFeatures.textureCompressionBC = VK_TRUE;
-  requiredFeatures.imageCubeArray = VK_TRUE;
-}
-
-void VKRLib::_extendRequiredFeatures(
-                      VkPhysicalDeviceVulkan12Features& requiredFeatures) const
-{
-  requiredFeatures.timelineSemaphore = VK_TRUE;
-  requiredFeatures.runtimeDescriptorArray = VK_TRUE;
-  //requiredFeatures.bufferDeviceAddress = VK_TRUE;
+  requiredFeatures.features10.samplerAnisotropy = VK_TRUE;
+  requiredFeatures.features10.textureCompressionBC = VK_TRUE;
+  requiredFeatures.features10.imageCubeArray = VK_TRUE;
+  requiredFeatures.features12.timelineSemaphore = VK_TRUE;
+  requiredFeatures.features12.runtimeDescriptorArray = VK_TRUE;
+  requiredFeatures.features12.bufferDeviceAddress = VK_TRUE;
+	requiredFeatures.features13.dynamicRendering = VK_TRUE;
+	requiredFeatures.features13.synchronization2 = VK_TRUE;
+  requiredFeatures.features13.maintenance4 = VK_TRUE;
 }
 
 std::set<std::string> VKRLib::_extendRequiredExtensions(
@@ -320,9 +318,7 @@ std::set<std::string> VKRLib::_extendRequiredExtensions(
 
 bool VKRLib::_isDeviceSuitable(
                               const PhysicalDevice& device,
-                              const VkPhysicalDeviceFeatures& requiredFeatures,
-                                const VkPhysicalDeviceVulkan12Features&
-                                                      requiredFeaturesVulkan12,
+                              const PhysicalDevice::Features& requiredFeatures,
                               const std::set<std::string>& requiredExtensions,
                               QueuesConfiguration configuration,
                               const WindowSurface* testSurface)
@@ -350,25 +346,6 @@ bool VKRLib::_isDeviceSuitable(
     Log::info() << "Device " << device.properties().deviceName << " doesn't support all features";
     return false;
   }
-  if (!device.areFeaturesVulkan12Supported(requiredFeaturesVulkan12))
-  {
-    Log::info() << "Device " << device.properties().deviceName << " doesn't support all vulkan 1.2 features";
-    return false;
-  }
-
-  if (!device.isSynchronization2Supported())
-  {
-    Log::info() << "Device " << device.properties().deviceName << " doesn't support synchronization2";
-    return false;
-  }
-
-  // Не используем FBO и RenderPass-ы, поэтому обязательно нужен
-  // DynamicRendering
-  if (!device.isDynamicRenderingSupported())
-  {
-    Log::info() << "Device " << device.properties().deviceName << " doesn't support dynamic rendering feature";
-    return false;
-  }
 
   // Проверяем, что карта поддерживает все требуемые расширения
   for (const std::string& extensionName : requiredExtensions)
@@ -384,11 +361,10 @@ bool VKRLib::_isDeviceSuitable(
 }
 
 PhysicalDevice* VKRLib::getBestPhysicalDevice(
-                      VkPhysicalDeviceFeatures requiredFeatures,
-                      VkPhysicalDeviceVulkan12Features requiredFeaturesVulkan12,
-                      const std::vector<std::string>& requiredExtensions,
-                      QueuesConfiguration configuration,
-                      const WindowSurface* testSurface) const
+                            PhysicalDevice::Features requiredFeatures,
+                            const std::vector<std::string>& requiredExtensions,
+                            QueuesConfiguration configuration,
+                            const WindowSurface* testSurface) const
 {
   // Формируем список расширений, которые должны поддерживаться устройством
   std::set<std::string> extensions = _extendRequiredExtensions(
@@ -397,7 +373,6 @@ PhysicalDevice* VKRLib::getBestPhysicalDevice(
 
   // Дополняем пользовательские фичи требованиями движка
   _extendRequiredFeatures(requiredFeatures);
-  _extendRequiredFeatures(requiredFeaturesVulkan12);
 
   // Выбираем видюху, которая имеет наибольший объем недоступной с CPU
   // памяти (дискретка). Если таких нет, то выбираем встройку
@@ -407,7 +382,6 @@ PhysicalDevice* VKRLib::getBestPhysicalDevice(
   {
     if(!_isDeviceSuitable(*device,
                           requiredFeatures,
-                          requiredFeaturesVulkan12,
                           extensions,
                           configuration,
                           testSurface))
@@ -442,24 +416,19 @@ PhysicalDevice* VKRLib::getBestPhysicalDevice(
 }
 
 std::unique_ptr<Device> VKRLib::createDevice(
-                            const VkPhysicalDeviceFeatures& requiredFeatures,
-                            const VkPhysicalDeviceVulkan12Features&
-                                                      requiredFeaturesVulkan12,
+                            const PhysicalDevice::Features& requiredFeatures,
                             const std::vector<std::string>& requiredExtensions,
                             QueuesConfiguration configuration,
                             const WindowSurface* testSurface) const
 {
-  PhysicalDevice* physicalDevice = getBestPhysicalDevice(
-                                                      requiredFeatures,
-                                                      requiredFeaturesVulkan12,
-                                                      requiredExtensions,
-                                                      configuration,
-                                                      testSurface);
+  PhysicalDevice* physicalDevice = getBestPhysicalDevice( requiredFeatures,
+                                                          requiredExtensions,
+                                                          configuration,
+                                                          testSurface);
   if(physicalDevice == nullptr) return nullptr;
 
   return createDevice(*physicalDevice,
                       requiredFeatures,
-                      requiredFeaturesVulkan12,
                       requiredExtensions,
                       configuration,
                       testSurface);
@@ -467,8 +436,7 @@ std::unique_ptr<Device> VKRLib::createDevice(
 
 std::unique_ptr<Device> VKRLib::createDevice(
                       PhysicalDevice& physicalDevice,
-                      VkPhysicalDeviceFeatures requiredFeatures,
-                      VkPhysicalDeviceVulkan12Features requiredFeaturesVulkan12,
+                      PhysicalDevice::Features requiredFeatures,
                       const std::vector<std::string>& enabledExtensions,
                       QueuesConfiguration configuration,
                       const WindowSurface* testSurface) const
@@ -482,7 +450,6 @@ std::unique_ptr<Device> VKRLib::createDevice(
 
   // Дополняем пользовательские фичи требованиями движка
   _extendRequiredFeatures(requiredFeatures);
-  _extendRequiredFeatures(requiredFeaturesVulkan12);
 
   // Список лэйеров, включенных на устройстве
   std::vector<std::string> enabledLayers;
@@ -497,7 +464,6 @@ std::unique_ptr<Device> VKRLib::createDevice(
 
   return std::unique_ptr<Device>(new Device(physicalDevice,
                                             requiredFeatures,
-                                            requiredFeaturesVulkan12,
                                             extensions,
                                             enabledLayers,
                                             *queueSources));

@@ -51,9 +51,7 @@ namespace mt
 
     //  Создать устройство, подходящее для рендера в окно
     std::unique_ptr<Device> createDevice(
-                            const VkPhysicalDeviceFeatures& requiredFeatures,
-                            const VkPhysicalDeviceVulkan12Features&
-                                                      requiredFeaturesVulkan12,
+                            const PhysicalDevice::Features& requiredFeatures,
                             const std::vector<std::string>& requiredExtensions,
                             QueuesConfiguration configuration);
   private:

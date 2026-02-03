@@ -18,10 +18,10 @@
 #include <vkr/queue/QueueSources.h>
 #include <vkr/queue/QueueTypes.h>
 #include <vkr/ExtFunctions.h>
+#include <vkr/PhysicalDevice.h>
 
 namespace mt
 {
-  class PhysicalDevice;
   class WindowSurface;
 
   // Логическое устройство, обертка вокруг вулкановского VkDevice
@@ -36,8 +36,7 @@ namespace mt
     friend class VKRLib;
     // Логическое устройство можно создать только через класс VKRLib
     Device( PhysicalDevice& physicalDevice,
-            VkPhysicalDeviceFeatures requiredFeatures,
-            VkPhysicalDeviceVulkan12Features requiredFeaturesVulkan12,
+            const PhysicalDevice::Features& requiredFeatures,
             const std::vector<std::string>& requiredExtensions,
             const std::vector<std::string>& enabledLayers,
             const QueueSources& queueSources);
@@ -50,9 +49,7 @@ namespace mt
     inline VkDevice handle() const noexcept;
     inline VmaAllocator allocator() noexcept;
 
-    inline const VkPhysicalDeviceFeatures& features() const noexcept;
-    inline const VkPhysicalDeviceVulkan12Features&
-                                            featuresVulkan12() const noexcept;
+    inline const PhysicalDevice::Features& features() const noexcept;
 
     inline PhysicalDevice& physicalDevice() const noexcept;
 
@@ -99,8 +96,7 @@ namespace mt
 
     VmaAllocator _allocator;
 
-    VkPhysicalDeviceFeatures _features;
-    VkPhysicalDeviceVulkan12Features _featuresVulkan12;
+    PhysicalDevice::Features _features;
 
     // Общий мьютекс для очередей. Добавлен так как очереди поддерживают
     // многопоток и под капотом могут взаимодействовать друг с другом.
@@ -122,15 +118,9 @@ namespace mt
     return _allocator;
   }
 
-  inline const VkPhysicalDeviceFeatures& Device::features() const noexcept
+  inline const PhysicalDevice::Features& Device::features() const noexcept
   {
     return _features;
-  }
-
-  inline const VkPhysicalDeviceVulkan12Features&
-                                      Device::featuresVulkan12() const noexcept
-  {
-    return _featuresVulkan12;
   }
 
   inline PhysicalDevice& Device::physicalDevice() const noexcept
