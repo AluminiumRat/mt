@@ -2,6 +2,7 @@
 
 #include <array>
 
+#include <util/Region.h>
 #include <vkr/image/ImageAccessMultiset.h>
 #include <vkr/queue/CommandProducerCompute.h>
 
@@ -71,6 +72,15 @@ namespace mt
     virtual ~CommandProducerGraphic() noexcept;
 
     inline const FrameBuffer* curentFrameBuffer() const noexcept;
+
+    //  Действует только внутри рендер пасов. Каждый новый рендер пас сбрасывает
+    //  вьюпорт в размер таргета
+    //  Невалидный region сбросит вьюпорт до размеров таргета текущего прохода
+    void setViewport(Region region);
+    //  Действует только внутри рендер пасов. Каждый новый рендер пас сбрасывает
+    //  трафарет в размер таргета
+    //  Невалидный region сбросит трафарет до размеров таргета текущего прохода
+    void setScissor(Region region);
 
     void setGraphicPipeline(const GraphicPipeline& pipeline);
 

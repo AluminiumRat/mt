@@ -30,7 +30,8 @@ namespace mt
 
     void draw(CommandProducerGraphic& commandProducer,
               const DrawPlan& drawPlan,
-              const FrameBuildContext& frameContext);
+              const FrameBuildContext& frameContext,
+              glm::uvec2 viewport);
 
     inline void setHdrBuffer(ImageView& newBuffer) noexcept;
     inline void setDepthBuffer(ImageView& newBuffer) noexcept;

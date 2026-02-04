@@ -60,7 +60,7 @@ void CommandProducerGraphic::_beginPass(RenderPass& renderPass)
   // Дефолтный трафарет
   VkRect2D scissor{ .offset = {.x = 0, .y = 0},
                     .extent = { .width = frameBuffer.extent().x,
-                                .height = frameBuffer.extent().y,}};
+                                .height = frameBuffer.extent().y}};
   vkCmdSetScissor(buffer.handle(), 0, 1, &scissor);
 
   _currentPass = &renderPass;
@@ -82,6 +82,39 @@ void CommandProducerGraphic::_endPass() noexcept
     Log::error() << "CommandProducerGraphic::_endPass: " << error.what();
     Abort("Unable to end render pass");
   }
+}
+
+void CommandProducerGraphic::setViewport(Region region)
+{
+  if(_currentPass == nullptr) return;
+
+  if(!region.valid()) region = curentFrameBuffer()->extent();
+  MT_ASSERT(region.valid());
+
+  CommandBuffer& buffer = getOrCreateBuffer();
+
+  VkViewport viewport{.x = float(region.minCorner.x),
+                      .y = float(region.minCorner.y),
+                      .width = float(region.width()),
+                      .height = float(region.height()),
+                      .minDepth = 0,
+                      .maxDepth = 1};
+  vkCmdSetViewport(buffer.handle(), 0, 1, &viewport);
+}
+
+void CommandProducerGraphic::setScissor(Region region)
+{
+  if(_currentPass == nullptr) return;
+
+  if(!region.valid()) region = curentFrameBuffer()->extent();
+  MT_ASSERT(region.valid());
+
+  CommandBuffer& buffer = getOrCreateBuffer();
+  VkRect2D scissor{ .offset = { .x = int32_t(region.minCorner.x),
+                                .y = int32_t(region.minCorner.y)},
+                    .extent = { .width = region.width(),
+                                .height = region.height()}};
+  vkCmdSetScissor(buffer.handle(), 0, 1, &scissor);
 }
 
 void CommandProducerGraphic::setGraphicPipeline(const GraphicPipeline& pipeline)

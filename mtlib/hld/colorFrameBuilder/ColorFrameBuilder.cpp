@@ -26,6 +26,19 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
                               const Camera& viewCamera,
                               const GlobalLight& illumination)
 {
+  //  Вычисляем регион в таргете, в который мы будем рисовать новое изображение
+  Region targetRegion(target.extent());
+  if(_drawRegion.valid()) targetRegion = targetRegion.intersection(_drawRegion);
+  if(!targetRegion.valid()) return;
+
+  //  Вьюпорт при отрисовке в промежуточные буферы. Нужен для того чтобы
+  //  корректно обрабатывать случай когда _drawRegion уходит за пределы
+  //  таргета
+  glm::uvec2 buffersViewport = targetRegion.size();
+  if(_drawRegion.valid()) buffersViewport = _drawRegion.size();
+
+  _updateBuffers(targetRegion.size());
+
   FrameBuildContext frameContext{};
   frameContext.frameType = _frameTypeIndex;
   frameContext.viewCamera = &viewCamera;
@@ -38,7 +51,6 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
     //  Подготовительные работы
     std::unique_ptr<CommandProducerGraphic> prepareProducer =
                                         _device.graphicQueue()->startCommands();
-    _updateBuffers(target);
     _initBuffersLayout(*prepareProducer);
     _commonSet.update(*prepareProducer, frameContext, illumination);
     _device.graphicQueue()->submitCommands(std::move(prepareProducer));
@@ -53,27 +65,28 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
       ColorFrameCommonSet::Bind(_commonSet, *opaqueProducer);
       _opaqueColorStage.draw( *opaqueProducer,
                               _drawPlan,
-                              frameContext);
+                              frameContext,
+                              buffersViewport);
     }
     _device.graphicQueue()->submitCommands(std::move(opaqueProducer));
   }
 
   {
-    //  Сборка конечного кадра
+    //  Конечная сборка кадра
     std::unique_ptr<CommandProducerGraphic> ldrProducer =
                               _device.graphicQueue()->startCommands("LDRStage");
 
     _posteffectsLayouts(*ldrProducer);
-    _posteffects.makeLDR(target, *ldrProducer, frameContext);
+    _posteffects.makeLDR(target, targetRegion, *ldrProducer, frameContext);
 
     _device.graphicQueue()->submitCommands(std::move(ldrProducer));
   }
 }
 
-void ColorFrameBuilder::_updateBuffers( FrameBuffer& targetFrameBuffer)
+void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
 {
   if (_hdrBuffer == nullptr ||
-      glm::uvec2(_hdrBuffer->extent()) != targetFrameBuffer.extent())
+      glm::uvec2(_hdrBuffer->extent()) != targetExtent)
   {
     _hdrBuffer = new Image( _device,
                             VK_IMAGE_TYPE_2D,
@@ -82,7 +95,7 @@ void ColorFrameBuilder::_updateBuffers( FrameBuffer& targetFrameBuffer)
                               VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
                             0,
                             hdrFormat,
-                            glm::uvec3(targetFrameBuffer.extent(), 1),
+                            glm::uvec3(targetExtent, 1),
                             VK_SAMPLE_COUNT_1_BIT,
                             1,
                             1,
@@ -96,14 +109,14 @@ void ColorFrameBuilder::_updateBuffers( FrameBuffer& targetFrameBuffer)
   }
 
   if (_depthBuffer == nullptr ||
-      glm::uvec2(_depthBuffer->extent()) != targetFrameBuffer.extent())
+      glm::uvec2(_depthBuffer->extent()) != targetExtent)
   {
     _depthBuffer = new Image( _device,
                               VK_IMAGE_TYPE_2D,
                               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                               0,
                               depthFormat,
-                              glm::uvec3(targetFrameBuffer.extent(), 1),
+                              glm::uvec3(targetExtent, 1),
                               VK_SAMPLE_COUNT_1_BIT,
                               1,
                               1,

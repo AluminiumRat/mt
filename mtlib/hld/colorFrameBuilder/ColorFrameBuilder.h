@@ -11,6 +11,7 @@
 #include <hld/DrawPlan.h>
 #include <hld/FrameTypeIndex.h>
 #include <util/Ref.h>
+#include <util/Region.h>
 #include <vkr/image/Image.h>
 #include <vkr/image/ImageView.h>
 #include <vkr/pipeline/DescriptorSet.h>
@@ -27,6 +28,8 @@ namespace mt
   class GlobalLight;
   class TechniqueManager;
 
+  //  Штуковина для отрисовки сцены в цветовой кадр. То есть то, что должно
+  //  показываться пользователю
   class ColorFrameBuilder
   {
   public:
@@ -47,20 +50,32 @@ namespace mt
                       const Camera& viewCamera,
                       const GlobalLight& illumination);
 
+    //  Регион таргета, в который отрисовываться изображение.
+    //  Если регион невалидный, то отрисовка производится в весь таргет
+    inline const Region& drawRegion() const noexcept;
+    //  Выставить регион, в который будет отрисовываться изображение
+    //  Если регион невалидный, то отрисовка производится в весь таргет
+    //  ВНИМАНИЕ!!! Изменение региона будет приводить к перевыделению внутренних
+    //    буферов и сбросу истории.
+    inline void setDrawRegion(const Region& newValue) noexcept;
+
     //  Добавить окно с настройками в текущий контекст ImGui
     void makeGui();
 
   private:
-    void _updateBuffers(FrameBuffer& targetFrameBuffer);
+    void _updateBuffers(glm::uvec2 targetExtent);
     void _initBuffersLayout(CommandProducerGraphic& commandProducer);
     void _posteffectsLayouts(CommandProducerGraphic& commandProducer);
 
   private:
     Device& _device;
 
+    FrameTypeIndex _frameTypeIndex;
+
+    Region _drawRegion;
+
     DrawPlan _drawPlan;
 
-    FrameTypeIndex _frameTypeIndex;
     Ref<Image> _hdrBuffer;
     Ref<ImageView> _hdrBufferView;
     Ref<Image> _depthBuffer;
@@ -71,4 +86,14 @@ namespace mt
     OpaqueColorStage _opaqueColorStage;
     Posteffects _posteffects;
   };
+
+  inline const Region& ColorFrameBuilder::drawRegion() const noexcept
+  {
+    return _drawRegion;
+  }
+  
+  inline void ColorFrameBuilder::setDrawRegion(const Region& newValue) noexcept
+  {
+    _drawRegion = newValue;
+  }
 }

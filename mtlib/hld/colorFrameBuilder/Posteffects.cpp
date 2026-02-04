@@ -38,9 +38,11 @@ Posteffects::Posteffects(Device& device) :
 }
 
 void Posteffects::makeLDR(FrameBuffer& target,
+                          const Region& drawRegion,
                           CommandProducerGraphic& commandProducer,
                           const FrameBuildContext& frameContext)
 {
+  MT_ASSERT(drawRegion.valid());
   MT_ASSERT(_hdrBuffer != nullptr);
 
   //  Готвим данные, необходимые для резолва HDR
@@ -51,6 +53,12 @@ void Posteffects::makeLDR(FrameBuffer& target,
 
   //  Резолв hdr и постэффекты в одной отрисовке
   CommandProducerGraphic::RenderPass renderPass(commandProducer, target);
+    if(drawRegion != Region(target.extent()))
+    {
+      commandProducer.setViewport(drawRegion);
+      commandProducer.setScissor(drawRegion);
+    }
+
     Technique::BindGraphic bind(_resolveTechnique,
                                 _resolvePass,
                                 commandProducer);

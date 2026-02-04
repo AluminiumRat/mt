@@ -17,10 +17,12 @@ OpaqueColorStage::OpaqueColorStage(Device& device) :
 
 void OpaqueColorStage::draw(CommandProducerGraphic& commandProducer,
                             const DrawPlan& drawPlan,
-                            const FrameBuildContext& frameContext)
+                            const FrameBuildContext& frameContext,
+                            glm::uvec2 viewport)
 {
   MT_ASSERT(_hdrBuffer != nullptr);
   MT_ASSERT(_depthBuffer != nullptr);
+  MT_ASSERT(viewport.x != 0 && viewport.y != 0);
 
   _drawCommands.clear();
   _commandMemoryPool.reset();
@@ -38,10 +40,12 @@ void OpaqueColorStage::draw(CommandProducerGraphic& commandProducer,
 
   CommandProducerGraphic::RenderPass renderPass(commandProducer,
                                                 *_frameBuffer);
-
-  _drawCommands.draw( commandProducer,
-                      DrawCommandList::BY_GROUP_INDEX_SORTING);
-
+    if(_frameBuffer->extent() != viewport)
+    {
+      commandProducer.setViewport(viewport);
+    }
+    _drawCommands.draw( commandProducer,
+                        DrawCommandList::BY_GROUP_INDEX_SORTING);
   renderPass.endPass();
 }
 

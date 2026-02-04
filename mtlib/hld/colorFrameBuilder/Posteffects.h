@@ -5,6 +5,7 @@
 #include <technique/TechniqueConfigurator.h>
 #include <technique/Technique.h>
 #include <util/Ref.h>
+#include <util/Region.h>
 #include <vkr/image/ImageView.h>
 
 namespace mt
@@ -37,6 +38,7 @@ namespace mt
     //  hdr буфер в этот момент должен быть в лэйауте
     //  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     void makeLDR( FrameBuffer& target,
+                  const Region& drawRegion,
                   CommandProducerGraphic& commandProducer,
                   const FrameBuildContext& frameContext);
 
