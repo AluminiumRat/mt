@@ -1,12 +1,29 @@
 ﻿#include <algorithm>
 
 #include <hld/drawCommand/DrawCommandList.h>
+#include <hld/drawScene/Drawable.h>
+#include <util/Assert.h>
 
 using namespace mt;
 
 DrawCommandList::DrawCommandList(CommandMemoryPool& memoryPool) :
   _memoryPool(&memoryPool)
 {
+}
+
+void DrawCommandList::fillFromStagePlan(const DrawPlan::StagePlan& stagePlan,
+                                        const FrameBuildContext& frameContext,
+                                        StageIndex stageIndex,
+                                        const void* extraData)
+{
+  for(const Drawable* drawable : stagePlan)
+  {
+    MT_ASSERT(drawable->drawType() == Drawable::COMMANDS_DRAW);
+    drawable->addToCommandList( *this,
+                                frameContext,
+                                stageIndex,
+                                extraData);
+  }
 }
 
 void DrawCommandList::draw(CommandProducerGraphic& producer, Sorting sortingType)

@@ -4,10 +4,13 @@
 #include <vector>
 
 #include <hld/drawCommand/CommandMemoryPool.h>
+#include <hld/DrawPlan.h>
+#include <hld/StageIndex.h>
 
 namespace mt
 {
   class CommandProducerGraphic;
+  struct FrameBuildContext;
 
   class DrawCommandList
   {
@@ -35,6 +38,14 @@ namespace mt
     inline size_t size() const noexcept;
     inline void clear() noexcept;
 
+    //  Создать для рендер-плана отдельной стадии команды и добавить их
+    //  в список.
+    //  extraData - дополнительные данные, необходимые для специализированных
+    //    стадий.
+    void fillFromStagePlan( const DrawPlan::StagePlan& stagePlan,
+                            const FrameBuildContext& frameContext,
+                            StageIndex stageIndex,
+                            const void* extraData);
     void draw(CommandProducerGraphic& producer, Sorting sortingType);
 
   private:

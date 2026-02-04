@@ -86,14 +86,10 @@ void TestDrawStage::_processDrawables(CommandProducerGraphic& commandProducer,
   _drawCommands.clear();
   _commandMemoryPool.reset();
 
-  for(const Drawable* drawable : drawPlan.stagePlan(_stageIndex))
-  {
-    MT_ASSERT(drawable->drawType() == Drawable::COMMANDS_DRAW);
-    drawable->addToCommandList( _drawCommands,
-                                frameContext,
-                                _stageIndex,
-                                nullptr);
-  }
+  _drawCommands.fillFromStagePlan(drawPlan.stagePlan(_stageIndex),
+                                  frameContext,
+                                  _stageIndex,
+                                  nullptr);
 
   _lastFrameCommandsCount = _drawCommands.size();
 

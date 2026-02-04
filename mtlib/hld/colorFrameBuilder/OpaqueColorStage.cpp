@@ -27,16 +27,12 @@ void OpaqueColorStage::draw(CommandProducerGraphic& commandProducer,
   _drawCommands.clear();
   _commandMemoryPool.reset();
 
-  if(_frameBuffer == nullptr) _buildFrameBuffer();
+  _drawCommands.fillFromStagePlan(drawPlan.stagePlan(_stageIndex),
+                                  frameContext,
+                                  _stageIndex,
+                                  nullptr);
 
-  for(const Drawable* drawable : drawPlan.stagePlan(_stageIndex))
-  {
-    MT_ASSERT(drawable->drawType() == Drawable::COMMANDS_DRAW);
-    drawable->addToCommandList( _drawCommands,
-                                frameContext,
-                                _stageIndex,
-                                nullptr);
-  }
+  if(_frameBuffer == nullptr) _buildFrameBuffer();
 
   CommandProducerGraphic::RenderPass renderPass(commandProducer,
                                                 *_frameBuffer);
