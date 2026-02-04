@@ -7,32 +7,34 @@
 
 using namespace mt;
 
-Bloom::Bloom(Device& device) :
+Bloom::Bloom(Device& device, const DataBuffer& avgLumBuffer) :
   _device(device),
-  _treshold(1.0f),
+  _treshold(3.0f),
   _intensity(0.1f),
   _sourceImageChanged(false),
   _bloomImageSize(1),
   _techniqueConfigurator(new TechniqueConfigurator(device, "Bloom technique")),
-  _bloorTechnique(*_techniqueConfigurator),
-  _horizontalPass(_bloorTechnique.getOrCreatePass("Horizontal")),
-  _verticalPass(_bloorTechnique.getOrCreatePass("Vertical")),
-  _sourceImageBinding(_bloorTechnique.getOrCreateResourceBinding(
+  _blurTechnique(*_techniqueConfigurator),
+  _horizontalPass(_blurTechnique.getOrCreatePass("Horizontal")),
+  _verticalPass(_blurTechnique.getOrCreatePass("Vertical")),
+  _sourceImageBinding(_blurTechnique.getOrCreateResourceBinding(
                                                               "sourceImage")),
-  _targetImageBinding(_bloorTechnique.getOrCreateResourceBinding(
+  _targetImageBinding(_blurTechnique.getOrCreateResourceBinding(
                                                               "targetImage")),
-  _invSourceSizeUniform(_bloorTechnique.getOrCreateUniform(
+  _avgLumBinding(_blurTechnique.getOrCreateResourceBinding("avgLuminance")),
+  _invSourceSizeUniform(_blurTechnique.getOrCreateUniform(
                                                       "params.invSourceSize")),
-  _targetSizeUniform(_bloorTechnique.getOrCreateUniform("params.targetSize")),
-  _tresholdUniform(_bloorTechnique.getOrCreateUniform("params.threshold")),
-  _intensityUniform(_bloorTechnique.getOrCreateUniform("params.intensity"))
+  _targetSizeUniform(_blurTechnique.getOrCreateUniform("params.targetSize")),
+  _tresholdUniform(_blurTechnique.getOrCreateUniform("params.threshold")),
+  _intensityUniform(_blurTechnique.getOrCreateUniform("params.intensity"))
 {
   _tresholdUniform.setValue(_treshold);
   _intensityUniform.setValue(_intensity);
 
   Ref<Sampler> sampler(new Sampler(_device));
-  _bloorTechnique.getOrCreateResourceBinding("linearSampler").setSampler(
+  _blurTechnique.getOrCreateResourceBinding("linearSampler").setSampler(
                                                                       sampler);
+  _avgLumBinding.setBuffer(&avgLumBuffer);
 }
 
 void Bloom::update(CommandProducerCompute& commandProducer)
@@ -140,7 +142,7 @@ void Bloom::_blur(CommandProducerCompute& commandProducer)
                                 0);
 
   //  Горизонтальный проход
-  Technique::BindCompute bindHorizontal(_bloorTechnique,
+  Technique::BindCompute bindHorizontal(_blurTechnique,
                                         _horizontalPass,
                                         commandProducer);
   MT_ASSERT(bindHorizontal.isValid());
@@ -154,7 +156,7 @@ void Bloom::_blur(CommandProducerCompute& commandProducer)
                                 VK_ACCESS_SHADER_READ_BIT);
 
   //  Вертикальный проход
-  Technique::BindCompute bindVertical(_bloorTechnique,
+  Technique::BindCompute bindVertical(_blurTechnique,
                                       _verticalPass,
                                       commandProducer);
   MT_ASSERT(bindVertical.isValid());

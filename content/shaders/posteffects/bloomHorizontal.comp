@@ -45,8 +45,8 @@ void main()
 
   //  Обрезаем по яркости, чтобы слабые пиксели не размазывались
   float luminance = colorToLuminance(myColor);
-  myColor *= smoothstep(params.threshold * 0.9f,
-                        params.threshold * 1.1f,
+  myColor *= smoothstep(params.threshold * avgLuminance.value * 0.8f,
+                        params.threshold * avgLuminance.value * 1.2f,
                         luminance);
 
   //  На каком расстоянии находится сосед, с которым смешиваем

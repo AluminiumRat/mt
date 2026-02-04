@@ -9,7 +9,13 @@ layout( r11f_g11f_b10f,
         binding = 1) uniform image2D targetImage;
 
 layout (set = STATIC,
-        binding = 2) uniform Params
+        binding = 3) readonly buffer AvgLuminance
+{
+  float value;
+} avgLuminance;
+
+layout (set = STATIC,
+        binding = 4) uniform Params
 {
   vec2 invSourceSize;
   ivec2 targetSize;

@@ -14,7 +14,7 @@ Posteffects::Posteffects(Device& device) :
   _device(device),
   _needUpdateBindings(false),
   _avgLum(device),
-  _bloom(device),
+  _bloom(device, _avgLum.resultBuffer()),
   _resolveConfigurator(new TechniqueConfigurator(device, "HDRResolve")),
   _resolveTechnique(*_resolveConfigurator),
   _resolvePass(_resolveTechnique.getOrCreatePass("ResolvePass")),

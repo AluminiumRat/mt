@@ -14,7 +14,9 @@ namespace mt
   class Bloom
   {
   public:
-    explicit Bloom(Device& device);
+    //  avgLumBuffer - буффер, в первых 4 байтах которого лежит float со средней
+    //    яркостью изображения. Можно получить из класса AvgLum
+    Bloom(Device& device, const DataBuffer& avgLumBuffer);
     Bloom(const Bloom&) = delete;
     Bloom& operator = (const Bloom&) = delete;
     ~Bloom() noexcept = default;
@@ -60,11 +62,12 @@ namespace mt
     glm::uvec2 _bloomImageSize;
 
     Ref<TechniqueConfigurator> _techniqueConfigurator;
-    Technique _bloorTechnique;
+    Technique _blurTechnique;
     TechniquePass& _horizontalPass;
     TechniquePass& _verticalPass;
     ResourceBinding& _sourceImageBinding;
     ResourceBinding& _targetImageBinding;
+    ResourceBinding& _avgLumBinding;
     UniformVariable& _invSourceSizeUniform;
     UniformVariable& _targetSizeUniform;
     UniformVariable& _tresholdUniform;
