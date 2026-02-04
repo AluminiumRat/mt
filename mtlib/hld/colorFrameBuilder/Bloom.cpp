@@ -53,7 +53,7 @@ void Bloom::update(CommandProducerCompute& commandProducer)
       _updateBindings();
     }
 
-    _bloor(commandProducer);
+    _blur(commandProducer);
 
     commandProducer.endDebugLabel();
   }
@@ -128,7 +128,7 @@ void Bloom::_updateBindings()
   _sourceImageChanged = false;
 }
 
-void Bloom::_bloor(CommandProducerCompute& commandProducer)
+void Bloom::_blur(CommandProducerCompute& commandProducer)
 {
   commandProducer.imageBarrier( *_bloomImage,
                                 ImageSlice(*_bloomImage),

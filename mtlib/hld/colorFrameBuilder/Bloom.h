@@ -45,7 +45,7 @@ namespace mt
   private:
     void _updateTechnique();
     void _updateBindings();
-    void _bloor(CommandProducerCompute& commandProducer);
+    void _blur(CommandProducerCompute& commandProducer);
 
   private:
     Device& _device;
