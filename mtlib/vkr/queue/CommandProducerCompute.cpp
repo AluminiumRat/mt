@@ -53,9 +53,11 @@ void CommandProducerCompute::unbindDescriptorSetCompute(
   _pipelineAccesses.setChild(nullptr, setIndex);
 }
 
-void CommandProducerCompute::dispatch(uint32_t x, uint32_t y, uint32_t z)
+void CommandProducerCompute::dispatch(uint32_t gridSizeX,
+                                      uint32_t gridSizeY,
+                                      uint32_t gridSizeZ)
 {
   addMultipleImagesUsage(_pipelineAccesses.getMergedSet().accessTable());
   CommandBuffer& buffer = getOrCreateBuffer();
-  vkCmdDispatch(buffer.handle(), x, y, z);
+  vkCmdDispatch(buffer.handle(), gridSizeX, gridSizeY, gridSizeZ);
 }

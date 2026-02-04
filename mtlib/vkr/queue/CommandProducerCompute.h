@@ -36,9 +36,34 @@ namespace mt
     void unbindDescriptorSetCompute(uint32_t setIndex) noexcept;
 
     //  Запустить прибинженный пайплайн
-    void dispatch(uint32_t x, uint32_t y, uint32_t z);
+    void dispatch(uint32_t gridSizeX, uint32_t gridSizeY, uint32_t gridSizeZ);
+    inline void dispatch(glm::uvec3 gridSize);
+    inline void dispatch(uint32_t gridSizeX, uint32_t gridSizeY);
+    inline void dispatch(glm::uvec2 gridSize);
+    inline void dispatch(uint32_t gridSize);
 
   private:
     ImageAccessMultiset _pipelineAccesses;
   };
+
+  inline void CommandProducerCompute::dispatch(glm::uvec3 gridSize)
+  {
+    dispatch(gridSize.x, gridSize.y, gridSize.z);
+  }
+
+  inline void CommandProducerCompute::dispatch( uint32_t gridSizeX,
+                                                uint32_t gridSizeY)
+  {
+    dispatch(gridSizeX, gridSizeY, 1);
+  }
+  
+  inline void CommandProducerCompute::dispatch(glm::uvec2 gridSize)
+  {
+    dispatch(gridSize.x, gridSize.y, 1);
+  }
+
+  inline void CommandProducerCompute::dispatch(uint32_t gridSize)
+  {
+    dispatch(gridSize, 1, 1);
+  }
 }
