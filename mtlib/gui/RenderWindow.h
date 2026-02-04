@@ -51,6 +51,22 @@ namespace mt
 
     virtual void draw() override;
 
+    //  Необходимо ли чистить фрэйм буффер перед отрисовкой
+    inline bool needClearFrameBuffer() const noexcept;
+    inline void setNeedClearFrameBuffer(bool newValue)  noexcept;
+
+    //  Цвер, в который будет чиститься таргет цвета
+    inline const glm::vec4& clearColor() const noexcept;
+    inline void setClearColor(const glm::vec4& newValue) noexcept;
+
+    //  Значение для очистки дэф буфера
+    inline float clearDepth() const noexcept;
+    inline void setClearDepth(float newValue) noexcept;
+
+    //  Значение для очистки стэнсила
+    inline uint32_t clearStencil() const noexcept;
+    inline void setClearStencil(uint32_t newValue) noexcept;
+
   protected:
     inline const SwapChain& swapChain() const noexcept;
 
@@ -85,6 +101,11 @@ namespace mt
     Ref<SwapChain> _swapChain;
     std::vector<Ref<FrameBuffer>> _frameBuffers;
     Ref<ImageView> _depthBufferView;
+
+    bool _needClearFrameBuffer;
+    glm::vec4 _clearColor;
+    float _clearDepth;
+    uint32_t _clearStencil;
   };
 
   inline Device& RenderWindow::device() const noexcept
@@ -107,6 +128,54 @@ namespace mt
   inline VkFormat RenderWindow::depthBufferFormat() const noexcept
   {
     return _depthBufferFormat;
+  }
+
+  inline bool RenderWindow::needClearFrameBuffer() const noexcept
+  {
+    return _needClearFrameBuffer;
+  }
+  
+  inline void RenderWindow::setNeedClearFrameBuffer(bool newValue)  noexcept
+  {
+    if(_needClearFrameBuffer == newValue) return;
+    _needClearFrameBuffer = newValue;
+    _frameBuffers.clear();
+  }
+
+  inline const glm::vec4& RenderWindow::clearColor() const noexcept
+  {
+    return _clearColor;
+  }
+  
+  inline void RenderWindow::setClearColor(const glm::vec4& newValue) noexcept
+  {
+    if(_clearColor == newValue) return;
+    _clearColor = newValue;
+    _frameBuffers.clear();
+  }
+
+  inline float RenderWindow::clearDepth() const noexcept
+  {
+    return _clearDepth;
+  }
+  
+  inline void RenderWindow::setClearDepth(float newValue) noexcept
+  {
+    if(_clearDepth == newValue) return;
+    _clearDepth = newValue;
+    _frameBuffers.clear();
+  }
+
+  inline uint32_t RenderWindow::clearStencil() const noexcept
+  {
+    return _clearStencil;
+  }
+  
+  inline void RenderWindow::setClearStencil(uint32_t newValue) noexcept
+  {
+    if(_clearStencil == newValue) return;
+    _clearStencil = newValue;
+    _frameBuffers.clear();
   }
 
   inline const SwapChain& RenderWindow::swapChain() const noexcept

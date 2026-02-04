@@ -21,6 +21,8 @@ TestWindow::TestWindow(Device& device) :
   _meshAsset(new MeshAsset("Test mesh")),
   _illumination(device)
 {
+  setNeedClearFrameBuffer(false);
+
   _cameraManipulator.setCamera(&_camera);
 
   _setupMeshAsset();

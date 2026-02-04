@@ -24,7 +24,11 @@ RenderWindow::RenderWindow( Device& device,
   _device(device),
   _presentationMode(presentationMode),
   _swapchainFormat(swapchainFormat),
-  _depthBufferFormat(depthBufferFormat)
+  _depthBufferFormat(depthBufferFormat),
+  _needClearFrameBuffer(true),
+  _clearColor(0.05f, 0.1f, 0.05f, 1.0f),
+  _clearDepth(0),
+  _clearStencil(0)
 {
   try
   {
@@ -151,18 +155,25 @@ Ref<FrameBuffer> RenderWindow::_createFrameBuffer(Image& targetColorBuffer)
                                             ImageSlice(targetColorBuffer),
                                             VK_IMAGE_VIEW_TYPE_2D));
 
+  VkAttachmentLoadOp loadOp = _needClearFrameBuffer ?
+                                                VK_ATTACHMENT_LOAD_OP_CLEAR :
+                                                VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+
   FrameBuffer::ColorAttachmentInfo colorAttachment = {
                     .target = colorTarget.get(),
-                    .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                    .loadOp = loadOp,
                     .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-                    .clearValue = VkClearColorValue{0.05f, 0.1f, 0.05f, 1.0f}};
+                    .clearValue = VkClearColorValue{_clearColor.r,
+                                                    _clearColor.g,
+                                                    _clearColor.b,
+                                                    _clearColor.a}};
 
   FrameBuffer::DepthStencilAttachmentInfo depthAttachment = {
-                                        .target = _depthBufferView.get(),
-                                        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                                        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-                                        .clearValue = { .depth = 0,
-                                                        .stencil = 0}};
+                                    .target = _depthBufferView.get(),
+                                    .loadOp = loadOp,
+                                    .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                                    .clearValue = { .depth = _clearDepth,
+                                                    .stencil = _clearStencil}};
 
   return Ref<FrameBuffer>(new FrameBuffer(
                                 std::span(&colorAttachment, 1),
