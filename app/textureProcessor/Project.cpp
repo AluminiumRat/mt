@@ -43,7 +43,7 @@ public:
 
     mt::PassConfigurator::ShaderInfo shaders[2] =
                                 { { .stage = VK_SHADER_STAGE_VERTEX_BIT,
-                                    .file = "textureProcessor/fsQuad.vert"},
+                                    .file = "lib/fsQuad.vert"},
                                   { .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
                                     .file = _shaderFile}};
 

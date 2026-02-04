@@ -12,7 +12,7 @@ passes:
     selections: [BLOOM_ENABLED]
 
     shaders:
-      VERTEX : posteffects/posteffects.vert
+      VERTEX : lib/fsQuad.vert
       FRAGMENT : posteffects/posteffects.frag
 
     frameBuffer:
