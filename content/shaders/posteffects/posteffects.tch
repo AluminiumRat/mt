@@ -7,6 +7,11 @@ defaultSamplers:
     minFilter: LINEAR
     mipmapMode: LINEAR
 
+  nearestSampler:
+    magFilter: NEAREST
+    minFilter: NEAREST
+    mipmapMode: NEAREST
+
 passes:
   ResolvePass :
     selections: [BLOOM_ENABLED]

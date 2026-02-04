@@ -11,8 +11,9 @@ layout (set = STATIC, binding = 2) readonly buffer AvgLuminance
 
 layout (set = STATIC, binding = 3) uniform texture2D bloomTexture;
 layout (set = STATIC, binding = 4) uniform sampler linearSampler;
+layout (set = STATIC, binding = 5) uniform sampler nearestSampler;
 
-layout (set = STATIC, binding = 5) uniform Params
+layout (set = STATIC, binding = 6) uniform Params
 {
   float brightness;
   float maxWhite;
@@ -23,7 +24,7 @@ layout(location = 0) out vec4 outColor;
 
 void main()
 {
-  vec3 sourceColor = texture( sampler2D(hdrTexture, linearSampler),
+  vec3 sourceColor = texture( sampler2D(hdrTexture, nearestSampler),
                               texCoord).rgb;
 
   #if BLOOM_ENABLED == 1
