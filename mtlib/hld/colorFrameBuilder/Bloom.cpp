@@ -173,7 +173,6 @@ void Bloom::_bloor(CommandProducerCompute& commandProducer)
 
 void Bloom::makeGui()
 {
-  ImGui::Text("Bloom");
   ImGuiPropertyGrid grid("Bloom");
 
   grid.addRow("Treshold");

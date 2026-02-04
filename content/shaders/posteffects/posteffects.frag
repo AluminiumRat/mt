@@ -25,8 +25,11 @@ void main()
 {
   vec3 sourceColor = texture( sampler2D(hdrTexture, linearSampler),
                               texCoord).rgb;
-  sourceColor += texture( sampler2D(bloomTexture, linearSampler),
-                                    texCoord).rgb;
+
+  #if BLOOM_ENABLED == 1
+    sourceColor += texture( sampler2D(bloomTexture, linearSampler),
+                                      texCoord).rgb;
+  #endif
 
   float sourceLuminance = colorToLuminance(sourceColor) + 0.001f;
 

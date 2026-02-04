@@ -1,3 +1,6 @@
+selections:
+  BLOOM_ENABLED : [0, 1]
+
 defaultSamplers:
   linearSampler:
     magFilter: LINEAR
@@ -6,6 +9,8 @@ defaultSamplers:
 
 passes:
   ResolvePass :
+    selections: [BLOOM_ENABLED]
+
     shaders:
       VERTEX : posteffects/posteffects.vert
       FRAGMENT : posteffects/posteffects.frag

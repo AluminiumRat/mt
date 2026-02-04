@@ -12,7 +12,7 @@ using namespace mt;
 
 Posteffects::Posteffects(Device& device) :
   _device(device),
-  _hdrBufferChanged(false),
+  _needUpdateBindings(false),
   _avgLum(device),
   _bloom(device),
   _resolveConfigurator(new TechniqueConfigurator(device, "HDRResolve")),
@@ -26,13 +26,15 @@ Posteffects::Posteffects(Device& device) :
   _brightnessUniform(_resolveTechnique.getOrCreateUniform("params.brightness")),
   _brightness(1.0f),
   _maxWhiteUniform(_resolveTechnique.getOrCreateUniform("params.maxWhite")),
-  _maxWhite(2.0f)
+  _maxWhite(2.0f),
+  _bloomEnabledSelection(
+                      _resolveTechnique.getOrCreateSelection("BLOOM_ENABLED")),
+  _bloomEnabled(true)
 {
   loadConfigurator(*_resolveConfigurator, "posteffects/posteffects.tch");
   _resolveConfigurator->rebuildConfiguration();
 
-  _brightnessUniform.setValue(_brightness);
-  _maxWhiteUniform.setValue(_maxWhite);
+  _updateProperties();
 }
 
 void Posteffects::makeLDR(FrameBuffer& target,
@@ -43,7 +45,7 @@ void Posteffects::makeLDR(FrameBuffer& target,
 
   //  Готвим данные, необходимые для резолва HDR
   _avgLum.update(commandProducer);
-  _bloom.update(commandProducer);
+  if(_bloomEnabled) _bloom.update(commandProducer);
 
   _updateBindings();
 
@@ -60,20 +62,31 @@ void Posteffects::makeLDR(FrameBuffer& target,
 void Posteffects::_updateBindings()
 {
   MT_ASSERT(_hdrBuffer != nullptr);
-  MT_ASSERT(_bloom.bloomImage() != nullptr);
 
-  if(!_hdrBufferChanged) return;
+  if(!_needUpdateBindings) return;
 
   _hdrBufferBinding.setImage(_hdrBuffer);
   _avgLuminanceBinding.setBuffer(&_avgLum.resultBuffer());
 
-  Ref<ImageView> bloomTextureView(new ImageView(
+  if(_bloomEnabled)
+  {
+    MT_ASSERT(_bloom.bloomImage() != nullptr);
+    Ref<ImageView> bloomTextureView(new ImageView(
                                               *_bloom.bloomImage(),
                                               ImageSlice(*_bloom.bloomImage()),
                                               VK_IMAGE_VIEW_TYPE_2D));
-  _bloomTextureBinding.setImage(bloomTextureView);
+    _bloomTextureBinding.setImage(bloomTextureView);
+  }
+  else _bloomTextureBinding.setImage(nullptr);
 
-  _hdrBufferChanged = false;
+  _needUpdateBindings = false;
+}
+
+void Posteffects::_updateProperties()
+{
+  _brightnessUniform.setValue(_brightness);
+  _maxWhiteUniform.setValue(_maxWhite);
+  _bloomEnabledSelection.setValue(_bloomEnabled ? "1" : "0");
 }
 
 void Posteffects::makeGui()
@@ -86,18 +99,17 @@ void Posteffects::makeGui()
       ImGuiPropertyGrid grid("ColorGrading");
 
       grid.addRow("brightness");
-      if(ImGui::InputFloat("#Brightness", &_brightness))
-      {
-        _brightnessUniform.setValue(_brightness);
-      }
+      if(ImGui::InputFloat("#Brightness", &_brightness)) _updateProperties();
 
       grid.addRow("MaxWhite");
-      if(ImGui::InputFloat("#maxwhite", &_maxWhite))
-      {
-        _maxWhiteUniform.setValue(_maxWhite);
-      }
+      if(ImGui::InputFloat("#maxwhite", &_maxWhite)) _updateProperties();
     }
 
+    if(ImGui::Checkbox("Bloom", &_bloomEnabled))
+    {
+      _updateProperties();
+      _needUpdateBindings = true;
+    }
     _bloom.makeGui();
   }
 }

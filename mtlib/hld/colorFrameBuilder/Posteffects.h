@@ -37,12 +37,13 @@ namespace mt
 
   private:
     void _updateBindings();
+    void _updateProperties();
 
   private:
     Device& _device;
 
     Ref<ImageView> _hdrBuffer;
-    bool _hdrBufferChanged;
+    bool _needUpdateBindings;
 
     AvgLum _avgLum;
     Bloom _bloom;
@@ -59,6 +60,9 @@ namespace mt
 
     UniformVariable& _maxWhiteUniform;
     float _maxWhite;
+
+    Selection& _bloomEnabledSelection;
+    bool _bloomEnabled;
   };
 
   inline void Posteffects::setHdrBuffer(ImageView& newBuffer) noexcept
@@ -67,6 +71,6 @@ namespace mt
     _hdrBuffer = &newBuffer;
     _avgLum.setSourceImage(newBuffer);
     _bloom.setSourceImage(newBuffer);
-    _hdrBufferChanged = true;
+    _needUpdateBindings = true;
   }
 }
