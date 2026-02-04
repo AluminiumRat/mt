@@ -36,10 +36,6 @@ namespace mt
     static constexpr VkFormat depthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
   public:
-    using ExtraDraw =
-                  std::function<void(CommandProducerGraphic& commandProducer)>;
-
-  public:
     explicit ColorFrameBuilder(Device& device);
     ColorFrameBuilder(const ColorFrameBuilder&) = delete;
     ColorFrameBuilder& operator = (const ColorFrameBuilder&) = delete;
@@ -49,8 +45,7 @@ namespace mt
     virtual void draw(FrameBuffer& target,
                       const DrawScene& scene,
                       const Camera& viewCamera,
-                      const GlobalLight& illumination,
-                      const ExtraDraw& imGuiDraw);
+                      const GlobalLight& illumination);
 
     //  Добавить окно с настройками в текущий контекст ImGui
     void makeGui();

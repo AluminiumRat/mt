@@ -23,17 +23,12 @@ namespace mt
     Posteffects& operator = (const Posteffects&) = delete;
     ~Posteffects() noexcept= default;
 
-    //  Предварительная работа. Вызывается вне рендер паса
+    //  Преобразует hd в ldr и накладывает постэффекты. Результат кладет в
+    //    target
     //  hdr буфер в этот момент должен быть в лэйауте
     //  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    void prepare( CommandProducerGraphic& commandProducer,
-                  const FrameBuildContext& frameContext);
-
-    //  Конечный этап, создание изображения в LDR буфере
-    //  Вызывается внутри рендер паса, где LDR прибижен как таргет
-    //  hdr буфер в этот момент должен быть в лэйауте
-    //  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-    void makeLDR( CommandProducerGraphic& commandProducer,
+    void makeLDR( FrameBuffer& target,
+                  CommandProducerGraphic& commandProducer,
                   const FrameBuildContext& frameContext);
 
     inline void setHdrBuffer(ImageView& newBuffer) noexcept;

@@ -127,11 +127,14 @@ void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
   _frameBuilder.draw( frameBuffer,
                       _scene,
                       _camera,
-                      _illumination,
-                      [this](CommandProducerGraphic& commandProducer)
-                      {
-                        drawGUI(commandProducer);
-                      });
+                      _illumination);
+
+  std::unique_ptr<CommandProducerGraphic> commandProducer =
+                                device().graphicQueue()->startCommands("ImGui");
+    CommandProducerGraphic::RenderPass renderPass(*commandProducer, frameBuffer);
+    drawGUI(*commandProducer);
+    renderPass.endPass();
+  device().graphicQueue()->submitCommands(std::move(commandProducer));
 }
 
 void TestWindow::guiImplementation()

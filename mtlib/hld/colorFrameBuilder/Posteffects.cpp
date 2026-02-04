@@ -35,23 +35,26 @@ Posteffects::Posteffects(Device& device) :
   _maxWhiteUniform.setValue(_maxWhite);
 }
 
-void Posteffects::prepare(CommandProducerGraphic& commandProducer,
+void Posteffects::makeLDR(FrameBuffer& target,
+                          CommandProducerGraphic& commandProducer,
                           const FrameBuildContext& frameContext)
 {
   MT_ASSERT(_hdrBuffer != nullptr);
+
+  //  Готвим данные, необходимые для резолва HDR
   _avgLum.update(commandProducer);
   _bloom.update(commandProducer);
-}
 
-void Posteffects::makeLDR(CommandProducerGraphic& commandProducer,
-                          const FrameBuildContext& frameContext)
-{
   _updateBindings();
 
-  Technique::BindGraphic bind(_resolveTechnique, _resolvePass, commandProducer);
-  MT_ASSERT(bind.isValid())
-
-  commandProducer.draw(4);
+  //  Резолв hdr и постэффекты в одной отрисовке
+  CommandProducerGraphic::RenderPass renderPass(commandProducer, target);
+    Technique::BindGraphic bind(_resolveTechnique,
+                                _resolvePass,
+                                commandProducer);
+    MT_ASSERT(bind.isValid())
+    commandProducer.draw(4);
+  renderPass.endPass();
 }
 
 void Posteffects::_updateBindings()

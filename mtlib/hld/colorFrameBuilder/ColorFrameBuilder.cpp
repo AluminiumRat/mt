@@ -24,8 +24,7 @@ ColorFrameBuilder::ColorFrameBuilder(Device& device) :
 void ColorFrameBuilder::draw( FrameBuffer& target,
                               const DrawScene& scene,
                               const Camera& viewCamera,
-                              const GlobalLight& illumination,
-                              const ExtraDraw& imGuiDraw)
+                              const GlobalLight& illumination)
 {
   FrameBuildContext frameContext{};
   frameContext.frameType = _frameTypeIndex;
@@ -61,23 +60,13 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
 
   {
     //  Сборка конечного кадра
-    std::unique_ptr<CommandProducerGraphic> finalizeProducer =
+    std::unique_ptr<CommandProducerGraphic> ldrProducer =
                               _device.graphicQueue()->startCommands("LDRStage");
-    _posteffectsLayouts(*finalizeProducer);
 
-    _posteffects.prepare(*finalizeProducer, frameContext);
+    _posteffectsLayouts(*ldrProducer);
+    _posteffects.makeLDR(target, *ldrProducer, frameContext);
 
-    CommandProducerGraphic::RenderPass renderPass(*finalizeProducer, target);
-      _posteffects.makeLDR(*finalizeProducer, frameContext);
-      if(imGuiDraw)
-      {
-        finalizeProducer->beginDebugLabel("ImGui");
-        imGuiDraw(*finalizeProducer);
-        finalizeProducer->endDebugLabel();
-      }
-    renderPass.endPass();
-
-    _device.graphicQueue()->submitCommands(std::move(finalizeProducer));
+    _device.graphicQueue()->submitCommands(std::move(ldrProducer));
   }
 }
 
