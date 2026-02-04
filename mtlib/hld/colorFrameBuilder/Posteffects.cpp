@@ -107,9 +107,9 @@ void Posteffects::makeGui()
 
     if(ImGui::Checkbox("Bloom", &_bloomEnabled))
     {
-      _updateProperties();
       _needUpdateBindings = true;
+      _updateProperties();
     }
-    _bloom.makeGui();
+    if(_bloomEnabled) _bloom.makeGui();
   }
 }

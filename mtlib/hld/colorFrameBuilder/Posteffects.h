@@ -23,6 +23,15 @@ namespace mt
     Posteffects& operator = (const Posteffects&) = delete;
     ~Posteffects() noexcept= default;
 
+    inline float brightness() const noexcept;
+    inline void setBrightness(float newValue);
+
+    inline float maxWhite() const noexcept;
+    inline void setMaxWhite(float newValue);
+
+    inline bool bloomEnabled() const noexcept;
+    inline void setBloomEnabled(bool newValue);
+
     //  Преобразует hd в ldr и накладывает постэффекты. Результат кладет в
     //    target
     //  hdr буфер в этот момент должен быть в лэйауте
@@ -64,6 +73,43 @@ namespace mt
     Selection& _bloomEnabledSelection;
     bool _bloomEnabled;
   };
+
+  inline float Posteffects::brightness() const noexcept
+  {
+    return _brightness;
+  }
+
+  inline void Posteffects::setBrightness(float newValue)
+  {
+    if(_brightness == newValue) return;
+    _brightness = newValue;
+    _updateProperties();
+  }
+
+  inline float Posteffects::maxWhite() const noexcept
+  {
+    return _maxWhite;
+  }
+
+  inline void Posteffects::setMaxWhite(float newValue)
+  {
+    if(_maxWhite == newValue) return;
+    _maxWhite = newValue;
+    _updateProperties();
+  }
+
+  inline bool Posteffects::bloomEnabled() const noexcept
+  {
+    return _bloomEnabled;
+  }
+
+  inline void Posteffects::setBloomEnabled(bool newValue)
+  {
+    if(_bloomEnabled == newValue) return;
+    _bloomEnabled = newValue;
+    _needUpdateBindings = true;
+    _updateProperties();
+  }
 
   inline void Posteffects::setHdrBuffer(ImageView& newBuffer) noexcept
   {
