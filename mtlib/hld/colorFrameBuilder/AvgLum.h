@@ -54,6 +54,7 @@ namespace mt
     ResourceBinding& _resultBufferBinding;
     UniformVariable& _invSourceSizeUniform;
     UniformVariable& _areaSizeUniform;
+    UniformVariable& _pixelRateUniform;
 
     //  Размер области, на которой будут работать компьют шейдеры
     glm::uvec2 _workAreaSize;

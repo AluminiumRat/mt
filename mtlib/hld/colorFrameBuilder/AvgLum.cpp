@@ -21,7 +21,8 @@ AvgLum::AvgLum(Device& device) :
   _intermediateImageBinding(_technique.getOrCreateResourceBinding(
                                                           "intermediateImage")),
   _invSourceSizeUniform(_technique.getOrCreateUniform("params.invSourceSize")),
-  _areaSizeUniform(_technique.getOrCreateUniform("params.areaSize"))
+  _areaSizeUniform(_technique.getOrCreateUniform("params.areaSize")),
+  _pixelRateUniform(_technique.getOrCreateUniform("params.pixelRate"))
 {
   _resultBufferBinding.setBuffer(_resultBuffer);
 
@@ -93,7 +94,11 @@ void AvgLum::_updateBindings(CommandProducerCompute& commandProducer)
   _sourceImageBinding.setImage(_sourceImage);
   _invSourceSizeUniform.setValue(1.0f / glm::vec2(_sourceImage->extent()));
 
-  _areaSizeUniform.setValue(glm::uvec2(_workAreaSize));
+  _areaSizeUniform.setValue(_workAreaSize);
+
+  glm::vec2 pixelRate = glm::vec2(_sourceImage->extent()) /
+                                                      glm::vec2(_workAreaSize);
+  _pixelRateUniform.setValue(pixelRate);
 
   _intermediateImage = new Image( _device,
                                   VK_IMAGE_TYPE_2D,

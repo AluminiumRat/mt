@@ -16,7 +16,8 @@ layout (local_size_x_id = 0,
 //  яркость
 float getSourceLuminance()
 {
-  vec2 sourceStartTexel = gl_GlobalInvocationID.xy * 4 + vec2(0.5f, 0.5f);
+  vec2 sourceStartTexel =
+              gl_GlobalInvocationID.xy * params.pixelRate + vec2(0.5f, 0.5f);
   vec2 sourceStartUV = sourceStartTexel * params.invSourceSize;
   vec2 step = params.invSourceSize;
 

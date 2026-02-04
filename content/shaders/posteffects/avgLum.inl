@@ -17,6 +17,8 @@ layout( set = STATIC,
 layout (set = STATIC,
         binding = 4) uniform Params
 {
-  vec2 invSourceSize;
-  ivec2 areaSize;
+  vec2 invSourceSize;   // 1.0f / размер исходного изображения
+  ivec2 areaSize;       // Размер сетки, по которой работают компьют шейдеры
+  vec2 pixelRate;       // Сколько пикселей по горизонтали и вертикали
+                        // приходится на 1 вызов горизонтального шейдера
 } params;
