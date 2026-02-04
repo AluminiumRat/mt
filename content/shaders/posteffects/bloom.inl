@@ -1,12 +1,12 @@
-layout (set = VOLATILE,
+layout (set = STATIC,
         binding = 0) uniform texture2D sourceImage;
 
 layout (set = STATIC,
-        binding = 0) uniform sampler linearSampler;
+        binding = 1) uniform sampler linearSampler;
 
 layout( r11f_g11f_b10f,
         set = STATIC,
-        binding = 1) uniform image2D targetImage;
+        binding = 2) uniform image2D targetImage;
 
 layout (set = STATIC,
         binding = 3) readonly buffer AvgLuminance
