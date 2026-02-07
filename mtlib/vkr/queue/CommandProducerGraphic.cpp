@@ -39,31 +39,41 @@ void CommandProducerGraphic::_beginPass(RenderPass& renderPass)
 {
   MT_ASSERT(_currentPass == nullptr);
 
-  const FrameBuffer& frameBuffer = renderPass.frameBuffer();
+  try
+  {
+    beginRenderPassBlock();
 
-  _pipelineAccesses.setChild(&frameBuffer.imagesAccess(), 0);
-  lockResource(frameBuffer);
+    const FrameBuffer& frameBuffer = renderPass.frameBuffer();
 
-  CommandBuffer& buffer = getOrCreateBuffer();
+    lockResource(frameBuffer);
+    addMultipleImagesUsage(frameBuffer.imagesAccess().accessTable());
 
-  vkCmdBeginRendering(buffer.handle(), &frameBuffer.bindingInfo());
+    CommandBuffer& buffer = getOrCreateBuffer();
 
-  // Выставляем дефолтный вьюпорт
-  VkViewport viewport{.x = 0,
-                      .y = 0,
-                      .width = float(frameBuffer.extent().x),
-                      .height = float(frameBuffer.extent().y),
-                      .minDepth = 0,
-                      .maxDepth = 1};
-  vkCmdSetViewport(buffer.handle(), 0, 1, &viewport);
+    vkCmdBeginRendering(buffer.handle(), &frameBuffer.bindingInfo());
 
-  // Дефолтный трафарет
-  VkRect2D scissor{ .offset = {.x = 0, .y = 0},
-                    .extent = { .width = frameBuffer.extent().x,
-                                .height = frameBuffer.extent().y}};
-  vkCmdSetScissor(buffer.handle(), 0, 1, &scissor);
+    // Выставляем дефолтный вьюпорт
+    VkViewport viewport{.x = 0,
+                        .y = 0,
+                        .width = float(frameBuffer.extent().x),
+                        .height = float(frameBuffer.extent().y),
+                        .minDepth = 0,
+                        .maxDepth = 1};
+    vkCmdSetViewport(buffer.handle(), 0, 1, &viewport);
 
-  _currentPass = &renderPass;
+    // Дефолтный трафарет
+    VkRect2D scissor{ .offset = {.x = 0, .y = 0},
+                      .extent = { .width = frameBuffer.extent().x,
+                                  .height = frameBuffer.extent().y}};
+    vkCmdSetScissor(buffer.handle(), 0, 1, &scissor);
+
+    _currentPass = &renderPass;
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << "CommandProducerGraphic::_beginPass: " << error.what();
+    Abort("Unable to begin render pass");
+  }
 }
 
 void CommandProducerGraphic::_endPass() noexcept
@@ -74,8 +84,8 @@ void CommandProducerGraphic::_endPass() noexcept
   {
     CommandBuffer& buffer = getOrCreateBuffer();
     vkCmdEndRendering(buffer.handle());
-    _pipelineAccesses.setChild(nullptr, 0);
     _currentPass = nullptr;
+    endRenderPassBlock();
   }
   catch(std::exception& error)
   {
@@ -132,13 +142,12 @@ void CommandProducerGraphic::bindDescriptorSetGraphic(
                                             uint32_t setIndex,
                                             const PipelineLayout& layout)
 {
-  MT_ASSERT(setIndex < maxGraphicDescriptorSetsNumber);
   MT_ASSERT(descriptorSet.isFinalized());
 
   lockResource(layout);
   lockResource(descriptorSet);
 
-  _pipelineAccesses.setChild(&descriptorSet.imagesAccess(), setIndex + 1);
+  addMultipleImagesUsage(descriptorSet.imagesAccess().accessTable());
 
   VkDescriptorSet setHandle = descriptorSet.handle();
   CommandBuffer& buffer = getOrCreateBuffer();
@@ -155,8 +164,6 @@ void CommandProducerGraphic::bindDescriptorSetGraphic(
 void CommandProducerGraphic::unbindDescriptorSetGraphic(
                                                     uint32_t setIndex) noexcept
 {
-  MT_ASSERT(setIndex < maxGraphicDescriptorSetsNumber);
-  _pipelineAccesses.setChild(nullptr, setIndex + 1);
 }
 
 void CommandProducerGraphic::draw(uint32_t vertexCount,
@@ -164,8 +171,6 @@ void CommandProducerGraphic::draw(uint32_t vertexCount,
                                   uint32_t firstVertex,
                                   uint32_t firstInstance)
 {
-  addMultipleImagesUsage(_pipelineAccesses.getMergedSet().accessTable());
-
   CommandBuffer& buffer = getOrCreateBuffer();
   vkCmdDraw(buffer.handle(),
             vertexCount,

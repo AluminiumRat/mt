@@ -7,7 +7,7 @@
 
 #include <util/Ref.h>
 #include <util/RefCounter.h>
-#include <vkr/image/ImagesAccessSet.h>
+#include <vkr/image/ImageAccessSet.h>
 #include <vkr/image/ImageView.h>
 #include <vkr/pipeline/DescriptorSetLayout.h>
 
@@ -36,7 +36,7 @@ namespace mt
     inline VkDescriptorSet handle() const noexcept;
     inline const DescriptorSetLayout& layout() const noexcept;
 
-    inline const ImagesAccessSet& imagesAccess() const noexcept;
+    inline const ImageAccessSet& imagesAccess() const noexcept;
 
     // Подключить буфер, общий способ
     void attachBuffer(const DataBuffer& buffer,
@@ -94,7 +94,7 @@ namespace mt
     ConstRef<DescriptorSetLayout> _layout;
 
     std::vector<ConstRef<RefCounter>> _resources;
-    ImagesAccessSet _imagesAccess;
+    ImageAccessSet _imagesAccess;
 
     bool _finalized;
   };
@@ -114,7 +114,7 @@ namespace mt
     return *_layout;
   }
 
-  inline const ImagesAccessSet& DescriptorSet::imagesAccess() const noexcept
+  inline const ImageAccessSet& DescriptorSet::imagesAccess() const noexcept
   {
     return _imagesAccess;
   }

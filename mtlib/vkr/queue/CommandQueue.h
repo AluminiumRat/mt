@@ -128,8 +128,8 @@ namespace mt
 
     // Сделать согласование по Image-ам с автоконтролем лэйаутов перед
     // отправкой буфера команд на исполнение
-    void _matchLayouts( CommandBuffer& matchingBuffer,
-                        const ImageAccessMap& imageStates) noexcept;
+    void _matchLayouts( const ImageAccessMap& imageStates,
+                        CommandPool& commandPool) noexcept;
 
     void _makeFullMemoryBarrier();
 

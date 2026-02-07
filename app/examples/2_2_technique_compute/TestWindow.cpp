@@ -78,7 +78,7 @@ void TestWindow::_createTexture()
                               VK_SAMPLE_COUNT_1_BIT,
                               1,
                               1,
-                              false,
+                              true,
                               "Test image");
 
   Ref<ImageView> imageView(new ImageView( *_renderedImage,
@@ -93,15 +93,6 @@ void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
   std::unique_ptr<CommandProducerGraphic> commandProducer =
                                       device().graphicQueue()->startCommands();
 
-  commandProducer->imageBarrier(*_renderedImage,
-                                ImageSlice(*_renderedImage),
-                                VK_IMAGE_LAYOUT_UNDEFINED,
-                                VK_IMAGE_LAYOUT_GENERAL,
-                                0,
-                                0,
-                                0,
-                                0);
-
   //  Заполнение текстуры через компьют
   Technique::BindCompute bindCompute( _computeTechnique.technique,
                                       _computeTechnique.pass,
@@ -111,15 +102,6 @@ void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
     commandProducer->dispatch(32, 32, 1);
     bindCompute.release();
   }
-
-  commandProducer->imageBarrier(*_renderedImage,
-                                ImageSlice(*_renderedImage),
-                                VK_IMAGE_LAYOUT_GENERAL,
-                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                                VK_ACCESS_SHADER_WRITE_BIT,
-                                VK_ACCESS_SHADER_READ_BIT);
 
   //  Отрисовка
   CommandProducerGraphic::RenderPass renderPass(*commandProducer, frameBuffer);

@@ -10,10 +10,9 @@ include_directories(..
 set(SOURCES
     "image/Image.cpp"
     "image/ImageAccess.cpp"
-    "image/ImageAccessMultiset.cpp"
+    "image/ImageAccessSet.cpp"
     "image/ImageAccessWatcher.cpp"
     "image/ImageFormatFeatures.cpp"
-    "image/ImagesAccessSet.cpp"
     "image/ImageSlice.cpp"
     "image/ImageView.cpp"
     "pipeline/AbstractPipeline.cpp"

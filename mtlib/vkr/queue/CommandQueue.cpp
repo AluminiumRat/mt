@@ -114,52 +114,55 @@ void CommandQueue::submitCommands(std::unique_ptr<CommandProducer> producer)
 
   std::optional<CommandProducer::FinalizeResult> finalizeResult =
                                                           producer->finalize();
-  if(!finalizeResult.has_value()) return;
-
-  _matchLayouts(*finalizeResult->matchingBuffer,
-                *finalizeResult->imageStates);
-
-  // Собираем список буферов команд
-  std::vector<VkCommandBuffer> buffersHandles;
-  buffersHandles.reserve(finalizeResult->commandSequence->size());
-  for(const CommandBuffer* buffer : *finalizeResult->commandSequence)
+  if(finalizeResult.has_value())
   {
-    buffersHandles.push_back(buffer->handle());
-  }
+    //  Согласовываем лэйауты Image-ей между тем что уже есть в очереди и тем,
+    //  что записано в буфере
+    _matchLayouts(*finalizeResult->imageStates, *finalizeResult->commandPool);
 
-  //  Одновременно с сабмитом буферов продвигаем наш таймлайн семафор
-  //  для того чтобы получить синк поинт, на котором можно чистить пулы
-  _lastSemaphoreValue++;
-  VkTimelineSemaphoreSubmitInfo timelineInfo{};
-  timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
-  timelineInfo.signalSemaphoreValueCount = 1;
-  timelineInfo.pSignalSemaphoreValues = &_lastSemaphoreValue;
+    // Собираем список буферов команд
+    std::vector<VkCommandBuffer> buffersHandles;
+    buffersHandles.reserve(finalizeResult->commandSequence->size());
+    for(const CommandBuffer* buffer : *finalizeResult->commandSequence)
+    {
+      buffersHandles.push_back(buffer->handle());
+    }
 
-  VkSubmitInfo submitInfo{};
-  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-  submitInfo.pNext = &timelineInfo;
-  submitInfo.signalSemaphoreCount  = 1;
-  VkSemaphore semaphore = _semaphore->handle();
-  submitInfo.pSignalSemaphores = &semaphore;
-  submitInfo.commandBufferCount = uint32_t(buffersHandles.size());
-  submitInfo.pCommandBuffers = buffersHandles.data();
+    //  Одновременно с сабмитом буферов продвигаем наш таймлайн семафор
+    //  для того чтобы получить синк поинт, на котором можно чистить пулы
+    _lastSemaphoreValue++;
+    VkTimelineSemaphoreSubmitInfo timelineInfo{};
+    timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+    timelineInfo.signalSemaphoreValueCount = 1;
+    timelineInfo.pSignalSemaphoreValues = &_lastSemaphoreValue;
 
-  if (vkQueueSubmit(handle(),
-                    1,
-                    &submitInfo,
-                    VK_NULL_HANDLE) != VK_SUCCESS)
-  {
-    MT_ASSERT(false && "CommandQueue: Failed to submit command buffer.");
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.pNext = &timelineInfo;
+    submitInfo.signalSemaphoreCount  = 1;
+    VkSemaphore semaphore = _semaphore->handle();
+    submitInfo.pSignalSemaphores = &semaphore;
+    submitInfo.commandBufferCount = uint32_t(buffersHandles.size());
+    submitInfo.pCommandBuffers = buffersHandles.data();
+
+    if (vkQueueSubmit(handle(),
+                      1,
+                      &submitInfo,
+                      VK_NULL_HANDLE) != VK_SUCCESS)
+    {
+      MT_ASSERT(false && "CommandQueue: Failed to submit command buffer.");
+    }
   }
 
   producer->release(SyncPoint(*_semaphore, _lastSemaphoreValue));
 }
 
-void CommandQueue::_matchLayouts( CommandBuffer& matchingBuffer,
-                                  const ImageAccessMap& imageStates) noexcept
+void CommandQueue::_matchLayouts( const ImageAccessMap& imageStates,
+                                  CommandPool& commandPool) noexcept
 {
   if(imageStates.empty()) return;
 
+  CommandBuffer& matchingBuffer = commandPool.getNextBuffer();
   matchingBuffer.startOnetimeBuffer();
   bool barriersAdded = false;
 

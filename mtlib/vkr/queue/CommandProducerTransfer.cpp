@@ -17,6 +17,8 @@ void CommandProducerTransfer::copyFromBufferToBuffer(
                                                   size_t dstOffset,
                                                   size_t size)
 {
+  MT_ASSERT(!insideRenderPass());
+
   lockResource(srcBuffer);
   lockResource(dstBuffer);
 
@@ -47,7 +49,7 @@ void CommandProducerTransfer::uniformBufferTransfer(const DataBuffer& srcBuffer,
   copyInfo.dstOffset = dstOffset;
   copyInfo.size = size;
 
-  CommandBuffer& commandBuffer = getOrCreatePreparationBuffer();
+  CommandBuffer& commandBuffer = getPreparationBuffer();
   vkCmdCopyBuffer(commandBuffer.handle(),
                   srcBuffer.handle(),
                   dstBuffer.handle(),
@@ -68,6 +70,8 @@ void CommandProducerTransfer::copyFromBufferToImage(
                                             glm::uvec3 dstOffset,
                                             glm::uvec3 dstExtent)
 {
+  MT_ASSERT(!insideRenderPass());
+
   ImageAccess imageAccess;
   imageAccess.slices[0] = ImageSlice( dstImage,
                                       dstAspectMask,
@@ -127,6 +131,8 @@ void CommandProducerTransfer::copyFromImageToBuffer(
                                             uint32_t dstRowLength,
                                             uint32_t dstImageHeight)
 {
+  MT_ASSERT(!insideRenderPass());
+
   ImageAccess imageAccess;
   imageAccess.slices[0] = ImageSlice( srcImage,
                                       srcAspectMask,

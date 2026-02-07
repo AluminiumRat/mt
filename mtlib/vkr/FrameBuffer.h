@@ -8,7 +8,7 @@
 
 #include <util/RefCounter.h>
 #include <util/Ref.h>
-#include <vkr/image/ImagesAccessSet.h>
+#include <vkr/image/ImageAccessSet.h>
 #include <vkr/image/ImageView.h>
 #include <vkr/FrameBufferFormat.h>
 
@@ -93,7 +93,7 @@ namespace mt
     inline const VkRenderingInfoKHR& bindingInfo() const noexcept;
 
     //  Информация о доступе к Image со включенным автоконтролем лэйаутов
-    inline const ImagesAccessSet& imagesAccess() const noexcept;
+    inline const ImageAccessSet& imagesAccess() const noexcept;
 
     inline const FrameBufferFormat& format() const noexcept;
 
@@ -120,7 +120,7 @@ namespace mt
 
     std::vector<RefCounterReference> _lockedResources;
 
-    ImagesAccessSet _imagesAccess;
+    ImageAccessSet _imagesAccess;
 
     FrameBufferFormat _format;
   };
@@ -151,7 +151,7 @@ namespace mt
     return _vkBindingInfo;
   }
 
-  inline const ImagesAccessSet& FrameBuffer::imagesAccess() const noexcept
+  inline const ImageAccessSet& FrameBuffer::imagesAccess() const noexcept
   {
     return _imagesAccess;
   }

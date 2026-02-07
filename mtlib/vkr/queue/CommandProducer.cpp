@@ -18,10 +18,9 @@ CommandProducer::CommandProducer( CommandPoolSet& poolSet,
   _commandPoolSet(poolSet),
   _queue(_commandPoolSet.queue()),
   _commandPool(nullptr),
-  _currentPrimaryBuffer(nullptr),
-  _preparationBuffer(nullptr),
-  _cachedMatchingBuffer(nullptr),
+  _currentBuffer(nullptr),
   _descriptorPool(nullptr),
+  _insideRenderPass(false),
   _debugName(debugName),
   _isFinalized(false)
 {
@@ -32,20 +31,7 @@ CommandProducer::CommandProducer( CommandPoolSet& poolSet,
     _uniformMemorySession.emplace(_commandPool->memoryPool());
     _commandSequence.reserve(1024);
 
-    //  Добавляем дебажную информацию в очередь. Используем подготовительный
-    //  буфер, чтобы гарантировать, что команда окажется в самом начале
-    //  первого буфера (поэтому не используем beginDebugLabel)
-    if(!_debugName.empty() && VKRLib::instance().isDebugEnabled())
-    {
-      VkDebugUtilsLabelEXT labelInfo{};
-      labelInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
-      labelInfo.pLabelName = _debugName.c_str();
-
-      CommandBuffer& buffer = getOrCreatePreparationBuffer();
-      Device& device = _queue.device();
-      device.extFunctions().vkCmdBeginDebugUtilsLabelEXT( buffer.handle(),
-                                                          &labelInfo);
-    }
+    if(!_debugName.empty()) beginDebugLabel(_debugName.c_str());
   }
   catch (std::exception& error)
   {
@@ -57,22 +43,14 @@ CommandProducer::CommandProducer( CommandPoolSet& poolSet,
 void CommandProducer::finalizeCommands() noexcept
 {
   //  Закрываем дебажную информацию в очереди команд
-  if(!_debugName.empty() && VKRLib::instance().isDebugEnabled())
-  {
-    MT_ASSERT(!_commandSequence.empty());
-
-    CommandBuffer* buffer = _commandSequence.back();
-    MT_ASSERT(buffer->isBufferInProcess());
-
-    Device& device = _queue.device();
-    device.extFunctions().vkCmdEndDebugUtilsLabelEXT(buffer->handle());
-  }
+  if(!_debugName.empty()) endDebugLabel();
 }
 
 std::optional<CommandProducer::FinalizeResult>
                                           CommandProducer::finalize() noexcept
 {
   MT_ASSERT(!_isFinalized);
+  MT_ASSERT(!_insideRenderPass);
 
   finalizeCommands();
 
@@ -86,9 +64,7 @@ std::optional<CommandProducer::FinalizeResult>
 
     FinalizeResult result;
     result.commandSequence = &_commandSequence;
-    result.matchingBuffer = _cachedMatchingBuffer != nullptr ?
-                                                _cachedMatchingBuffer :
-                                                &_commandPool->getNextBuffer();
+    result.commandPool = _commandPool;
     result.imageStates = &_accessWatcher.finalize();
 
     //  EndBuffer стоит после _accessWatcher.finalize, так как finalize
@@ -204,82 +180,101 @@ CommandBuffer& CommandProducer::getOrCreateBuffer()
   // Нельзя создавать новый буфер после финализации
   MT_ASSERT(!_isFinalized);
 
-  if(_currentPrimaryBuffer != nullptr) return *_currentPrimaryBuffer;
+  if(_currentBuffer != nullptr) return *_currentBuffer;
 
   try
   {
-    _currentPrimaryBuffer = &_commandPool->getNextBuffer();
-    _currentPrimaryBuffer->startOnetimeBuffer();
-    _commandSequence.push_back(_currentPrimaryBuffer);
+    _currentBuffer = &_commandPool->getNextBuffer();
+    _currentBuffer->startOnetimeBuffer();
+    _commandSequence.push_back(_currentBuffer);
   }
   catch(...)
   {
-    _currentPrimaryBuffer = nullptr;
+    _currentBuffer = nullptr;
     throw;
   }
 
-  return *_currentPrimaryBuffer;
+  return *_currentBuffer;
 }
 
-CommandBuffer& CommandProducer::getOrCreatePreparationBuffer()
+void CommandProducer::beginRenderPassBlock()
 {
-  // Нельзя создавать новый буфер после финализации
+  MT_ASSERT(!_insideRenderPass);
+
+  //  Создаем новый буфер команд для того чтобы не поймать конфликты лэйаутов
+  //  с командами, которые уже записаны в текущем буфере
+  _currentBuffer = nullptr;
+  getOrCreateBuffer();
+
+  _insideRenderPass = true;
+}
+
+void CommandProducer::endRenderPassBlock() noexcept
+{
+  MT_ASSERT(_insideRenderPass);
+  _insideRenderPass = false;
+}
+
+CommandBuffer& CommandProducer::getPreparationBuffer()
+{
   MT_ASSERT(!_isFinalized);
 
-  if (_preparationBuffer != nullptr) return *_preparationBuffer;
-
-  try
+  if(!_insideRenderPass)
   {
-    _preparationBuffer = &_commandPool->getNextBuffer();
-    _preparationBuffer->startOnetimeBuffer();
-    _commandSequence.insert(_commandSequence.begin(), _preparationBuffer);
+    //  Если сейчас не заполняется рендер пасс, то вспомогательные команды можно
+    //  записывать в конец последнего буфера
+    if(_commandSequence.empty()) return getOrCreateBuffer();
+    return *_commandSequence.back();
   }
-  catch(...)
+  else
   {
-    _preparationBuffer = nullptr;
-    throw;
+    //  Если мы записываем рендер пасс, то барьеры нужно вставлять до текущего
+    //  буфера, так как текущий буфер нельзя разрывать (начало и конец рендер
+    //  пасса должны быть в одном буфере)
+    MT_ASSERT(!_commandSequence.empty());
+    if(_commandSequence.size() > 1)
+    {
+      return *_commandSequence[_commandSequence.size() - 2];
+    }
+    else
+    {
+      //  Если в списке буферов есть только один единственный буфер, значит
+      //  это буфер, созданный для рендер пасса, нужно добавить ещё один перед
+      //  ним, и в него уже писать барьеры
+      CommandBuffer& matchingBuffer = _commandPool->getNextBuffer();
+      matchingBuffer.startOnetimeBuffer();
+      _commandSequence.insert(_commandSequence.begin(), &matchingBuffer);
+      return matchingBuffer;
+    }
   }
-
-  return *_preparationBuffer;
 }
 
 void CommandProducer::addImageUsage( const Image& image,
                                       const ImageAccess& access)
 {
-  if(image.isLayoutAutoControlEnabled())
-  {
-    if(_cachedMatchingBuffer == nullptr)
-    {
-      _cachedMatchingBuffer = &_commandPool->getNextBuffer();
-    }
+  if(!image.isLayoutAutoControlEnabled()) return;
 
-    if(_accessWatcher.addImageAccess( image,
-                                      access,
-                                      *_cachedMatchingBuffer) ==
-                                            ImageAccessWatcher::NEED_MATCHING)
-    {
-      // Обнаружили место, где будет барьер
-      CommandBuffer* matchingBuffer = _cachedMatchingBuffer;
-      _cachedMatchingBuffer = nullptr;
-      _currentPrimaryBuffer = nullptr;
-      matchingBuffer->startOnetimeBuffer();
-      _commandSequence.push_back(matchingBuffer);
-    }
+  CommandBuffer& matchingBuffer = getPreparationBuffer();
+  if(_accessWatcher.addImageAccess( image,
+                                    access,
+                                    matchingBuffer) ==
+                                              ImageAccessWatcher::NEED_MATCHING)
+  {
+    //  Если нет рендер пасса, то текущий буфер необходимо завершить, так как
+    //  _accessWatcher будет дописывать в него барьеры, но будет делать это
+    //  позже
+    if(!_insideRenderPass) _currentBuffer = nullptr;
   }
 }
 
 void CommandProducer::addMultipleImagesUsage(MultipleImageUsage usages)
 {
-  if (_cachedMatchingBuffer == nullptr)
-  {
-    _cachedMatchingBuffer = &_commandPool->getNextBuffer();
-  }
+  if(usages.empty()) return;
+
+  CommandBuffer& matchingBuffer = getPreparationBuffer();
 
   try
   {
-    bool matchingFound = false;
-
-    //  Добавляем информацию об Image с автоконтролем лэйаутов в вотчер лэйаутов
     for(const ImageUsage& usage : usages)
     {
       const Image* image = usage.first;
@@ -289,21 +284,14 @@ void CommandProducer::addMultipleImagesUsage(MultipleImageUsage usages)
       if(_accessWatcher.addImageAccess(
                                     *image,
                                     access,
-                                    *_cachedMatchingBuffer) ==
+                                    matchingBuffer) ==
                                               ImageAccessWatcher::NEED_MATCHING)
       {
-        matchingFound = true;
+        //  Если нет рендер пасса, то текущий буфер необходимо завершить, так
+        //  как _accessWatcher будет дописывать в него барьеры, но будет
+        //  делать это позже
+        if(!_insideRenderPass) _currentBuffer = nullptr;
       }
-    }
-
-    if(matchingFound)
-    {
-      // Обнаружили место, где будет барьер
-      CommandBuffer* matchingBuffer = _cachedMatchingBuffer;
-      _cachedMatchingBuffer = nullptr;
-      _currentPrimaryBuffer = nullptr;
-      matchingBuffer->startOnetimeBuffer();
-      _commandSequence.push_back(matchingBuffer);
     }
   }
   catch(std::exception& error)
@@ -333,6 +321,7 @@ void CommandProducer::imageBarrier( const Image& image,
                                     VkAccessFlags srcAccesMask,
                                     VkAccessFlags dstAccesMask)
 {
+  MT_ASSERT(!insideRenderPass());
   MT_ASSERT(!image.isLayoutAutoControlEnabled());
 
   lockResource(image);

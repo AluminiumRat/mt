@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include <vkr/image/ImageAccessMultiset.h>
 #include <vkr/queue/CommandProducerTransfer.h>
 
 namespace mt
@@ -12,12 +11,6 @@ namespace mt
   //  Так же включает в себя функционал CommandProducerTransfer
   class CommandProducerCompute : public CommandProducerTransfer
   {
-  public:
-    //  Максимальное количество дескриптер сетов, которые можно прибиндить к
-    //  компьют пайплайну
-    static constexpr uint32_t maxComputeDescriptorSetsNumber =
-                                              ImageAccessMultiset::maxSetsCount;
-
   public:
     //  Если debugName - не пустая строка, то все команды продюсера
     //  будут обернуты в vkCmdBeginDebugUtilsLabelEXT и
@@ -41,9 +34,6 @@ namespace mt
     inline void dispatch(uint32_t gridSizeX, uint32_t gridSizeY);
     inline void dispatch(glm::uvec2 gridSize);
     inline void dispatch(uint32_t gridSize);
-
-  private:
-    ImageAccessMultiset _pipelineAccesses;
   };
 
   inline void CommandProducerCompute::dispatch(glm::uvec3 gridSize)

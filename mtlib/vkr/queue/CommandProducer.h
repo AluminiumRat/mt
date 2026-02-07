@@ -95,19 +95,20 @@ namespace mt
 
     //  Получить буфер команд, предназначенный для основных выполняемых операций
     CommandBuffer& getOrCreateBuffer();
-    //  Получить буфер для подготовительных команд. Этот буфер попадет
-    //  в очередь команд перед всеми остальными буферами. Предназначен для
-    //  команд команд загрузки/копирования, которые не могут быть выполнены
-    //  внутри рендер пасса
-    CommandBuffer& getOrCreatePreparationBuffer();
+    //  Получить буфер для подготовительных команд перед рендер пассом. Если
+    //    продюсер в данный момент записывает рендер пасс, то будет возвращен
+    //    буфер, находящийся перед текущим. Если рендер пасс не записывается,
+    //    то будет возвращен текущий буфер.
+    //  Метод необходим для проведения подготовительных работ перед проходом
+    //    рендера, так как во время прохода запрещено менять лэйауты image-ей и
+    //    переносить(копировать) данные
+    CommandBuffer& getPreparationBuffer();
 
     //  Зарегистрировать использование Image. Работает для поддержки
     //  автоконтроля лэйаутов
     void addImageUsage(const Image& image, const ImageAccess& access);
     //  Зарегистрировать использование нескольких Image. Работает для поддержки
     //    автоконтроля лэйаутов.
-    //  В отличии от addImageUsage позволяет немного сэкономить на буферах
-    //    согласования
     void addMultipleImagesUsage(MultipleImageUsage usages);
 
     //  Захватить владение ресурсом. Это продляет жизнь ресурса и позволяет
@@ -135,13 +136,10 @@ namespace mt
       //  Всегда не nullptr, и всегда в завершенном состоянии, то есть с уже
       //    вызванным CommandBuffer::endBuffer
       const std::vector<CommandBuffer*>* commandSequence;
-      //  Пустой буфер команд, предназначенный для согласования предыдущих
-      //    буферов с только что заполненными. То есть он предназначен для
-      //    барьеров.
+      //  Пулл, из которого можно создать буффер для согласования Image
+      //    layout-ов
       //  Всегда не nullptr
-      //  Буфер возвращается в нестартованном состоянии, то есть для него
-      //    необходимо вызвать CommandBuffer::startOnetimeBuffer.
-      CommandBuffer* matchingBuffer = nullptr;
+      CommandPool* commandPool = nullptr;
 
       //  Информация об Image-ах с автоконтролем Layout-ов
       //  Всегда не nullptr
@@ -170,9 +168,20 @@ namespace mt
                                 uint32_t newFamilyIndex);
 
   protected:
+    //  Начинает блок, внутри которого нельзя менять лэйауты Image-ей, менять
+    //  текущий буфер команд и производить копирование(трансфер) данных
+    void beginRenderPassBlock();
+    void endRenderPassBlock() noexcept;
+    inline bool insideRenderPass() const noexcept;
+
+  protected:
     //  Вызывается при финализации продюсера. Предназначен для классов-потомков,
     //  чтобы они могли корректно завершать запись команд.
     virtual void finalizeCommands() noexcept;
+
+  private:
+    //  Найти или создать буфер, в который можно вставить Image барьеры
+    CommandBuffer* _getMatchingBuffer();
 
   private:
     CommandPoolSet& _commandPoolSet;
@@ -186,13 +195,11 @@ namespace mt
     //  в очередь
     std::vector<CommandBuffer*> _commandSequence;
     //  Текущий заполняемый буфер команд
-    CommandBuffer* _currentPrimaryBuffer;
-    //  Зарезервированный, но ещё не использованный буфер для согласования
-    CommandBuffer* _cachedMatchingBuffer;
-    //  Буфер для предварительных настроек. Создается в самом начале очереди
-    //  и предназначен для команд команд загрузки/копирования, которые не могут
-    //  быть выполнены внутри рендер пасса
-    CommandBuffer* _preparationBuffer;
+    CommandBuffer* _currentBuffer;
+
+    //  Флаг, который говорит о том, что вданный момент формируются команды для
+    //  рендер пасса
+    bool _insideRenderPass;
 
     //  Для дебажных целей
     std::string _debugName;
@@ -222,5 +229,10 @@ namespace mt
   {
     MT_ASSERT(_commandPool != nullptr);
     _commandPool->lockResource(resource);
+  }
+
+  inline bool CommandProducer::insideRenderPass() const noexcept
+  {
+    return _insideRenderPass;
   }
 }

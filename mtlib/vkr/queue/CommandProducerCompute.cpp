@@ -26,13 +26,11 @@ void CommandProducerCompute::bindDescriptorSetCompute(
                                             uint32_t setIndex,
                                             const PipelineLayout& layout)
 {
-  MT_ASSERT(setIndex < maxComputeDescriptorSetsNumber);
   MT_ASSERT(descriptorSet.isFinalized());
 
   lockResource(layout);
   lockResource(descriptorSet);
-
-  _pipelineAccesses.setChild(&descriptorSet.imagesAccess(), setIndex);
+  addMultipleImagesUsage(descriptorSet.imagesAccess().accessTable());
 
   VkDescriptorSet setHandle = descriptorSet.handle();
   CommandBuffer& buffer = getOrCreateBuffer();
@@ -49,15 +47,14 @@ void CommandProducerCompute::bindDescriptorSetCompute(
 void CommandProducerCompute::unbindDescriptorSetCompute(
                                                     uint32_t setIndex) noexcept
 {
-  MT_ASSERT(setIndex < maxComputeDescriptorSetsNumber);
-  _pipelineAccesses.setChild(nullptr, setIndex);
 }
 
 void CommandProducerCompute::dispatch(uint32_t gridSizeX,
                                       uint32_t gridSizeY,
                                       uint32_t gridSizeZ)
 {
-  addMultipleImagesUsage(_pipelineAccesses.getMergedSet().accessTable());
+  MT_ASSERT(!insideRenderPass());
+
   CommandBuffer& buffer = getOrCreateBuffer();
   vkCmdDispatch(buffer.handle(), gridSizeX, gridSizeY, gridSizeZ);
 }
