@@ -32,7 +32,41 @@ void CommandProducerGraphic::finalizeCommands() noexcept
     _endPass();
   }
 
+  _graphicPipeline.reset();
+  _graphicDescriptors.clear();
+
   CommandProducerCompute::finalizeCommands();
+}
+
+void CommandProducerGraphic::restoreBindings(CommandBuffer& buffer)
+{
+  if(_graphicPipeline != nullptr)
+  {
+    vkCmdBindPipeline(buffer.handle(),
+                      VK_PIPELINE_BIND_POINT_GRAPHICS,
+                      _graphicPipeline->handle());
+  }
+
+  for(uint32_t setIndex = 0;
+      setIndex < _graphicDescriptors.size();
+      setIndex++)
+  {
+    const BindingRecord& binding = _graphicDescriptors[setIndex];
+    if(binding.descriptors == nullptr) continue;
+    MT_ASSERT(binding.layout != nullptr);
+
+    VkDescriptorSet setHandle = binding.descriptors->handle();
+    vkCmdBindDescriptorSets(buffer.handle(),
+                            VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            binding.layout->handle(),
+                            setIndex,
+                            1,
+                            &setHandle,
+                            0,
+                            nullptr);
+  }
+
+  CommandProducerCompute::restoreBindings(buffer);
 }
 
 void CommandProducerGraphic::_beginPass(RenderPass& renderPass)
@@ -127,14 +161,23 @@ void CommandProducerGraphic::setScissor(Region region)
   vkCmdSetScissor(buffer.handle(), 0, 1, &scissor);
 }
 
-void CommandProducerGraphic::setGraphicPipeline(const GraphicPipeline& pipeline)
+void CommandProducerGraphic::bindGraphicPipeline(const GraphicPipeline& pipeline)
 {
+  if(&pipeline == _graphicPipeline.get()) return;
+
   lockResource(pipeline);
 
   CommandBuffer& buffer = getOrCreateBuffer();
   vkCmdBindPipeline(buffer.handle(),
                     VK_PIPELINE_BIND_POINT_GRAPHICS,
                     pipeline.handle());
+
+  _graphicPipeline = &pipeline;
+}
+
+void CommandProducerGraphic::unbindGraphicPipeline()
+{
+  _graphicPipeline = nullptr;
 }
 
 void CommandProducerGraphic::bindDescriptorSetGraphic(
@@ -143,6 +186,12 @@ void CommandProducerGraphic::bindDescriptorSetGraphic(
                                             const PipelineLayout& layout)
 {
   MT_ASSERT(descriptorSet.isFinalized());
+
+  if(setIndex >= _graphicDescriptors.size())
+  {
+    _graphicDescriptors.resize(setIndex + 1);
+  }
+  if(_graphicDescriptors[setIndex].descriptors == &descriptorSet) return;
 
   lockResource(layout);
   lockResource(descriptorSet);
@@ -159,11 +208,16 @@ void CommandProducerGraphic::bindDescriptorSetGraphic(
                           &setHandle,
                           0,
                           nullptr);
+
+  _graphicDescriptors[setIndex] = BindingRecord{.layout{&layout},
+                                                .descriptors{&descriptorSet}};
 }
 
 void CommandProducerGraphic::unbindDescriptorSetGraphic(
                                                     uint32_t setIndex) noexcept
 {
+  if(setIndex >= _graphicDescriptors.size()) return;
+  _graphicDescriptors[setIndex] = BindingRecord{};
 }
 
 void CommandProducerGraphic::draw(uint32_t vertexCount,

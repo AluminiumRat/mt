@@ -207,9 +207,10 @@ void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
                                             0,
                                             _pipeline->layout());
 
-  commandProducer->setGraphicPipeline(*_pipeline);
+  commandProducer->bindGraphicPipeline(*_pipeline);
   commandProducer->draw(3);
 
+  commandProducer->unbindGraphicPipeline();
   commandProducer->unbindDescriptorSetGraphic(0);
 
   renderPass.endPass();

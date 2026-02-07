@@ -1,12 +1,13 @@
 ﻿#pragma once
 
+#include <vector>
+
+#include <util/Ref.h>
+#include <vkr/pipeline/ComputePipeline.h>
 #include <vkr/queue/CommandProducerTransfer.h>
 
 namespace mt
 {
-  class ComputePipeline;
-  class PipelineLayout;
-
   //  Продюсер команд, реализующий функционал компьют очереди
   //  Так же включает в себя функционал CommandProducerTransfer
   class CommandProducerCompute : public CommandProducerTransfer
@@ -20,7 +21,8 @@ namespace mt
     CommandProducerCompute& operator = (const CommandProducerCompute&) = delete;
     virtual ~CommandProducerCompute() noexcept = default;
 
-    void setComputePipeline(const ComputePipeline& pipeline);
+    void bindComputePipeline(const ComputePipeline& pipeline);
+    void unbindComputePipeline();
 
     void bindDescriptorSetCompute(const DescriptorSet& descriptorSet,
                                   uint32_t setIndex,
@@ -34,6 +36,21 @@ namespace mt
     inline void dispatch(uint32_t gridSizeX, uint32_t gridSizeY);
     inline void dispatch(glm::uvec2 gridSize);
     inline void dispatch(uint32_t gridSize);
+
+  protected:
+    virtual void finalizeCommands() noexcept override;
+    virtual void restoreBindings(CommandBuffer& buffer) override;
+
+  private:
+    struct BindingRecord
+    {
+      ConstRef<PipelineLayout> layout;
+      ConstRef<DescriptorSet> descriptors;
+    };
+
+  private:
+    ConstRef<ComputePipeline> _computePipeline;
+    std::vector<BindingRecord> _computeDescriptors;
   };
 
   inline void CommandProducerCompute::dispatch(glm::uvec3 gridSize)

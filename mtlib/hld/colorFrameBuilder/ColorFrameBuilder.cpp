@@ -62,7 +62,7 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
                                   _device.graphicQueue()->startCommands(
                                                   OpaqueColorStage::stageName);
     {
-      ColorFrameCommonSet::Bind(_commonSet, *opaqueProducer);
+      ColorFrameCommonSet::Bind bindCommonSet(_commonSet, *opaqueProducer);
       _opaqueColorStage.draw( *opaqueProducer,
                               _drawPlan,
                               frameContext,

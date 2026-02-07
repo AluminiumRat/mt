@@ -213,7 +213,7 @@ bool Technique::bindGraphic(
   const PassConfiguration& passConfig = _configuration->_passes[passIndex];
   const GraphicPipeline& pipeline = static_cast<const GraphicPipeline&>(
                                   *passConfig.pipelineVariants[pipelineVariant]);
-  producer.setGraphicPipeline(pipeline);
+  producer.bindGraphicPipeline(pipeline);
   return true;
 }
 
@@ -462,6 +462,7 @@ TechniqueVolatileContext Technique::createVolatileContext(
 
 void Technique::unbindGraphic(CommandProducerGraphic& producer) const noexcept
 {
+  producer.unbindGraphicPipeline();
   if(_volatileSetDescription != nullptr)
   {
     producer.unbindDescriptorSetGraphic(uint32_t(DescriptorSetType::VOLATILE));
@@ -505,12 +506,14 @@ bool Technique::bindCompute(
   const PassConfiguration& passConfig = _configuration->_passes[passIndex];
   const ComputePipeline& pipeline = static_cast<const ComputePipeline&>(
                                   *passConfig.pipelineVariants[pipelineVariant]);
-  producer.setComputePipeline(pipeline);
+  producer.bindComputePipeline(pipeline);
   return true;
 }
 
 void Technique::unbindCompute(CommandProducerCompute& producer) const noexcept
 {
+  producer.unbindComputePipeline();
+
   if(_volatileSetDescription != nullptr)
   {
     producer.unbindDescriptorSetCompute(uint32_t(DescriptorSetType::VOLATILE));

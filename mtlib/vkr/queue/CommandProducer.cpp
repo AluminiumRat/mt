@@ -187,6 +187,7 @@ CommandBuffer& CommandProducer::getOrCreateBuffer()
     _currentBuffer = &_commandPool->getNextBuffer();
     _currentBuffer->startOnetimeBuffer();
     _commandSequence.push_back(_currentBuffer);
+    restoreBindings(*_currentBuffer);
   }
   catch(...)
   {
@@ -195,6 +196,10 @@ CommandBuffer& CommandProducer::getOrCreateBuffer()
   }
 
   return *_currentBuffer;
+}
+
+void CommandProducer::restoreBindings(CommandBuffer& buffer)
+{
 }
 
 void CommandProducer::beginRenderPassBlock()

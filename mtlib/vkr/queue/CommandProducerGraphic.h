@@ -2,15 +2,15 @@
 
 #include <array>
 
+#include <util/Ref.h>
 #include <util/Region.h>
+#include <vkr/pipeline/GraphicPipeline.h>
 #include <vkr/queue/CommandProducerCompute.h>
 
 namespace mt
 {
   class FrameBuffer;
   class DescriptorSet;
-  class GraphicPipeline;
-  class PipelineLayout;
 
   //  Продюсер команд, реализующий функционал графической очереди команд
   //  Так же включает в себя функционал CommandProducerTransfer и
@@ -74,7 +74,8 @@ namespace mt
     //  Невалидный region сбросит трафарет до размеров таргета текущего прохода
     void setScissor(Region region);
 
-    void setGraphicPipeline(const GraphicPipeline& pipeline);
+    void bindGraphicPipeline(const GraphicPipeline& pipeline);
+    void unbindGraphicPipeline();
 
     // Подключить набор ресурсов к графическому пайплайну
     void bindDescriptorSetGraphic(const DescriptorSet& descriptorSet,
@@ -112,13 +113,23 @@ namespace mt
 
   protected:
     virtual void finalizeCommands() noexcept;
+    virtual void restoreBindings(CommandBuffer& buffer) override;
 
   private:
     void _beginPass(RenderPass& renderPass);
     void _endPass() noexcept;
 
   private:
+    struct BindingRecord
+    {
+      ConstRef<PipelineLayout> layout;
+      ConstRef<DescriptorSet> descriptors;
+    };
+
+  private:
     RenderPass* _currentPass;
+    ConstRef<GraphicPipeline> _graphicPipeline;
+    std::vector<BindingRecord> _graphicDescriptors;
   };
 
   inline CommandProducerGraphic::RenderPass::RenderPass(
