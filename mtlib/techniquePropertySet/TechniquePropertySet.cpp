@@ -9,15 +9,15 @@ namespace fs = std::filesystem;
 using namespace mt;
 
 TechniquePropertySet::TechniquePropertySet(
-                                    mt::Technique& technique,
-                                    TextureManager& textureManager,
-                                    BufferResourceManager& bufferManager,
-                                    CommandQueueTransfer& resourceOwnerQueue) :
+                                          mt::Technique& technique,
+                                          TextureManager& textureManager,
+                                          BufferResourceManager& bufferManager,
+                                          CommandQueueGraphic& uploadingQueue) :
   _technique(technique),
   _lastConfigurationRevision(0),
   _commonData{.textureManager = &textureManager,
               .bufferManager  = &bufferManager,
-              .resourceOwnerQueue = &resourceOwnerQueue}
+              .uploadingQueue = &uploadingQueue}
 {
   updateFromTechnique();
 }

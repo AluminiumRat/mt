@@ -1,9 +1,9 @@
 ﻿#include <glm/gtc/matrix_transform.hpp>
 
-#include <ddsSupport/ddsSupport.h>
 #include <gui/ImGuiRAII.h>
 #include <hld/FrameBuildContext.h>
 #include <hld/HLDLib.h>
+#include <imageIO/imageIO.h>
 #include <technique/TechniqueLoader.h>
 #include <vkr/image/ImageView.h>
 #include <vkr/Device.h>
@@ -38,10 +38,9 @@ void TestWindow::_setupMeshAsset()
   std::unique_ptr<Technique> technique(new Technique(*configurator));
 
   //  Создаем текстуру
-  Ref<Image> image = loadDDS( "examples/image.dds",
-                              device(),
-                              nullptr,
-                              false);
+  Ref<Image> image = loadImage( "examples/image.dds",
+                                *device().graphicQueue(),
+                                false);
   Ref<ImageView> imageView(new ImageView( *image,
                                           ImageSlice(*image),
                                           VK_IMAGE_VIEW_TYPE_2D));

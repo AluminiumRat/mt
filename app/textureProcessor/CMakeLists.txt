@@ -23,7 +23,7 @@ target_link_libraries(textureProcessor
                       ${GLFW_PATH}/lib-vc2022/glfw3.lib
                       ${YamlCPP_LIBRARIES}
                       asyncTask
-                      ddsSupport
+                      imageIO
                       util
                       vkr
                       resourceManagement

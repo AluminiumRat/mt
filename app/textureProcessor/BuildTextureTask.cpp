@@ -1,4 +1,4 @@
-﻿#include <ddsSupport/ddsSupport.h>
+﻿#include <imageIO/imageIO.h>
 #include <util/Assert.h>
 #include <vkr/image/ImageView.h>
 #include <vkr/queue/CommandProducerGraphic.h>

@@ -1,7 +1,7 @@
 ﻿#include <memory>
 #include <vulkan/vulkan.h>
 
-#include <ddsSupport/ddsSupport.h>
+#include <imageIO/imageIO.h>
 #include <technique/TechniqueLoader.h>
 #include <vkr/image/ImageFormatFeatures.h>
 #include <vkr/queue/CommandProducerGraphic.h>
@@ -56,10 +56,11 @@ void TestWindow::_createVertexBuffer()
 
 void TestWindow::_createTexture()
 {
-  Ref<Image> image = loadDDS( "examples/image.dds",
-                              device(),
-                              nullptr,
-                              true);
+  //Ref<Image> image = loadImage( "examples/image.dds",
+  //Ref<Image> image = loadImage( "examples/imageRGB.png",
+  Ref<Image> image = loadImage( "examples/imageRGBA.png",
+                                *device().graphicQueue(),
+                                true);
 
   Ref<ImageView> imageView(new ImageView( *image,
                                           ImageSlice(*image),

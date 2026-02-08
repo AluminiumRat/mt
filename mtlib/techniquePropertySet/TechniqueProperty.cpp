@@ -7,6 +7,7 @@
 #include <util/fileSystemHelpers.h>
 #include <util/Log.h>
 #include <util/vkMeta.h>
+#include <vkr/queue/CommandQueueGraphic.h>
 
 namespace fs = std::filesystem;
 
@@ -191,9 +192,9 @@ void TechniqueProperty::_updateResource()
     if(_resourcePath.empty()) return;
     ConstRef<TechniqueResource> resource =
             _commonData.textureManager->scheduleLoading(
-                                                _resourcePath,
-                                                *_commonData.resourceOwnerQueue,
-                                                false);
+                                                    _resourcePath,
+                                                    *_commonData.uploadingQueue,
+                                                    false);
     _resourceBinding->setResource(resource);
   }
   else if(_resourceType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)
@@ -201,8 +202,8 @@ void TechniqueProperty::_updateResource()
     if(_resourcePath.empty()) return;
     ConstRef<TechniqueResource> resource =
             _commonData.bufferManager->scheduleLoading(
-                                              _resourcePath,
-                                              *_commonData.resourceOwnerQueue);
+                                                  _resourcePath,
+                                                  *_commonData.uploadingQueue);
     _resourceBinding->setResource(resource);
   }
   else if(_resourceType == VK_DESCRIPTOR_TYPE_SAMPLER)

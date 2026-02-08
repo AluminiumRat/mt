@@ -19,7 +19,7 @@ namespace mt
     TechniquePropertySet( mt::Technique& technique,
                           TextureManager& textureManager,
                           BufferResourceManager& bufferManager,
-                          CommandQueueTransfer& resourceOwnerQueue);
+                          CommandQueueGraphic& uploadingQueue);
     TechniquePropertySet(const TechniquePropertySet&) = delete;
     TechniquePropertySet& operator = (const TechniquePropertySet&) = delete;
     virtual ~TechniquePropertySet() = default;

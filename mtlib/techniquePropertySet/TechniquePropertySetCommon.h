@@ -4,13 +4,13 @@ namespace mt
 {
   class TextureManager;
   class BufferResourceManager;
-  class CommandQueueTransfer;
+  class CommandQueueGraphic;
 
   //  Общие данные для всех пропертей из проперти сета
   struct TechniquePropertySetCommon
   {
     TextureManager* textureManager;
     BufferResourceManager* bufferManager;
-    CommandQueueTransfer* resourceOwnerQueue;
+    CommandQueueGraphic* uploadingQueue;
   };
 }

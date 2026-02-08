@@ -3,7 +3,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <ddsSupport/ddsSupport.h>
+#include <imageIO/imageIO.h>
 #include <technique/TechniqueLoader.h>
 #include <vkr/image/ImageFormatFeatures.h>
 #include <vkr/queue/CommandProducerGraphic.h>
@@ -81,7 +81,8 @@ void TestWindow::_createTexture()
   //  Здесь можно выбрать, как именно загружать текстуру
 
   ConstRef<TechniqueResource> texture = _textureManager.scheduleLoading(
-                                                      "examples/image.dds",
+                                                      //"examples/image.dds",
+                                                      "examples/imageRGB.png",
                                                       *device().graphicQueue(),
                                                       true);
 

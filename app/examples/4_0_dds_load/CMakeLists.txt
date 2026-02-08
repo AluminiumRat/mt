@@ -17,7 +17,7 @@ target_link_libraries(dds_load
                       ${Shaderc_LIBRARIES}
                       ${GLFW_PATH}/lib-vc2022/glfw3.lib
                       ${YamlCPP_LIBRARIES}
-                      ddsSupport
+                      imageIO
                       util
                       vkr
                       technique

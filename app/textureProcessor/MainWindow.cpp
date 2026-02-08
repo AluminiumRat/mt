@@ -4,10 +4,10 @@
 
 #include <vulkan/vulkan.h>
 
-#include <ddsSupport/ddsSupport.h>
 #include <gui/textureViewer/TextureViewer.h>
 #include <gui/ImGuiRAII.h>
 #include <gui/modalDialogs.h>
+#include <imageIO/imageIO.h>
 #include <technique/TechniqueLoader.h>
 #include <util/Log.h>
 #include <vkr/image/ImageFormatFeatures.h>

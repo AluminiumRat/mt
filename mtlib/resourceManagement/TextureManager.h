@@ -12,7 +12,7 @@
 
 namespace mt
 {
-  class CommandQueueTransfer;
+  class CommandQueueGraphic;
   class Device;
 
   //  Класс используется для централизованной загрузки текстур с диска и
@@ -46,12 +46,12 @@ namespace mt
     //    текстура. Если false, то будет возвращен пустой ресурс.
     //  Загруженный Image не поддерживает автоконтроль лэйаутов, его лэйаут
     //    выставлен в VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, ресурсом владеет
-    //    ownerQueue. Image гарантированно поддерживает сэмплирование в шейдерах
-    //    и копирование данных из него.
+    //    uploadingQueue. Image гарантированно поддерживает сэмплирование в
+    //    шейдерах и копирование данных из него.
     //  Потокобезопасный метод.
     ConstRef<TechniqueResource> loadImmediately(
                                           const std::filesystem::path& filePath,
-                                          CommandQueueTransfer& ownerQueue,
+                                          CommandQueueGraphic& uploadingQueue,
                                           bool useDefaultTexture);
 
     //  Асинхронная загрузка текстуры через отдельный поток.
@@ -65,12 +65,12 @@ namespace mt
     //    текстура. Если false, то будет возвращен пустой ресурс.
     //  Загруженный Image не поддерживает автоконтроль лэйаутов, его лэйаут
     //    выставлен в VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, ресурсом владеет
-    //    ownerQueue. Image гарантированно поддерживает сэмплирование в шейдерах
-    //    и копирование данных из него.
+    //    uploadingQueue. Image гарантированно поддерживает сэмплирование в
+    //    шейдерах и копирование данных из него.
     //  Потокобезопасный метод.
     ConstRef<TechniqueResource> scheduleLoading(
                                       const std::filesystem::path& filePath,
-                                      CommandQueueTransfer& ownerQueue,
+                                      CommandQueueGraphic& uploadingQueue,
                                       bool useDefaultTexture);
 
     //  Удалить все текстуры, на которые нет внешних ссылок.
@@ -104,7 +104,7 @@ namespace mt
     struct ResourcesKey
     {
       std::filesystem::path filePath;
-      CommandQueueTransfer* commandQueue;
+      CommandQueueGraphic* commandQueue;
 
       std::strong_ordering operator <=> (
                                   const ResourcesKey&) const noexcept = default;
@@ -114,7 +114,7 @@ namespace mt
       std::size_t operator()(const ResourcesKey& key) const
       {
         return std::hash<std::filesystem::path>()(key.filePath) ^
-                std::hash<CommandQueueTransfer*>()(key.commandQueue);
+                std::hash<CommandQueueGraphic*>()(key.commandQueue);
       }
     };
     using ResourcesMap = std::unordered_map<ResourcesKey,
@@ -131,24 +131,25 @@ namespace mt
 
     //  Найти подходящий ресурс для loadImmediately
     ResourceRecord* _getExistingResource( const std::filesystem::path& filePath,
-                                          CommandQueueTransfer& ownerQueue);
+                                          CommandQueueGraphic& uploadingQueue);
 
     //  Создать новый ресурс для для loadImmediately
     ResourceRecord& _createNewRecord( const std::filesystem::path& filePath,
-                                      CommandQueueTransfer& ownerQueue,
+                                      CommandQueueGraphic& uploadingQueue,
                                       const ImageView* image);
 
     //  Добавить в запись record ресурсы для loadImmediately
-    void _createImmediatelyResources( ResourceRecord& record,
-                                      const ImageView* image,
-                                      CommandQueueTransfer& ownerQueue) const;
+    void _createImmediatelyResources(
+                                    ResourceRecord& record,
+                                    const ImageView* image,
+                                    CommandQueueGraphic& uploadingQueue) const;
 
     void _addFileWatching(const std::filesystem::path& filePath) noexcept;
 
     //  Обновить текстуру для подходящего ресурса.
     //  Вызывается из LoadTextureTask
     void _updateTexture(const std::filesystem::path& filePath,
-                        CommandQueueTransfer& ownerQueue,
+                        CommandQueueGraphic& uploadingQueue,
                         const ImageView& imageView);
 
     //  Посчитать, сколько ресурсов ссылается на файл

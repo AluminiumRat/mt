@@ -19,7 +19,7 @@ target_link_libraries(hld_opaque
                       ${GLFW_PATH}/lib-vc2022/glfw3.lib
                       ${YamlCPP_LIBRARIES}
                       asyncTask
-                      ddsSupport
+                      imageIO
                       gui
                       util
                       hld

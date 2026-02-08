@@ -1,12 +1,12 @@
 ﻿#include <stdexcept>
 
-#include <ddsSupport/ddsSupport.h>
+#include <imageIO/imageIO.h>
 #include <resourceManagement/TextureManager.h>
 #include <util/Abort.h>
 #include <util/Assert.h>
 #include <util/Log.h>
 #include <vkr/image/Image.h>
-#include <vkr/queue/CommandQueueTransfer.h>
+#include <vkr/queue/CommandQueueGraphic.h>
 #include <vkr/Device.h>
 
 namespace fs = std::filesystem;
@@ -49,13 +49,13 @@ class TextureManager::LoadingTask : public AsyncTask
 {
 public:
   LoadingTask(const fs::path& filePath,
-              CommandQueueTransfer& ownerQueue,
+              CommandQueueGraphic& uploadingQueue,
               TextureManager& manager) :
     AsyncTask((const char*)filePath.u8string().c_str(),
               AsyncTask::EXCLUSIVE_MODE,
               AsyncTask::SILENT),
     _filePath(filePath),
-    _ownerQueue(ownerQueue),
+    _uploadingQueue(uploadingQueue),
     _manager(manager)
   {
   }
@@ -64,9 +64,7 @@ public:
   {
     AsyncTask::asyncPart();
 
-    Ref<Image> loadedImage = loadDDS(_filePath,
-                                      _ownerQueue.device(),
-                                      &_ownerQueue);
+    Ref<Image> loadedImage = loadImage( _filePath, _uploadingQueue);
     _loadedImage =  Ref(new ImageView(*loadedImage,
                                       ImageSlice(*loadedImage),
                                       getViewType(*loadedImage, _filePath)));
@@ -76,12 +74,12 @@ public:
   {
     MT_ASSERT(_loadedImage != nullptr);
     AsyncTask::finalizePart();
-    _manager._updateTexture(_filePath, _ownerQueue, *_loadedImage);
+    _manager._updateTexture(_filePath, _uploadingQueue, *_loadedImage);
   }
 
 private:
   fs::path _filePath;
-  CommandQueueTransfer& _ownerQueue;
+  CommandQueueGraphic& _uploadingQueue;
   TextureManager& _manager;
   ConstRef<ImageView> _loadedImage;
 };
@@ -98,9 +96,9 @@ TextureManager::~TextureManager() noexcept
   _fileWatcher.removeObserver(*this);
 }
 
-static Ref<ImageView> createDefaultImage(CommandQueueTransfer& ownerQueue)
+static Ref<ImageView> createDefaultImage(CommandQueueGraphic& uploadingQueue)
 {
-  Device& device = ownerQueue.device();
+  Device& device = uploadingQueue.device();
 
   uint32_t pixels[16] = { 0xFF0030FF, 0xFF000000, 0xFF0030FF, 0xFF000000,
                           0xFF000000, 0xFF0030FF, 0xFF000000, 0xFF0030FF,
@@ -126,8 +124,8 @@ static Ref<ImageView> createDefaultImage(CommandQueueTransfer& ownerQueue)
                               false,
                               "Default texture"));
 
-  std::unique_ptr<CommandProducerTransfer> producer =
-                                                    ownerQueue.startCommands();
+  std::unique_ptr<CommandProducerGraphic> producer =
+                                                uploadingQueue.startCommands();
 
   producer->imageBarrier( *image,
                           ImageSlice(*image),
@@ -161,7 +159,7 @@ static Ref<ImageView> createDefaultImage(CommandQueueTransfer& ownerQueue)
                             VK_ACCESS_SHADER_READ_BIT |
                             VK_ACCESS_COLOR_ATTACHMENT_READ_BIT);
 
-  ownerQueue.submitCommands(std::move(producer));
+  uploadingQueue.submitCommands(std::move(producer));
 
   return Ref(new ImageView( *image,
                             ImageSlice(*image),
@@ -169,23 +167,22 @@ static Ref<ImageView> createDefaultImage(CommandQueueTransfer& ownerQueue)
 }
 
 TextureManager::ResourceRecord*
-                      TextureManager::_getExistingResource(
-                                              const fs::path& filePath,
-                                              CommandQueueTransfer& ownerQueue)
+                    TextureManager::_getExistingResource(
+                                            const fs::path& filePath,
+                                            CommandQueueGraphic& uploadingQueue)
 {
-  ResourcesMap::iterator iResource = _resources.find({filePath, &ownerQueue });
+  ResourcesMap::iterator iResource =
+                                  _resources.find({filePath, &uploadingQueue});
   if (iResource == _resources.end()) return nullptr;
   return &iResource->second;
 }
 
 static Ref<ImageView> loadFromDDS(const fs::path& filePath, 
-                                  CommandQueueTransfer& ownerQueue)
+                                  CommandQueueGraphic& uploadingQueue)
 {
   try
   {
-    Ref<Image> loadedImage = loadDDS( filePath,
-                                      ownerQueue.device(),
-                                      &ownerQueue);
+    Ref<Image> loadedImage = loadImage(filePath, uploadingQueue);
     return Ref(new ImageView( *loadedImage,
                               ImageSlice(*loadedImage),
                               getViewType(*loadedImage, filePath)));
@@ -198,10 +195,10 @@ static Ref<ImageView> loadFromDDS(const fs::path& filePath,
 }
 
 TextureManager::ResourceRecord&
-                      TextureManager::_createNewRecord(
-                                                const fs::path& filePath,
-                                                CommandQueueTransfer& ownerQueue,
-                                                const ImageView* image)
+                    TextureManager::_createNewRecord(
+                                            const fs::path& filePath,
+                                            CommandQueueGraphic& uploadingQueue,
+                                            const ImageView* image)
 {
   ResourceRecord newRecord;
   newRecord.waitableWithDefault = Ref(new TechniqueResource);
@@ -219,43 +216,44 @@ TextureManager::ResourceRecord&
   else
   {
     // Текстура не загрузилась - используем вместо неё дефлотную
-    ConstRef<ImageView> defaultImage = createDefaultImage(ownerQueue);
+    ConstRef<ImageView> defaultImage = createDefaultImage(uploadingQueue);
     newRecord.waitableWithDefault->setImage(defaultImage.get());
     newRecord.immediatellyWithDefault->setImage(defaultImage.get());
   }
 
-  _resources[{filePath, & ownerQueue}] = std::move(newRecord);
+  _resources[{filePath, & uploadingQueue}] = std::move(newRecord);
 
-  return _resources[{filePath, & ownerQueue}];
+  return _resources[{filePath, & uploadingQueue}];
 }
 
 void TextureManager::_createImmediatelyResources(
-                                        ResourceRecord& record,
-                                        const ImageView* image,
-                                        CommandQueueTransfer& ownerQueue) const
+                                      ResourceRecord& record,
+                                      const ImageView* image,
+                                      CommandQueueGraphic& uploadingQueue) const
 {
   record.immediatellyWithDefault = Ref(new TechniqueResource);
   if(image != nullptr) record.immediatellyWithDefault->setImage(image);
   else
   {
     record.immediatellyWithDefault->setImage(
-                                        createDefaultImage(ownerQueue).get());
+                                      createDefaultImage(uploadingQueue).get());
   }
   record.immediatellyNoDefault = Ref(new TechniqueResource);
   record.immediatellyNoDefault->setImage(image);
 }
 
 ConstRef<TechniqueResource> TextureManager::loadImmediately(
-                                              const fs::path& filePath,
-                                              CommandQueueTransfer& ownerQueue,
-                                              bool useDefaultTexture)
+                                          const fs::path& filePath,
+                                          CommandQueueGraphic& uploadingQueue,
+                                          bool useDefaultTexture)
 {
   fs::path normalizedPath = filePath.lexically_normal();
 
   {
     // Первичная проверка, не загружен ли уже ресурс
     std::lock_guard lock(_accessMutex);
-    ResourceRecord* record = _getExistingResource(normalizedPath, ownerQueue);
+    ResourceRecord* record = _getExistingResource(normalizedPath,
+                                                  uploadingQueue);
     if(record != nullptr && record->immediatellyNoDefault != nullptr)
     {
       MT_ASSERT(record->immediatellyWithDefault != nullptr);
@@ -265,12 +263,12 @@ ConstRef<TechniqueResource> TextureManager::loadImmediately(
   }
 
   //  Если ресурс ещё не был загружен, загружаем его
-  Ref<ImageView> image = loadFromDDS(normalizedPath, ownerQueue);
+  Ref<ImageView> image = loadFromDDS(normalizedPath, uploadingQueue);
 
   //  Повторная проверка, может кто-то ещё успел загрузить ресурс пока мы читали
   //  image
   std::lock_guard lock(_accessMutex);
-  ResourceRecord* record = _getExistingResource(normalizedPath, ownerQueue);
+  ResourceRecord* record = _getExistingResource(normalizedPath, uploadingQueue);
   if(record != nullptr && record->immediatellyNoDefault != nullptr)
   {
     MT_ASSERT(record->immediatellyWithDefault != nullptr);
@@ -280,12 +278,12 @@ ConstRef<TechniqueResource> TextureManager::loadImmediately(
 
   if (record == nullptr)
   {
-    record = &_createNewRecord(normalizedPath, ownerQueue, image.get());
+    record = &_createNewRecord(normalizedPath, uploadingQueue, image.get());
   }
   else
   {
     //  У нас есть запись в мапе, но в ней нет immediatelly ресурсов.
-    _createImmediatelyResources(*record, image.get(), ownerQueue);
+    _createImmediatelyResources(*record, image.get(), uploadingQueue);
   }
 
   _addFileWatching(normalizedPath);
@@ -308,7 +306,7 @@ void TextureManager::_addFileWatching(const fs::path& filePath) noexcept
 
 ConstRef<TechniqueResource> TextureManager::scheduleLoading(
                                           const std::filesystem::path& filePath,
-                                          CommandQueueTransfer& ownerQueue,
+                                          CommandQueueGraphic& uploadingQueue,
                                           bool useDefaultTexture)
 {
   fs::path normalizedPath = filePath.lexically_normal();
@@ -316,8 +314,8 @@ ConstRef<TechniqueResource> TextureManager::scheduleLoading(
   std::lock_guard lock(_accessMutex);
 
   //  Проверка, не создан ли уже ресурс
-  ResourcesMap::const_iterator iResource =
-                              _resources.find({ normalizedPath, &ownerQueue });
+  ResourcesMap::const_iterator iResource = _resources.find({normalizedPath,
+                                                            &uploadingQueue });
   if(iResource != _resources.end())
   {
     MT_ASSERT(iResource->second.waitableWithDefault != nullptr);
@@ -331,23 +329,24 @@ ConstRef<TechniqueResource> TextureManager::scheduleLoading(
   ResourceRecord newRecord;
   newRecord.waitableNoDefault = Ref(new TechniqueResource);
   newRecord.waitableWithDefault = Ref(new TechniqueResource);
-  newRecord.waitableWithDefault->setImage(createDefaultImage(ownerQueue).get());
+  newRecord.waitableWithDefault->setImage(
+                                    createDefaultImage(uploadingQueue).get());
 
   std::unique_ptr<LoadingTask> loadTask(new LoadingTask(normalizedPath,
-                                                        ownerQueue,
+                                                        uploadingQueue,
                                                         *this));
   if(newRecord.loadingHandle != nullptr) newRecord.loadingHandle->abortTask();
   newRecord.loadingHandle = _loadingQueue.addManagedTask(std::move(loadTask));
 
-  _resources[{normalizedPath, & ownerQueue}] = std::move(newRecord);
+  _resources[{normalizedPath, & uploadingQueue}] = std::move(newRecord);
 
   _addFileWatching(normalizedPath);
 
   if (useDefaultTexture)
   {
-    return _resources[{normalizedPath, & ownerQueue}].waitableWithDefault;
+    return _resources[{normalizedPath, & uploadingQueue}].waitableWithDefault;
   }
-  return _resources[{normalizedPath, & ownerQueue}].waitableNoDefault;
+  return _resources[{normalizedPath, & uploadingQueue}].waitableNoDefault;
 }
 
 void TextureManager::onFileChanged( const fs::path& filePath,
@@ -378,12 +377,13 @@ void TextureManager::onFileChanged( const fs::path& filePath,
 }
 
 void TextureManager::_updateTexture(const fs::path& filePath,
-                                    CommandQueueTransfer& ownerQueue,
+                                    CommandQueueGraphic& uploadingQueue,
                                     const ImageView& imageView)
 {
   std::lock_guard lock(_accessMutex);
 
-  ResourcesMap::iterator iResource = _resources.find({filePath, &ownerQueue});
+  ResourcesMap::iterator iResource = _resources.find({filePath,
+                                                      &uploadingQueue});
   MT_ASSERT(iResource != _resources.end());
 
   ResourceRecord& resource = iResource->second;

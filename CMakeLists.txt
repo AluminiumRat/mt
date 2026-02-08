@@ -41,10 +41,15 @@ find_path(DDSIMAGE_PATH
           HINTS "3rdParty/dds_image/include"
           REQUIRED)
 
+find_path(STB_PATH
+          stb_image.h
+          HINTS "3rdParty/stb"
+          REQUIRED)
+
 add_subdirectory(mtlib/asyncTask)
-add_subdirectory(mtlib/ddsSupport)
 add_subdirectory(mtlib/gui)
 add_subdirectory(mtlib/hld)
+add_subdirectory(mtlib/imageIO)
 add_subdirectory(mtlib/resourceManagement)
 add_subdirectory(mtlib/technique)
 add_subdirectory(mtlib/techniquePropertySet)
