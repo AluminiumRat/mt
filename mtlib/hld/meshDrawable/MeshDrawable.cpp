@@ -32,18 +32,16 @@ void MeshDrawable::setPositionMatrix(const glm::mat4& newValue)
   _updateBoundingBox();
 }
 
-void MeshDrawable::setPrevPositionMatrix(const glm::mat4& newValue)
-{
-  _prevPositionMatrix = newValue;
-}
-
 void MeshDrawable::_updateBivecMatrix() noexcept
 {
-  if(!_asset->usesBivecMatrix()) return;
-
   _bivecMatrix = _positionMatrix;
   _bivecMatrix = glm::inverse(_bivecMatrix);
   _bivecMatrix = glm::transpose(_bivecMatrix);
+}
+
+void MeshDrawable::setPrevPositionMatrix(const glm::mat4& newValue)
+{
+  _prevPositionMatrix = newValue;
 }
 
 void MeshDrawable::_updateBoundingBox() noexcept
@@ -53,7 +51,6 @@ void MeshDrawable::_updateBoundingBox() noexcept
 
 void MeshDrawable::onAssetUpdated()
 {
-  _updateBivecMatrix();
   _updateBoundingBox();
 }
 

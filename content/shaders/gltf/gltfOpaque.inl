@@ -5,7 +5,7 @@ layout (set = VOLATILE,
 {
   mat4 positionMatrix[32];
   mat3 bivecMatrix[32];
-  //mat4 prevPositionMatrix[32];
+  mat4 prevPositionMatrix[32];
 } transformData;
 
 // Индексный буфер. По 1 индексу на вершину. Без разрывов

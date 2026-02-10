@@ -10,8 +10,6 @@ using namespace mt;
 MeshAsset::MeshAsset(const char* debugName) :
   _debugName(debugName),
   _onTechniqueUpdatedSlot(*this, &MeshAsset::_rebuildDrawMap),
-  _usesBivecMatrix(false),
-  _usesPrevMatrix(false),
   _vertexCount(0),
   _bound(0,0,0,0,0,0)
 {
@@ -37,8 +35,6 @@ void MeshAsset::clear() noexcept
   }
   _techniques.clear();
 
-  _usesBivecMatrix = false;
-  _usesPrevMatrix = false;
   _vertexCount = 0;
   _bound = AABB(0, 0, 0, 0, 0, 0);
 
@@ -141,8 +137,6 @@ void MeshAsset::_rebuildDrawMap()
   {
     _availableStages.clear();
     _drawMap.clear();
-    _usesBivecMatrix = false;
-    _usesPrevMatrix = false;
 
     for (std::unique_ptr<Technique>& technique : _techniques)
     {
@@ -167,11 +161,9 @@ void MeshAsset::_updateDrawmapFromTechnique(Technique& technique)
 
   UniformVariable& prevPositionMatrix =
               technique.getOrCreateUniform("transformData.prevPositionMatrix");
-  _usesPrevMatrix |= prevPositionMatrix.isActive();
 
   UniformVariable& bivecMatrix =
                       technique.getOrCreateUniform("transformData.bivecMatrix");
-  _usesBivecMatrix |= bivecMatrix.isActive();
 
   //  Обходим все проходы в технике и добавляем их в _drawMap
   for(const PassConfiguration& passConfig : configuration->_passes)

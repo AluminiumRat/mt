@@ -74,15 +74,6 @@ namespace mt
     inline const AABB& bound() const noexcept;
     inline void setBound(const AABB& newValue);
 
-    //  Возвращает true, если хотябы одна из техник использует bivec матрицу
-    //  (матрица поворота нормалей, обратная транспонированная от матрицы
-    //  трансформации)
-    inline bool usesBivecMatrix() const noexcept;
-
-    //  Возвращает true, если хотябы одна из техник использует матрицу положения
-    //  предыдущего кадра
-    inline bool usesPrevMatrix() const noexcept;
-
   public:
     //  Вызывается, когда изменяется количество техник (clear, addTechnique и
     //    deleteTechnique) или какая-либо из техник меняет свою конфигурацию
@@ -129,9 +120,6 @@ namespace mt
     //  Пустой вектор. Ссылка на него возвращается из метода passes, когда
     //  нечего вернуть из _drawMap
     StagePasses _emptyStageInfo;
-
-    bool _usesBivecMatrix;
-    bool _usesPrevMatrix;
 
     CommonBuffers _commonBuffers;
 
@@ -198,15 +186,5 @@ namespace mt
     if(_bound == newValue) return;
     _bound = newValue;
     boundChanged.emit();
-  }
-
-  inline bool MeshAsset::usesBivecMatrix() const noexcept
-  {
-    return _usesBivecMatrix;
-  }
-
-  inline bool MeshAsset::usesPrevMatrix() const noexcept
-  {
-    return _usesPrevMatrix;
   }
 }
