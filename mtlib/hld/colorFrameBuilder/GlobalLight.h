@@ -73,8 +73,8 @@ namespace mt
                                       GlobalLight::uniformData() const noexcept
   {
     UniformBufferData bufferData{};
-    bufferData.fromSunDirection = -_sunDirection;
-    bufferData.toSunDirection = _sunDirection;
+    bufferData.fromSunDirection = _sunDirection;
+    bufferData.toSunDirection = -_sunDirection;
     bufferData.directLightIrradiance = _directLightIrradiance;
     return bufferData;
   }
