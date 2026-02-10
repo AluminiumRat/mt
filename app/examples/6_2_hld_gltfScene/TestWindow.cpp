@@ -1,6 +1,6 @@
 ﻿#include <glm/gtc/matrix_transform.hpp>
 
-#include <gltfSupport/gltfSupport.h>
+#include <gltfSupport/GLTFImporter.h>
 #include <gui/ImGuiRAII.h>
 #include <hld/colorFrameBuilder/OpaqueColorStage.h>
 #include <imageIO/imageIO.h>
@@ -36,12 +36,16 @@ TestWindow::TestWindow(Device& device) :
 
 void TestWindow::_fillScene()
 {
-  loadGLTFScene("examples/Box/glTF/Box.gltf",
-                _scene,
-                _drawables,
-                *device().graphicQueue(),
-                _textureManager,
-                _techniqueManager);
+  GLTFImporter importer(*device().graphicQueue(),
+                        _textureManager,
+                        _techniqueManager);
+  std::vector<std::unique_ptr<MeshDrawable>> meshes = importer.importGLTF(
+                                                  "examples/Box/glTF/Box.gltf");
+  for(std::unique_ptr<MeshDrawable>& mesh : meshes)
+  {
+    _drawables.push_back(std::move(mesh));
+    _scene.registerDrawable(*_drawables.back());
+  }
 }
 
 void TestWindow::update()
