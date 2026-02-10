@@ -9,14 +9,17 @@
 #define TINYGLTF_NO_EXTERNAL_IMAGE
 #include <tiny_gltf.h>
 
-#include <glbSupport/glbSupport.h>
+#include <gltfSupport/gltfSupport.h>
 #include <hld/meshDrawable/MeshDrawable.h>
 #include <resourceManagement/TechniqueManager.h>
 #include <util/ContentLoader.h>
+#include <util/fileSystemHelpers.h>
 #include <util/Log.h>
 #include <util/Ref.h>
 #include <vkr/queue/CommandQueueGraphic.h>
 #include <vkr/DataBuffer.h>
+
+namespace fs = std::filesystem;
 
 using namespace mt;
 
@@ -260,8 +263,8 @@ static void processNode(BuildSceneContext& context, int nodeIndex)
   context.transformMatrix = oldTransform;
 }
 
-void mt::loadGLBScene(
-                    std::filesystem::path file,
+void mt::loadGLTFScene(
+                    fs::path file,
                     DrawScene& targetScene,
                     std::vector<std::unique_ptr<Drawable>>& drawablesContainer,
                     CommandQueueGraphic& uploadingQueue,
@@ -277,14 +280,61 @@ void mt::loadGLBScene(
   //  Парсим загруженные данные
   tinygltf::Model model;
   tinygltf::TinyGLTF gltfLoader;
+
+  tinygltf::FsCallbacks fsCallbacks{};
+  fsCallbacks.FileExists =
+    [&](const std::string filename, void*)
+    {
+      return fileLoader.exists(utf8ToPath(filename));
+    };
+
+  fsCallbacks.ExpandFilePath =  [](const std::string filename, void*)
+                                {
+                                  return filename;
+                                };
+
+  fsCallbacks.ReadWholeFile =
+    [&](std::vector<unsigned char>* target,
+        std::string*,
+        const std::string filename,
+        void*)
+    {
+      MT_ASSERT(target != nullptr);
+      std::vector<char> data = fileLoader.loadData(utf8ToPath(filename));
+      if(data.empty()) return true;
+      target->resize(data.size());
+      memcpy(target->data(), data.data(), data.size());
+      return true;
+    };
+  fsCallbacks.WriteWholeFile =  []( std::string*,
+                                    const std::string&,
+                                    const std::vector<unsigned char>&,
+                                    void*)
+                                {return false;};
+  fsCallbacks.GetFileSizeInBytes =  []( size_t* filesize_out,
+                                        std::string* err,
+                                        const std::string& abs_filename,
+                                        void* userdata)
+                                    {
+                                      //  Этот калбэк нужен только для проверки
+                                      //  на максимальный размер, поэтому просто
+                                      //  вернем 0
+                                      *filesize_out = 0;
+                                      return true;
+                                    };
+  gltfLoader.SetFsCallbacks(fsCallbacks);
+
   std::string error;
   std::string warning;
-  bool success = gltfLoader.LoadBinaryFromMemory(
+  std::string baseDir = pathToUtf8(file.parent_path());
+  bool success = gltfLoader.LoadASCIIFromString(
                                           &model,
                                           &error,
                                           &warning,
-                                          (const unsigned char*)fileData.data(),
-                                          (unsigned int)fileData.size());
+                                          (const char*)fileData.data(),
+                                          (unsigned int)fileData.size(),
+                                          baseDir.c_str());
+
   if(!error.empty()) throw std::runtime_error(filename + " : " + error);
   if(!success) throw std::runtime_error(filename + " : unable to parse file");
   if(!warning.empty()) Log::warning() << filename << " : " << warning;

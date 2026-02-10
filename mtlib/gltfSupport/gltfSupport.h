@@ -12,7 +12,8 @@ namespace mt
   class TechniqueManager;
   class TextureManager;
 
-  void loadGLBScene(std::filesystem::path file,
+  void loadGLTFScene(
+                    std::filesystem::path file,
                     DrawScene& targetScene,
                     std::vector<std::unique_ptr<Drawable>>& drawablesContainer,
                     CommandQueueGraphic& uploadingQueue,

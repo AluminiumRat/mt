@@ -19,7 +19,7 @@ target_link_libraries(hld_gltfScene
                       ${GLFW_PATH}/lib-vc2022/glfw3.lib
                       ${YamlCPP_LIBRARIES}
                       asyncTask
-                      glbSupport
+                      gltfSupport
                       gui
                       hld
                       imageIO

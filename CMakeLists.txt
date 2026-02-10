@@ -52,7 +52,7 @@ find_path(TINY_GLTF_PATH
           REQUIRED)
 
 add_subdirectory(mtlib/asyncTask)
-add_subdirectory(mtlib/glbSupport)
+add_subdirectory(mtlib/gltfSupport)
 add_subdirectory(mtlib/gui)
 add_subdirectory(mtlib/hld)
 add_subdirectory(mtlib/imageIO)

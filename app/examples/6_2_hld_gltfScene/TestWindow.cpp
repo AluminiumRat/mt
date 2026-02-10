@@ -1,6 +1,6 @@
 ﻿#include <glm/gtc/matrix_transform.hpp>
 
-#include <glbSupport/glbSupport.h>
+#include <gltfSupport/gltfSupport.h>
 #include <gui/ImGuiRAII.h>
 #include <hld/colorFrameBuilder/OpaqueColorStage.h>
 #include <imageIO/imageIO.h>
@@ -36,7 +36,7 @@ TestWindow::TestWindow(Device& device) :
 
 void TestWindow::_fillScene()
 {
-  loadGLBScene( "examples/Box/glTF-Binary/Box.glb",
+  loadGLTFScene("examples/Box/glTF/Box.gltf",
                 _scene,
                 _drawables,
                 *device().graphicQueue(),

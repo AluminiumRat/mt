@@ -1,6 +1,6 @@
 ﻿cmake_minimum_required (VERSION 3.10)
 
-project(glbSupport)
+project(gltfSupport)
 
 include_directories(..
                     ${GLM_PATH}
@@ -9,7 +9,7 @@ include_directories(..
                     ${TINY_GLTF_PATH})
 
 set(SOURCES
-    "glbSupport.cpp")
+    "gltfSupport.cpp")
 
-add_library(glbSupport
+add_library(gltfSupport
             ${SOURCES})
