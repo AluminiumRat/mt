@@ -46,7 +46,13 @@ find_path(STB_PATH
           HINTS "3rdParty/stb"
           REQUIRED)
 
+find_path(TINY_GLTF_PATH
+          tiny_gltf.h
+          HINTS "3rdParty/tinygltf"
+          REQUIRED)
+
 add_subdirectory(mtlib/asyncTask)
+add_subdirectory(mtlib/glbSupport)
 add_subdirectory(mtlib/gui)
 add_subdirectory(mtlib/hld)
 add_subdirectory(mtlib/imageIO)
@@ -68,5 +74,6 @@ add_subdirectory(app/examples/5_1_async_tasks)
 add_subdirectory(app/examples/5_2_resource_managers)
 add_subdirectory(app/examples/6_0_hld_base)
 add_subdirectory(app/examples/6_1_hld_opaque)
+add_subdirectory(app/examples/6_2_hld_gltfScene)
 
 add_subdirectory(app/textureProcessor)
