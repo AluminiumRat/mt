@@ -357,6 +357,11 @@ void GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
   std::unique_ptr<Technique> technique =
                         _techniqueManager.scheduleLoading("gltf/gltfOpaque.tch",
                                                           _device);
+  Selection& indicesSelection =
+                            technique->getOrCreateSelection("INDICES_ENABLED");
+  if(verticesInfo.indicesFound) indicesSelection.setValue("1");
+  else indicesSelection.setValue("0");
+
   targetAsset.addTechnique(std::move(technique));
 }
 

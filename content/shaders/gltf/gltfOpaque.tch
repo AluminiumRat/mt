@@ -1,3 +1,6 @@
+selections:
+  INDICES_ENABLED: [0, 1]
+
 defaultSamplers:
   linearSampler:
     magFilter: LINEAR
@@ -6,6 +9,8 @@ defaultSamplers:
 
 passes:
   OpaquePass :
+    selections: [INDICES_ENABLED]
+
     frameType: ColorFrame
     stageName: OpaqueColorStage
     maxInstances: 32

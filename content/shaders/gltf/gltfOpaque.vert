@@ -6,7 +6,11 @@ layout(location = 0) out vec3 outNormal;
 
 void main()
 {
-  int vertexIndex = INDICES.data[gl_VertexIndex];
+  #if INDICES_ENABLED == 1
+    int vertexIndex = INDICES.data[gl_VertexIndex];
+  #else
+    int vertexIndex = gl_VertexIndex;
+  #endif
 
   //  Сдвиг для буферов POSITION и NORMAL
   int vertexShift = vertexIndex * 3;

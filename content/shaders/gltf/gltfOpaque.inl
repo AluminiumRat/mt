@@ -8,11 +8,13 @@ layout (set = VOLATILE,
   mat4 prevPositionMatrix[32];
 } transformData;
 
-// Индексный буфер. По 1 индексу на вершину. Без разрывов
-layout (set = STATIC, binding = 0) readonly buffer IndexBuffer
-{
-  int data[];
-} INDICES;
+#if INDICES_ENABLED == 1
+  // Индексный буфер. По 1 индексу на вершину. Без разрывов
+  layout (set = STATIC, binding = 0) readonly buffer IndexBuffer
+  {
+    int data[];
+  } INDICES;
+#endif
 
 // Буфер с координатами вершин
 // Координаты укладываются без разрывов по 3 значения для каждой вершины
