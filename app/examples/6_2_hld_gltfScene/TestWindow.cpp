@@ -40,7 +40,8 @@ void TestWindow::_fillScene()
                         _textureManager,
                         _techniqueManager);
   std::vector<std::unique_ptr<MeshDrawable>> meshes = importer.importGLTF(
-                                                  "examples/Box/glTF/Box.gltf");
+                                                "examples/Duck/glTF/Duck.gltf");
+                                                //"examples/Box/glTF/Box.gltf");
   for(std::unique_ptr<MeshDrawable>& mesh : meshes)
   {
     _drawables.push_back(std::move(mesh));

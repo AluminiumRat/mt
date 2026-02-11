@@ -18,6 +18,13 @@ namespace fs = std::filesystem;
 
 using namespace mt;
 
+//  Перевод из координат glfw в движковые. Просто замена осей, чтобы
+//  направление вверх было +Z
+constexpr glm::mat4 glfwToMTTransform(1, 0, 0, 0,
+                                      0, 0, 1, 0,
+                                      0,-1, 0, 0,
+                                      0, 0, 0, 1);
+
 GLTFImporter::GLTFImporter( CommandQueueGraphic& uploadingQueue,
                             TextureManager& textureManager,
                             TechniqueManager& techniqueManager) :
@@ -27,7 +34,7 @@ GLTFImporter::GLTFImporter( CommandQueueGraphic& uploadingQueue,
   _textureManager(textureManager),
   _techniqueManager(techniqueManager),
   _gltfModel(nullptr),
-  _currentTansform(1)
+  _currentTansform(glfwToMTTransform)
 {
 }
 
@@ -38,7 +45,7 @@ void GLTFImporter::_clear()
   _filename.clear();
   _gltfModel = nullptr;
   _meshAssets.clear();
-  _currentTansform = glm::mat4(1);
+  _currentTansform = glfwToMTTransform;
 }
 
 GLTFImporter::DrawablesList GLTFImporter::importGLTF(
@@ -77,7 +84,7 @@ void GLTFImporter::_import(const std::filesystem::path& file)
                                   _uploadingQueue.startCommands("GLTF uploading");
   _producer = producer.get();
   _gltfModel = &gltfModel;
-  _currentTansform = glm::mat4(1);
+  _currentTansform = glfwToMTTransform;
 
   //  Создаем ассеты мешей
   _meshAssets.resize(gltfModel.meshes.size());
