@@ -4,6 +4,10 @@
 
 layout(location = 0) out vec3 outNormal;
 
+#if TEXCOORD_COUNT > 0
+  layout(location = 1) out vec2 outTexcoord0;
+#endif
+
 void main()
 {
   #if INDICES_ENABLED == 1
@@ -26,4 +30,10 @@ void main()
                       NORMAL.data[vertexShift + 1],
                       NORMAL.data[vertexShift + 2]);
   outNormal = transformData.bivecMatrix[gl_InstanceIndex] * normal;
+
+  #if TEXCOORD_COUNT > 0
+    int texCoordShift = vertexIndex * 2;
+    outTexcoord0 = vec2(TEXCOORD_0.data[texCoordShift],
+                        TEXCOORD_0.data[texCoordShift + 1]);
+  #endif
 }

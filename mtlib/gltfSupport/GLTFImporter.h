@@ -55,6 +55,7 @@ namespace mt
       bool positionFound = false;
       bool normalFound = false;
       bool indicesFound = false;
+      bool texcoord0Found = false;
     };
 
   private:

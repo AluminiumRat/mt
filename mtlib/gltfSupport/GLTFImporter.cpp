@@ -362,6 +362,11 @@ void GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
   if(verticesInfo.indicesFound) indicesSelection.setValue("1");
   else indicesSelection.setValue("0");
 
+  Selection& texCoordSelection =
+                              technique->getOrCreateSelection("TEXCOORD_COUNT");
+  if(verticesInfo.texcoord0Found) texCoordSelection.setValue("1");
+  else texCoordSelection.setValue("0");
+
   targetAsset.addTechnique(std::move(technique));
 }
 
@@ -393,10 +398,8 @@ void GLTFImporter::_processVertexAttribute( const std::string& attributeName,
     }
     else Log::warning() << meshName << ":" << attributeName << "doesen't have correct minimal and maximal values";
   }
-  else if(attributeName == "NORMAL")
-  {
-    verticesInfo.normalFound = true;
-  }
+  else if(attributeName == "NORMAL") verticesInfo.normalFound = true;
+  else if(attributeName == "TEXCOORD_0") verticesInfo.texcoord0Found = true;
 }
 
 void GLTFImporter::_processNode(int nodeIndex)

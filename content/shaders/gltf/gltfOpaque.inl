@@ -31,4 +31,12 @@ layout (set = STATIC, binding = 2) readonly buffer NormalBuffer
   float data[];
 } NORMAL;
 
-layout (set = STATIC, binding = 3) uniform sampler linearSampler;
+#if TEXCOORD_COUNT > 0
+  // Текстурные координаты. По 2 float-а на вершину. Без разрывов
+  layout (set = STATIC, binding = 3) readonly buffer Texcoord0Buffer
+  {
+    float data[];
+  } TEXCOORD_0;
+#endif
+
+layout (set = STATIC, binding = 4) uniform sampler linearSampler;

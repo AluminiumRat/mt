@@ -1,5 +1,6 @@
 selections:
   INDICES_ENABLED: [0, 1]
+  TEXCOORD_COUNT: [0, 1]
 
 defaultSamplers:
   linearSampler:
@@ -9,7 +10,7 @@ defaultSamplers:
 
 passes:
   OpaquePass :
-    selections: [INDICES_ENABLED]
+    selections: [INDICES_ENABLED, TEXCOORD_COUNT]
 
     frameType: ColorFrame
     stageName: OpaqueColorStage

@@ -8,7 +8,8 @@ using namespace mt;
 void MeshDrawCommand::draw( CommandProducerGraphic& producer,
                             std::span<const CommandPtr> commands)
 {
-  if(!_drawInfo.technique->isReady()) return;
+  //  Проверяем, что конфигурация уже прогрузилась
+  if(_drawInfo.technique->configuration() == nullptr) return;
 
   size_t commandProcessed = 0;
   while(commandProcessed != commands.size())

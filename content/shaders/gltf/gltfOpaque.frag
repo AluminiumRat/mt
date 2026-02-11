@@ -3,6 +3,9 @@
 #include "gltf/gltfOpaque.inl"
 
 layout(location = 0) in vec3 inNormal;
+/*#if TEXCOORD_COUNT > 0
+  layout(location = 1) in vec2 inTexcoord0;
+#endif*/
 
 layout(location = 0) out vec4 outColor;
 
