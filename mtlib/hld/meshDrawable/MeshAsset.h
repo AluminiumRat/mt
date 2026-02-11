@@ -67,6 +67,15 @@ namespace mt
     //  bufferName - имя, под которым буфер используется в шейдерах
     void setCommonBuffer(const char* bufferName, const DataBuffer& buffer);
 
+    //  Выставить селекшен, который будет пробрасываться во все дочерние
+    //  техники.
+    void setCommonSelection(const char* selectionName, const char* value);
+
+    //  Установить ресурс, который будет пробрасываться во все дочерние техники
+    //  В первую очередь предназначен для подключения общих текстур
+    void setCommonResource( const char* resourceName,
+                            const TechniqueResource& resource);
+
     //  Количество точек на отрисовку
     inline uint32_t vertexCount() const noexcept;
     inline void setVertexCount(uint32_t newValue);
@@ -93,6 +102,20 @@ namespace mt
       ConstRef<DataBuffer> buffer;
     };
     using CommonBuffers = std::vector<BufferInfo>;
+
+    struct SelectionInfo
+    {
+      std::string name;
+      std::string value;
+    };
+    using CommonSelections = std::vector<SelectionInfo>;
+
+    struct ResourceInfo
+    {
+      std::string name;
+      ConstRef<TechniqueResource> resource;
+    };
+    using CommonResources = std::vector<ResourceInfo>;
 
   private:
     std::string _debugName;
@@ -122,6 +145,8 @@ namespace mt
     StagePasses _emptyStageInfo;
 
     CommonBuffers _commonBuffers;
+    CommonSelections _commonSelections;
+    CommonResources _commonResources;
 
     uint32_t _vertexCount;
 

@@ -28,6 +28,7 @@ void MeshAsset::clear() noexcept
   _availableStages.clear();
   _drawMap.clear();
   _commonBuffers.clear();
+  _commonSelections.clear();
 
   for (std::unique_ptr<Technique>& technique : _techniques)
   {
@@ -60,6 +61,20 @@ void MeshAsset::addTechnique(std::unique_ptr<Technique> technique)
       binding.setBuffer(bufferInfo.buffer);
     }
 
+    for(SelectionInfo& selectionInfo : _commonSelections)
+    {
+      Selection& selection = 
+                techniquePtr->getOrCreateSelection(selectionInfo.name.c_str());
+      selection.setValue(selectionInfo.value);
+    }
+
+    for(ResourceInfo& resourceInfo : _commonResources)
+    {
+      ResourceBinding& binding = 
+            techniquePtr->getOrCreateResourceBinding(resourceInfo.name.c_str());
+      binding.setResource(resourceInfo.resource);
+    }
+
     _rebuildDrawMap();
   }
   catch(std::exception& error)
@@ -88,6 +103,20 @@ void MeshAsset::addTechniques(std::span<std::unique_ptr<Technique>> techniques)
         ResourceBinding& binding = 
               techniquePtr->getOrCreateResourceBinding(bufferInfo.name.c_str());
         binding.setBuffer(bufferInfo.buffer);
+      }
+
+      for(SelectionInfo& selectionInfo : _commonSelections)
+      {
+        Selection& selection =
+                techniquePtr->getOrCreateSelection(selectionInfo.name.c_str());
+        selection.setValue(selectionInfo.value);
+      }
+
+      for(ResourceInfo& resourceInfo : _commonResources)
+      {
+        ResourceBinding& binding =
+            techniquePtr->getOrCreateResourceBinding(resourceInfo.name.c_str());
+        binding.setResource(resourceInfo.resource);
       }
     }
 
@@ -233,6 +262,7 @@ void MeshAsset::setCommonBuffer(const char* bufferName,
     {
       if(bufferInfo.name == bufferName)
       {
+        bufferInfo.buffer = &buffer;
         exists = true;
         break;
       }
@@ -252,6 +282,77 @@ void MeshAsset::setCommonBuffer(const char* bufferName,
   catch(std::exception& error)
   {
     Log::error() << _debugName << ": unable to add buffer " << bufferName << ": " << error.what();
+    clear();
+    throw error;
+  }
+}
+
+void MeshAsset::setCommonSelection(const char* selectionName, const char* value)
+{
+  try
+  {
+    //  Проверяем, есть ли уже селекшен с таким именем, и если нет, то добавляем
+    //  в список
+    bool exists = false;
+    for(SelectionInfo& selectionInfo : _commonSelections)
+    {
+      if(selectionInfo.name == selectionName)
+      {
+        selectionInfo.value = value;
+        exists = true;
+        break;
+      }
+    }
+    if(!exists) _commonSelections.push_back(SelectionInfo{.name = selectionName,
+                                                          .value = value});
+
+    //  Обходим все техники и выставляем селекшен
+    for(std::unique_ptr<Technique>& technique : _techniques)
+    {
+      Selection& selection = technique->getOrCreateSelection(selectionName);
+      selection.setValue(value);
+    }
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << _debugName << ": unable to add selection " << selectionName << ": " << error.what();
+    clear();
+    throw error;
+  }
+}
+
+void MeshAsset::setCommonResource(const char* resourceName,
+                                  const TechniqueResource& resource)
+{
+  try
+  {
+    //  Проверяем, есть ли уже ресурс с таким именем, и если нет, то добавляем
+    //  в список
+    bool exists = false;
+    for(ResourceInfo& resourceInfo : _commonResources)
+    {
+      if(resourceInfo.name == resourceName)
+      {
+        resourceInfo.resource = &resource;
+        exists = true;
+        break;
+      }
+    }
+    if(!exists) _commonResources.push_back(ResourceInfo{
+                                              .name = resourceName,
+                                              .resource = ConstRef(&resource)});
+
+    //  Обходим все техники и выставляем ресурс
+    for(std::unique_ptr<Technique>& technique : _techniques)
+    {
+      ResourceBinding& binding =
+                            technique->getOrCreateResourceBinding(resourceName);
+      binding.setResource(&resource);
+    }
+  }
+  catch(std::exception& error)
+  {
+    Log::error() << _debugName << ": unable to add resource " << resourceName << ": " << error.what();
     clear();
     throw error;
   }

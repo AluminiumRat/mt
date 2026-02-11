@@ -520,19 +520,21 @@ bool GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
 
   targetAsset.setCommonBuffer("materialBuffer", *material.materialData);
 
+  if(verticesInfo.indicesFound)
+  {
+    targetAsset.setCommonSelection("INDICES_ENABLED", "1");
+  }
+  else targetAsset.setCommonSelection("INDICES_ENABLED", "0");
+
+  if(verticesInfo.texcoord0Found)
+  {
+    targetAsset.setCommonSelection("TEXCOORD_COUNT", "1");
+  }
+  else targetAsset.setCommonSelection("TEXCOORD_COUNT", "0");
+
   std::unique_ptr<Technique> technique =
                         _techniqueManager.scheduleLoading("gltf/gltfOpaque.tch",
                                                           _device);
-  Selection& indicesSelection =
-                            technique->getOrCreateSelection("INDICES_ENABLED");
-  if(verticesInfo.indicesFound) indicesSelection.setValue("1");
-  else indicesSelection.setValue("0");
-
-  Selection& texCoordSelection =
-                              technique->getOrCreateSelection("TEXCOORD_COUNT");
-  if(verticesInfo.texcoord0Found) texCoordSelection.setValue("1");
-  else texCoordSelection.setValue("0");
-
   targetAsset.addTechnique(std::move(technique));
 
   return true;
