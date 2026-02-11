@@ -28,7 +28,7 @@ static Ref<Image> createImage(int width,
                                 VK_IMAGE_USAGE_TRANSFER_DST_BIT |
                                 VK_IMAGE_USAGE_SAMPLED_BIT,
                               0,
-                              VK_FORMAT_B8G8R8A8_SRGB,
+                              VK_FORMAT_R8G8B8A8_SRGB,
                               glm::uvec3(extent, 1),
                               VK_SAMPLE_COUNT_1_BIT,
                               1,
