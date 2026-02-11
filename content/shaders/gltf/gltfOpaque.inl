@@ -36,12 +36,16 @@ layout (set = STATIC, binding = 3) readonly buffer NormalBuffer
   float data[];
 } NORMAL;
 
+#if BASECOLORTEXTURE_ENABLED == 1
+  layout (set = STATIC, binding = 4) uniform texture2D baseColorTexture;
+#endif
+
 #if TEXCOORD_COUNT > 0
   // Текстурные координаты. По 2 float-а на вершину. Без разрывов
-  layout (set = STATIC, binding = 4) readonly buffer Texcoord0Buffer
+  layout (set = STATIC, binding = 5) readonly buffer Texcoord0Buffer
   {
     float data[];
   } TEXCOORD_0;
 #endif
 
-layout (set = STATIC, binding = 5) uniform sampler linearSampler;
+layout (set = STATIC, binding = 6) uniform sampler linearSampler;

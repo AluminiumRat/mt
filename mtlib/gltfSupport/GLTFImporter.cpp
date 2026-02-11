@@ -518,6 +518,11 @@ bool GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
     return false;
   }
 
+  if(material.baseColorTexture != nullptr && !verticesInfo.texcoord0Found)
+  {
+    throw std::runtime_error(meshName + ": there is baseColorTexture in material but TEXCOORD_0 attribute is not found");
+  }
+
   targetAsset.setCommonBuffer("materialBuffer", *material.materialData);
 
   if(verticesInfo.indicesFound)
@@ -531,6 +536,14 @@ bool GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
     targetAsset.setCommonSelection("TEXCOORD_COUNT", "1");
   }
   else targetAsset.setCommonSelection("TEXCOORD_COUNT", "0");
+
+  if(material.baseColorTexture != nullptr)
+  {
+    targetAsset.setCommonSelection("BASECOLORTEXTURE_ENABLED", "1");
+    targetAsset.setCommonResource("baseColorTexture",
+                                  *material.baseColorTexture);
+  }
+  else targetAsset.setCommonSelection("BASECOLORTEXTURE_ENABLED", "0");
 
   std::unique_ptr<Technique> technique =
                         _techniqueManager.scheduleLoading("gltf/gltfOpaque.tch",

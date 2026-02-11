@@ -16,6 +16,12 @@ void main()
   luminance = clamp(luminance, 0.0f, 1.0f);
   luminance += 0.1f;
 
-  outColor = vec4(luminance * materialBuffer.material.baseColor.rgb,
-                  materialBuffer.material.baseColor.a);
+  vec4 baseColor = materialBuffer.material.baseColor;
+  #if BASECOLORTEXTURE_ENABLED == 1 && TEXCOORD_COUNT > 0
+    baseColor *= texture( sampler2D(baseColorTexture, linearSampler),
+                          inTexcoord0);
+  #endif
+
+  outColor = vec4(luminance * baseColor.rgb,
+                  baseColor.a);
 }
