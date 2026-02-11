@@ -9,6 +9,7 @@
 
 #include <gltfSupport/GLTFImporter.h>
 #include <resourceManagement/TechniqueManager.h>
+#include <resourceManagement/TextureManager.h>
 #include <util/ContentLoader.h>
 #include <util/fileSystemHelpers.h>
 #include <util/Log.h>
@@ -42,8 +43,12 @@ void GLTFImporter::_clear()
 {
   _producer = nullptr;
   _drawables.clear();
+  _file.clear();
+  _baseDir.clear();
   _filename.clear();
   _gltfModel = nullptr;
+  _textures.clear();
+  _materials.clear();
   _meshAssets.clear();
   _currentTansform = glfwToMTTransform;
 }
@@ -68,6 +73,8 @@ GLTFImporter::DrawablesList GLTFImporter::importGLTF(
 
 void GLTFImporter::_import(const std::filesystem::path& file)
 {
+  _file = file;
+  _baseDir = file.parent_path();
   _filename = (const char*)file.u8string().c_str();
 
   //  Загружаем данные с диска
@@ -76,8 +83,7 @@ void GLTFImporter::_import(const std::filesystem::path& file)
 
   //  Парсим загруженные данные
   tinygltf::Model gltfModel;
-  std::string baseDir = pathToUtf8(file.parent_path());
-  _parseGLTF(fileData, gltfModel, baseDir.c_str());
+  _parseGLTF(fileData, gltfModel);
 
   //  Подготовка к разбору gltf модели
   std::unique_ptr<CommandProducerGraphic> producer =
@@ -85,6 +91,24 @@ void GLTFImporter::_import(const std::filesystem::path& file)
   _producer = producer.get();
   _gltfModel = &gltfModel;
   _currentTansform = glfwToMTTransform;
+
+  //  Отправляем команды на загрузку текстур, которые используются в сцене
+  _textures.resize(gltfModel.textures.size());
+  for(int textureIndex = 0;
+      textureIndex < gltfModel.textures.size();
+      textureIndex++)
+  {
+    _createTexture(textureIndex);
+  }
+
+  //  Заранее обходим все материалы и готовим инфу по ним
+  _materials.resize(gltfModel.materials.size());
+  for(int materialIndex = 0;
+      materialIndex < gltfModel.materials.size();
+      materialIndex++)
+  {
+    _createMaterialInfo(materialIndex);
+  }
 
   //  Создаем ассеты мешей
   _meshAssets.resize(gltfModel.meshes.size());
@@ -103,8 +127,7 @@ void GLTFImporter::_import(const std::filesystem::path& file)
 }
 
 void GLTFImporter::_parseGLTF(const std::vector<char>& fileData,
-                              tinygltf::Model& model,
-                              const char* baseDir)
+                              tinygltf::Model& model)
 {
   tinygltf::TinyGLTF gltfLoader;
   _prepareLoader(gltfLoader);
@@ -117,7 +140,7 @@ void GLTFImporter::_parseGLTF(const std::vector<char>& fileData,
                                           &warning,
                                           (const char*)fileData.data(),
                                           (unsigned int)fileData.size(),
-                                          baseDir);
+                                          pathToUtf8(_baseDir));
   if(!error.empty()) throw std::runtime_error(_filename + " : " + error);
   if(!success) throw std::runtime_error(_filename + " : unable to parse file");
   if(!warning.empty()) Log::warning() << _filename << " : " << warning;
@@ -177,6 +200,29 @@ void GLTFImporter::_prepareLoader(tinygltf::TinyGLTF& loader) const
   loader.SetFsCallbacks(fsCallbacks);
 }
 
+void GLTFImporter::_createTexture(int textureIndex)
+{
+  const tinygltf::Texture& gltfTexture = _gltfModel->textures[textureIndex];
+  if(gltfTexture.source < 0)
+  {
+    Log::warning() << _filename << ": texture " << textureIndex << " doesn't have source";
+    return;
+  }
+
+  tinygltf::Image image = _gltfModel->images[gltfTexture.source];
+
+  if(image.uri.empty())
+  {
+    Log::warning() << _filename << ": image " << gltfTexture.source << " has empty uri";
+    return;
+  }
+  fs::path imagePath = _baseDir / utf8ToPath(image.uri);
+
+  _textures[textureIndex] = _textureManager.scheduleLoading(imagePath,
+                                                            _uploadingQueue,
+                                                            true);
+}
+
 ConstRef<DataBuffer> GLTFImporter::_uploadData( const void* data,
                                                 size_t dataSize,
                                                 CommandProducerGraphic& producer,
@@ -194,6 +240,105 @@ ConstRef<DataBuffer> GLTFImporter::_uploadData( const void* data,
   stagingBuffer->uploadData(data, 0, dataSize);
   producer.copyFromBufferToBuffer(*stagingBuffer, *gpuBuffer, 0, 0, dataSize);
   return gpuBuffer;
+}
+
+void GLTFImporter::_createMaterialInfo(int materialIndex)
+{
+  const tinygltf::Material& gltfMaterial = _gltfModel->materials[materialIndex];
+
+  // Режим смешивания по альфе
+  GLTFMaterial newMaterial{};
+  if(gltfMaterial.alphaMode == "OPAQUE")
+  {
+    newMaterial.alphaMode = GLTFMaterial::OPAQUE_ALPHA_MODE;
+  }
+  else if(gltfMaterial.alphaMode == "MASK")
+  {
+    newMaterial.alphaMode = GLTFMaterial::MASK_ALPHA_MODE;
+  }
+  else if(gltfMaterial.alphaMode == "BLEND")
+  {
+    newMaterial.alphaMode = GLTFMaterial::BLEND_ALPHA_MODE;
+  }
+  else
+  {
+    newMaterial.alphaMode = GLTFMaterial::OPAQUE_ALPHA_MODE;
+    Log::warning() << _filename << " : material: " << gltfMaterial.name << ": unknown alphaMode: " << gltfMaterial.alphaMode;
+  }
+  newMaterial.alphaCutoff = (float)gltfMaterial.alphaCutoff;
+
+  // Базовые параметры
+  newMaterial.doubleSided = gltfMaterial.doubleSided;
+  newMaterial.baseColor = glm::vec4(
+                          gltfMaterial.pbrMetallicRoughness.baseColorFactor[0],
+                          gltfMaterial.pbrMetallicRoughness.baseColorFactor[1],
+                          gltfMaterial.pbrMetallicRoughness.baseColorFactor[2],
+                          gltfMaterial.pbrMetallicRoughness.baseColorFactor[3]);
+  newMaterial.emission = glm::vec3( gltfMaterial.emissiveFactor[0],
+                                    gltfMaterial.emissiveFactor[1],
+                                    gltfMaterial.emissiveFactor[2]);
+  newMaterial.metallic =
+                        (float)gltfMaterial.pbrMetallicRoughness.metallicFactor;
+  newMaterial.roughness =
+                      (float)gltfMaterial.pbrMetallicRoughness.roughnessFactor;
+  newMaterial.normalTextureScale = (float)gltfMaterial.normalTexture.scale;
+  newMaterial.occlusionTextureStrength =
+                                  (float)gltfMaterial.occlusionTexture.strength;
+
+  // Заливаем данные материала на ГПУ
+  newMaterial.materialData = _createGPUMaterialInfo(
+                                              newMaterial,
+                                              _filename+":"+ gltfMaterial.name);
+
+  // Грузим текстуры
+  newMaterial.baseColorTexture = _getTexture(
+                              gltfMaterial.pbrMetallicRoughness.baseColorTexture,
+                              gltfMaterial.name.c_str(),
+                              "baseColorTexture");
+  newMaterial.metallicRoughnessTexture = _getTexture(
+                                            gltfMaterial.pbrMetallicRoughness.
+                                                          metallicRoughnessTexture,
+                                            gltfMaterial.name.c_str(),
+                                            "metallicRoughnessTexture");
+  newMaterial.normalTexture = _getTexture(
+                      (const tinygltf::TextureInfo&)gltfMaterial.normalTexture,
+                      gltfMaterial.name.c_str(),
+                      "normalTexture");
+  newMaterial.occlusionTexture = _getTexture(
+                    (const tinygltf::TextureInfo&)gltfMaterial.occlusionTexture,
+                    gltfMaterial.name.c_str(),
+                    "occlusionTexture");
+  newMaterial.emissiveTexture = _getTexture(gltfMaterial.emissiveTexture,
+                                            gltfMaterial.name.c_str(),
+                                            "emissiveTexture");
+  _materials[materialIndex] = newMaterial;
+}
+
+ConstRef<TechniqueResource> GLTFImporter::_getTexture(
+                                              const tinygltf::TextureInfo& info,
+                                              const char* materialName,
+                                              const char* textureName) const
+{
+  if(info.index < 0) return ConstRef<TechniqueResource>();
+  if(info.texCoord != 0) Log::warning() << _filename << " material: " << materialName << " texture:" << textureName << " texture uses custom texture coordinates";
+  return _textures[info.index];
+}
+
+ConstRef<DataBuffer> GLTFImporter::_createGPUMaterialInfo(
+                                            const GLTFMaterial& material,
+                                            const std::string& bufferName) const
+{
+  GLTFMaterialGPU gpuData{};
+  gpuData.alphaMode = material.alphaMode;
+  gpuData.alphaCutoff = material.alphaCutoff;
+  gpuData.doubleSided = material.doubleSided ? 1 : 0;
+  gpuData.baseColor = material.baseColor;
+  gpuData.emission = material.emission;
+  gpuData.metallic = material.metallic;
+  gpuData.roughness = material.roughness;
+  gpuData.normalTextureScale = material.normalTextureScale;
+  gpuData.occlusionTextureStrength = material.occlusionTextureStrength;
+  return _uploadData(&gpuData, sizeof(gpuData), *_producer, bufferName);
 }
 
 ConstRef<DataBuffer> GLTFImporter::_createAccessorBuffer(
@@ -338,8 +483,20 @@ void GLTFImporter::_createMeshAssets(int meshIndex)
     
     asset->setVertexCount(verticesInfo.vertexCount);
 
+    if(primitive.material < 0)
+    {
+      Log::warning() << meshName << " : the primitive doesn't have any material";
+      continue;
+    }
+
     //  Подключаем техники
-    _attachTechniques(*asset, verticesInfo, meshName);
+    if(!_attachTechniques(*asset,
+                          verticesInfo,
+                          _materials[primitive.material],
+                          meshName))
+    {
+      continue;
+    }
 
     newSet.push_back(asset);
   }
@@ -347,12 +504,21 @@ void GLTFImporter::_createMeshAssets(int meshIndex)
   _meshAssets[meshIndex] = std::move(newSet);
 }
 
-void GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
-                                      VerticesInfo& verticesInfo,
+bool GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
+                                      const VerticesInfo& verticesInfo,
+                                      const GLTFMaterial& material,
                                       const std::string& meshName)
 {
   if(!verticesInfo.positionFound) throw std::runtime_error(meshName + ": POSITION buffer is not found");
   if(!verticesInfo.normalFound) throw std::runtime_error(meshName + ": NORMAL buffer is not found");
+
+  if(material.alphaMode != GLTFMaterial::OPAQUE_ALPHA_MODE)
+  {
+    Log::warning() << meshName << "Unsupported alpha mode";
+    return false;
+  }
+
+  targetAsset.setCommonBuffer("materialBuffer", *material.materialData);
 
   std::unique_ptr<Technique> technique =
                         _techniqueManager.scheduleLoading("gltf/gltfOpaque.tch",
@@ -368,6 +534,8 @@ void GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
   else texCoordSelection.setValue("0");
 
   targetAsset.addTechnique(std::move(technique));
+
+  return true;
 }
 
 void GLTFImporter::_processVertexAttribute( const std::string& attributeName,

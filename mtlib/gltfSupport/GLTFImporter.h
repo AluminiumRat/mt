@@ -6,6 +6,7 @@
 
 #include <glm/glm.hpp>
 
+#include <gltfSupport/GLTFMaterial.h>
 #include <hld/meshDrawable/MeshDrawable.h>
 #include <util/Ref.h>
 #include <vkr/DataBuffer.h>
@@ -14,6 +15,7 @@ namespace tinygltf
 {
   struct Accessor;
   class Model;
+  struct TextureInfo;
   class TinyGLTF;
 }
 
@@ -58,14 +60,20 @@ namespace mt
       bool texcoord0Found = false;
     };
 
+    //  Информация по всем материалам gltf сцены. Индекс в векторе соответствует
+    //  индексу материала в tinygltf::Model::materials
+    using Materials = std::vector<GLTFMaterial>;
+
+    //  Ресурсы для подключения текстур к техникам. Индексы соответствуют
+    //  индексам текстур в tinygltf::Model::textures
+    using Textures = std::vector<ConstRef<TechniqueResource>>;
+
   private:
     void _clear();
     //  Основной алгоритм загрузки без обвязки на исключения
     void _import(const std::filesystem::path& file);
     //  Пропарсить сырые данные из файла и заполнить tinygltf::Model
-    void _parseGLTF(const std::vector<char>& fileData,
-                    tinygltf::Model& model,
-                    const char* baseDir);
+    void _parseGLTF(const std::vector<char>& fileData, tinygltf::Model& model);
     //  Настройить лодер tinygltf перед парсингом файла
     void _prepareLoader(tinygltf::TinyGLTF& loader) const;
     //  Просто загрузить какие-то данные в storage буфер на ГПУ
@@ -73,6 +81,22 @@ namespace mt
                                             size_t dataSize,
                                             CommandProducerGraphic& producer,
                                             const std::string& debugName);
+    //  Обработать информацию о текстуре, отправить команду на её загрузку и
+    //  заполнить _textures
+    void _createTexture(int textureIndex);
+
+    //  Обработать настройки gltf материала и транслировать их в собственные
+    void _createMaterialInfo(int materialIndex);
+    //  Загрузить данные материала на GPU
+    ConstRef<DataBuffer> _createGPUMaterialInfo(
+                                          const GLTFMaterial& material,
+                                          const std::string& bufferName) const;
+    //  Получить текстуру из уже загруженных.
+    //  MaterialName и textureName нужны только для лога
+    ConstRef<TechniqueResource> _getTexture(
+                                        const tinygltf::TextureInfo& info,
+                                        const char* materialName,
+                                        const char* textureName) const;
     //  Создать на GPU буфер с данными для gltf аксессора (общий случай)
     ConstRef<DataBuffer> _createAccessorBuffer(
                                             const tinygltf::Accessor& accessor,
@@ -90,8 +114,10 @@ namespace mt
                                   VerticesInfo& verticesInfo,
                                   const std::string& meshName);
     //  Подключить к ассету и настроить техники рисования
-    void _attachTechniques( MeshAsset& targetAsset,
-                            VerticesInfo& verticesInfo,
+    //  Возвращает false, если по какой-то причине не удалось создать техники
+    bool _attachTechniques( MeshAsset& targetAsset,
+                            const VerticesInfo& verticesInfo,
+                            const GLTFMaterial& material,
                             const std::string& meshName);
 
     //  Рекурсивный обход нод в иерархии gltf модели
@@ -108,8 +134,13 @@ namespace mt
 
     DrawablesList _drawables;
 
+    std::filesystem::path _file;
+    std::filesystem::path _baseDir;
     std::string _filename;
     const tinygltf::Model* _gltfModel;
+
+    Textures _textures;
+    Materials _materials;
     AssetLib _meshAssets;
     glm::mat4 _currentTansform;
   };
