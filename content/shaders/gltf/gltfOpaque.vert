@@ -3,9 +3,9 @@
 #include "gltf/gltfOpaque.inl"
 
 layout(location = 0) out vec3 outNormal;
-
+layout(location = 1) out vec3 outWorldPosition;
 #if TEXCOORD_COUNT > 0
-  layout(location = 1) out vec2 outTexcoord0;
+  layout(location = 2) out vec2 outTexcoord0;
 #endif
 
 void main()
@@ -24,6 +24,7 @@ void main()
                         POSITION.data[vertexShift + 2],
                         1.0);
   position = transformData.positionMatrix[gl_InstanceIndex] * position;
+  outWorldPosition = position.xyz;
   gl_Position = commonData.cameraData.viewProjectionMatrix * position;
 
   vec3 normal = vec3( NORMAL.data[vertexShift],

@@ -5,6 +5,7 @@ struct GlobaLightData
 {
   vec3 fromSunDirection;
   vec3 toSunDirection;
+  //  Освещенность поверхности, перпендикулярной направлению света
   vec3 directLightIrradiance;
 };
 

@@ -18,6 +18,10 @@ namespace mt
       alignas(16) glm::mat4 viewMatrix;
       alignas(16) glm::mat4 projectionMatrix;
       alignas(16) glm::mat4 viewProjectionMatrix;
+      alignas(16) glm::vec3 eyePoint;
+      alignas(16) glm::vec3 frontVector;
+      alignas(16) glm::vec3 upVector;
+      alignas(16) glm::vec3 rightVector;
     };
 
   public:
@@ -164,6 +168,10 @@ namespace mt
     shaderData.projectionMatrix = projectionMatrix();
     shaderData.viewProjectionMatrix =
                             shaderData.projectionMatrix * shaderData.viewMatrix;
+    shaderData.eyePoint = eyePoint();
+    shaderData.frontVector = frontVector();
+    shaderData.upVector = upVector();
+    shaderData.rightVector = rightVector();
     return shaderData;
   }
 }
