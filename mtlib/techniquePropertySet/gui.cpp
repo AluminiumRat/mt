@@ -145,7 +145,13 @@ static void makeTextureGUI(TechniqueProperty& property)
       fs::path file =
               openFileDialog( GUIWindow::currentWindow(),
                               FileFilters{{ .expression = "*.dds",
-                                            .description = "DDS image(*.dds)"}},
+                                            .description = "DDS image(*.dds)"},
+                                          { .expression = "*.hdr",
+                                            .description = "HDR image(*.hdr)"},
+                                          { .expression = "*.png",
+                                            .description = "PNG image(*.png)"},
+                                          { .expression = "*.*",
+                                            .description = "All files(*.*)"}},
                               "");
       if(!file.empty()) property.setResourcePath(file);
     }
