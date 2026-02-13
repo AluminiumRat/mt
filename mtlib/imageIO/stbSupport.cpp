@@ -2,6 +2,7 @@
 
 #include <imageIO/imageIO.h>
 #include <util/ContentLoader.h>
+#include <vkr/image/ImageFormatFeatures.h>
 #include <vkr/queue/CommandQueueTransfer.h>
 #include <vkr/Device.h>
 
@@ -12,6 +13,7 @@ using namespace mt;
 
 static Ref<Image> createImage(int width,
                               int height,
+                              VkFormat format,
                               const void* data,
                               CommandQueueGraphic& transferQueue,
                               bool layoutAutocontrol,
@@ -28,7 +30,7 @@ static Ref<Image> createImage(int width,
                                 VK_IMAGE_USAGE_TRANSFER_DST_BIT |
                                 VK_IMAGE_USAGE_SAMPLED_BIT,
                               0,
-                              VK_FORMAT_R8G8B8A8_SRGB,
+                              format,
                               glm::uvec3(extent, 1),
                               VK_SAMPLE_COUNT_1_BIT,
                               1,
@@ -52,7 +54,8 @@ static Ref<Image> createImage(int width,
   }
 
   //  Копируем нулевой мир
-  size_t dataSize = width * height * 4;
+  const ImageFormatFeatures& formatInfo = getFormatFeatures(format);
+  size_t dataSize = width * height * formatInfo.texelSize / 8;
   Ref<DataBuffer> uploadBuffer(new DataBuffer(transferQueue.device(),
                                               dataSize,
                                               DataBuffer::UPLOADING_BUFFER,
@@ -145,9 +148,9 @@ static Ref<Image> createImage(int width,
   return image;
 }
 
-Ref<Image> mt::loadStb( const std::filesystem::path& file,
-                        CommandQueueGraphic& uploadQueue,
-                        bool layoutAutocontrol)
+Ref<Image> mt::loadStbLDR(const std::filesystem::path& file,
+                          CommandQueueGraphic& uploadQueue,
+                          bool layoutAutocontrol)
 {
   std::string filename = (const char*)file.u8string().c_str();
 
@@ -175,6 +178,52 @@ Ref<Image> mt::loadStb( const std::filesystem::path& file,
   {
     Ref<Image> result = createImage(width,
                                     height,
+                                    VK_FORMAT_R8G8B8A8_SRGB,
+                                    imageData,
+                                    uploadQueue,
+                                    layoutAutocontrol,
+                                    filename);
+    stbi_image_free(imageData);
+    return result;
+  }
+  catch(...)
+  {
+    stbi_image_free(imageData);
+    throw;
+  }
+}
+
+Ref<Image> mt::loadStbHDR(const std::filesystem::path& file,
+                          CommandQueueGraphic& uploadQueue,
+                          bool layoutAutocontrol)
+{
+  std::string filename = (const char*)file.u8string().c_str();
+
+  //  Загружаем данные с диска
+  ContentLoader& loader = ContentLoader::getLoader();
+  std::vector<char> fileData = loader.loadData(file);
+
+  //  Парсим данные
+  int width = 0;
+  int height = 0;
+  int channels = 0;
+  float* imageData = stbi_loadf_from_memory((stbi_uc*)fileData.data(),
+                                            (int)fileData.size(),
+                                            &width,
+                                            &height,
+                                            &channels,
+                                            STBI_rgb_alpha);
+  if(imageData == nullptr)
+  {
+    throw std::runtime_error(std::string("unable to load image from ") + filename);
+  }
+
+  //  Загружаем данные на GPU
+  try
+  {
+    Ref<Image> result = createImage(width,
+                                    height,
+                                    VK_FORMAT_R32G32B32A32_SFLOAT,
                                     imageData,
                                     uploadQueue,
                                     layoutAutocontrol,

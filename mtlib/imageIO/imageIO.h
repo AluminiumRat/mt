@@ -17,7 +17,8 @@ namespace mt
 
   //  Загрузить изображение из файла
   //  Загрузчик определяется по расширению файла, будет использован либо
-  //    loadDDS для *.dds файлов, либо loadStb для остальных расширений
+  //    loadDDS для *.dds файлов, либо loadStbLDR/loadStbHDR для остальных
+  //    расширений
   //  uploadQueue - это очередь, через которую будет производится
   //    загрузка текстуры и создание мипов(при необходимости).
   //  layoutAutocontrol - надо ли включать автоконтроль лэйаута у создаваемого
@@ -31,9 +32,9 @@ namespace mt
                               CommandQueueGraphic& uploadQueue,
                               bool layoutAutocontrol = false);
 
-  //  Загрузить изображение с помошью библиотеки stb. Используется
-  //  для форматов файлов bmp, jpg, png
-  //  Формат итогового изображения - VK_FORMAT_B8G8R8A8_SRGB
+  //  Загрузить ldr изображение с помошью библиотеки stb. Используется
+  //    для форматов файлов bmp, jpg, png
+  //  Форматы итогового изображения VK_FORMAT_R8G8B8A8_SRGB
   //  После загрузки будут автоматически сгенерированы мипы
   //  uploadQueue - это очередь, через которую будет производится
   //    загрузка текстуры и создание мипов(при необходимости).
@@ -44,9 +45,26 @@ namespace mt
   //    ожидает их выполнения. Если вы используете image в очереди, отличной от
   //    transferQueue, то необходима внешняя синхронизация. Впрочем,
   //    CommandQueue::ownershipTransfer и так её делает
-  Ref<Image> loadStb( const std::filesystem::path& file,
-                      CommandQueueGraphic& uploadQueue,
-                      bool layoutAutocontrol = false);
+  Ref<Image> loadStbLDR(const std::filesystem::path& file,
+                        CommandQueueGraphic& uploadQueue,
+                        bool layoutAutocontrol = false);
+
+  //  Загрузить hdr изображение с помошью библиотеки stb. Используется
+  //    для формата hdr
+  //  Форматы итогового изображения VK_FORMAT_R32G32B32A32_SFLOAT
+  //  После загрузки будут автоматически сгенерированы мипы
+  //  uploadQueue - это очередь, через которую будет производится
+  //    загрузка текстуры и создание мипов(при необходимости).
+  //  layoutAutocontrol - надо ли включать автоконтроль лэйаута у создаваемого
+  //    image. Если layoutAutocontrol отключен, то image после загрузки будет
+  //    переведен в лэйаут VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL.
+  //  Обратите внимание, метод отправляет необходимые команды в очередь, но не
+  //    ожидает их выполнения. Если вы используете image в очереди, отличной от
+  //    transferQueue, то необходима внешняя синхронизация. Впрочем,
+  //    CommandQueue::ownershipTransfer и так её делает
+  Ref<Image> loadStbHDR(const std::filesystem::path& file,
+                        CommandQueueGraphic& uploadQueue,
+                        bool layoutAutocontrol = false);
 
   //  Загрузить dds файл, используя библиотеку dds_image
   //  Данные загружаются как есть. Тип картинки, формат, размер массива и
@@ -102,9 +120,13 @@ namespace mt
                       &uploadQueue,
                       layoutAutocontrol);
     }
+    else if(extension == ".hdr")
+    {
+      return loadStbHDR(file, uploadQueue, layoutAutocontrol);
+    }
     else
     {
-      return loadStb(file, uploadQueue, layoutAutocontrol);
+      return loadStbLDR(file, uploadQueue, layoutAutocontrol);
     }
   }
 };
