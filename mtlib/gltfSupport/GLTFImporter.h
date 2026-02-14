@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #include <filesystem>
 #include <memory>
@@ -43,16 +43,16 @@ namespace mt
     DrawablesList importGLTF(const std::filesystem::path& file);
 
   private:
-    //  Набор hld ассетов для одного gltf меша
+    //  РќР°Р±РѕСЂ hld Р°СЃСЃРµС‚РѕРІ РґР»СЏ РѕРґРЅРѕРіРѕ gltf РјРµС€Р°
     using MeshAssets = std::vector<ConstRef<MeshAsset>>;
-    //  Набор маш асетов для всей сцены. Индекс в векторе соответствует индексу
-    //  меша в tinygltf::Model
+    //  РќР°Р±РѕСЂ РјР°С€ Р°СЃРµС‚РѕРІ РґР»СЏ РІСЃРµР№ СЃС†РµРЅС‹. РРЅРґРµРєСЃ РІ РІРµРєС‚РѕСЂРµ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓРµС‚ РёРЅРґРµРєСЃСѓ
+    //  РјРµС€Р° РІ tinygltf::Model
     using AssetLib = std::vector<MeshAssets>;
 
-    //  Информация об обнаруженных вертексных буферах меша
+    //  РРЅС„РѕСЂРјР°С†РёСЏ РѕР± РѕР±РЅР°СЂСѓР¶РµРЅРЅС‹С… РІРµСЂС‚РµРєСЃРЅС‹С… Р±СѓС„РµСЂР°С… РјРµС€Р°
     struct VerticesInfo
     {
-      //  Сколько всего вершин в меше
+      //  РЎРєРѕР»СЊРєРѕ РІСЃРµРіРѕ РІРµСЂС€РёРЅ РІ РјРµС€Рµ
       uint32_t vertexCount = 0;
       bool positionFound = false;
       bool normalFound = false;
@@ -60,69 +60,69 @@ namespace mt
       bool texcoord0Found = false;
     };
 
-    //  Информация по всем материалам gltf сцены. Индекс в векторе соответствует
-    //  индексу материала в tinygltf::Model::materials
+    //  РРЅС„РѕСЂРјР°С†РёСЏ РїРѕ РІСЃРµРј РјР°С‚РµСЂРёР°Р»Р°Рј gltf СЃС†РµРЅС‹. РРЅРґРµРєСЃ РІ РІРµРєС‚РѕСЂРµ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓРµС‚
+    //  РёРЅРґРµРєСЃСѓ РјР°С‚РµСЂРёР°Р»Р° РІ tinygltf::Model::materials
     using Materials = std::vector<GLTFMaterial>;
 
-    //  Ресурсы для подключения текстур к техникам. Индексы соответствуют
-    //  индексам текстур в tinygltf::Model::textures
+    //  Р РµСЃСѓСЂСЃС‹ РґР»СЏ РїРѕРґРєР»СЋС‡РµРЅРёСЏ С‚РµРєСЃС‚СѓСЂ Рє С‚РµС…РЅРёРєР°Рј. РРЅРґРµРєСЃС‹ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‚
+    //  РёРЅРґРµРєСЃР°Рј С‚РµРєСЃС‚СѓСЂ РІ tinygltf::Model::textures
     using Textures = std::vector<ConstRef<TechniqueResource>>;
 
   private:
     void _clear();
-    //  Основной алгоритм загрузки без обвязки на исключения
+    //  РћСЃРЅРѕРІРЅРѕР№ Р°Р»РіРѕСЂРёС‚Рј Р·Р°РіСЂСѓР·РєРё Р±РµР· РѕР±РІСЏР·РєРё РЅР° РёСЃРєР»СЋС‡РµРЅРёСЏ
     void _import(const std::filesystem::path& file);
-    //  Пропарсить сырые данные из файла и заполнить tinygltf::Model
+    //  РџСЂРѕРїР°СЂСЃРёС‚СЊ СЃС‹СЂС‹Рµ РґР°РЅРЅС‹Рµ РёР· С„Р°Р№Р»Р° Рё Р·Р°РїРѕР»РЅРёС‚СЊ tinygltf::Model
     void _parseGLTF(const std::vector<char>& fileData, tinygltf::Model& model);
-    //  Настройить лодер tinygltf перед парсингом файла
+    //  РќР°СЃС‚СЂРѕР№РёС‚СЊ Р»РѕРґРµСЂ tinygltf РїРµСЂРµРґ РїР°СЂСЃРёРЅРіРѕРј С„Р°Р№Р»Р°
     void _prepareLoader(tinygltf::TinyGLTF& loader) const;
-    //  Просто загрузить какие-то данные в storage буфер на ГПУ
+    //  РџСЂРѕСЃС‚Рѕ Р·Р°РіСЂСѓР·РёС‚СЊ РєР°РєРёРµ-С‚Рѕ РґР°РЅРЅС‹Рµ РІ storage Р±СѓС„РµСЂ РЅР° Р“РџРЈ
     static ConstRef<DataBuffer> _uploadData(const void* data,
                                             size_t dataSize,
                                             CommandProducerGraphic& producer,
                                             const std::string& debugName);
-    //  Обработать информацию о текстуре, отправить команду на её загрузку и
-    //  заполнить _textures
+    //  РћР±СЂР°Р±РѕС‚Р°С‚СЊ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ С‚РµРєСЃС‚СѓСЂРµ, РѕС‚РїСЂР°РІРёС‚СЊ РєРѕРјР°РЅРґСѓ РЅР° РµС‘ Р·Р°РіСЂСѓР·РєСѓ Рё
+    //  Р·Р°РїРѕР»РЅРёС‚СЊ _textures
     void _createTexture(int textureIndex);
 
-    //  Обработать настройки gltf материала и транслировать их в собственные
+    //  РћР±СЂР°Р±РѕС‚Р°С‚СЊ РЅР°СЃС‚СЂРѕР№РєРё gltf РјР°С‚РµСЂРёР°Р»Р° Рё С‚СЂР°РЅСЃР»РёСЂРѕРІР°С‚СЊ РёС… РІ СЃРѕР±СЃС‚РІРµРЅРЅС‹Рµ
     void _createMaterialInfo(int materialIndex);
-    //  Загрузить данные материала на GPU
+    //  Р—Р°РіСЂСѓР·РёС‚СЊ РґР°РЅРЅС‹Рµ РјР°С‚РµСЂРёР°Р»Р° РЅР° GPU
     ConstRef<DataBuffer> _createGPUMaterialInfo(
                                           const GLTFMaterial& material,
                                           const std::string& bufferName) const;
-    //  Получить текстуру из уже загруженных.
-    //  MaterialName и textureName нужны только для лога
+    //  РџРѕР»СѓС‡РёС‚СЊ С‚РµРєСЃС‚СѓСЂСѓ РёР· СѓР¶Рµ Р·Р°РіСЂСѓР¶РµРЅРЅС‹С….
+    //  MaterialName Рё textureName РЅСѓР¶РЅС‹ С‚РѕР»СЊРєРѕ РґР»СЏ Р»РѕРіР°
     ConstRef<TechniqueResource> _getTexture(
                                         const tinygltf::TextureInfo& info,
                                         const char* materialName,
                                         const char* textureName) const;
-    //  Создать на GPU буфер с данными для gltf аксессора (общий случай)
+    //  РЎРѕР·РґР°С‚СЊ РЅР° GPU Р±СѓС„РµСЂ СЃ РґР°РЅРЅС‹РјРё РґР»СЏ gltf Р°РєСЃРµСЃСЃРѕСЂР° (РѕР±С‰РёР№ СЃР»СѓС‡Р°Р№)
     ConstRef<DataBuffer> _createAccessorBuffer(
                                             const tinygltf::Accessor& accessor,
                                             const std::string& debugName) const;
-    //  Специализированный метод для загрузки индекс буффера из glyf аксессора
+    //  РЎРїРµС†РёР°Р»РёР·РёСЂРѕРІР°РЅРЅС‹Р№ РјРµС‚РѕРґ РґР»СЏ Р·Р°РіСЂСѓР·РєРё РёРЅРґРµРєСЃ Р±СѓС„С„РµСЂР° РёР· glyf Р°РєСЃРµСЃСЃРѕСЂР°
     ConstRef<DataBuffer> _createIndexBuffer(const tinygltf::Accessor& accessor,
                                             const std::string& debugName) const;
-    //  Создать набор меш ассетов для меша из gltf и вставить их в _meshAssets
+    //  РЎРѕР·РґР°С‚СЊ РЅР°Р±РѕСЂ РјРµС€ Р°СЃСЃРµС‚РѕРІ РґР»СЏ РјРµС€Р° РёР· gltf Рё РІСЃС‚Р°РІРёС‚СЊ РёС… РІ _meshAssets
     void _createMeshAssets(int meshIndex);
-    //  Обработать отдельный вертекс аттрибут, добавить его в targetAsset и
-    //  обновить vertexInfo
+    //  РћР±СЂР°Р±РѕС‚Р°С‚СЊ РѕС‚РґРµР»СЊРЅС‹Р№ РІРµСЂС‚РµРєСЃ Р°С‚С‚СЂРёР±СѓС‚, РґРѕР±Р°РІРёС‚СЊ РµРіРѕ РІ targetAsset Рё
+    //  РѕР±РЅРѕРІРёС‚СЊ vertexInfo
     void _processVertexAttribute( const std::string& attributeName,
                                   const tinygltf::Accessor& accessor,
                                   MeshAsset& targetAsset,
                                   VerticesInfo& verticesInfo,
                                   const std::string& meshName);
-    //  Подключить к ассету и настроить техники рисования
-    //  Возвращает false, если по какой-то причине не удалось создать техники
+    //  РџРѕРґРєР»СЋС‡РёС‚СЊ Рє Р°СЃСЃРµС‚Сѓ Рё РЅР°СЃС‚СЂРѕРёС‚СЊ С‚РµС…РЅРёРєРё СЂРёСЃРѕРІР°РЅРёСЏ
+    //  Р’РѕР·РІСЂР°С‰Р°РµС‚ false, РµСЃР»Рё РїРѕ РєР°РєРѕР№-С‚Рѕ РїСЂРёС‡РёРЅРµ РЅРµ СѓРґР°Р»РѕСЃСЊ СЃРѕР·РґР°С‚СЊ С‚РµС…РЅРёРєРё
     bool _attachTechniques( MeshAsset& targetAsset,
                             const VerticesInfo& verticesInfo,
                             const GLTFMaterial& material,
                             const std::string& meshName);
 
-    //  Рекурсивный обход нод в иерархии gltf модели
+    //  Р РµРєСѓСЂСЃРёРІРЅС‹Р№ РѕР±С…РѕРґ РЅРѕРґ РІ РёРµСЂР°СЂС…РёРё gltf РјРѕРґРµР»Рё
     void _processNode(int nodeIndex);
-    //  Создать MeshDrawable, когда при обходе иерархии gltf наткнулись на меш
+    //  РЎРѕР·РґР°С‚СЊ MeshDrawable, РєРѕРіРґР° РїСЂРё РѕР±С…РѕРґРµ РёРµСЂР°СЂС…РёРё gltf РЅР°С‚РєРЅСѓР»РёСЃСЊ РЅР° РјРµС€
     void _processMesh(int gltfMeshIndex);
 
   private:

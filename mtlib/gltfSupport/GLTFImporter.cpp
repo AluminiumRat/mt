@@ -1,4 +1,4 @@
-#include <cstring>
+п»ї#include <cstring>
 #include <stdexcept>
 
 #define TINYGLTF_IMPLEMENTATION
@@ -19,8 +19,8 @@ namespace fs = std::filesystem;
 
 using namespace mt;
 
-//  Перевод из координат glfw в движковые. Просто замена осей, чтобы
-//  направление вверх было +Z
+//  РџРµСЂРµРІРѕРґ РёР· РєРѕРѕСЂРґРёРЅР°С‚ glfw РІ РґРІРёР¶РєРѕРІС‹Рµ. РџСЂРѕСЃС‚Рѕ Р·Р°РјРµРЅР° РѕСЃРµР№, С‡С‚РѕР±С‹
+//  РЅР°РїСЂР°РІР»РµРЅРёРµ РІРІРµСЂС… Р±С‹Р»Рѕ +Z
 constexpr glm::mat4 glfwToMTTransform(1, 0, 0, 0,
                                       0, 0, 1, 0,
                                       0,-1, 0, 0,
@@ -77,22 +77,22 @@ void GLTFImporter::_import(const std::filesystem::path& file)
   _baseDir = file.parent_path();
   _filename = (const char*)file.u8string().c_str();
 
-  //  Загружаем данные с диска
+  //  Р—Р°РіСЂСѓР¶Р°РµРј РґР°РЅРЅС‹Рµ СЃ РґРёСЃРєР°
   ContentLoader& fileLoader = ContentLoader::getLoader();
   std::vector<char> fileData = fileLoader.loadData(file);
 
-  //  Парсим загруженные данные
+  //  РџР°СЂСЃРёРј Р·Р°РіСЂСѓР¶РµРЅРЅС‹Рµ РґР°РЅРЅС‹Рµ
   tinygltf::Model gltfModel;
   _parseGLTF(fileData, gltfModel);
 
-  //  Подготовка к разбору gltf модели
+  //  РџРѕРґРіРѕС‚РѕРІРєР° Рє СЂР°Р·Р±РѕСЂСѓ gltf РјРѕРґРµР»Рё
   std::unique_ptr<CommandProducerGraphic> producer =
                                   _uploadingQueue.startCommands("GLTF uploading");
   _producer = producer.get();
   _gltfModel = &gltfModel;
   _currentTansform = glfwToMTTransform;
 
-  //  Отправляем команды на загрузку текстур, которые используются в сцене
+  //  РћС‚РїСЂР°РІР»СЏРµРј РєРѕРјР°РЅРґС‹ РЅР° Р·Р°РіСЂСѓР·РєСѓ С‚РµРєСЃС‚СѓСЂ, РєРѕС‚РѕСЂС‹Рµ РёСЃРїРѕР»СЊР·СѓСЋС‚СЃСЏ РІ СЃС†РµРЅРµ
   _textures.resize(gltfModel.textures.size());
   for(int textureIndex = 0;
       textureIndex < gltfModel.textures.size();
@@ -101,7 +101,7 @@ void GLTFImporter::_import(const std::filesystem::path& file)
     _createTexture(textureIndex);
   }
 
-  //  Заранее обходим все материалы и готовим инфу по ним
+  //  Р—Р°СЂР°РЅРµРµ РѕР±С…РѕРґРёРј РІСЃРµ РјР°С‚РµСЂРёР°Р»С‹ Рё РіРѕС‚РѕРІРёРј РёРЅС„Сѓ РїРѕ РЅРёРј
   _materials.resize(gltfModel.materials.size());
   for(int materialIndex = 0;
       materialIndex < gltfModel.materials.size();
@@ -110,14 +110,14 @@ void GLTFImporter::_import(const std::filesystem::path& file)
     _createMaterialInfo(materialIndex);
   }
 
-  //  Создаем ассеты мешей
+  //  РЎРѕР·РґР°РµРј Р°СЃСЃРµС‚С‹ РјРµС€РµР№
   _meshAssets.resize(gltfModel.meshes.size());
   for(int meshIndex = 0; meshIndex < gltfModel.meshes.size(); meshIndex++)
   {
     _createMeshAssets(meshIndex);
   }
 
-  //  Обходим ноды и создаем дравэйблы
+  //  РћР±С…РѕРґРёРј РЅРѕРґС‹ Рё СЃРѕР·РґР°РµРј РґСЂР°РІСЌР№Р±Р»С‹
   for(const tinygltf::Scene& scene : gltfModel.scenes)
   {
     for(int nodeIndex : scene.nodes) _processNode(nodeIndex);
@@ -148,7 +148,7 @@ void GLTFImporter::_parseGLTF(const std::vector<char>& fileData,
 
 void GLTFImporter::_prepareLoader(tinygltf::TinyGLTF& loader) const
 {
-  //  Подключаем свой fileLoader к tinygltf через FsCallbacks
+  //  РџРѕРґРєР»СЋС‡Р°РµРј СЃРІРѕР№ fileLoader Рє tinygltf С‡РµСЂРµР· FsCallbacks
   ContentLoader& fileLoader = ContentLoader::getLoader();
 
   tinygltf::FsCallbacks fsCallbacks{};
@@ -191,8 +191,8 @@ void GLTFImporter::_prepareLoader(tinygltf::TinyGLTF& loader) const
   fsCallbacks.GetFileSizeInBytes =
     [](size_t* filesize_out, std::string*, const std::string&, void*)
     {
-      //  Этот калбэк нужен только для проверки на максимальный размер, поэтому
-      //  просто вернем 0, чтобы всегда проходить проверку
+      //  Р­С‚РѕС‚ РєР°Р»Р±СЌРє РЅСѓР¶РµРЅ С‚РѕР»СЊРєРѕ РґР»СЏ РїСЂРѕРІРµСЂРєРё РЅР° РјР°РєСЃРёРјР°Р»СЊРЅС‹Р№ СЂР°Р·РјРµСЂ, РїРѕСЌС‚РѕРјСѓ
+      //  РїСЂРѕСЃС‚Рѕ РІРµСЂРЅРµРј 0, С‡С‚РѕР±С‹ РІСЃРµРіРґР° РїСЂРѕС…РѕРґРёС‚СЊ РїСЂРѕРІРµСЂРєСѓ
       *filesize_out = 0;
       return true;
     };
@@ -246,7 +246,7 @@ void GLTFImporter::_createMaterialInfo(int materialIndex)
 {
   const tinygltf::Material& gltfMaterial = _gltfModel->materials[materialIndex];
 
-  // Режим смешивания по альфе
+  // Р РµР¶РёРј СЃРјРµС€РёРІР°РЅРёСЏ РїРѕ Р°Р»СЊС„Рµ
   GLTFMaterial newMaterial{};
   if(gltfMaterial.alphaMode == "OPAQUE")
   {
@@ -267,7 +267,7 @@ void GLTFImporter::_createMaterialInfo(int materialIndex)
   }
   newMaterial.alphaCutoff = (float)gltfMaterial.alphaCutoff;
 
-  // Базовые параметры
+  // Р‘Р°Р·РѕРІС‹Рµ РїР°СЂР°РјРµС‚СЂС‹
   newMaterial.doubleSided = gltfMaterial.doubleSided;
   newMaterial.baseColor = glm::vec4(
                           gltfMaterial.pbrMetallicRoughness.baseColorFactor[0],
@@ -285,12 +285,12 @@ void GLTFImporter::_createMaterialInfo(int materialIndex)
   newMaterial.occlusionTextureStrength =
                                   (float)gltfMaterial.occlusionTexture.strength;
 
-  // Заливаем данные материала на ГПУ
+  // Р—Р°Р»РёРІР°РµРј РґР°РЅРЅС‹Рµ РјР°С‚РµСЂРёР°Р»Р° РЅР° Р“РџРЈ
   newMaterial.materialData = _createGPUMaterialInfo(
                                               newMaterial,
                                               _filename+":"+ gltfMaterial.name);
 
-  // Грузим текстуры
+  // Р“СЂСѓР·РёРј С‚РµРєСЃС‚СѓСЂС‹
   newMaterial.baseColorTexture = _getTexture(
                               gltfMaterial.pbrMetallicRoughness.baseColorTexture,
                               gltfMaterial.name.c_str(),
@@ -362,7 +362,7 @@ ConstRef<DataBuffer> GLTFImporter::_createAccessorBuffer(
 
   if(bufferview.byteStride == partSize)
   {
-    //  В буфере нет разрывов между данными, можем копировать одним куском
+    //  Р’ Р±СѓС„РµСЂРµ РЅРµС‚ СЂР°Р·СЂС‹РІРѕРІ РјРµР¶РґСѓ РґР°РЅРЅС‹РјРё, РјРѕР¶РµРј РєРѕРїРёСЂРѕРІР°С‚СЊ РѕРґРЅРёРј РєСѓСЃРєРѕРј
     return _uploadData( &buffer.data[dataStartOffset],
                         dataSize,
                         *_producer,
@@ -370,8 +370,8 @@ ConstRef<DataBuffer> GLTFImporter::_createAccessorBuffer(
   }
   else
   {
-    //  В буфере есть разрывы, сначала собираем непрерывный буфер, потом
-    //  копируем его на GPU
+    //  Р’ Р±СѓС„РµСЂРµ РµСЃС‚СЊ СЂР°Р·СЂС‹РІС‹, СЃРЅР°С‡Р°Р»Р° СЃРѕР±РёСЂР°РµРј РЅРµРїСЂРµСЂС‹РІРЅС‹Р№ Р±СѓС„РµСЂ, РїРѕС‚РѕРј
+    //  РєРѕРїРёСЂСѓРµРј РµРіРѕ РЅР° GPU
     std::vector<std::byte> accessorData(dataSize);
     std::byte* dstCursor = accessorData.data();
     const unsigned char* srcCursor = &buffer.data[dataStartOffset];
@@ -392,7 +392,7 @@ ConstRef<DataBuffer> GLTFImporter::_createIndexBuffer(
                                             const tinygltf::Accessor& accessor,
                                             const std::string& debugName) const
 {
-  //  Всегда используем 32-х разрядные индексы
+  //  Р’СЃРµРіРґР° РёСЃРїРѕР»СЊР·СѓРµРј 32-С… СЂР°Р·СЂСЏРґРЅС‹Рµ РёРЅРґРµРєСЃС‹
   size_t indexSize = 4;
 
   int32_t srcIndexSize =
@@ -408,12 +408,12 @@ ConstRef<DataBuffer> GLTFImporter::_createIndexBuffer(
   if(bufferview.buffer < 0) throw std::runtime_error(_filename + " : wrong buffer reference");
   const tinygltf::Buffer& buffer = _gltfModel->buffers[bufferview.buffer];
 
-  //Создаем промежуточный CPU буфер, чтобы скопировать туда данные идексов
+  //РЎРѕР·РґР°РµРј РїСЂРѕРјРµР¶СѓС‚РѕС‡РЅС‹Р№ CPU Р±СѓС„РµСЂ, С‡С‚РѕР±С‹ СЃРєРѕРїРёСЂРѕРІР°С‚СЊ С‚СѓРґР° РґР°РЅРЅС‹Рµ РёРґРµРєСЃРѕРІ
   size_t bufferSize = indexSize * accessor.count;
   std::vector<std::byte> bufferData;
   bufferData.resize(bufferSize, std::byte(0));
   
-  // Копируем индексы из исходного буфера
+  // РљРѕРїРёСЂСѓРµРј РёРЅРґРµРєСЃС‹ РёР· РёСЃС…РѕРґРЅРѕРіРѕ Р±СѓС„РµСЂР°
   std::byte* dstCursor = bufferData.data();
   const unsigned char* srcCursor = &buffer.data[dataStartOffset];
   size_t srcStride = bufferview.byteStride == 0 ? srcIndexSize :
@@ -425,7 +425,7 @@ ConstRef<DataBuffer> GLTFImporter::_createIndexBuffer(
     srcCursor += srcStride;
   }
 
-  //  Загружаем на ГПУ
+  //  Р—Р°РіСЂСѓР¶Р°РµРј РЅР° Р“РџРЈ
   return _uploadData( bufferData.data(),
                       bufferData.size(),
                       *_producer,
@@ -439,8 +439,8 @@ void GLTFImporter::_createMeshAssets(int meshIndex)
   const tinygltf::Mesh& gltfMesh = _gltfModel->meshes[meshIndex];
   std::string meshName = _filename + ":" + gltfMesh.name;
 
-  //  Для каждого из примитивов создвем свой ассет, так как они могут иметь
-  //  разные материалы
+  //  Р”Р»СЏ РєР°Р¶РґРѕРіРѕ РёР· РїСЂРёРјРёС‚РёРІРѕРІ СЃРѕР·РґРІРµРј СЃРІРѕР№ Р°СЃСЃРµС‚, С‚Р°Рє РєР°Рє РѕРЅРё РјРѕРіСѓС‚ РёРјРµС‚СЊ
+  //  СЂР°Р·РЅС‹Рµ РјР°С‚РµСЂРёР°Р»С‹
   for(const tinygltf::Primitive& primitive : gltfMesh.primitives)
   {
     if(primitive.mode != TINYGLTF_MODE_TRIANGLES)
@@ -452,7 +452,7 @@ void GLTFImporter::_createMeshAssets(int meshIndex)
     Ref<MeshAsset> asset(new MeshAsset(meshName.c_str()));
     VerticesInfo verticesInfo;
 
-    //  Прикрепляем вертекс-буфферы (атрибуты)
+    //  РџСЂРёРєСЂРµРїР»СЏРµРј РІРµСЂС‚РµРєСЃ-Р±СѓС„С„РµСЂС‹ (Р°С‚СЂРёР±СѓС‚С‹)
     for(std::map<std::string, int>::const_iterator iAttribute =
                                                   primitive.attributes.begin();
         iAttribute != primitive.attributes.end();
@@ -468,7 +468,7 @@ void GLTFImporter::_createMeshAssets(int meshIndex)
                               meshName);
     }
 
-    //  Прикрепляем индексный буфер, если он есть
+    //  РџСЂРёРєСЂРµРїР»СЏРµРј РёРЅРґРµРєСЃРЅС‹Р№ Р±СѓС„РµСЂ, РµСЃР»Рё РѕРЅ РµСЃС‚СЊ
     if(primitive.indices >= 0)
     {
       const tinygltf::Accessor& accessor =
@@ -489,7 +489,7 @@ void GLTFImporter::_createMeshAssets(int meshIndex)
       continue;
     }
 
-    //  Подключаем техники
+    //  РџРѕРґРєР»СЋС‡Р°РµРј С‚РµС…РЅРёРєРё
     if(!_attachTechniques(*asset,
                           verticesInfo,
                           _materials[primitive.material],
@@ -566,8 +566,8 @@ void GLTFImporter::_processVertexAttribute( const std::string& attributeName,
   
   if(attributeName == "POSITION")
   {
-    //  По этому аттрибуту определяем AABB и сколько вообще у нас есть
-    //  вертек сов на отрисовку (если не обнаружим индексный буфер)
+    //  РџРѕ СЌС‚РѕРјСѓ Р°С‚С‚СЂРёР±СѓС‚Сѓ РѕРїСЂРµРґРµР»СЏРµРј AABB Рё СЃРєРѕР»СЊРєРѕ РІРѕРѕР±С‰Рµ Сѓ РЅР°СЃ РµСЃС‚СЊ
+    //  РІРµСЂС‚РµРє СЃРѕРІ РЅР° РѕС‚СЂРёСЃРѕРІРєСѓ (РµСЃР»Рё РЅРµ РѕР±РЅР°СЂСѓР¶РёРј РёРЅРґРµРєСЃРЅС‹Р№ Р±СѓС„РµСЂ)
     verticesInfo.vertexCount = (uint32_t)accessor.count;
     verticesInfo.positionFound = true;
     if(accessor.minValues.size() == 3 || accessor.maxValues.size() == 3)
