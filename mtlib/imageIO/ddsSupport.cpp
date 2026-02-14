@@ -143,11 +143,19 @@ Ref<Image> mt::loadDDS( const fs::path& file,
     throw std::runtime_error(std::string("Only color formats are supported: ") + filename);
   }
 
+  VkImageCreateFlags imageCreateFlags = 0;
+  if( ddsImage.arraySize >= 6 &&
+      ddsImage.depth == 1 &&
+      ddsImage.width == ddsImage.height)
+  {
+    imageCreateFlags = imageCreateFlags | VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+  }
+
   Ref<Image> image(new Image( device,
                               imageType,
                               VK_IMAGE_USAGE_SAMPLED_BIT |
                                 VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                              0,
+                              imageCreateFlags,
                               imageFormat,
                               glm::uvec3( ddsImage.width,
                                           ddsImage.height,
