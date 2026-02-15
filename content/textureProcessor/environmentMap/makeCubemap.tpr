@@ -15,9 +15,9 @@ shaderProps:
       addressModeU: REPEAT
       addressModeV: CLAMP_TO_EDGE
       addressModeW: REPEAT
-      mipLodBias: -1
+      mipLodBias: 0
       anisotropyEnable: true
-      maxAnisotropy: 4
+      maxAnisotropy: 16
       compareEnable: false
       compareOp: GREATER
       minLod: 0

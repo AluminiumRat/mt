@@ -1,8 +1,8 @@
 shader: makeIrradianceMap.frag
 output: irradiance_CUBEMAP.dds
 outputFormat: VK_FORMAT_B10G11R11_UFLOAT_PACK32
-outputWidth: 2
-outputHeight: 2
+outputWidth: 8
+outputHeight: 8
 outputMips: 1
 outputArraySize: 6
 shaderProps:
@@ -31,4 +31,4 @@ shaderProps:
   intrinsic.mipLevel:
     int: [1]
   params.samplesPerTexel:
-    int: [5000]
+    int: [1000]

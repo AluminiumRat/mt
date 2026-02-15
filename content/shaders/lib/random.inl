@@ -14,9 +14,9 @@ float random(vec2 co)
 
 //  Hammersley Point Set
 //  Radical inverse based on http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
-vec2 hammersley2d(uint i, uint N) 
+vec2 hammersley2d(uint i, uint N, uint seed)
 {
-	uint bits = (i << 16u) | (i >> 16u);
+	uint bits = ((i + seed) << 16u) | ((i + seed) >> 16u);
 	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
 	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
 	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);

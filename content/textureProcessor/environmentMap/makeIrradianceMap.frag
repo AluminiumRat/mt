@@ -48,7 +48,10 @@ void main()
   vec3 color = vec3(0.0);
   for(int i = 0; i < params.samplesPerTexel; i++)
   {
-    vec2 samplerValue = hammersley2d(i, params.samplesPerTexel);
+    float seed = random(texCoord);
+    vec2 samplerValue = hammersley2d(i,
+                                     params.samplesPerTexel,
+                                     uint(seed * 10 * params.samplesPerTexel));
     vec3 sampleDirection = sampleHemisphere(samplerValue);
     
     float cosTheta = sampleDirection.z;
