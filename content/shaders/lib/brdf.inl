@@ -59,11 +59,13 @@ float specularBRDF( float normDotLight,
                     float normDotHalf,
                     float roughness2)
 {
-  return ggxNormalDistribution(normDotHalf, roughness2) *
-          geometrySchlickSmith(normDotLight, normDotView, roughness2) *
-            visibilityFunction(normDotLight, normDotView);
+  //  Закоменчен более понятный, но немного более медленный вариант "как по
+  //  букварю". Оставлен для контроля и понимания, откуда что пришло.
   /*return ggxNormalDistribution(normDotHalf, roughness2) *
-          schlickSmithGeometryVisibility(normDotLight, normDotView, roughness2);*/
+          geometrySchlickSmith(normDotLight, normDotView, roughness2) *
+            visibilityFunction(normDotLight, normDotView);*/
+  return ggxNormalDistribution(normDotHalf, roughness2) *
+          schlickSmithGeometryVisibility(normDotLight, normDotView, roughness2);
 }
 
 //  Диффузное отражение. BRDF по Ламберту. Равномерное отражение во все стороны
