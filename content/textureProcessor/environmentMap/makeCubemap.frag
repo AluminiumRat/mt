@@ -6,7 +6,6 @@
 
 layout (set = STATIC) uniform IntrinsicData
 {
-  uint mipLevel;
   uint arrayIndex;
 } intrinsic;
 

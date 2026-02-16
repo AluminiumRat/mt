@@ -1,0 +1,36 @@
+shader: makeSpecularEnvMap.frag
+output: specularEnvmap_CUBEMAP.dds
+outputFormat: VK_FORMAT_B10G11R11_UFLOAT_PACK32
+outputWidth: 256
+outputHeight: 256
+outputMips: 100
+outputArraySize: 6
+shaderProps:
+  colorSampler:
+    sampler:
+      default: false
+      magFilter: LINEAR
+      minFilter: LINEAR
+      mipmapMode: LINEAR
+      addressModeU: REPEAT
+      addressModeV: CLAMP_TO_EDGE
+      addressModeW: REPEAT
+      mipLodBias: 0
+      anisotropyEnable: true
+      maxAnisotropy: 16
+      compareEnable: false
+      compareOp: GREATER
+      minLod: 0
+      maxLod: 1000
+      borderColor: FLOAT_TRANSPARENT_BLACK
+      unnormalizedCoordinates: false
+  environmentMap:
+    file: environment_CUBEMAP.dds
+  intrinsic.arrayIndex:
+    int: [1]
+  intrinsic.mipLevel:
+    int: [1]
+  intrinsic.mipLevelCount:
+    int: [1]
+  params.samplesPerTexel:
+    int: [256]

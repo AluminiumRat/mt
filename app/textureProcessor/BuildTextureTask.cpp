@@ -175,9 +175,18 @@ void Project::BuildTextureTask::_adjustIntrinsic( uint32_t mipIndex,
   mt::UniformVariable& mipUniform =
                           _technique->getOrCreateUniform("intrinsic.mipLevel");
   mipUniform.setValue(mipIndex);
+
+  mt::UniformVariable& mipCountUniform =
+                      _technique->getOrCreateUniform("intrinsic.mipLevelCount");
+  mipCountUniform.setValue(_targetImage->mipmapCount());
+
   mt::UniformVariable& arrayIndexUniform =
                         _technique->getOrCreateUniform("intrinsic.arrayIndex");
   arrayIndexUniform.setValue(arrayIndex);
+
+  mt::UniformVariable& arraySizeUniform =
+                        _technique->getOrCreateUniform("intrinsic.arraySize");
+  arraySizeUniform.setValue(_targetImage->arraySize());
 }
 
 mt::Ref<mt::FrameBuffer> Project::BuildTextureTask::_createFrameBuffer(

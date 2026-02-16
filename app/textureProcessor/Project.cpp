@@ -61,7 +61,11 @@ public:
 
     _configurator.addGUIHint({"intrinsic.mipLevel",
                               mt::TechniqueConfiguration::GUI_HINT_HIDDEN});
+    _configurator.addGUIHint({"intrinsic.mipLevelCount",
+                              mt::TechniqueConfiguration::GUI_HINT_HIDDEN});
     _configurator.addGUIHint({"intrinsic.arrayIndex",
+                              mt::TechniqueConfiguration::GUI_HINT_HIDDEN});
+    _configurator.addGUIHint({"intrinsic.arraySize",
                               mt::TechniqueConfiguration::GUI_HINT_HIDDEN});
 
     _configurator.rebuildConfiguration(&_usedFiles);

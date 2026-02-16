@@ -71,4 +71,19 @@ vec3 cosineSampleHemisphere(vec2 samplerValue)
   return vec3(projection, z);
 }
 
+//  Сэмплинг нормалей по GGX
+//  Предполагается, что макронормаль параллельна оси z и направлена в +Z
+//  roughness_4 - четвертая степень от roughness
+//  http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_slides.pdf
+vec3 sampleGGX(vec2 samplerValue, float roughness_4)
+{
+	// Maps a 2D point to a hemisphere with spread based on roughness
+	float phi = 2.0 * M_PI * samplerValue.x;
+	float cosTheta = sqrt((1.0f - samplerValue.y) /
+                          (1.0f + (roughness_4 - 1.0f) * samplerValue.y));
+  cosTheta = min(cosTheta, 1.0f);
+	float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+	return vec3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
+}
+
 #endif
