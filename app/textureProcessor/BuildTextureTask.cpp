@@ -13,6 +13,7 @@ Project::BuildTextureTask::BuildTextureTask(
                                         VkFormat textureFormat,
                                         glm::uvec2 textureSize,
                                         uint32_t mipsCount,
+                                        bool mipsAutogenerate,
                                         uint32_t arraySize,
                                         Project& project) :
   AsyncTask("Build texture",
@@ -22,6 +23,7 @@ Project::BuildTextureTask::BuildTextureTask(
   _textureFormat(textureFormat),
   _textureSize(textureSize),
   _mipsCount(mipsCount),
+  _mipsAutogenerate(mipsAutogenerate),
   _arraySize(arraySize),
   _project(project)
 {
@@ -98,9 +100,12 @@ void Project::BuildTextureTask::asyncPart()
 
   reportStage("Build texture");
 
+  uint32_t mipsToRender = _mipsAutogenerate ? 1 : _mipsCount;
+
+  //  Отрисовываем контент в текстуру с помощью пользовательского шейдера
   for(uint32_t arrayIndex = 0; arrayIndex < _arraySize; arrayIndex++)
   {
-    for(uint32_t mipIndex = 0; mipIndex < _mipsCount; mipIndex++)
+    for(uint32_t mipIndex = 0; mipIndex < mipsToRender; mipIndex++)
     {
       _buildSlice(mipIndex, arrayIndex);
       int percent = 100 * (mipIndex + arrayIndex * _mipsCount) /
@@ -109,6 +114,9 @@ void Project::BuildTextureTask::asyncPart()
       if(shouldBeAborted()) return;
     }
   }
+
+  //  Генерируем недостающие мипы при необходимости
+  _createMips();
 
   reportStage("Save texture");
   _saveTexture();
@@ -125,19 +133,20 @@ void Project::BuildTextureTask::_createTargetImage()
     imageFlags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
   }
   _targetImage = mt::Ref<mt::Image>(new mt::Image(
-                                            device,
-                                            VK_IMAGE_TYPE_2D,
-                                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                                          device,
+                                          VK_IMAGE_TYPE_2D,
+                                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                                            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
                                             VK_IMAGE_USAGE_SAMPLED_BIT |
                                             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                            imageFlags,
-                                            _textureFormat,
-                                            glm::uvec3(_textureSize, 1),
-                                            VK_SAMPLE_COUNT_1_BIT,
-                                            _arraySize,
-                                            _mipsCount,
-                                            true,
-                                            "Result texture"));
+                                          imageFlags,
+                                          _textureFormat,
+                                          glm::uvec3(_textureSize, 1),
+                                          VK_SAMPLE_COUNT_1_BIT,
+                                          _arraySize,
+                                          _mipsCount,
+                                          true,
+                                          "Result texture"));
 }
 
 void Project::BuildTextureTask::_buildSlice(uint32_t mipIndex,
@@ -166,6 +175,9 @@ void Project::BuildTextureTask::_buildSlice(uint32_t mipIndex,
   renderPass.endPass();
 
   queue->submitCommands(std::move(producer));
+  //  Ожидание очереди нужно для правильного отчета о завершенных процентах
+  //  задачи, а также для того чтобы к моменту, когда текстура будет считываться
+  //  с ГПУ, она уже была готова
   queue->createSyncPoint().waitForReady();
 }
 
@@ -209,6 +221,40 @@ mt::Ref<mt::FrameBuffer> Project::BuildTextureTask::_createFrameBuffer(
                     .clearValue = VkClearColorValue{0.0f, 0.0f, 0.00f, 0.0f}};
 
   return mt::Ref(new mt::FrameBuffer(std::span(&colorAttachment, 1), nullptr));
+}
+
+void Project::BuildTextureTask::_createMips()
+{
+  if(!_mipsAutogenerate) return;
+  if(_mipsCount <= 1) return;
+
+  mt::Device& device = Application::instance().primaryDevice();
+  mt::CommandQueueGraphic* queue = device.graphicQueue();
+  MT_ASSERT(queue != nullptr)
+  std::unique_ptr<mt::CommandProducerGraphic> producer = queue->startCommands();
+
+  for(uint32_t arrayIndex = 0; arrayIndex < _arraySize; arrayIndex++)
+  {
+    for(uint32_t mipIndex = 1; mipIndex < _mipsCount; mipIndex++)
+    {
+      producer->blitImage(*_targetImage,
+                          VK_IMAGE_ASPECT_COLOR_BIT,
+                          arrayIndex,
+                          mipIndex - 1,
+                          glm::uvec3(0),
+                          _targetImage->extent(mipIndex - 1),
+                          *_targetImage,
+                          VK_IMAGE_ASPECT_COLOR_BIT,
+                          arrayIndex,
+                          mipIndex,
+                          glm::uvec3(0),
+                          _targetImage->extent(mipIndex),
+                          VK_FILTER_LINEAR);
+    }
+  }
+
+  queue->submitCommands(std::move(producer));
+  queue->createSyncPoint().waitForReady();
 }
 
 void Project::BuildTextureTask::_saveTexture()

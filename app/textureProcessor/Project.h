@@ -55,6 +55,7 @@ private:
   VkFormat _imageFormat;
   glm::ivec2 _outputSize;
   int32_t _mipsCount;
+  bool _mipsAutogenerate;
   int32_t _arraySize;
 
   mt::Ref<mt::TechniqueConfigurator> _configurator;

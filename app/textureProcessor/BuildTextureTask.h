@@ -35,6 +35,7 @@ public:
                     VkFormat textureFormat,
                     glm::uvec2 textureSize,
                     uint32_t mipsCount,
+                    bool mipsAutogenerate,
                     uint32_t arraySize,
                     Project& project);
   BuildTextureTask(const BuildTextureTask&) = delete;
@@ -54,6 +55,7 @@ private:
   void _adjustIntrinsic(uint32_t mipIndex, uint32_t arrayIndex);
   mt::Ref<mt::FrameBuffer> _createFrameBuffer(uint32_t mipIndex,
                                               uint32_t arrayIndex);
+  void _createMips();
   void _saveTexture();
 
 private:
@@ -61,6 +63,7 @@ private:
   VkFormat _textureFormat;
   glm::uvec2 _textureSize;
   uint32_t _mipsCount;
+  bool _mipsAutogenerate;
   uint32_t _arraySize;
 
   //  Копия оригенальной техники. Оригенальную технику использовать нельзя, так

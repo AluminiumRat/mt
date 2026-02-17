@@ -114,6 +114,7 @@ Project::Project( const fs::path& file) :
   _imageFormat(VK_FORMAT_B8G8R8A8_SRGB),
   _outputSize(256, 256),
   _mipsCount(1),
+  _mipsAutogenerate(false),
   _arraySize(1),
   _configurator(new mt::TechniqueConfigurator(
                                         Application::instance().primaryDevice(),
@@ -170,6 +171,8 @@ void Project::_load()
   _mipsCount = rootNode["outputMips"].as<int32_t>(_mipsCount);
   _mipsCount = glm::clamp(_mipsCount, 1, 1024);
 
+  _mipsAutogenerate = rootNode["mipsAutogenerate"].as<bool>(false);
+
   _arraySize = rootNode["outputArraySize"].as<int32_t>(_arraySize);
   _arraySize = glm::clamp(_arraySize, 1, 16536);
 
@@ -210,6 +213,9 @@ void Project::save(const fs::path& file)
   out << YAML::Key << "outputMips";
   out << YAML::Value << _mipsCount;
 
+  out << YAML::Key << "mipsAutogenerate";
+  out << YAML::Value << _mipsAutogenerate;
+
   out << YAML::Key << "outputArraySize";
   out << YAML::Value << _arraySize;
 
@@ -248,13 +254,15 @@ void Project::runTechnique()
   if(!_technique.isReady()) throw std::runtime_error("Not all resources are setted");
 
   if (_textureTaskHandle != nullptr) _textureTaskHandle->abortTask();
-  std::unique_ptr<mt::AsyncTask> newTask( new BuildTextureTask( _technique,
-                                                                _outputFile,
-                                                                _imageFormat,
-                                                                _outputSize,
-                                                                _mipsCount,
-                                                                _arraySize,
-                                                                *this));
+  std::unique_ptr<mt::AsyncTask> newTask( new BuildTextureTask(
+                                                              _technique,
+                                                              _outputFile,
+                                                              _imageFormat,
+                                                              _outputSize,
+                                                              _mipsCount,
+                                                              _mipsAutogenerate,
+                                                              _arraySize,
+                                                              *this));
   _textureTaskHandle = Application::instance().asyncQueue().addManagedTask(
                                                             std::move(newTask));
 }
@@ -333,6 +341,9 @@ void Project::_guiOutputProps()
   outputPropsGrid.addRow("Mips:");
   ImGui::InputInt("##mips", &_mipsCount, 0);
   _mipsCount = glm::clamp(_mipsCount, 1, 1024);
+
+  outputPropsGrid.addRow("Auto mips:");
+  ImGui::Checkbox("##automips", &_mipsAutogenerate);
 
   outputPropsGrid.addRow("Array size:");
   ImGui::InputInt("##arraySize", &_arraySize, 0);
