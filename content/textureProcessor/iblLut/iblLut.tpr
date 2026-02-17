@@ -1,5 +1,5 @@
-shader: makeBrdfLut.frag
-output: brdfLut.dds
+shader: iblLut.frag
+output: ..\..\util\iblLut.dds
 outputFormat: VK_FORMAT_B8G8R8A8_SRGB
 outputWidth: 64
 outputHeight: 64
