@@ -27,6 +27,7 @@ namespace mt
   class DrawScene;
   class EnvironmentScene;
   class TechniqueManager;
+  class TextureManager;
 
   //  Штуковина для отрисовки сцены в цветовой кадр. То есть то, что должно
   //  показываться пользователю
@@ -39,7 +40,8 @@ namespace mt
     static constexpr VkFormat depthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
   public:
-    explicit ColorFrameBuilder(Device& device);
+    explicit ColorFrameBuilder( Device& device,
+                                TextureManager& textureManager);
     ColorFrameBuilder(const ColorFrameBuilder&) = delete;
     ColorFrameBuilder& operator = (const ColorFrameBuilder&) = delete;
     virtual ~ColorFrameBuilder() noexcept = default;

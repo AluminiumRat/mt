@@ -1,22 +1,28 @@
 ﻿#pragma once
 
 #include <util/Ref.h>
+#include <vkr/image/ImageView.h>
 #include <vkr/pipeline/DescriptorSet.h>
 #include <vkr/pipeline/PipelineLayout.h>
 #include <vkr/DataBuffer.h>
+#include <vkr/Sampler.h>
 
 namespace mt
 {
   class CommandProducerGraphic;
   class Device;
-  struct FrameBuildContext;
   class EnvironmentScene;
+  struct FrameBuildContext;
+  class TextureManager;
+
 
   //  Управляет набором общих ресурсов для шейдеров в ColorFrameBuilder-е
   class ColorFrameCommonSet
   {
   public:
     static constexpr uint32_t uniformBufferBinding = 0;
+    static constexpr uint32_t iblLutBinding = 1;
+    static constexpr uint32_t iblLutSamplerBinding = 2;
 
   public:
     //  Хелпер, который биндит сет в конструкторе и анбиндит в деструкторе
@@ -35,7 +41,7 @@ namespace mt
     };
 
   public:
-    explicit ColorFrameCommonSet(Device& device);
+    ColorFrameCommonSet(Device& device, TextureManager& textureManager);
     ColorFrameCommonSet(const ColorFrameCommonSet&) = delete;
     ColorFrameCommonSet& operator = (const ColorFrameCommonSet&) = delete;
     ~ColorFrameCommonSet() = default;
@@ -57,9 +63,12 @@ namespace mt
 
   private:
     Device& _device;
+    TextureManager& _textureManager;
 
     Ref<DescriptorSet> _descriptorSet;
     Ref<DataBuffer> _uniformBuffer;
+    ConstRef<ImageView> _iblLut;
+    Ref<Sampler> _iblLutSampler;
 
     ConstRef<DescriptorSetLayout> _setLayout;
     Ref<PipelineLayout> _pipelineLayout;

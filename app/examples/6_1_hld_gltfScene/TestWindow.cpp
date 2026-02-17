@@ -23,7 +23,7 @@ TestWindow::TestWindow(Device& device) :
                 })),
   _textureManager(_fileWatcher, _asyncQueue),
   _techniqueManager(_fileWatcher, _asyncQueue),
-  _frameBuilder(device),
+  _frameBuilder(device, _textureManager),
   _cameraManipulator(CameraManipulator::APPLICATION_WINDOW_LOCATION),
   _environment(device)
 {

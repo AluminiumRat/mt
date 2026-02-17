@@ -12,10 +12,11 @@
 
 using namespace mt;
 
-ColorFrameBuilder::ColorFrameBuilder(Device& device) :
+ColorFrameBuilder::ColorFrameBuilder( Device& device,
+                                      TextureManager& textureManager) :
   _device(device),
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(frameTypeName)),
-  _commonSet(device),
+  _commonSet(device, textureManager),
   _opaqueColorStage(device),
   _posteffects(device)
 {
