@@ -1,0 +1,10 @@
+shader: makeBrdfLut.frag
+output: brdfLut.dds
+outputFormat: VK_FORMAT_B8G8R8A8_SRGB
+outputWidth: 64
+outputHeight: 64
+outputMips: 1
+outputArraySize: 1
+shaderProps:
+  params.samplesCount:
+    int: [10000]
