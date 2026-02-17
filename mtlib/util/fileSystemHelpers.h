@@ -11,9 +11,9 @@ namespace mt
   inline std::filesystem::path utf8ToPath(const std::string& filename);
 
   //  Перевести pathToSave в формат, пригодный для сохранения в файле проекта
-  //  Если pathToSave - это абсолютный путь и pathToSave лежит в projectFolder
-  //    или её подпапке, то возвращает путь относительно projectFolder, иначе
-  //    возвращает исходный pathToSave
+  //  Если pathToSave - это абсолютный путь и существует относительный
+  //    путь из projectFolder в pathToSave, то возвращает путь относительно
+  //    projectFolder, иначе возвращает исходный pathToSave
   inline std::filesystem::path makeStoredPath(
                                     const std::filesystem::path& pathToSave,
                                     const std::filesystem::path& projectFolder);
@@ -48,22 +48,9 @@ namespace mt
     std::filesystem::path normalizedPath = pathToSave.lexically_normal();
     std::filesystem::path projectFolderNorm = projectFolder.lexically_normal();
 
-    auto [mismatchInFile, mismatchInFolder] =
-                                        std::mismatch(normalizedPath.begin(),
-                                                      normalizedPath.end(),
-                                                      projectFolderNorm.begin(),
-                                                      projectFolderNorm.end());
-    //  Проверяем, а лежит ли файл в указанной папке
-    if(mismatchInFolder != projectFolderNorm.end()) return pathToSave;
-
-    //  Восстанавливаем относительный путь от точки расхождения
-    std::filesystem::path storedPath;
-    for(std::filesystem::path::const_iterator iPath = mismatchInFile;
-        iPath != normalizedPath.end();
-        iPath++)
-    {
-      storedPath = storedPath  / *iPath;
-    }
+    std::filesystem::path storedPath =
+                          normalizedPath.lexically_relative(projectFolderNorm);
+    if(storedPath.empty()) return pathToSave;
     return storedPath;
   }
 
@@ -74,6 +61,6 @@ namespace mt
     if (storedPath.empty()) return storedPath;
     if (storedPath.is_absolute()) return storedPath;
     MT_ASSERT(projectFolder.is_absolute());
-    return projectFolder / storedPath;
+    return (projectFolder / storedPath).lexically_normal();
   }
 }
