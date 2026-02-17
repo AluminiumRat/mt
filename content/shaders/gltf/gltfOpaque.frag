@@ -24,10 +24,10 @@ void main()
   vec3 toViewer = commonData.cameraData.eyePoint - inWorldPosition;
   toViewer = normalize(toViewer);
 
-  vec3 halfVector = toViewer + commonData.lightData.toSunDirection;
+  vec3 halfVector = toViewer + commonData.environmentData.toSunDirection;
   halfVector = normalize(halfVector);
 
-  float normDotLight = dot(commonData.lightData.toSunDirection, normal);
+  float normDotLight = dot(commonData.environmentData.toSunDirection, normal);
   normDotLight = max(normDotLight, 0.001f);
 
   float normDotView = dot(toViewer, normal);
@@ -45,7 +45,8 @@ void main()
                                 viewDotHalf);
 
 
-  vec3 irradiance = commonData.lightData.directLightIrradiance * normDotLight;
+  vec3 irradiance =
+                commonData.environmentData.directLightIrradiance * normDotLight;
 
   outColor = vec4(irradiance * brdfValue,
                   baseColor.a);

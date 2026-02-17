@@ -25,7 +25,7 @@ namespace mt
   class CommandProducerGraphic;
   class Device;
   class DrawScene;
-  class GlobalLight;
+  class EnvironmentScene;
   class TechniqueManager;
 
   //  Штуковина для отрисовки сцены в цветовой кадр. То есть то, что должно
@@ -48,7 +48,7 @@ namespace mt
     virtual void draw(FrameBuffer& target,
                       const DrawScene& scene,
                       const Camera& viewCamera,
-                      const GlobalLight& illumination);
+                      const EnvironmentScene& environment);
 
     //  Регион таргета, в который отрисовываться изображение.
     //  Если регион невалидный, то отрисовка производится в весь таргет

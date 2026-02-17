@@ -13,7 +13,7 @@ set(SOURCES
     "colorFrameBuilder/Bloom.cpp"
     "colorFrameBuilder/ColorFrameBuilder.cpp"
     "colorFrameBuilder/ColorFrameCommonSet.cpp"
-    "colorFrameBuilder/GlobalLight.cpp"
+    "colorFrameBuilder/EnvironmentScene.cpp"
     "colorFrameBuilder/OpaqueColorStage.cpp"
     "colorFrameBuilder/Posteffects.cpp"
     "drawCommand/CommandMemoryPool.cpp"

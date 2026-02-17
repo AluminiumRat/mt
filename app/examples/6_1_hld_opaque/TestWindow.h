@@ -6,7 +6,7 @@
 #include <gui/cameraManipulator/OrbitalCameraManipulator.h>
 #include <gui/GUIWindow.h>
 #include <hld/colorFrameBuilder/ColorFrameBuilder.h>
-#include <hld/colorFrameBuilder/GlobalLight.h>
+#include <hld/colorFrameBuilder/EnvironmentScene.h>
 #include <hld/drawScene/DrawScene.h>
 #include <hld/meshDrawable/MeshAsset.h>
 #include <hld/meshDrawable/MeshDrawable.h>
@@ -41,6 +41,6 @@ namespace mt
     DrawScene _scene;
     std::vector<std::unique_ptr<MeshDrawable>> _drawables;
 
-    GlobalLight _illumination;
+    EnvironmentScene _environment;
   };
 }

@@ -1,5 +1,5 @@
 ﻿#include <hld/colorFrameBuilder/ColorFrameCommonSet.h>
-#include <hld/colorFrameBuilder/GlobalLight.h>
+#include <hld/colorFrameBuilder/EnvironmentScene.h>
 #include <hld/FrameBuildContext.h>
 #include <technique/DescriptorSetType.h>
 #include <util/Camera.h>
@@ -15,7 +15,7 @@ ColorFrameCommonSet::ColorFrameCommonSet(Device& device) :
 
   _uniformBuffer = new DataBuffer(_device,
                                   sizeof(Camera::ShaderData) +
-                                    sizeof(GlobalLight::UniformBufferData),
+                                    sizeof(EnvironmentScene::UniformBufferData),
                                   DataBuffer::UNIFORM_BUFFER,
                                   "ColorFrameCommonData");
 }
@@ -40,9 +40,9 @@ void ColorFrameCommonSet::_createLayouts()
 
 void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
                                   const FrameBuildContext& frameContext,
-                                  const GlobalLight& illumination)
+                                  const EnvironmentScene& environment)
 {
-  _updateuniformBuffer(commandProducer, frameContext, illumination);
+  _updateuniformBuffer(commandProducer, frameContext, environment);
 
   if(_descriptorSet == nullptr)
   {
@@ -60,7 +60,7 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
 void ColorFrameCommonSet::_updateuniformBuffer(
                                         CommandProducerGraphic& commandProducer,
                                         const FrameBuildContext& frameContext,
-                                        const GlobalLight& illumination)
+                                        const EnvironmentScene& environment)
 {
   size_t uniformBufferCursor = 0;
 
@@ -74,14 +74,14 @@ void ColorFrameCommonSet::_updateuniformBuffer(
                                           sizeof(cameraData));
   uniformBufferCursor += sizeof(cameraData);
 
-  GlobalLight::UniformBufferData globalLightData = illumination.uniformData();
-  uploadedData = commandProducer.uniformMemorySession().write(globalLightData);
+  EnvironmentScene::UniformBufferData environmentData = environment.uniformData();
+  uploadedData = commandProducer.uniformMemorySession().write(environmentData);
   commandProducer.copyFromBufferToBuffer( *uploadedData.buffer,
                                           *_uniformBuffer,
                                           uploadedData.offset,
                                           uniformBufferCursor,
-                                          sizeof(globalLightData));
-  uniformBufferCursor += sizeof(globalLightData);
+                                          sizeof(environmentData));
+  uniformBufferCursor += sizeof(environmentData);
 }
 
 void ColorFrameCommonSet::bind(CommandProducerGraphic& commandProducer) const

@@ -8,7 +8,7 @@
 #include <gui/AsyncTaskGUI.h>
 #include <gui/GUIWindow.h>
 #include <hld/colorFrameBuilder/ColorFrameBuilder.h>
-#include <hld/colorFrameBuilder/GlobalLight.h>
+#include <hld/colorFrameBuilder/EnvironmentScene.h>
 #include <hld/drawScene/DrawScene.h>
 #include <resourceManagement/FileWatcher.h>
 #include <resourceManagement/TechniqueManager.h>
@@ -50,6 +50,6 @@ namespace mt
     DrawScene _scene;
     std::vector<std::unique_ptr<Drawable>> _drawables;
 
-    GlobalLight _illumination;
+    EnvironmentScene _environment;
   };
 }

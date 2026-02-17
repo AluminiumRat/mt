@@ -10,7 +10,7 @@ namespace mt
   class CommandProducerGraphic;
   class Device;
   struct FrameBuildContext;
-  class GlobalLight;
+  class EnvironmentScene;
 
   //  Управляет набором общих ресурсов для шейдеров в ColorFrameBuilder-е
   class ColorFrameCommonSet
@@ -42,7 +42,7 @@ namespace mt
 
     void update(CommandProducerGraphic& commandProducer,
                 const FrameBuildContext& frameContext,
-                const GlobalLight& illumination);
+                const EnvironmentScene& environment);
 
   private:
     //  Вызывется из хэлпера Bind
@@ -53,7 +53,7 @@ namespace mt
     void _createLayouts();
     void _updateuniformBuffer(CommandProducerGraphic& commandProducer,
                               const FrameBuildContext& frameContext,
-                              const GlobalLight& illumination);
+                              const EnvironmentScene& environment);
 
   private:
     Device& _device;

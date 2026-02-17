@@ -19,7 +19,7 @@ TestWindow::TestWindow(Device& device) :
   _frameBuilder(device),
   _cameraManipulator(CameraManipulator::APPLICATION_WINDOW_LOCATION),
   _meshAsset(new MeshAsset("Test mesh")),
-  _illumination(device)
+  _environment(device)
 {
   setNeedClearFrameBuffer(false);
 
@@ -126,7 +126,7 @@ void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
   _frameBuilder.draw( frameBuffer,
                       _scene,
                       _camera,
-                      _illumination);
+                      _environment);
 
   std::unique_ptr<CommandProducerGraphic> commandProducer =
                                 device().graphicQueue()->startCommands("ImGui");

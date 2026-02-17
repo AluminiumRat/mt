@@ -10,7 +10,7 @@ namespace mt
 {
   class Device;
 
-  class GlobalLight
+  class EnvironmentScene
   {
   public:
     struct UniformBufferData
@@ -21,10 +21,10 @@ namespace mt
     };
 
   public:
-    explicit GlobalLight(Device& device);
-    GlobalLight(const GlobalLight&) = delete;
-    GlobalLight& operator = (const GlobalLight&) = delete;
-    virtual ~GlobalLight() noexcept = default;
+    explicit EnvironmentScene(Device& device);
+    EnvironmentScene(const EnvironmentScene&) = delete;
+    EnvironmentScene& operator = (const EnvironmentScene&) = delete;
+    virtual ~EnvironmentScene() noexcept = default;
 
     //  Направление света от солнца (указывает в противоположном от солнца
     //    направлении)
@@ -48,29 +48,29 @@ namespace mt
     glm::vec3 _directLightIrradiance;
   };
 
-  inline const glm::vec3& GlobalLight::sunDirection() noexcept
+  inline const glm::vec3& EnvironmentScene::sunDirection() noexcept
   {
     return _sunDirection;
   }
 
-  inline void GlobalLight::setSunDirection(const glm::vec3& newValue) noexcept
+  inline void EnvironmentScene::setSunDirection(const glm::vec3& newValue) noexcept
   {
     _sunDirection = glm::normalize(newValue);
   }
 
-  inline const glm::vec3& GlobalLight::directLightIrradiance() noexcept
+  inline const glm::vec3& EnvironmentScene::directLightIrradiance() noexcept
   {
     return _directLightIrradiance;
   }
 
-  inline void GlobalLight::setDirectLightIrradiance(
+  inline void EnvironmentScene::setDirectLightIrradiance(
                                             const glm::vec3& newValue) noexcept
   {
     _directLightIrradiance = newValue;
   }
 
-  inline GlobalLight::UniformBufferData
-                                      GlobalLight::uniformData() const noexcept
+  inline EnvironmentScene::UniformBufferData
+                                  EnvironmentScene::uniformData() const noexcept
   {
     UniformBufferData bufferData{};
     bufferData.fromSunDirection = _sunDirection;

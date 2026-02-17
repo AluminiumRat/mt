@@ -1,6 +1,6 @@
 ﻿#include <gui/ImGuiRAII.h>
 #include <hld/colorFrameBuilder/ColorFrameBuilder.h>
-#include <hld/colorFrameBuilder/GlobalLight.h>
+#include <hld/colorFrameBuilder/EnvironmentScene.h>
 #include <hld/drawScene/DrawScene.h>
 #include <hld/FrameBuildContext.h>
 #include <hld/HLDLib.h>
@@ -24,7 +24,7 @@ ColorFrameBuilder::ColorFrameBuilder(Device& device) :
 void ColorFrameBuilder::draw( FrameBuffer& target,
                               const DrawScene& scene,
                               const Camera& viewCamera,
-                              const GlobalLight& illumination)
+                              const EnvironmentScene& environment)
 {
   //  Вычисляем регион в таргете, в который мы будем рисовать новое изображение
   Region targetRegion(target.extent());
@@ -52,7 +52,7 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
     std::unique_ptr<CommandProducerGraphic> prepareProducer =
                                         _device.graphicQueue()->startCommands();
     _initBuffersLayout(*prepareProducer);
-    _commonSet.update(*prepareProducer, frameContext, illumination);
+    _commonSet.update(*prepareProducer, frameContext, environment);
     _device.graphicQueue()->submitCommands(std::move(prepareProducer));
   }
 

@@ -2,12 +2,12 @@
 #define COMMON_SET_INL
 
 #include <lib/cameraData.inl>
-#include <lib/globalLightData.inl>
+#include <lib/environmentData.inl>
 
 layout (set = COMMON, binding = 0) uniform CommonData
 {
   CameraData cameraData;
-  GlobaLightData lightData;
+  EnvironmentData environmentData;
 } commonData;
 
 #endif
