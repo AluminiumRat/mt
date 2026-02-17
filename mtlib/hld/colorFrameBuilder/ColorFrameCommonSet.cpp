@@ -47,6 +47,17 @@ ColorFrameCommonSet::ColorFrameCommonSet( Device& device,
                                 VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
                                 VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
                                 VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
+
+  _commonLinearSampler = new Sampler( _device,
+                                      VK_FILTER_LINEAR,
+                                      VK_FILTER_LINEAR,
+                                      VK_SAMPLER_MIPMAP_MODE_LINEAR,
+                                      VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                                      VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                                      VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                                      0,
+                                      true,
+                                      4.0f);
 }
 
 void ColorFrameCommonSet::_createLayouts()
@@ -54,7 +65,7 @@ void ColorFrameCommonSet::_createLayouts()
   static constexpr VkShaderStageFlags allStages = VK_SHADER_STAGE_ALL_GRAPHICS |
                                                   VK_SHADER_STAGE_COMPUTE_BIT;
 
-  VkDescriptorSetLayoutBinding commonSetBindings[3];
+  VkDescriptorSetLayoutBinding commonSetBindings[6];
   commonSetBindings[0] = {};
   commonSetBindings[0].binding = uniformBufferBinding;
   commonSetBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -73,6 +84,24 @@ void ColorFrameCommonSet::_createLayouts()
   commonSetBindings[2].descriptorCount = 1;
   commonSetBindings[2].stageFlags = allStages;
 
+  commonSetBindings[3] = {};
+  commonSetBindings[3].binding = iblIrradianceMapBinding;
+  commonSetBindings[3].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+  commonSetBindings[3].descriptorCount = 1;
+  commonSetBindings[3].stageFlags = allStages;
+
+  commonSetBindings[4] = {};
+  commonSetBindings[4].binding = iblspecularMapBinding;
+  commonSetBindings[4].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+  commonSetBindings[4].descriptorCount = 1;
+  commonSetBindings[4].stageFlags = allStages;
+
+  commonSetBindings[5] = {};
+  commonSetBindings[5].binding = commonLinearSamplerBinding;
+  commonSetBindings[5].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+  commonSetBindings[5].descriptorCount = 1;
+  commonSetBindings[5].stageFlags = allStages;
+
   _setLayout = new DescriptorSetLayout(_device, commonSetBindings);
 
   _pipelineLayout = new PipelineLayout( _device,
@@ -85,19 +114,24 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
 {
   _updateuniformBuffer(commandProducer, frameContext, environment);
 
-  if(_descriptorSet == nullptr)
-  {
-    Ref<DescriptorPool> pool(new DescriptorPool(_device,
-                                                _setLayout->descriptorCounter(),
-                                                1,
-                                                DescriptorPool::STATIC_POOL));
-    _descriptorSet = pool->allocateSet(*_setLayout);
+  Ref<DescriptorPool> pool(new DescriptorPool(_device,
+                                              _setLayout->descriptorCounter(),
+                                              1,
+                                              DescriptorPool::STATIC_POOL));
+  _descriptorSet = pool->allocateSet(*_setLayout);
 
-    _descriptorSet->attachUniformBuffer(*_uniformBuffer, uniformBufferBinding);
-    _descriptorSet->attachSampledImage(*_iblLut, iblLutBinding, ALL_SHADER_BITS);
-    _descriptorSet->attachSampler(*_iblLutSampler, iblLutSamplerBinding);
-    _descriptorSet->finalize();
-  }
+  _descriptorSet->attachUniformBuffer(*_uniformBuffer, uniformBufferBinding);
+  _descriptorSet->attachSampledImage(*_iblLut, iblLutBinding, ALL_SHADER_BITS);
+  _descriptorSet->attachSampler(*_iblLutSampler, iblLutSamplerBinding);
+  _descriptorSet->attachSampledImage( environment.irradianceMap(),
+                                      iblIrradianceMapBinding,
+                                      ALL_SHADER_BITS);
+  _descriptorSet->attachSampledImage( environment.specularMap(),
+                                      iblspecularMapBinding,
+                                      ALL_SHADER_BITS);
+  _descriptorSet->attachSampler(*_commonLinearSampler,
+                                commonLinearSamplerBinding);
+  _descriptorSet->finalize();
 }
 
 void ColorFrameCommonSet::_updateuniformBuffer(

@@ -23,6 +23,9 @@ namespace mt
     static constexpr uint32_t uniformBufferBinding = 0;
     static constexpr uint32_t iblLutBinding = 1;
     static constexpr uint32_t iblLutSamplerBinding = 2;
+    static constexpr uint32_t iblIrradianceMapBinding = 3;
+    static constexpr uint32_t iblspecularMapBinding = 4;
+    static constexpr uint32_t commonLinearSamplerBinding = 5;
 
   public:
     //  Хелпер, который биндит сет в конструкторе и анбиндит в деструкторе
@@ -69,6 +72,8 @@ namespace mt
     Ref<DataBuffer> _uniformBuffer;
     ConstRef<ImageView> _iblLut;
     Ref<Sampler> _iblLutSampler;
+    //  Дефолтный сэмплер общего назначения
+    Ref<Sampler> _commonLinearSampler;
 
     ConstRef<DescriptorSetLayout> _setLayout;
     Ref<PipelineLayout> _pipelineLayout;

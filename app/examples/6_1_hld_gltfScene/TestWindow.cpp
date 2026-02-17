@@ -25,13 +25,16 @@ TestWindow::TestWindow(Device& device) :
   _techniqueManager(_fileWatcher, _asyncQueue),
   _frameBuilder(device, _textureManager),
   _cameraManipulator(CameraManipulator::APPLICATION_WINDOW_LOCATION),
-  _environment(device)
+  _environment(device, _textureManager)
 {
   setNeedClearFrameBuffer(false);
 
   _cameraManipulator.setCamera(&_camera);
 
   _fillScene();
+
+  _environment.setIBLMaps("environment/sunny_rose_garden/irradiance_CUBEMAP.dds",
+                          "environment/sunny_rose_garden/specular_CUBEMAP.dds");
 }
 
 void TestWindow::_fillScene()

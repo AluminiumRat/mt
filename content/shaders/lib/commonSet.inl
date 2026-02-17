@@ -16,4 +16,17 @@ layout (set = COMMON,
 layout (set = COMMON,
         binding = 2) uniform sampler iblLutSampler;
 
+//  Префильтрованная Irradiance текстура для IBL освещения
+layout (set = COMMON,
+        binding = 3) uniform textureCube iblIrradiance;
+
+//  Префильтрованная specular текстура для IBL освещения
+layout (set = COMMON,
+        binding = 4) uniform textureCube iblSpecularMap;
+
+//  Дефолтный сэмплер общего назначения.
+//  Линейная фильтрация, кламп к границам, анизотропия 4
+layout (set = COMMON,
+        binding = 5) uniform sampler commonLinearSampler;
+
 #endif
