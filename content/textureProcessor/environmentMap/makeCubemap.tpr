@@ -1,5 +1,5 @@
 shader: makeCubemap.frag
-output: environment_CUBEMAP.dds
+output: ..\..\environment\sunny_rose_garden\environment_CUBEMAP.dds
 outputFormat: VK_FORMAT_B10G11R11_UFLOAT_PACK32
 outputWidth: 256
 outputHeight: 256
@@ -25,8 +25,6 @@ shaderProps:
       borderColor: FLOAT_TRANSPARENT_BLACK
       unnormalizedCoordinates: false
   colorTexture:
-    file: sunny_rose_garden_1k.hdr
+    file: ..\..\environment\sunny_rose_garden\sunny_rose_garden_1k.hdr
   intrinsic.arrayIndex:
-    int: [1]
-  intrinsic.mipLevel:
     int: [1]

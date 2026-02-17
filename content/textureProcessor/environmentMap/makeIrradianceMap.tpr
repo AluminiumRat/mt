@@ -1,8 +1,8 @@
 shader: makeIrradianceMap.frag
-output: irradiance_CUBEMAP.dds
+output: ..\..\environment\sunny_rose_garden\irradiance_CUBEMAP.dds
 outputFormat: VK_FORMAT_B10G11R11_UFLOAT_PACK32
-outputWidth: 8
-outputHeight: 8
+outputWidth: 16
+outputHeight: 16
 outputMips: 1
 outputArraySize: 6
 shaderProps:
@@ -25,10 +25,8 @@ shaderProps:
       borderColor: FLOAT_TRANSPARENT_BLACK
       unnormalizedCoordinates: false
   environmentMap:
-    file: environment_CUBEMAP.dds
+    file: ..\..\environment\sunny_rose_garden\environment_CUBEMAP.dds
   intrinsic.arrayIndex:
-    int: [1]
-  intrinsic.mipLevel:
     int: [1]
   params.samplesPerTexel:
     int: [1000]
