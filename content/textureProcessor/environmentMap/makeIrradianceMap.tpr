@@ -4,6 +4,7 @@ outputFormat: VK_FORMAT_B10G11R11_UFLOAT_PACK32
 outputWidth: 16
 outputHeight: 16
 outputMips: 1
+mipsAutogenerate: false
 outputArraySize: 6
 shaderProps:
   colorSampler:
