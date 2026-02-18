@@ -30,8 +30,8 @@ namespace mt
               const FrameBuildContext& frameContext,
               glm::uvec2 viewport);
 
-    inline void setHdrBuffer(ImageView& newBuffer) noexcept;
-    inline void setDepthBuffer(ImageView& newBuffer) noexcept;
+    inline void setHdrBuffer(const ImageView& newBuffer) noexcept;
+    inline void setDepthBuffer(const ImageView& newBuffer) noexcept;
 
   private:
     void _buildFrameBuffer();
@@ -41,22 +41,24 @@ namespace mt
 
     StageIndex _stageIndex;
 
-    Ref<ImageView> _hdrBuffer;
-    Ref<ImageView> _depthBuffer;
-    Ref<FrameBuffer> _frameBuffer;
+    ConstRef<ImageView> _hdrBuffer;
+    ConstRef<ImageView> _depthBuffer;
+    ConstRef<FrameBuffer> _frameBuffer;
 
     CommandMemoryPool _commandMemoryPool;
     DrawCommandList _drawCommands;
   };
 
-  inline void OpaqueColorStage::setHdrBuffer(ImageView& newBuffer) noexcept
+  inline void OpaqueColorStage::setHdrBuffer(
+                                            const ImageView& newBuffer) noexcept
   {
     if(_hdrBuffer == &newBuffer) return;
     _hdrBuffer = &newBuffer;
     _frameBuffer = nullptr;
   }
 
-  inline void OpaqueColorStage::setDepthBuffer(ImageView& newBuffer) noexcept
+  inline void OpaqueColorStage::setDepthBuffer(
+                                            const ImageView& newBuffer) noexcept
   {
     if(_depthBuffer == &newBuffer) return;
     _depthBuffer = &newBuffer;

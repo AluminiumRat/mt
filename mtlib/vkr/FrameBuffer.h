@@ -32,7 +32,7 @@ namespace mt
       //  Не должен быть nullptr
       //  Соответствующий Image должен быть создан с usageFlags со включенным
       //    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
-      ImageView* target;
+      const ImageView* target;
       //  Что надо сделать со старыми данными в таргете перед началом работы
       //    с буфером
       VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -62,7 +62,7 @@ namespace mt
       //  Не должен быть nullptr
       //  Соответствующий Image должен быть создан с usageFlags со включенным
       //    VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
-      ImageView* target;
+      const ImageView* target;
       //  Что надо сделать со старыми данными в таргете перед началом работы
       //    с буфером
       VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;

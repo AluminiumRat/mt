@@ -42,7 +42,7 @@ namespace mt
                   CommandProducerGraphic& commandProducer,
                   const FrameBuildContext& frameContext);
 
-    inline void setHdrBuffer(ImageView& newBuffer) noexcept;
+    inline void setHdrBuffer(const ImageView& newBuffer) noexcept;
 
     void makeGui();
 
@@ -53,7 +53,7 @@ namespace mt
   private:
     Device& _device;
 
-    Ref<ImageView> _hdrBuffer;
+    ConstRef<ImageView> _hdrBuffer;
     bool _needUpdateBindings;
 
     AvgLum _avgLum;
@@ -113,7 +113,7 @@ namespace mt
     _updateProperties();
   }
 
-  inline void Posteffects::setHdrBuffer(ImageView& newBuffer) noexcept
+  inline void Posteffects::setHdrBuffer(const ImageView& newBuffer) noexcept
   {
     if(_hdrBuffer == &newBuffer) return;
     _hdrBuffer = &newBuffer;

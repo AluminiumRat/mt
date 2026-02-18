@@ -27,7 +27,7 @@ namespace mt
     inline float intensity() const noexcept;
     inline void setIntensity(float newValue);
 
-    inline void setSourceImage(ImageView& newImage) noexcept;
+    inline void setSourceImage(const ImageView& newImage) noexcept;
 
     //  Построить блюренную текстуру по исходному hdr буферу
     //  На момент вызова sourceImage должна либо быть в лэйауте
@@ -55,7 +55,7 @@ namespace mt
     float _treshold;
     float _intensity;
 
-    Ref<ImageView> _sourceImage;
+    ConstRef<ImageView> _sourceImage;
     bool _sourceImageChanged;
 
     Ref<Image> _bloomImage;
@@ -74,7 +74,7 @@ namespace mt
     UniformVariable& _intensityUniform;
   };
 
-  inline void Bloom::setSourceImage(ImageView& newImage) noexcept
+  inline void Bloom::setSourceImage(const ImageView& newImage) noexcept
   {
     if(_sourceImage == &newImage) return;
     _sourceImage = &newImage;

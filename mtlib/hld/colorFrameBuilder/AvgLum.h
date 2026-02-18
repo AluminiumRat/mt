@@ -19,7 +19,7 @@ namespace mt
     AvgLum& operator = (const AvgLum&) = delete;
     ~AvgLum() noexcept = default;
 
-    inline void setSourceImage(ImageView& newImage) noexcept;
+    inline void setSourceImage(const ImageView& newImage) noexcept;
 
     //  Посчитать среднюю яркость изображения
     //  На момент вызова sourceImage должна либо быть в лэйауте
@@ -39,7 +39,7 @@ namespace mt
   private:
     Device& _device;
 
-    Ref<ImageView> _sourceImage;
+    ConstRef<ImageView> _sourceImage;
     bool _sourceImageChanged;
 
     Ref<Image> _intermediateImage;
@@ -60,7 +60,7 @@ namespace mt
     glm::uvec2 _workAreaSize;
   };
 
-  inline void AvgLum::setSourceImage(ImageView& newImage) noexcept
+  inline void AvgLum::setSourceImage(const ImageView& newImage) noexcept
   {
     if(_sourceImage == &newImage) return;
     _sourceImage = &newImage;
