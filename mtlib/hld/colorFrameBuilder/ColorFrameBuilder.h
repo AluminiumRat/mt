@@ -4,6 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <hld/colorFrameBuilder/BackgroundRender.h>
 #include <hld/colorFrameBuilder/ColorFrameCommonSet.h>
 #include <hld/colorFrameBuilder/OpaqueColorStage.h>
 #include <hld/colorFrameBuilder/Posteffects.h>
@@ -41,7 +42,8 @@ namespace mt
 
   public:
     explicit ColorFrameBuilder( Device& device,
-                                TextureManager& textureManager);
+                                TextureManager& textureManager,
+                                TechniqueManager& techniqueManager);
     ColorFrameBuilder(const ColorFrameBuilder&) = delete;
     ColorFrameBuilder& operator = (const ColorFrameBuilder&) = delete;
     virtual ~ColorFrameBuilder() noexcept = default;
@@ -86,6 +88,7 @@ namespace mt
     ColorFrameCommonSet _commonSet;
 
     OpaqueColorStage _opaqueColorStage;
+    BackgroundRender _backgroundRender;
     Posteffects _posteffects;
   };
 

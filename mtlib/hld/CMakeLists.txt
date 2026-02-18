@@ -10,6 +10,7 @@ include_directories(..
 
 set(SOURCES
     "colorFrameBuilder/AvgLum.cpp"
+    "colorFrameBuilder/BackgroundRender.cpp"
     "colorFrameBuilder/Bloom.cpp"
     "colorFrameBuilder/ColorFrameBuilder.cpp"
     "colorFrameBuilder/ColorFrameCommonSet.cpp"

@@ -8,6 +8,9 @@ struct CameraData
   mat4 viewMatrix;
   mat4 projectionMatrix;
   mat4 viewProjectionMatrix;
+  mat4 viewToWorldMatix;
+  mat4 invProjectionMatrix;
+  mat4 cullToWorldMatrix;
   vec3 eyePoint;
   vec3 frontVector;
   vec3 upVector;

@@ -13,11 +13,13 @@
 using namespace mt;
 
 ColorFrameBuilder::ColorFrameBuilder( Device& device,
-                                      TextureManager& textureManager) :
+                                      TextureManager& textureManager,
+                                      TechniqueManager& techniqueManager) :
   _device(device),
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(frameTypeName)),
   _commonSet(device, textureManager),
   _opaqueColorStage(device),
+  _backgroundRender(device, techniqueManager),
   _posteffects(device)
 {
 }
@@ -68,6 +70,7 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
                               _drawPlan,
                               frameContext,
                               buffersViewport);
+      _backgroundRender.draw(*opaqueProducer, buffersViewport);
     }
     _device.graphicQueue()->submitCommands(std::move(opaqueProducer));
   }
@@ -106,6 +109,7 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                                     ImageSlice(*_hdrBuffer),
                                     VK_IMAGE_VIEW_TYPE_2D);
     _opaqueColorStage.setHdrBuffer(*_hdrBufferView);
+    _backgroundRender.setHdrBuffer(*_hdrBufferView);
     _posteffects.setHdrBuffer(*_hdrBufferView);
   }
 
@@ -127,6 +131,7 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                                       ImageSlice(*_depthBuffer),
                                       VK_IMAGE_VIEW_TYPE_2D);
     _opaqueColorStage.setDepthBuffer(*_depthBufferView);
+    _backgroundRender.setDepthBuffer(*_depthBufferView);
   }
 }
 

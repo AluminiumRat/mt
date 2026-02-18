@@ -7,7 +7,7 @@
 layout (set = COMMON, binding = 0) uniform CommonData
 {
   CameraData cameraData;
-  EnvironmentData environmentData;
+  EnvironmentData environment;
 } commonData;
 
 //  LUT текстура для image based lighting и сэмплер для её чтения

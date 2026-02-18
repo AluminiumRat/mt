@@ -18,6 +18,9 @@ namespace mt
       alignas(16) glm::mat4 viewMatrix;
       alignas(16) glm::mat4 projectionMatrix;
       alignas(16) glm::mat4 viewProjectionMatrix;
+      alignas(16) glm::mat4 viewToWorldMatix;
+      alignas(16) glm::mat4 invProjectionMatrix;
+      alignas(16) glm::mat4 cullToWorldMatrix;
       alignas(16) glm::vec3 eyePoint;
       alignas(16) glm::vec3 frontVector;
       alignas(16) glm::vec3 upVector;
@@ -168,6 +171,9 @@ namespace mt
     shaderData.projectionMatrix = projectionMatrix();
     shaderData.viewProjectionMatrix =
                             shaderData.projectionMatrix * shaderData.viewMatrix;
+    shaderData.viewToWorldMatix = _transformMatrix;
+    shaderData.invProjectionMatrix = _inverseProjectionMatrix;
+    shaderData.cullToWorldMatrix = _transformMatrix * _inverseProjectionMatrix;
     shaderData.eyePoint = eyePoint();
     shaderData.frontVector = frontVector();
     shaderData.upVector = upVector();

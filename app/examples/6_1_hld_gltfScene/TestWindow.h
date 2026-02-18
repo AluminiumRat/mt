@@ -36,9 +36,9 @@ namespace mt
     void _fillScene();
 
   private:
+    FileWatcher _fileWatcher;
     AsyncTaskQueue _asyncQueue;
     AsyncTaskGUI _asyncTaskGui;
-    FileWatcher _fileWatcher;
     TextureManager _textureManager;
     TechniqueManager _techniqueManager;
 

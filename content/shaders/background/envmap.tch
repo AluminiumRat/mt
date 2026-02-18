@@ -1,0 +1,20 @@
+defaultSamplers:
+  samplerState:
+    magFilter: LINEAR
+    minFilter: LINEAR
+    mipmapMode: LINEAR
+
+passes:
+  RenderPass :
+    shaders:
+      VERTEX : background/envmap.vert
+      FRAGMENT : background/envmap.frag
+
+    frameBuffer:
+      color: VK_FORMAT_B10G11R11_UFLOAT_PACK32
+      depthStencil: VK_FORMAT_D32_SFLOAT_S8_UINT
+
+    graphicSettings:
+      topology: TRIANGLE_STRIP
+      depthTest : true
+      depthCompareOp : GREATER_OR_EQUAL
