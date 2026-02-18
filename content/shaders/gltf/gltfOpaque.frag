@@ -48,17 +48,18 @@ void main()
   vec3 radiance = irradiance * brdfValue;
 
   //  IBL
+  vec3 lutValue = textureLod(
+                          sampler2D(iblLut, iblLutSampler),
+                          vec2(normDotView, materialBuffer.material.roughness),
+                          0).rgb;
   vec3 sampleIrradianceDir = vec3(normal.x, normal.y, -normal.z);
   vec3 lambertRradiance = texture(
                                 samplerCube(iblIrradiance, commonLinearSampler),
                                 sampleIrradianceDir).rgb;
   lambertRradiance *= baseColor.rgb;
   lambertRradiance *= (1.0f - materialBuffer.material.metallic);
+  lambertRradiance *= lutValue.z;
 
-  vec2 lutValue = textureLod(
-                          sampler2D(iblLut, iblLutSampler),
-                          vec2(normDotView, materialBuffer.material.roughness),
-                          0).rg;
   vec3 f0Reflection = mix(vec3(DIELECTRIC_F0),
                           baseColor.rgb,
                           materialBuffer.material.metallic);

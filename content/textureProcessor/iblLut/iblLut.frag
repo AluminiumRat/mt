@@ -1,6 +1,8 @@
 #version 450
 //  Расчет LUT текстуры для image based lighting
-//  https://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf
+//  Основано на https://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf
+//  Основное отличие - добавлен третий канал, в котором накапливается нормировочный коэффициент для
+//  ламбертового отражения.
 
 #include "lib/brdf.inl"
 #include "lib/random.inl"
@@ -26,8 +28,14 @@ void main()
                       0.0f,
                       normDotView);
 
+  //  A и B - взяты из оригенальной работы. Здесь накапливаются коэффициенты
+  //  для вычисления спекуляр отражения
   float A = 0;
   float B = 0;
+  //  В C накапливается нормировочный коэффициент для Ламбертового отражения
+  //  В gltf модели освещения Ламберт и спекуляр смешиваются по Френелю, поэтому
+  //    в C складывается среднее значение френеля (вернее 1 - fresnel)
+  float C = 0;
   for(uint i = 0; i < params.samplesCount; i++)
   {
     vec2 samplerValue = hammersley2d(i, params.samplesCount,0);
@@ -43,14 +51,15 @@ void main()
     {
       float G = geometrySchlickSmith(normDotLight, normDotView, roughness_2);
       float G_Vis = (G * viewDotHalf) / (normDotHalf * normDotView);
-      float Fc = pow(1.0 - viewDotHalf, 5.0);
+      float Fc = fresnelSlickCompliment(viewDotHalf);
       A += (1.0f - Fc) * G_Vis;
       B += Fc * G_Vis;
+      C += (1.0f - dielectricFresnel(Fc));
     }
   }
 
   outColor = vec4(A / float(params.samplesCount),
                   B / float(params.samplesCount),
-                  0,
+                  C / float(params.samplesCount),
                   1);
 }
