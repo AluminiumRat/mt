@@ -1,0 +1,1 @@
+The origfinal HDR texture was getted from https://polyhaven.com/a/monochrome_studio_03

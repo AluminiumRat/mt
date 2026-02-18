@@ -33,8 +33,11 @@ TestWindow::TestWindow(Device& device) :
 
   _fillScene();
 
-  _environment.setIBLMaps("environment/sunny_rose_garden/irradiance_CUBEMAP.dds",
-                          "environment/sunny_rose_garden/specular_CUBEMAP.dds");
+  _environment.setDirectLightIrradiance(glm::vec3(0,0,0));
+  _environment.setIBLMaps("environment/monochrome_studio_03/irradiance_CUBEMAP.dds",
+                          "environment/monochrome_studio_03/specular_CUBEMAP.dds");
+  //_environment.setIBLMaps("environment/sunny_rose_garden/irradiance_CUBEMAP.dds",
+  //                        "environment/sunny_rose_garden/specular_CUBEMAP.dds");
 }
 
 void TestWindow::_fillScene()
