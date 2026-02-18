@@ -1,28 +1,28 @@
-#pragma once
+ï»¿#pragma once
 
 #include <glm/glm.hpp>
 
 namespace mt
 {
-  //  Íåêîòîðàÿ îáëàñòü 2D èçîáðàæåíèÿ, îêíà, ýêðàíà
-  //  Çàäàåòñÿ êîîðäèíàòàìè êðàéíèõ ïèêñåëîâ, ïðåíàäëåæàùèõ ýòîé îáëàñòè
-  //  Åñëè õîòÿ áû îäíà êîîðäèíàòà maxCorner ìåíüøå, ÷åì ñîîòâåòñòâóþùàÿ
-  //    êîîðäèíàòà minCorner, òî áîêñ ñ÷èòàåòñÿ íåâàëèäíûì.
+  //  ÐÐµÐºÐ¾Ñ‚Ð¾Ñ€Ð°Ñ Ð¾Ð±Ð»Ð°ÑÑ‚ÑŒ 2D Ð¸Ð·Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ñ, Ð¾ÐºÐ½Ð°, ÑÐºÑ€Ð°Ð½Ð°
+  //  Ð—Ð°Ð´Ð°ÐµÑ‚ÑÑ ÐºÐ¾Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ‚Ð°Ð¼Ð¸ ÐºÑ€Ð°Ð¹Ð½Ð¸Ñ… Ð¿Ð¸ÐºÑÐµÐ»Ð¾Ð², Ð¿Ñ€ÐµÐ½Ð°Ð´Ð»ÐµÐ¶Ð°Ñ‰Ð¸Ñ… ÑÑ‚Ð¾Ð¹ Ð¾Ð±Ð»Ð°ÑÑ‚Ð¸
+  //  Ð•ÑÐ»Ð¸ Ñ…Ð¾Ñ‚Ñ Ð±Ñ‹ Ð¾Ð´Ð½Ð° ÐºÐ¾Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ‚Ð° maxCorner Ð¼ÐµÐ½ÑŒÑˆÐµ, Ñ‡ÐµÐ¼ ÑÐ¾Ð¾Ñ‚Ð²ÐµÑ‚ÑÑ‚Ð²ÑƒÑŽÑ‰Ð°Ñ
+  //    ÐºÐ¾Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ‚Ð° minCorner, Ñ‚Ð¾ Ð±Ð¾ÐºÑ ÑÑ‡Ð¸Ñ‚Ð°ÐµÑ‚ÑÑ Ð½ÐµÐ²Ð°Ð»Ð¸Ð´Ð½Ñ‹Ð¼.
   struct Region
   {
-    glm::uvec2 minCorner; //  Ïèêñåëü ñ íàèìåíüøèìè êîîðäèíàòàìè
-    glm::uvec2 maxCorner; //  Ïèêñåëü ñ íàèáîëüøèìè êîîðäèíàòàìè
+    glm::uvec2 minCorner; //  ÐŸÐ¸ÐºÑÐµÐ»ÑŒ Ñ Ð½Ð°Ð¸Ð¼ÐµÐ½ÑŒÑˆÐ¸Ð¼Ð¸ ÐºÐ¾Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ‚Ð°Ð¼Ð¸
+    glm::uvec2 maxCorner; //  ÐŸÐ¸ÐºÑÐµÐ»ÑŒ Ñ Ð½Ð°Ð¸Ð±Ð¾Ð»ÑŒÑˆÐ¸Ð¼Ð¸ ÐºÐ¾Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ‚Ð°Ð¼Ð¸
 
-    //  Ñîçäàåò íåâàëèäíûé ðåãèîí
+    //  Ð¡Ð¾Ð·Ð´Ð°ÐµÑ‚ Ð½ÐµÐ²Ð°Ð»Ð¸Ð´Ð½Ñ‹Ð¹ Ñ€ÐµÐ³Ð¸Ð¾Ð½
     inline Region() noexcept;
-    //  Ñîçäàåò ðåãèîí ïî óãëàì
+    //  Ð¡Ð¾Ð·Ð´Ð°ÐµÑ‚ Ñ€ÐµÐ³Ð¸Ð¾Ð½ Ð¿Ð¾ ÑƒÐ³Ð»Ð°Ð¼
     inline Region(unsigned int minX,
                   unsigned int minY,
                   unsigned int maxX,
                   unsigned int maxY) noexcept;
-    //  Ñîçäàåò ðåãèîí ïî êîîðäèíàòàì ïåðâîãî ïèêñåëÿ è ðàçìåðàì îáëàñòè
+    //  Ð¡Ð¾Ð·Ð´Ð°ÐµÑ‚ Ñ€ÐµÐ³Ð¸Ð¾Ð½ Ð¿Ð¾ ÐºÐ¾Ð¾Ñ€Ð´Ð¸Ð½Ð°Ñ‚Ð°Ð¼ Ð¿ÐµÑ€Ð²Ð¾Ð³Ð¾ Ð¿Ð¸ÐºÑÐµÐ»Ñ Ð¸ Ñ€Ð°Ð·Ð¼ÐµÑ€Ð°Ð¼ Ð¾Ð±Ð»Ð°ÑÑ‚Ð¸
     inline Region(glm::uvec2 MinCorner, glm::uvec2 size) noexcept;
-    //  Ðåãèîí, íà÷èíàþùèéñÿ â íóëåâîì ïèêñåëå è èìåþùèé ðàçìåð size
+    //  Ð ÐµÐ³Ð¸Ð¾Ð½, Ð½Ð°Ñ‡Ð¸Ð½Ð°ÑŽÑ‰Ð¸Ð¹ÑÑ Ð² Ð½ÑƒÐ»ÐµÐ²Ð¾Ð¼ Ð¿Ð¸ÐºÑÐµÐ»Ðµ Ð¸ Ð¸Ð¼ÐµÑŽÑ‰Ð¸Ð¹ Ñ€Ð°Ð·Ð¼ÐµÑ€ size
     inline Region(glm::uvec2 size) noexcept;
     Region(const Region&) noexcept = default;
     Region& operator = (const Region&) noexcept = default;
@@ -33,7 +33,7 @@ namespace mt
     inline bool valid() const noexcept;
     inline void invalidate() noexcept;
 
-    //  Ðàçìåð íåâàëèäíîãî ðåãèîíà ðàâåí íóëþ
+    //  Ð Ð°Ð·Ð¼ÐµÑ€ Ð½ÐµÐ²Ð°Ð»Ð¸Ð´Ð½Ð¾Ð³Ð¾ Ñ€ÐµÐ³Ð¸Ð¾Ð½Ð° Ñ€Ð°Ð²ÐµÐ½ Ð½ÑƒÐ»ÑŽ
     inline glm::uvec2 size() const noexcept;
     inline unsigned int width() const noexcept;
     inline unsigned int height() const noexcept;
@@ -42,9 +42,9 @@ namespace mt
 
     inline void move(glm::uvec2 newMinCorner) noexcept;
 
-    //  Íàéòè îáùèå ïèêñåëè ó äâóõ ðåãèîíîâ
-    //  Åñëè õîòÿáû îäèí èç ðåãèîíîâ íåâàëèäíûé, òî ðåçóëüòàò òàê æå áóäåò
-    //  íåâàëèäíûì ðåãèîíîì
+    //  ÐÐ°Ð¹Ñ‚Ð¸ Ð¾Ð±Ñ‰Ð¸Ðµ Ð¿Ð¸ÐºÑÐµÐ»Ð¸ Ñƒ Ð´Ð²ÑƒÑ… Ñ€ÐµÐ³Ð¸Ð¾Ð½Ð¾Ð²
+    //  Ð•ÑÐ»Ð¸ Ñ…Ð¾Ñ‚ÑÐ±Ñ‹ Ð¾Ð´Ð¸Ð½ Ð¸Ð· Ñ€ÐµÐ³Ð¸Ð¾Ð½Ð¾Ð² Ð½ÐµÐ²Ð°Ð»Ð¸Ð´Ð½Ñ‹Ð¹, Ñ‚Ð¾ Ñ€ÐµÐ·ÑƒÐ»ÑŒÑ‚Ð°Ñ‚ Ñ‚Ð°Ðº Ð¶Ðµ Ð±ÑƒÐ´ÐµÑ‚
+    //  Ð½ÐµÐ²Ð°Ð»Ð¸Ð´Ð½Ñ‹Ð¼ Ñ€ÐµÐ³Ð¸Ð¾Ð½Ð¾Ð¼
     inline Region intersection(const Region& other) noexcept;
   };
 
@@ -92,7 +92,7 @@ namespace mt
 
   inline bool Region::valid() const noexcept
   {
-    return maxCorner.x > minCorner.x && maxCorner.y > minCorner.y;
+    return maxCorner.x >= minCorner.x && maxCorner.y >= minCorner.y;
   }
 
   inline void Region::invalidate() noexcept
