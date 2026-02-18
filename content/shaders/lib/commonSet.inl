@@ -18,7 +18,7 @@ layout (set = COMMON,
 
 //  Префильтрованная Irradiance текстура для IBL освещения
 layout (set = COMMON,
-        binding = 3) uniform textureCube iblIrradiance;
+        binding = 3) uniform textureCube iblIrradianceMap;
 
 //  Префильтрованная specular текстура для IBL освещения
 layout (set = COMMON,

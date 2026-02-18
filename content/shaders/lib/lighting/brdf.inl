@@ -1,10 +1,7 @@
 #ifndef BRDF_INL
 #define BRDF_INL
 
-//  Индекс преломления для диэлектриков
-#define DIELECTRIC_IOR 1.5f
-//  Коэффициент отражения Френеля под углом 90 градусов для диэлектриков
-#define DIELECTRIC_F0 0.04f
+#include "lib/lighting/LitSurface.inl"
 
 //  GGX функция распределения нормалей. D - компонент в модели Кука-Торренса
 //  normDotHalf - косинус угла между нормалью и средним между вью и вектором
@@ -155,31 +152,37 @@ vec3 gltf2BRDF( vec3 baseColor,
 //  BRDF для GLTF2 материалов. Ускоренный вариант. Ускорение за счет объединения
 //  общих рассчетов.
 //  https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#metal-brdf-and-dielectric-brdf
-vec3 glt2BRDFFast(vec3 baseColor,
-                  float roughness,
-                  float metallic,
-                  float normDotLight,
-                  float normDotView,
-                  float normDotHalf,
-                  float viewDotHalf)
+vec3 glt2BRDFFast(LitSurface surface)
 {
-  //  Ламбертово отражение работает только на диэлектриках
-  vec3 lambert = lambertBRDF() * baseColor * (1.0f - metallic);
+  vec3 lambert = lambertBRDF() * surface.lambertColor;
 
   //  GGX БРДФ одинаковая и для металла и для диэлектрика, отличия в спектре и
   //  работе Френеля
-  vec3 specular = vec3(specularBRDF(normDotLight,
-                                    normDotView,
-                                    normDotHalf,
-                                    roughness * roughness));
+  vec3 specular = vec3(specularBRDF(surface.normDotLight,
+                                    surface.normDotView,
+                                    surface.normDotHalf,
+                                    surface.roughness * surface.roughness));
 
-  //  За счет того, что и металл и диэлектрик одинаково переходят в белое отражение на
-  //  тупых углах, мы можем протащить весь расчет френеля через metallicReflectionFactor
-  vec3 f0Reflection = mix(vec3(DIELECTRIC_F0), baseColor, metallic);
-  float fresnelCompliment = fresnelSlickCompliment(viewDotHalf);
-  vec3 fresnel = metallicReflectionFactor(f0Reflection, fresnelCompliment);
+  //  За счет того, что и металл и диэлектрик одинаково переходят в белое
+  //  отражение на тупых углах, мы можем протащить весь расчет френеля через
+  //  metallicReflectionFactor
+  float fresnelCompliment = fresnelSlickCompliment(surface.viewDotHalf);
+  vec3 fresnel = metallicReflectionFactor(surface.f0Reflection,
+                                          fresnelCompliment);
 
   return mix(lambert, specular, fresnel);
+}
+
+//  Вычислить яркость поверхности при освещениее прямым светом
+//  lightIrradiance - освещенность от источника света, но измеренная не по
+//    освещаемой поверхности, а по поверхности, перпендикулярной направлению
+//    света.
+vec3 getDirectLightRadiance(LitSurface surface,
+                            vec3 lightIrradiance)
+{
+  vec3 brdfValue = glt2BRDFFast(surface);
+  vec3 irradiance = lightIrradiance * surface.normDotLight;
+  return irradiance * brdfValue;
 }
 
 #endif
