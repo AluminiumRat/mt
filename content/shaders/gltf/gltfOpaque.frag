@@ -15,7 +15,7 @@ void main()
 {
   vec4 baseColor = materialBuffer.material.baseColor;
   #if BASECOLORTEXTURE_ENABLED == 1 && TEXCOORD_COUNT > 0
-    baseColor *= texture( sampler2D(baseColorTexture, linearSampler),
+    baseColor *= texture( sampler2D(baseColorTexture, commonLinearSampler),
                           inTexcoord0);
   #endif
 
@@ -24,10 +24,10 @@ void main()
   vec3 toViewer = commonData.cameraData.eyePoint - inWorldPosition;
   toViewer = normalize(toViewer);
 
-  vec3 halfVector = toViewer + commonData.environmentData.toSunDirection;
+  vec3 halfVector = toViewer + commonData.environment.toSunDirection;
   halfVector = normalize(halfVector);
 
-  float normDotLight = dot(commonData.environmentData.toSunDirection, normal);
+  float normDotLight = dot(commonData.environment.toSunDirection, normal);
   normDotLight = max(normDotLight, 0.001f);
 
   float normDotView = dot(toViewer, normal);
@@ -44,10 +44,37 @@ void main()
                                 normDotHalf,
                                 viewDotHalf);
 
+  vec3 irradiance = commonData.environment.directLightIrradiance * normDotLight;
+  vec3 radiance = irradiance * brdfValue;
 
-  vec3 irradiance =
-                commonData.environmentData.directLightIrradiance * normDotLight;
+  //  IBL
+  vec3 sampleIrradianceDir = vec3(normal.x, normal.y, -normal.z);
+  vec3 lambertRradiance = texture(
+                                samplerCube(iblIrradiance, commonLinearSampler),
+                                sampleIrradianceDir).rgb;
+  lambertRradiance *= baseColor.rgb;
+  lambertRradiance *= (1.0f - materialBuffer.material.metallic);
 
-  outColor = vec4(irradiance * brdfValue,
-                  baseColor.a);
+  vec2 lutValue = textureLod(
+                          sampler2D(iblLut, iblLutSampler),
+                          vec2(normDotView, materialBuffer.material.roughness),
+                          0).rg;
+  vec3 f0Reflection = mix(vec3(DIELECTRIC_F0),
+                          baseColor.rgb,
+                          materialBuffer.material.metallic);
+  vec3 specularRadiance = f0Reflection * lutValue.x + vec3(lutValue.y);
+
+  vec3 specularMapDir = reflect(-toViewer,normal);
+  specularMapDir.z = -specularMapDir.z;
+  float specularMapLod = materialBuffer.material.roughness *
+                                          commonData.environment.roughnessToLod;
+  specularRadiance *= textureLod(
+                              samplerCube(iblSpecularMap, commonLinearSampler),
+                              specularMapDir,
+                              specularMapLod).rgb;
+
+  radiance += lambertRradiance;
+  radiance += specularRadiance;
+
+  outColor = vec4(radiance, baseColor.a);
 }

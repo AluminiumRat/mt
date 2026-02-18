@@ -38,8 +38,8 @@ namespace mt
     inline const glm::vec3& sunDirection() noexcept;
     inline void setSunDirection(const glm::vec3& newValue) noexcept;
 
-    //  Нормированное значение освещенности от прямых лучей солнца по
-    //    компонентам rgb на плоскости, перпендикулярной sunDirection
+    //  Освещенность от прямых лучей солнца на плоскости, перпендикулярной
+    //    sunDirection
     //  Нормированноя освещенность равная 1 дает на чисто ламбертовом отражении
     //    нормированную яркость 1/pi
     inline const glm::vec3& directLightIrradiance() noexcept;

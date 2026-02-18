@@ -47,5 +47,3 @@ layout (set = STATIC, binding = 3) readonly buffer NormalBuffer
     float data[];
   } TEXCOORD_0;
 #endif
-
-layout (set = STATIC, binding = 6) uniform sampler linearSampler;

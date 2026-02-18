@@ -3,12 +3,6 @@ selections:
   TEXCOORD_COUNT: [0, 1]
   BASECOLORTEXTURE_ENABLED: [0, 1]
 
-defaultSamplers:
-  linearSampler:
-    magFilter: LINEAR
-    minFilter: LINEAR
-    mipmapMode: LINEAR
-
 passes:
   OpaquePass :
     selections: [ INDICES_ENABLED,

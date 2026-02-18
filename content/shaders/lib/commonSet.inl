@@ -12,7 +12,7 @@ layout (set = COMMON, binding = 0) uniform CommonData
 
 //  LUT текстура для image based lighting и сэмплер для её чтения
 layout (set = COMMON,
-        binding = 1) uniform texture2DArray iblLut;
+        binding = 1) uniform texture2D iblLut;
 layout (set = COMMON,
         binding = 2) uniform sampler iblLutSampler;
 
