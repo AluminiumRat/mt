@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <array>
+#include <optional>
 
 #include <util/Ref.h>
 #include <util/Region.h>
@@ -35,8 +36,12 @@ namespace mt
     class RenderPass
     {
     public:
-      inline RenderPass(CommandProducerGraphic& commandProducer,
-                        const FrameBuffer& frameBuffer);
+      //  Если кто-то из scissor или viewport равен nullopt, то в качестве
+      //    соответствующего региона будет взят весь frameBuffer
+      RenderPass( CommandProducerGraphic& commandProducer,
+                  const FrameBuffer& frameBuffer,
+                  std::optional<Region> scissor = std::nullopt,
+                  std::optional<Region> viewport = std::nullopt);
       RenderPass(const RenderPass&) = delete;
       RenderPass& operator = (const RenderPass&) = delete;
       inline RenderPass(RenderPass&& other) noexcept;
@@ -48,10 +53,14 @@ namespace mt
       inline void endPass() noexcept;
 
       inline const FrameBuffer& frameBuffer() const noexcept;
+      inline const Region& scissor() const noexcept;
+      inline const Region& viewport() const noexcept;
 
     private:
       CommandProducerGraphic* _commandProducer;
       const FrameBuffer* _frameBuffer;
+      Region _scissor;
+      Region _viewport;
     };
 
   public:
@@ -133,15 +142,6 @@ namespace mt
   };
 
   inline CommandProducerGraphic::RenderPass::RenderPass(
-                                        CommandProducerGraphic& commandProducer,
-                                        const FrameBuffer& frameBuffer) :
-    _commandProducer(&commandProducer),
-    _frameBuffer(&frameBuffer)
-  {
-    _commandProducer->_beginPass(*this);
-  }
-
-  inline CommandProducerGraphic::RenderPass::RenderPass(
                                                   RenderPass&& other) noexcept :
     _commandProducer(other._commandProducer),
     _frameBuffer(other._frameBuffer)
@@ -168,6 +168,18 @@ namespace mt
                 CommandProducerGraphic::RenderPass::frameBuffer() const noexcept
   {
     return *_frameBuffer;
+  }
+
+  inline const Region&
+                    CommandProducerGraphic::RenderPass::scissor() const noexcept
+  {
+    return _scissor;
+  }
+  
+  inline const Region&
+                  CommandProducerGraphic::RenderPass::viewport() const noexcept
+  {
+    return _viewport;
   }
 
   inline void CommandProducerGraphic::RenderPass::endPass() noexcept

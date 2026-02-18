@@ -2,7 +2,6 @@
 
 #include <hld/drawCommand/CommandMemoryPool.h>
 #include <hld/drawCommand/DrawCommandList.h>
-#include <hld/FrameTypeIndex.h>
 #include <hld/StageIndex.h>
 #include <util/Ref.h>
 #include <vkr/image/ImageView.h>
@@ -11,11 +10,9 @@
 namespace mt
 {
   class CommandProducerGraphic;
-  class DescriptorSet;
   class Device;
   class DrawPlan;
   struct FrameBuildContext;
-  class PipelineLayout;
 
   class OpaqueColorStage
   {

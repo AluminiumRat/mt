@@ -52,13 +52,10 @@ void Posteffects::makeLDR(FrameBuffer& target,
   _updateBindings();
 
   //  Резолв hdr и постэффекты в одной отрисовке
-  CommandProducerGraphic::RenderPass renderPass(commandProducer, target);
-    if(drawRegion != Region(target.extent()))
-    {
-      commandProducer.setViewport(drawRegion);
-      commandProducer.setScissor(drawRegion);
-    }
-
+  CommandProducerGraphic::RenderPass renderPass(commandProducer,
+                                                target,
+                                                drawRegion,
+                                                drawRegion);
     Technique::BindGraphic bind(_resolveTechnique,
                                 _resolvePass,
                                 commandProducer);

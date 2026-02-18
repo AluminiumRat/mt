@@ -12,6 +12,19 @@
 
 using namespace mt;
 
+CommandProducerGraphic::RenderPass::RenderPass(
+                                        CommandProducerGraphic& commandProducer,
+                                        const FrameBuffer& frameBuffer,
+                                        std::optional<Region> scissor,
+                                        std::optional<Region> viewport) :
+  _commandProducer(&commandProducer),
+  _frameBuffer(&frameBuffer),
+  _scissor(scissor.has_value() ? *scissor : frameBuffer.extent()),
+  _viewport(viewport.has_value() ? *viewport : frameBuffer.extent())
+{
+  _commandProducer->_beginPass(*this);
+}
+
 CommandProducerGraphic::CommandProducerGraphic( CommandPoolSet& poolSet,
                                                 const char* debugName) :
   CommandProducerCompute(poolSet, debugName),
@@ -87,18 +100,19 @@ void CommandProducerGraphic::_beginPass(RenderPass& renderPass)
     vkCmdBeginRendering(buffer.handle(), &frameBuffer.bindingInfo());
 
     // Выставляем дефолтный вьюпорт
-    VkViewport viewport{.x = 0,
-                        .y = 0,
-                        .width = float(frameBuffer.extent().x),
-                        .height = float(frameBuffer.extent().y),
+    VkViewport viewport{.x = float(renderPass.viewport().minCorner.x),
+                        .y = float(renderPass.viewport().minCorner.y),
+                        .width = float(renderPass.viewport().width()),
+                        .height = float(renderPass.viewport().height()),
                         .minDepth = 0,
                         .maxDepth = 1};
     vkCmdSetViewport(buffer.handle(), 0, 1, &viewport);
 
     // Дефолтный трафарет
-    VkRect2D scissor{ .offset = {.x = 0, .y = 0},
-                      .extent = { .width = frameBuffer.extent().x,
-                                  .height = frameBuffer.extent().y}};
+    VkRect2D scissor{ .offset = { .x = int32_t(renderPass.scissor().minCorner.x),
+                                  .y = int32_t(renderPass.scissor().minCorner.y)},
+                      .extent = { .width = renderPass.scissor().width(),
+                                  .height = renderPass.scissor().height()}};
     vkCmdSetScissor(buffer.handle(), 0, 1, &scissor);
 
     _currentPass = &renderPass;

@@ -35,11 +35,9 @@ void OpaqueColorStage::draw(CommandProducerGraphic& commandProducer,
   if(_frameBuffer == nullptr) _buildFrameBuffer();
 
   CommandProducerGraphic::RenderPass renderPass(commandProducer,
-                                                *_frameBuffer);
-    if(_frameBuffer->extent() != viewport)
-    {
-      commandProducer.setViewport(viewport);
-    }
+                                                *_frameBuffer,
+                                                std::nullopt,
+                                                viewport);
     _drawCommands.draw( commandProducer,
                         DrawCommandList::BY_GROUP_INDEX_SORTING);
   renderPass.endPass();
