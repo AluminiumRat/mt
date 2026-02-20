@@ -15,6 +15,7 @@ namespace tinygltf
 {
   struct Accessor;
   class Model;
+  class Node;
   struct TextureInfo;
   class TinyGLTF;
 }
@@ -123,6 +124,8 @@ namespace mt
 
     //  Рекурсивный обход нод в иерархии gltf модели
     void _processNode(int nodeIndex);
+    //  Получить матрицу трансформации из node и добавить её к _currentTansform
+    void _applyNodeTransform(const tinygltf::Node& node);
     //  Создать MeshDrawable, когда при обходе иерархии gltf наткнулись на меш
     void _processMesh(int gltfMeshIndex);
 

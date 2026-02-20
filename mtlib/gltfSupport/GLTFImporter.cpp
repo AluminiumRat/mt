@@ -1,6 +1,10 @@
 ﻿#include <cstring>
 #include <stdexcept>
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/quaternion.hpp>
+
 #define TINYGLTF_IMPLEMENTATION
 #define TINYGLTF_NO_STB_IMAGE
 #define TINYGLTF_NO_STB_IMAGE_WRITE
@@ -615,6 +619,17 @@ void GLTFImporter::_processNode(int nodeIndex)
 {
   const tinygltf::Node& node = _gltfModel->nodes[nodeIndex];
   glm::mat4 oldTransform = _currentTansform;
+  _applyNodeTransform(node);
+
+  if(node.mesh != -1) _processMesh(node.mesh);
+
+  for(int childIndex : node.children) _processNode(childIndex);
+
+  _currentTansform = oldTransform;
+}
+
+void GLTFImporter::_applyNodeTransform(const tinygltf::Node& node)
+{
   if(!node.matrix.empty())
   {
     glm::mat4 localTransform(
@@ -624,12 +639,32 @@ void GLTFImporter::_processNode(int nodeIndex)
               node.matrix[12], node.matrix[13], node.matrix[14], node.matrix[15]);
     _currentTansform = _currentTansform * localTransform;
   }
+  else
+  {
+    if(!node.translation.empty())
+    {
+      _currentTansform *= glm::translate( glm::mat4(1),
+                                          glm::vec3(node.translation[0],
+                                                    node.translation[1],
+                                                    node.translation[2]));
+    }
+    if(!node.rotation.empty())
+    {
+      glm::quat rotation( (float)node.rotation[1],
+                          (float)node.rotation[2],
+                          -(float)node.rotation[0],
+                          (float)node.rotation[3]);
 
-  if(node.mesh != -1) _processMesh(node.mesh);
-
-  for(int childIndex : node.children) _processNode(childIndex);
-
-  _currentTansform = oldTransform;
+      _currentTansform *= glm::toMat4(rotation);
+    }
+    if(!node.scale.empty())
+    {
+      _currentTansform *= glm::scale( glm::mat4(1),
+                                      glm::vec3(node.scale[0],
+                                                node.scale[1],
+                                                node.scale[2]));
+    }
+  }
 }
 
 void GLTFImporter::_processMesh(int gltfMeshIndex)
