@@ -5,7 +5,7 @@
 #include "lib/lighting/LitSurface.inl"
 #include "lib/commonSet.inl"
 
-vec3 getIBLRadiance(LitSurface surface,
+vec3 getIBLRadiance(ObservedSurface surface,
                     textureCube iblIrradianceTexture,
                     textureCube iblSpecularTexture,
                     float roughnessToLodFactor)

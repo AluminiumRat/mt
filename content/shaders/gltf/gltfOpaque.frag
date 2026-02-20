@@ -25,18 +25,22 @@ void main()
   vec3 toViewer = commonData.cameraData.eyePoint - inWorldPosition;
   toViewer = normalize(toViewer);
 
-  LitSurface surface = makeLitSurface(baseColor.rgb,
-                                      materialBuffer.material.roughness,
-                                      materialBuffer.material.metallic,
-                                      normal,
-                                      toViewer,
-                                      commonData.environment.toSunDirection);
+  ObservedSurface observedSurface = makeObservedSurface(
+                                              baseColor.rgb,
+                                              materialBuffer.material.roughness,
+                                              materialBuffer.material.metallic,
+                                              normal,
+                                              toViewer);
+  LitSurface litSurface = makeLitSurface(
+                                        observedSurface,
+                                        commonData.environment.toSunDirection);
 
   vec3 radiance = getDirectLightRadiance(
-                                  surface,
+                                  observedSurface,
+                                  litSurface,
                                   commonData.environment.directLightIrradiance);
 
-  radiance += getIBLRadiance( surface,
+  radiance += getIBLRadiance( observedSurface,
                               iblIrradianceMap,
                               iblSpecularMap,
                               commonData.environment.roughnessToLod);

@@ -4,10 +4,10 @@
 //  Коэффициент отражения Френеля под углом 90 градусов для диэлектриков
 #define DIELECTRIC_F0 0.04f
 
-//  Данные о поверхности, для которой рассчитывается освещение
-//  Инициализируются через makeLitSurface
-//  Мелкая рутина перед просчетом освещения
-struct LitSurface
+//  Данные об поверхности на которую мы смотрим
+//  Инициализируются через makeObservedSurface
+//  Просто группировка данных и мелкие рутины перед просчетом освещения
+struct ObservedSurface
 {
   vec3 baseColor;
   float roughness;
@@ -20,23 +20,33 @@ struct LitSurface
 
   vec3 normal;
   vec3 toViewer;
-  vec3 toLight;
-  vec3 halfVector;
-  float normDotLight;
   float normDotView;
+};
+
+//  Дополнение к ObservedSurface, которое включает в себя информацию об
+//    источнике прямого освещения
+//  Инициализируются через makeLitSurface
+//  Просто группировка данных и мелкие рутины перед просчетом освещения
+struct LitSurface
+{
+  //  направление на источник света
+  vec3 toLight;
+  //  средний вектор между ObservedSurface::toViewer и LitSurface::toLight
+  vec3 halfVector;
+
+  float normDotLight;
   float normDotHalf;
   float viewDotHalf;
 };
 
-//  Инициализаия структуры LitSurface
-LitSurface makeLitSurface(vec3 baseColor,
-                          float roughness,
-                          float metallic,
-                          vec3 normal,
-                          vec3 toViewer,
-                          vec3 toLight)
+//  Инициализаия структуры ObservedSurface
+ObservedSurface makeObservedSurface(vec3 baseColor,
+                                    float roughness,
+                                    float metallic,
+                                    vec3 normal,
+                                    vec3 toViewer)
 {
-  LitSurface surface;
+  ObservedSurface surface;
   surface.baseColor = baseColor;
   surface.roughness = roughness;
   surface.metallic = metallic;
@@ -47,15 +57,22 @@ LitSurface makeLitSurface(vec3 baseColor,
 
   surface.normal = normal;
   surface.toViewer = toViewer;
-  surface.toLight = toLight;
-  surface.halfVector = toViewer + toLight;
-  surface.halfVector = normalize(surface.halfVector);
-  surface.normDotLight = dot(toLight, normal);
-  surface.normDotLight = max(surface.normDotLight, 0.001f);
   surface.normDotView = dot(toViewer, normal);
   surface.normDotView = max(surface.normDotView, 0.001f);
-  surface.normDotHalf = dot(surface.halfVector, normal);
-  surface.viewDotHalf = dot(toViewer, surface.halfVector);
+  return surface;
+}
+
+//  Инициализаия структуры LitSurface
+LitSurface makeLitSurface(ObservedSurface observedSurface, vec3 toLight)
+{
+  LitSurface surface;
+  surface.toLight = toLight;
+  surface.halfVector = observedSurface.toViewer + toLight;
+  surface.halfVector = normalize(surface.halfVector);
+  surface.normDotLight = dot(toLight, observedSurface.normal);
+  surface.normDotLight = max(surface.normDotLight, 0.001f);
+  surface.normDotHalf = dot(surface.halfVector, observedSurface.normal);
+  surface.viewDotHalf = dot(observedSurface.toViewer, surface.halfVector);
   return surface;
 }
 

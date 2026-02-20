@@ -152,22 +152,24 @@ vec3 gltf2BRDF( vec3 baseColor,
 //  BRDF для GLTF2 материалов. Ускоренный вариант. Ускорение за счет объединения
 //  общих рассчетов.
 //  https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#metal-brdf-and-dielectric-brdf
-vec3 glt2BRDFFast(LitSurface surface)
+vec3 glt2BRDFFast(ObservedSurface observedSurface,
+                  LitSurface litSurface)
 {
-  vec3 lambert = lambertBRDF() * surface.lambertColor;
+  vec3 lambert = lambertBRDF() * observedSurface.lambertColor;
 
   //  GGX БРДФ одинаковая и для металла и для диэлектрика, отличия в спектре и
   //  работе Френеля
-  vec3 specular = vec3(specularBRDF(surface.normDotLight,
-                                    surface.normDotView,
-                                    surface.normDotHalf,
-                                    surface.roughness * surface.roughness));
+  vec3 specular = vec3(specularBRDF(litSurface.normDotLight,
+                                    observedSurface.normDotView,
+                                    litSurface.normDotHalf,
+                                    observedSurface.roughness *
+                                      observedSurface.roughness));
 
   //  За счет того, что и металл и диэлектрик одинаково переходят в белое
   //  отражение на тупых углах, мы можем протащить весь расчет френеля через
   //  metallicReflectionFactor
-  float fresnelCompliment = fresnelSlickCompliment(surface.viewDotHalf);
-  vec3 fresnel = metallicReflectionFactor(surface.f0Reflection,
+  float fresnelCompliment = fresnelSlickCompliment(litSurface.viewDotHalf);
+  vec3 fresnel = metallicReflectionFactor(observedSurface.f0Reflection,
                                           fresnelCompliment);
 
   return mix(lambert, specular, fresnel);
@@ -177,11 +179,12 @@ vec3 glt2BRDFFast(LitSurface surface)
 //  lightIrradiance - освещенность от источника света, но измеренная не по
 //    освещаемой поверхности, а по поверхности, перпендикулярной направлению
 //    света.
-vec3 getDirectLightRadiance(LitSurface surface,
+vec3 getDirectLightRadiance(ObservedSurface observedSurface,
+                            LitSurface litSurface,
                             vec3 lightIrradiance)
 {
-  vec3 brdfValue = glt2BRDFFast(surface);
-  vec3 irradiance = lightIrradiance * surface.normDotLight;
+  vec3 brdfValue = glt2BRDFFast(observedSurface, litSurface);
+  vec3 irradiance = lightIrradiance * litSurface.normDotLight;
   return irradiance * brdfValue;
 }
 
