@@ -650,10 +650,10 @@ void GLTFImporter::_applyNodeTransform(const tinygltf::Node& node)
     }
     if(!node.rotation.empty())
     {
-      glm::quat rotation( (float)node.rotation[1],
-                          (float)node.rotation[2],
-                          -(float)node.rotation[0],
-                          (float)node.rotation[3]);
+      glm::quat rotation( (float)node.rotation[3],
+                          (float)node.rotation[0],
+                          (float)node.rotation[1],
+                          (float)node.rotation[2]);
 
       _currentTansform *= glm::toMat4(rotation);
     }
