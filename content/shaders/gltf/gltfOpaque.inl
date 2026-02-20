@@ -36,13 +36,33 @@ layout (set = STATIC, binding = 3) readonly buffer NormalBuffer
   float data[];
 } NORMAL;
 
-#if BASECOLORTEXTURE_ENABLED == 1
-  layout (set = STATIC, binding = 4) uniform texture2D baseColorTexture;
+//  Тангенты
+//  vec4 на каждую вершину. XYZ - нормализованный вектор тангента,
+//    W - знак(+1 или -1), указывающий на "рукость" tbn базиса
+//  Тангенты используются только для текстур нормалей
+#ifdef NORMALTEXTURE_ENABLED
+  layout (set = STATIC, binding = 4) readonly buffer TangentBuffer
+  {
+    vec4 data[];
+  } TANGENT;
 #endif
 
+#if BASECOLORTEXTURE_ENABLED == 1
+  layout (set = STATIC, binding = 5) uniform texture2D baseColorTexture;
+#endif
+
+#if METALLICROUGHNESSTEXTURE_ENABLED == 1
+  layout (set = STATIC,
+          binding = 6) uniform texture2D metallicRougghnessTexture;
+#endif
+
+#ifdef NORMALTEXTURE_ENABLED
+  layout (set = STATIC, binding = 7) uniform texture2D normalTexture;
+#endif
+
+// Текстурные координаты. По 2 float-а на вершину. Без разрывов
 #if TEXCOORD_COUNT > 0
-  // Текстурные координаты. По 2 float-а на вершину. Без разрывов
-  layout (set = STATIC, binding = 5) readonly buffer Texcoord0Buffer
+  layout (set = STATIC, binding = 8) readonly buffer Texcoord0Buffer
   {
     float data[];
   } TEXCOORD_0;

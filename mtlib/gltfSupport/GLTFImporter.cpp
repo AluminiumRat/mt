@@ -518,9 +518,18 @@ bool GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
     return false;
   }
 
-  if(material.baseColorTexture != nullptr && !verticesInfo.texcoord0Found)
+  if( material.baseColorTexture != nullptr ||
+      material.metallicRoughnessTexture != nullptr ||
+      material.normalTexture != nullptr ||
+      material.occlusionTexture != nullptr ||
+      material.emissiveTexture != nullptr)
   {
-    throw std::runtime_error(meshName + ": there is baseColorTexture in material but TEXCOORD_0 attribute is not found");
+    if(!verticesInfo.texcoord0Found) throw std::runtime_error(meshName + ": there are some textures in material but TEXCOORD_0 attribute is not found");
+  }
+
+  if( material.normalTexture != nullptr && !verticesInfo.texcoord0Found)
+  {
+    throw std::runtime_error(meshName + ": there is normal textures in material but TANGENT attribute is not found");
   }
 
   targetAsset.setCommonBuffer("materialBuffer", *material.materialData);
@@ -544,6 +553,22 @@ bool GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
                                   *material.baseColorTexture);
   }
   else targetAsset.setCommonSelection("BASECOLORTEXTURE_ENABLED", "0");
+
+  if(material.metallicRoughnessTexture != nullptr)
+  {
+    targetAsset.setCommonSelection("METALLICROUGHNESSTEXTURE_ENABLED", "1");
+    targetAsset.setCommonResource("metallicRougghnessTexture",
+                                  *material.metallicRoughnessTexture);
+  }
+  else targetAsset.setCommonSelection("METALLICROUGHNESSTEXTURE_ENABLED", "0");
+
+  if(material.normalTexture != nullptr)
+  {
+    targetAsset.setCommonSelection("NORMALTEXTURE_ENABLED", "1");
+    targetAsset.setCommonResource("normalTexture",
+                                  *material.normalTexture);
+  }
+  else targetAsset.setCommonSelection("NORMALTEXTURE_ENABLED", "0");
 
   std::unique_ptr<Technique> technique =
                         _techniqueManager.scheduleLoading("gltf/gltfOpaque.tch",
@@ -583,6 +608,7 @@ void GLTFImporter::_processVertexAttribute( const std::string& attributeName,
   }
   else if(attributeName == "NORMAL") verticesInfo.normalFound = true;
   else if(attributeName == "TEXCOORD_0") verticesInfo.texcoord0Found = true;
+  else if(attributeName == "TANGENT") verticesInfo.tangentFound = true;
 }
 
 void GLTFImporter::_processNode(int nodeIndex)

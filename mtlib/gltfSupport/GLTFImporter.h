@@ -58,6 +58,7 @@ namespace mt
       bool normalFound = false;
       bool indicesFound = false;
       bool texcoord0Found = false;
+      bool tangentFound = false;
     };
 
     //  Информация по всем материалам gltf сцены. Индекс в векторе соответствует

@@ -2,6 +2,18 @@
 #ifndef COLOR_INL
 #define COLOR_INL
 
+//  Грубый перевод из sRGB в линейное пространство
+vec3 srgbToLinearFast(vec3 srgbValue)
+{
+  return pow(srgbValue, vec3(2.2f));
+}
+
+//  Грубый перевод из линейного пространства в sRGB
+vec3 linearToSrgbFast(vec3 linearValue)
+{
+  return pow(linearValue, vec3(1.0f / 2.2f));
+}
+
 //  Преобразование из RGB спекта в яркость
 //  Просто взвешивание компонентов по восприятию глазом
 float colorToLuminance(vec3 color)
