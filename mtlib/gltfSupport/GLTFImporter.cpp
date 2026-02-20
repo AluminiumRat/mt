@@ -360,7 +360,7 @@ ConstRef<DataBuffer> GLTFImporter::_createAccessorBuffer(
   if(bufferview.buffer < 0) throw std::runtime_error(_filename + " : wrong buffer reference");
   const tinygltf::Buffer& buffer = _gltfModel->buffers[bufferview.buffer];
 
-  if(bufferview.byteStride == partSize)
+  if(bufferview.byteStride == partSize || bufferview.byteStride == 0)
   {
     //  В буфере нет разрывов между данными, можем копировать одним куском
     return _uploadData( &buffer.data[dataStartOffset],
