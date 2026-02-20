@@ -531,9 +531,9 @@ bool GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
     if(!verticesInfo.texcoord0Found) throw std::runtime_error(meshName + ": there are some textures in material but TEXCOORD_0 attribute is not found");
   }
 
-  if( material.normalTexture != nullptr && !verticesInfo.texcoord0Found)
+  if(material.normalTexture != nullptr && !verticesInfo.tangentFound)
   {
-    throw std::runtime_error(meshName + ": there is normal textures in material but TANGENT attribute is not found");
+    Log::warning() << meshName << ": there is normal textures in material but TANGENT attribute is not found";
   }
 
   targetAsset.setCommonBuffer("materialBuffer", *material.materialData);
@@ -566,7 +566,7 @@ bool GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
   }
   else targetAsset.setCommonSelection("METALLICROUGHNESSTEXTURE_ENABLED", "0");
 
-  if(material.normalTexture != nullptr)
+  if(material.normalTexture != nullptr && verticesInfo.tangentFound)
   {
     targetAsset.setCommonSelection("NORMALTEXTURE_ENABLED", "1");
     targetAsset.setCommonResource("normalTexture",
