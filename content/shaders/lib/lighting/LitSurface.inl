@@ -12,6 +12,8 @@ struct ObservedSurface
   vec3 baseColor;
   float roughness;
   float metallic;
+  float ambientOcclusion;
+  float specularOcclusion;
   //  Дифузная составляющая цвета, темнее baseColor из-за отсутствия у металлов
   //  диффузной составляющей отражения
   vec3 lambertColor;
@@ -43,6 +45,7 @@ struct LitSurface
 ObservedSurface makeObservedSurface(vec3 baseColor,
                                     float roughness,
                                     float metallic,
+                                    float ambientOcclusion,
                                     vec3 normal,
                                     vec3 toViewer)
 {
@@ -50,6 +53,7 @@ ObservedSurface makeObservedSurface(vec3 baseColor,
   surface.baseColor = baseColor;
   surface.roughness = roughness;
   surface.metallic = metallic;
+  surface.ambientOcclusion = ambientOcclusion;
   surface.lambertColor = baseColor * (1.0f - metallic);
   surface.f0Reflection = mix( vec3(DIELECTRIC_F0),
                               baseColor.rgb,
@@ -59,6 +63,13 @@ ObservedSurface makeObservedSurface(vec3 baseColor,
   surface.toViewer = toViewer;
   surface.normDotView = dot(toViewer, normal);
   surface.normDotView = max(surface.normDotView, 0.001f);
+
+  //  specular occlusion взят из "Moving Frostbite to Physically Based Rendering 3.0"
+  surface.specularOcclusion = pow(surface.normDotView + ambientOcclusion,
+                                  exp2(-16.0f * roughness * roughness - 1.0f));
+  surface.specularOcclusion = surface.specularOcclusion - 1.0f +
+                                                              ambientOcclusion;
+  surface.specularOcclusion = clamp(surface.specularOcclusion, 0.0f, 1.0f);
   return surface;
 }
 

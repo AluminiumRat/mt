@@ -23,6 +23,7 @@ vec3 getIBLRadiance(ObservedSurface surface,
                                   sampleIrradianceDir).rgb;
   lambertRadiance *= surface.lambertColor;
   lambertRadiance *= lutValue.z;
+  lambertRadiance *= surface.ambientOcclusion;
 
   //  Спекуляр составляющая
   vec3 specularRadiance = surface.f0Reflection * lutValue.x + vec3(lutValue.y);
@@ -33,6 +34,7 @@ vec3 getIBLRadiance(ObservedSurface surface,
                                               commonLinearSampler),
                                   reflectionDir,
                                   specularMapLod).rgb;
+  specularRadiance *= surface.specularOcclusion;
 
   return lambertRadiance + specularRadiance;
 }

@@ -569,10 +569,17 @@ bool GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
   if(material.normalTexture != nullptr && verticesInfo.tangentFound)
   {
     targetAsset.setCommonSelection("NORMALTEXTURE_ENABLED", "1");
-    targetAsset.setCommonResource("normalTexture",
-                                  *material.normalTexture);
+    targetAsset.setCommonResource("normalTexture", *material.normalTexture);
   }
   else targetAsset.setCommonSelection("NORMALTEXTURE_ENABLED", "0");
+
+  if(material.occlusionTexture)
+  {
+    targetAsset.setCommonSelection("OCCLUSIONTEXTURE_ENABLED", "1");
+    targetAsset.setCommonResource("occlusionTexture",
+                                  *material.occlusionTexture);
+  }
+  else targetAsset.setCommonSelection("OCCLUSIONTEXTURE_ENABLED", "0");
 
   std::unique_ptr<Technique> technique =
                         _techniqueManager.scheduleLoading("gltf/gltfOpaque.tch",

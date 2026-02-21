@@ -57,22 +57,35 @@ void main()
     normal = normalize(normal);
   #endif
 
+  #if OCCLUSIONTEXTURE_ENABLED == 1 && TEXCOORD_COUNT > 0
+    float occlusion = texture(sampler2D(occlusionTexture,
+                                        commonLinearSampler),
+                              inTexcoord0).r;
+    occlusion *= materialBuffer.material.occlusionTextureStrength;
+  #else
+    float occlusion = 1.0f;
+  #endif
+
   vec3 toViewer = commonData.cameraData.eyePoint - inWorldPosition;
   toViewer = normalize(toViewer);
 
   ObservedSurface observedSurface = makeObservedSurface(baseColor.rgb,
                                                         roughness,
                                                         metallic,
+                                                        occlusion,
                                                         normal,
                                                         toViewer);
   LitSurface litSurface = makeLitSurface(
                                         observedSurface,
                                         commonData.environment.toSunDirection);
 
+  //  Теней пока нет, поэтому вместо shadowFactor передаем ambientOcclusion
+  //  Костыль, но позволяет сделать немного покарасивее
   vec3 radiance = getDirectLightRadiance(
                                   observedSurface,
                                   litSurface,
-                                  commonData.environment.directLightIrradiance);
+                                  commonData.environment.directLightIrradiance,
+                                  observedSurface.ambientOcclusion);
 
   radiance += getIBLRadiance( observedSurface,
                               iblIrradianceMap,

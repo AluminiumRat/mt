@@ -181,11 +181,12 @@ vec3 glt2BRDFFast(ObservedSurface observedSurface,
 //    света.
 vec3 getDirectLightRadiance(ObservedSurface observedSurface,
                             LitSurface litSurface,
-                            vec3 lightIrradiance)
+                            vec3 lightIrradiance,
+                            float shadowFactor)
 {
   vec3 brdfValue = glt2BRDFFast(observedSurface, litSurface);
   vec3 irradiance = lightIrradiance * litSurface.normDotLight;
-  return irradiance * brdfValue;
+  return shadowFactor * brdfValue * irradiance;
 }
 
 #endif
