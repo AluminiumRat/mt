@@ -581,6 +581,14 @@ bool GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
   }
   else targetAsset.setCommonSelection("OCCLUSIONTEXTURE_ENABLED", "0");
 
+  if(material.emissiveTexture)
+  {
+    targetAsset.setCommonSelection("EMISSIVETEXTURE_ENABLED", "1");
+    targetAsset.setCommonResource("emissiveTexture",
+                                  *material.emissiveTexture);
+  }
+  else targetAsset.setCommonSelection("EMISSIVETEXTURE_ENABLED", "0");
+
   std::unique_ptr<Technique> technique =
                         _techniqueManager.scheduleLoading("gltf/gltfOpaque.tch",
                                                           _device);

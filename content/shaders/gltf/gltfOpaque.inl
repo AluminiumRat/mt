@@ -64,9 +64,13 @@ layout (set = STATIC, binding = 3) readonly buffer NormalBuffer
   layout (set = STATIC, binding = 8) uniform texture2D occlusionTexture;
 #endif
 
+#ifdef EMISSIVETEXTURE_ENABLED
+  layout (set = STATIC, binding = 9) uniform texture2D emissiveTexture;
+#endif
+
 // Текстурные координаты. По 2 float-а на вершину. Без разрывов
 #if TEXCOORD_COUNT > 0
-  layout (set = STATIC, binding = 9) readonly buffer Texcoord0Buffer
+  layout (set = STATIC, binding = 10) readonly buffer Texcoord0Buffer
   {
     float data[];
   } TEXCOORD_0;

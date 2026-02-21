@@ -92,5 +92,12 @@ void main()
                               iblSpecularMap,
                               commonData.environment.roughnessToLod);
 
+  #if EMISSIVETEXTURE_ENABLED  && TEXCOORD_COUNT > 0
+    vec3 emission = texture(sampler2D(emissiveTexture, commonLinearSampler),
+                            inTexcoord0).rgb;
+    emission *= materialBuffer.material.emission;
+    radiance += emission;
+  #endif
+
   outColor = vec4(radiance, baseColor.a);
 }
