@@ -12,7 +12,7 @@ float ggxNormalDistribution(float normDotHalf, float roughness2)
   float roughness4 = roughness2 * roughness2;
   float factor = roughness4 / M_PI;
   float denom = normDotHalf * normDotHalf * (roughness4 - 1.f) + 1.f;
-  denom = denom * denom;
+  denom = max(denom * denom, 0.0001f);
   factor /= denom;
   return factor;
 }
