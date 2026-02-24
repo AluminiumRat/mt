@@ -27,6 +27,14 @@ namespace mt
     virtual std::filesystem::file_time_type lastWriteTime(
                                         const std::filesystem::path& file) = 0;
 
+    //  Хэш значение, позволяющее отличать один лоадер от другого а так же
+    //    различные настройки одинаковых лоадеров.
+    //    Лоадеры с одинаковым хэшем должны возвращать одни и те же данные при
+    //    загрузке.
+    //  Создано специально для кэша шейдеров, чтобы отличать друг от друга
+    //    файлы с одинаковым относительным именем
+    virtual size_t loaderHash() const noexcept = 0;
+
     //  Установить загрузчик данных
     //  По умолчанию установлен DefaultContentLoader
     //  ВНИМАНИЕ!!! Метод не потокобезопасный. Предполагается, что лоадер будет
@@ -56,7 +64,10 @@ namespace mt
     virtual bool exists(const std::filesystem::path& file) override;
     virtual std::filesystem::file_time_type lastWriteTime(
                                     const std::filesystem::path& file) override;
+    virtual size_t loaderHash() const noexcept override;
+
   private:
     std::vector<std::filesystem::path> _searchPatches;
+    size_t _hash;
   };
 }

@@ -15,6 +15,7 @@ set(SOURCES
     "PassConfigurator.cpp"
     "ResourceBinding.cpp"
     "Selection.cpp"
+    "ShaderCache.cpp"
     "ShaderCompilator.cpp"
     "SpecializationConstantSet.cpp"
     "Technique.cpp"

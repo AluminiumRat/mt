@@ -13,6 +13,13 @@ namespace mt
   class ShaderCompilator
   {
   public:
+    //  Версия компилируемого кода. Используется при кэшировании SPIR-V кода
+    //    для валидации кэша
+    //  Необходимо увеличивать версию каждый раз, когда изменения в
+    //    ShaderCompilator приводят к изменениям в генерируемом SPIRV.
+    static constexpr uint32_t version = 0;
+
+  public:
     struct Define
     {
       const char* name;

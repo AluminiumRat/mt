@@ -8,6 +8,7 @@
 
 #include <util/Assert.h>
 #include <util/ContentLoader.h>
+#include <util/fileSystemHelpers.h>
 
 namespace fs = std::filesystem;
 
@@ -52,12 +53,16 @@ static std::ifstream openFile(const fs::path& file,
   return fileStream;
 }
 
-DefaultContentLoader::DefaultContentLoader()
+DefaultContentLoader::DefaultContentLoader() :
+  _hash(0)
 {
   _searchPatches.push_back(fs::current_path());
   _searchPatches.push_back(fs::current_path() / "shaders");
   _searchPatches.push_back(fs::current_path() / "content");
   _searchPatches.push_back(fs::current_path() / "content/shaders");
+
+  //  Строка для создания хэша лоадера
+  std::string loaderDescription = "DefaultContentLoader";
 
   // Парсим переменную окружения и ищем по путям в ней
   const char* patchesEnv = std::getenv("MT_CONTENT_DIRS");
@@ -67,9 +72,15 @@ DefaultContentLoader::DefaultContentLoader()
     std::string path;
     while(std::getline(envStream, path, ';'))
     {
-      if(!path.empty()) _searchPatches.push_back(path);
+      if(!path.empty())
+      {
+        _searchPatches.push_back(utf8ToPath(path));
+        loaderDescription += path;
+      }
     }
   }
+
+  _hash = std::hash<std::string>()(loaderDescription);
 }
 
 std::vector<char> DefaultContentLoader::loadData(const fs::path& file)
@@ -129,4 +140,9 @@ fs::file_time_type DefaultContentLoader::lastWriteTime(const fs::path& file)
   }
 
   throw std::runtime_error(std::string("DefaultContentLoader::lastWriteTime: file " + std::string((const char*)file.u8string().c_str())) + " doesn't exist");
+}
+
+size_t DefaultContentLoader::loaderHash() const noexcept
+{
+  return _hash;
 }

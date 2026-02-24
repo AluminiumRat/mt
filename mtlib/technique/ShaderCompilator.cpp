@@ -3,6 +3,7 @@
 
 #include <shaderc/shaderc.hpp>
 
+#include <technique/ShaderCache.h>
 #include <technique/ShaderCompilator.h>
 #include <util/Abort.h>
 #include <util/ContentLoader.h>
@@ -12,6 +13,9 @@ namespace fs = std::filesystem;
 
 using namespace mt;
 
+ShaderCache shaderCache;
+std::mutex cacheMutex;
+
 shaderc::Compiler compiler;
 std::mutex compilerMutex;
 
@@ -19,7 +23,8 @@ std::mutex compilerMutex;
 class ShaderIncluder : public shaderc::CompileOptions::IncluderInterface
 {
 public:
-  explicit ShaderIncluder(std::unordered_set<fs::path>* usedFiles);
+  explicit ShaderIncluder(std::unordered_set<fs::path>* usedFiles,
+                          ShaderCache::Resources& resources);
   virtual shaderc_include_result* GetInclude( const char* requested_source,
                                               shaderc_include_type type,
                                               const char* requesting_source,
@@ -37,10 +42,13 @@ private:
   using Includes = std::vector<std::unique_ptr<IncludeInfo>>;
   Includes _includes;
   std::unordered_set<std::filesystem::path>* _usedFiles;
+  ShaderCache::Resources& _resources;
 };
 
-ShaderIncluder::ShaderIncluder(std::unordered_set<fs::path>* usedFiles) :
-  _usedFiles(usedFiles)
+ShaderIncluder::ShaderIncluder( std::unordered_set<fs::path>* usedFiles,
+                                ShaderCache::Resources& resources) :
+  _usedFiles(usedFiles),
+  _resources(resources)
 {
 }
 
@@ -55,6 +63,7 @@ shaderc_include_result* ShaderIncluder::GetInclude(
     fs::path filePath((const char8_t*)requested_source);
     filePath = filePath.lexically_normal();
     if(_usedFiles != nullptr) _usedFiles->insert(filePath);
+    _resources[filePath] = ContentLoader::getLoader().lastWriteTime(filePath);
 
     // Загружаем текст шейдера
     std::string shaderText;
@@ -154,12 +163,29 @@ std::vector<char> ShaderCompilator::compile(
                                         std::span<const Define> defines,
                                         std::unordered_set<fs::path>* usedFiles)
 {
-  if(usedFiles != nullptr) usedFiles->insert(file.lexically_normal());
+  fs::path normalizedPath = file.lexically_normal();
+
+  //  Для начала пытаемся загрузить из кэша
+  {
+    std::lock_guard lock(cacheMutex);
+    std::vector<char> cachedCode = shaderCache.load(normalizedPath,
+                                                    shaderStage,
+                                                    defines,
+                                                    usedFiles);
+    if(!cachedCode.empty()) return cachedCode;
+  }
+
+  //  Загружаем исходный текст
+  ShaderCache::Resources resources;
+  resources[normalizedPath] =
+                      ContentLoader::getLoader().lastWriteTime(normalizedPath);
+  if(usedFiles != nullptr) usedFiles->insert(normalizedPath);
 
   std::string shaderFilename = (const char*)file.u8string().c_str();
-  std::string shaderText = ContentLoader::getLoader().loadText(file);
+  std::string shaderText = ContentLoader::getLoader().loadText(normalizedPath);
   if (shaderText.empty()) throw std::runtime_error(shaderFilename + " : file is empty");
 
+  //  Готовимся к компиляции
   shaderc::CompileOptions options;
   options.SetOptimizationLevel(shaderc_optimization_level_performance);
   options.SetGenerateDebugInfo();
@@ -177,7 +203,7 @@ std::vector<char> ShaderCompilator::compile(
   {
     options.AddMacroDefinition(define.name, define.value);
   }
-  options.SetIncluder(std::make_unique<ShaderIncluder>(usedFiles));
+  options.SetIncluder(std::make_unique<ShaderIncluder>(usedFiles, resources));
 
   //  Собираем SPIR-V код
   shaderc::SpvCompilationResult compilationResult;
@@ -195,6 +221,16 @@ std::vector<char> ShaderCompilator::compile(
   {
     throw std::runtime_error(std::string("Shader compilation error. File: ") + shaderFilename.c_str() + "\n" + compilationResult.GetErrorMessage());
   }
-  return std::vector<char>( (const char*)compilationResult.cbegin(),
-                            (const char*)compilationResult.cend());
+  std::vector<char> compiledCode( (const char*)compilationResult.cbegin(),
+                                  (const char*)compilationResult.cend());
+  //  Сохраняем результат в кэш
+  {
+    std::lock_guard lock(cacheMutex);
+    shaderCache.save( compiledCode,
+                      normalizedPath,
+                      shaderStage,
+                      defines,
+                      resources);
+  }
+  return compiledCode;
 }
