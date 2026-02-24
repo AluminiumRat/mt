@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include <filesystem>
 #include <memory>
 #include <vector>
 
@@ -29,11 +30,13 @@ namespace mt
     virtual void update() override;
 
   protected:
-    virtual void guiImplementation() override;
     virtual void drawImplementation(FrameBuffer& frameBuffer) override;
+    virtual void guiImplementation() override;
 
   private:
-    void _fillScene();
+    void _clearScene() noexcept;
+    void _loadModel(const std::filesystem::path& filename);
+    void _makeMainMenu();
 
   private:
     FileWatcher _fileWatcher;
