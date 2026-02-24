@@ -19,6 +19,8 @@ int main(int argc, char* argv[])
                   true,
                   true);
     GUILib guiLib;
+    guiLib.loadConfiguration("gltfSceneGui.cfg");
+
     HLDLib hldLib;
 
     std::unique_ptr<Device> device = guiLib.createDevice(
@@ -26,11 +28,14 @@ int main(int argc, char* argv[])
                                                       {},
                                                       GRAPHICS_CONFIGURATION);
     TestWindow mainWindow(*device);
+    mainWindow.loadConfiguration();
     while (!guiLib.shouldBeClosed())
     {
       guiLib.updateWindows();
       guiLib.drawWindows();
     }
+
+    guiLib.saveConfiguration("gltfSceneGui.cfg");
 
     return 0;
   }

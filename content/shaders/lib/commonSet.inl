@@ -25,7 +25,7 @@ layout (set = COMMON,
         binding = 4) uniform textureCube iblSpecularMap;
 
 //  Дефолтный сэмплер общего назначения.
-//  Линейная фильтрация, кламп к границам, анизотропия 4
+//  Линейная фильтрация, VK_SAMPLER_ADDRESS_MODE_REPEAT, анизотропия 4
 layout (set = COMMON,
         binding = 5) uniform sampler commonLinearSampler;
 

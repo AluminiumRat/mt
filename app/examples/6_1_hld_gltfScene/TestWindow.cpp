@@ -15,7 +15,7 @@ using namespace mt;
 TestWindow::TestWindow(Device& device) :
   GUIWindow(device,
             "Test window",
-            std::nullopt,
+            VK_PRESENT_MODE_FIFO_KHR,
             std::nullopt,
             VK_FORMAT_UNDEFINED),
   _asyncQueue(( [&](const mt::AsyncTaskQueue::Event& theEvent)
