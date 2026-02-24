@@ -1,5 +1,6 @@
-﻿#include <hld/drawCommand/DrawCommand.h>
+﻿#include <hld/colorFrameBuilder/ColorFrameCommonSet.h>
 #include <hld/HLDLib.h>
+#include <technique/CommonSetRegistry.h>
 
 using namespace mt;
 
@@ -9,8 +10,10 @@ HLDLib::HLDLib() :
   _drawCommandGroupCount(DrawCommand::noGroup + 1)
 {
   MT_ASSERT(_instance == nullptr);
-
   _instance = this;
+
+  CommonSetRegistry::registerSet( ColorFrameCommonSet::setName,
+                                  ColorFrameCommonSet::bindings);
 }
 
 HLDLib::~HLDLib()

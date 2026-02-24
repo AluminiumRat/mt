@@ -1,3 +1,5 @@
+commonSetName : ColorFrameCommonSet
+
 defaultSamplers:
   samplerState:
     magFilter: LINEAR

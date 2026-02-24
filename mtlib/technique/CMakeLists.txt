@@ -12,6 +12,7 @@ include_directories(..
 
 set(SOURCES
     "../../3rdParty/spirv_reflect/spirv_reflect.c"
+    "CommonSetRegistry.cpp"
     "PassConfigurator.cpp"
     "ResourceBinding.cpp"
     "Selection.cpp"

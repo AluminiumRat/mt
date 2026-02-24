@@ -126,6 +126,12 @@ namespace mt
 
     inline const std::string& debugName() const noexcept;
 
+    //  Имя COMMON дескриптор-сета, по которому он зарегистрирован в
+    //  CommonSetRegistry.
+    //  Если CommonSet не используется в технике, можно не выставлять.
+    inline const std::string commonSetName() const noexcept;
+    inline void setCommonSetName(const char* newName);
+
     inline const Passes& passes() const noexcept;
     inline void setPasses(Passes&& newPasses) noexcept;
     inline void addPass(std::unique_ptr<PassConfigurator> newPass);
@@ -172,6 +178,8 @@ namespace mt
     Ref<TechniqueConfiguration> _configuration;
     size_t _configurationRevision;
     mutable SpinLock _configurationMutex;
+
+    std::string _commonSetName;
 
     Passes _passes;
 
@@ -223,6 +231,16 @@ namespace mt
         return;
       }
     }
+  }
+
+  inline const std::string TechniqueConfigurator::commonSetName() const noexcept
+  {
+    return _commonSetName;
+  }
+
+  inline void TechniqueConfigurator::setCommonSetName(const char* newName)
+  {
+    _commonSetName = newName;
   }
 
   inline const TechniqueConfigurator::Passes&

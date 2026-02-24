@@ -192,7 +192,6 @@ std::vector<char> ShaderCompilator::compile(
   options.SetWarningsAsErrors();
   options.SetAutoBindUniforms(true);
   options.SetAutoMapLocations(true);
-  options.SetPreserveBindings(true);
   options.AddMacroDefinition("M_PI", "3.1415926535897932384626433832795f");
   options.AddMacroDefinition("COMMON", "0");
   options.AddMacroDefinition("STATIC", "1");

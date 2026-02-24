@@ -19,9 +19,9 @@ target_link_libraries(hld_base
                       ${Shaderc_LIBRARIES}
                       ${GLFW_PATH}/lib-vc2022/glfw3.lib
                       ${YamlCPP_LIBRARIES}
-                      imageIO
-                      util
-                      vkr
-                      technique
                       gui
-                      hld)
+                      hld
+                      imageIO
+                      technique
+                      util
+                      vkr)

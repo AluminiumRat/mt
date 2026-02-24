@@ -15,11 +15,13 @@ namespace mt
   struct FrameBuildContext;
   class TextureManager;
 
-
   //  Управляет набором общих ресурсов для шейдеров в ColorFrameBuilder-е
   class ColorFrameCommonSet
   {
   public:
+    static constexpr const char* setName = "ColorFrameCommonSet";
+    static const VkDescriptorSetLayoutBinding bindings[6];
+
     static constexpr uint32_t uniformBufferBinding = 0;
     static constexpr uint32_t iblLutBinding = 1;
     static constexpr uint32_t iblLutSamplerBinding = 2;

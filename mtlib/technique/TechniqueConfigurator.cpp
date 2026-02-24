@@ -1,5 +1,6 @@
 ﻿#include <stdexcept>
 
+#include <technique/CommonSetRegistry.h>
 #include <technique/ConfigurationBuildContext.h>
 #include <technique/Technique.h>
 #include <technique/TechniqueConfigurator.h>
@@ -136,8 +137,7 @@ void TechniqueConfigurator::_createLayouts(
     }
     else
     {
-      binding.stageFlags =  VK_SHADER_STAGE_ALL_GRAPHICS |
-                            VK_SHADER_STAGE_COMPUTE_BIT;
+      binding.stageFlags = VK_SHADER_STAGE_ALL;
     }
 
     uint32_t setIndex = uint32_t(resource.set);
@@ -151,8 +151,18 @@ void TechniqueConfigurator::_createLayouts(
                                           context.configuration->descriptorSets)
   {
     uint32_t setIndex = uint32_t(set.type);
-    set.layout = ConstRef(new DescriptorSetLayout(_device,
-                                                  bindings[setIndex]));
+    if(set.type == DescriptorSetType::COMMON)
+    {
+      if(_commonSetName.empty()) throw std::runtime_error(_debugName + " uses COMMON descriptor set but commonSetName is not specified");
+      const std::vector<VkDescriptorSetLayoutBinding>& setBindings =
+                              CommonSetRegistry::getSet(_commonSetName.c_str());
+      set.layout = ConstRef(new DescriptorSetLayout(_device, setBindings));
+    }
+    else
+    {
+      set.layout = ConstRef(new DescriptorSetLayout(_device,
+                                                    bindings[setIndex]));
+    }
     setLayouts[setIndex] = set.layout;
   }
 

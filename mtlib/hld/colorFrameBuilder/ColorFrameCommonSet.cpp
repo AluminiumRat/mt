@@ -11,17 +11,6 @@
 
 using namespace mt;
 
-VkPipelineStageFlags ALL_SHADER_BITS =
-                            VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
-                            VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
-                            VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
-                            VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
-                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-                            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
-                            VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR |
-                            VK_PIPELINE_STAGE_TASK_SHADER_BIT_EXT |
-                            VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT;
-
 ColorFrameCommonSet::ColorFrameCommonSet( Device& device,
                                           TextureManager& textureManager) :
   _device(device),
@@ -62,50 +51,8 @@ ColorFrameCommonSet::ColorFrameCommonSet( Device& device,
 
 void ColorFrameCommonSet::_createLayouts()
 {
-  static constexpr VkShaderStageFlags allStages = VK_SHADER_STAGE_ALL_GRAPHICS |
-                                                  VK_SHADER_STAGE_COMPUTE_BIT;
-
-  VkDescriptorSetLayoutBinding commonSetBindings[6];
-  commonSetBindings[0] = {};
-  commonSetBindings[0].binding = uniformBufferBinding;
-  commonSetBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  commonSetBindings[0].descriptorCount = 1;
-  commonSetBindings[0].stageFlags = allStages;
-
-  commonSetBindings[1] = {};
-  commonSetBindings[1].binding = iblLutBinding;
-  commonSetBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-  commonSetBindings[1].descriptorCount = 1;
-  commonSetBindings[1].stageFlags = allStages;
-
-  commonSetBindings[2] = {};
-  commonSetBindings[2].binding = iblLutSamplerBinding;
-  commonSetBindings[2].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-  commonSetBindings[2].descriptorCount = 1;
-  commonSetBindings[2].stageFlags = allStages;
-
-  commonSetBindings[3] = {};
-  commonSetBindings[3].binding = iblIrradianceMapBinding;
-  commonSetBindings[3].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-  commonSetBindings[3].descriptorCount = 1;
-  commonSetBindings[3].stageFlags = allStages;
-
-  commonSetBindings[4] = {};
-  commonSetBindings[4].binding = iblspecularMapBinding;
-  commonSetBindings[4].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-  commonSetBindings[4].descriptorCount = 1;
-  commonSetBindings[4].stageFlags = allStages;
-
-  commonSetBindings[5] = {};
-  commonSetBindings[5].binding = commonLinearSamplerBinding;
-  commonSetBindings[5].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-  commonSetBindings[5].descriptorCount = 1;
-  commonSetBindings[5].stageFlags = allStages;
-
-  _setLayout = new DescriptorSetLayout(_device, commonSetBindings);
-
-  _pipelineLayout = new PipelineLayout( _device,
-                                        std::span(&_setLayout, 1));
+  _setLayout = new DescriptorSetLayout(_device, bindings);
+  _pipelineLayout = new PipelineLayout( _device, std::span(&_setLayout, 1));
 }
 
 void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
@@ -121,14 +68,16 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
   _descriptorSet = pool->allocateSet(*_setLayout);
 
   _descriptorSet->attachUniformBuffer(*_uniformBuffer, uniformBufferBinding);
-  _descriptorSet->attachSampledImage(*_iblLut, iblLutBinding, ALL_SHADER_BITS);
+  _descriptorSet->attachSampledImage( *_iblLut,
+                                      iblLutBinding,
+                                      VK_SHADER_STAGE_ALL);
   _descriptorSet->attachSampler(*_iblLutSampler, iblLutSamplerBinding);
   _descriptorSet->attachSampledImage( environment.irradianceMap(),
                                       iblIrradianceMapBinding,
-                                      ALL_SHADER_BITS);
+                                      VK_SHADER_STAGE_ALL);
   _descriptorSet->attachSampledImage( environment.specularMap(),
                                       iblspecularMapBinding,
-                                      ALL_SHADER_BITS);
+                                      VK_SHADER_STAGE_ALL);
   _descriptorSet->attachSampler(*_commonLinearSampler,
                                 commonLinearSamplerBinding);
   _descriptorSet->finalize();

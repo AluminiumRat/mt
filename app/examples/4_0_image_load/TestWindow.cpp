@@ -56,10 +56,9 @@ void TestWindow::_createVertexBuffer()
 
 void TestWindow::_createTexture()
 {
-  //Ref<Image> image = loadImage( "examples/image.dds",
+  Ref<Image> image = loadImage( "examples/image.dds",
   //Ref<Image> image = loadImage( "examples/imageRGB.png",
   //Ref<Image> image = loadImage( "examples/imageRGBA.png",
-  Ref<Image> image = loadImage( "textureProcessor/environmentMap/sunny_rose_garden_1k.hdr",
                                 *device().graphicQueue(),
                                 true);
 

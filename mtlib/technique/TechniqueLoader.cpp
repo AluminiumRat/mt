@@ -109,6 +109,9 @@ namespace mt
     target.clear();
     try
     {
+      std::string commonSetName = node["commonSetName"].as<std::string>("");
+      target.setCommonSetName(commonSetName.c_str());
+
       // Загружаем селекшены
       YAML::Node selectionsNode = node["selections"];
       TechniqueConfigurator::Selections selections = loadSelections(

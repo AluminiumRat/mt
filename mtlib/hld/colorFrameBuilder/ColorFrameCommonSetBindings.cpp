@@ -1,0 +1,31 @@
+﻿#include <hld/colorFrameBuilder/ColorFrameCommonSet.h>
+
+using namespace mt;
+
+//  Вынес в отдельный файл, чтобы msvc не тащил зависимости из
+//  ColorFrameCommonSet.cpp
+const VkDescriptorSetLayoutBinding ColorFrameCommonSet::bindings[6] =
+{ { .binding = ColorFrameCommonSet::uniformBufferBinding,
+    .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    .descriptorCount = 1,
+    .stageFlags = VK_SHADER_STAGE_ALL},
+  { .binding = ColorFrameCommonSet::iblLutBinding,
+    .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+    .descriptorCount = 1,
+    .stageFlags = VK_SHADER_STAGE_ALL},
+  { .binding = ColorFrameCommonSet::iblLutSamplerBinding,
+    .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+    .descriptorCount = 1,
+    .stageFlags = VK_SHADER_STAGE_ALL},
+  { .binding = ColorFrameCommonSet::iblIrradianceMapBinding,
+    .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+    .descriptorCount = 1,
+    .stageFlags = VK_SHADER_STAGE_ALL},
+  { .binding = ColorFrameCommonSet::iblspecularMapBinding,
+    .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+    .descriptorCount = 1,
+    .stageFlags = VK_SHADER_STAGE_ALL},
+  { .binding = ColorFrameCommonSet::commonLinearSamplerBinding,
+    .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+    .descriptorCount = 1,
+    .stageFlags = VK_SHADER_STAGE_ALL}};

@@ -4,6 +4,7 @@
 #include <hld/DrawPlan.h>
 #include <hld/FrameBuildContext.h>
 #include <hld/HLDLib.h>
+#include <technique/CommonSetRegistry.h>
 #include <technique/DescriptorSetType.h>
 #include <util/Camera.h>
 #include <vkr/queue/CommandProducerGraphic.h>
@@ -29,8 +30,10 @@ void TestDrawStage::_createCommonSet(Device& device)
   commonSetBindings[0].binding = 0;
   commonSetBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
   commonSetBindings[0].descriptorCount = 1;
-  commonSetBindings[0].stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS |
-                                    VK_SHADER_STAGE_COMPUTE_BIT;
+  commonSetBindings[0].stageFlags = VK_SHADER_STAGE_ALL;
+
+  CommonSetRegistry::registerSet("TestCommonSet", commonSetBindings);
+
   ConstRef commonSetLayout(new DescriptorSetLayout(device, commonSetBindings));
 
   Ref<DescriptorPool> pool(new DescriptorPool(

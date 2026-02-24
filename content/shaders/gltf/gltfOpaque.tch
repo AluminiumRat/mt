@@ -1,3 +1,5 @@
+commonSetName : ColorFrameCommonSet
+
 selections:
   INDICES_ENABLED: [0, 1]
   TEXCOORD_COUNT: [0, 1]
