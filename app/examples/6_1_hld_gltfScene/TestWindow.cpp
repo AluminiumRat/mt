@@ -32,14 +32,13 @@ TestWindow::TestWindow(Device& device) :
 
   _cameraManipulator.setCamera(&_camera);
 
-  //_loadModel("examples/Box/glTF/Box.gltf");
   _loadModel("examples/Duck/glTF/Duck.gltf");
 
-  _environment.setDirectLightIrradiance(glm::vec3(0,0,0));
-  _environment.setIBLMaps("environment/monochrome_studio_03/irradiance_CUBEMAP.dds",
-                          "environment/monochrome_studio_03/specular_CUBEMAP.dds");
-  //_environment.setIBLMaps("environment/sunny_rose_garden/irradiance_CUBEMAP.dds",
-  //                        "environment/sunny_rose_garden/specular_CUBEMAP.dds");
+  //_environment.setDirectLightIrradiance(glm::vec3(0,0,0));
+  _environment.setIrradianceMap(
+                    "environment/monochrome_studio_03/irradiance_CUBEMAP.dds");
+  _environment.setSpecularMap(
+                      "environment/monochrome_studio_03/specular_CUBEMAP.dds");
 }
 
 void TestWindow::_loadModel(const std::filesystem::path& filename)
@@ -100,6 +99,7 @@ void TestWindow::guiImplementation()
   _makeMainMenu();
 
   _frameBuilder.makeGui();
+  _environment.makeGui();
   _asyncTaskGui.makeImGUI();
 }
 

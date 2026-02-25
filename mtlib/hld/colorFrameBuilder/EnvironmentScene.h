@@ -33,30 +33,38 @@ namespace mt
     EnvironmentScene& operator = (const EnvironmentScene&) = delete;
     virtual ~EnvironmentScene() noexcept = default;
 
-    //  Направление света от солнца (указывает в противоположном от солнца
-    //    направлении)
-    inline const glm::vec3& sunDirection() noexcept;
-    inline void setSunDirection(const glm::vec3& newValue) noexcept;
+    //  Расположение солнца на небе
+    inline float sunAzimuth() const noexcept;
+    inline void setSunAzimuth(float newValue) noexcept;
+    inline float sunAltitude() const noexcept;
+    inline void setSunAltitude(float newValue) noexcept;
 
     //  Освещенность от прямых лучей солнца на плоскости, перпендикулярной
     //    sunDirection
     //  Нормированноя освещенность равная 1 дает на чисто ламбертовом отражении
     //    нормированную яркость 1/pi
-    inline const glm::vec3& directLightIrradiance() noexcept;
-    inline void setDirectLightIrradiance(const glm::vec3& newValue) noexcept;
+    inline float directLightIrradiance() const noexcept;
+    inline void setDirectLightIrradiance(float newValue) noexcept;
+
+    //  Цвет прямого света
+    inline const glm::vec3& directLightColor() const noexcept;
+    inline void setDirectLightColor(const glm::vec3& newValue) noexcept;
 
     //  Данные, которые должны быть отправлены в юниформ буфер
     inline UniformBufferData uniformData() const noexcept;
 
     //  Загрузить карты освещения. Управление вернется немедленно, загрузка
     //  будет проводиться через асинхронную таску
-    void setIBLMaps(const std::filesystem::path& irradianceMap,
-                    const std::filesystem::path& specularMap);
+    void setIrradianceMap(const std::filesystem::path& irradianceMap);
+    void setSpecularMap(const std::filesystem::path& specularMap);
 
     //  Префильтрованная карта освещенности для IBL
     inline const ImageView& irradianceMap() const noexcept;
     //  Префильтрованная specular карта для IBL
     inline const ImageView& specularMap() const noexcept;
+
+    //  Добавить окно с настройками в текущий контекст ImGui
+    void makeGui();
 
   private:
     //  Создать дефолтные(пустые) текстуры для IBL
@@ -66,44 +74,73 @@ namespace mt
     Device& _device;
     TextureManager& _textureManager;
 
-    glm::vec3 _sunDirection;
-    glm::vec3 _directLightIrradiance;
+    float _sunAzimuth;
+    float _sunAltitude;
+    float _directLightIrradiance;
+    glm::vec3 _directLightColor;
 
     ConstRef<TechniqueResource> _irradianceMapResource;
     ConstRef<ImageView> _defaultIrradianceMap;
+    std::filesystem::path _irradianceMapFile;
 
     ConstRef<TechniqueResource> _specularMapResource;
     ConstRef<ImageView> _defaultSpecularMap;
+    std::filesystem::path _specularMapFile;
   };
 
-  inline const glm::vec3& EnvironmentScene::sunDirection() noexcept
+  inline float EnvironmentScene::sunAzimuth() const noexcept
   {
-    return _sunDirection;
+    return _sunAzimuth;
   }
 
-  inline void EnvironmentScene::setSunDirection(const glm::vec3& newValue) noexcept
+  inline void EnvironmentScene::setSunAzimuth(float newValue) noexcept
   {
-    _sunDirection = glm::normalize(newValue);
+    _sunAzimuth = newValue;
   }
 
-  inline const glm::vec3& EnvironmentScene::directLightIrradiance() noexcept
+  inline float EnvironmentScene::sunAltitude() const noexcept
+  {
+    return _sunAltitude;
+  }
+  
+  inline void EnvironmentScene::setSunAltitude(float newValue) noexcept
+  {
+    _sunAltitude = newValue;
+  }
+
+  inline float EnvironmentScene::directLightIrradiance() const noexcept
   {
     return _directLightIrradiance;
   }
 
   inline void EnvironmentScene::setDirectLightIrradiance(
-                                            const glm::vec3& newValue) noexcept
+                                                        float newValue) noexcept
   {
     _directLightIrradiance = newValue;
+  }
+
+  inline const glm::vec3& EnvironmentScene::directLightColor() const noexcept
+  {
+    return _directLightColor;
+  }
+  
+  inline void EnvironmentScene::setDirectLightColor(
+                                            const glm::vec3& newValue) noexcept
+  {
+    _directLightColor = newValue;
   }
 
   inline EnvironmentScene::UniformBufferData
                                   EnvironmentScene::uniformData() const noexcept
   {
     UniformBufferData bufferData{};
-    bufferData.fromSunDirection = _sunDirection;
-    bufferData.toSunDirection = -_sunDirection;
-    bufferData.directLightIrradiance = _directLightIrradiance;
+    bufferData.toSunDirection = glm::vec3(
+                                          cos(_sunAzimuth) * cos(_sunAltitude),
+                                          sin(_sunAzimuth) * cos(_sunAltitude),
+                                          sin(_sunAltitude));
+    bufferData.fromSunDirection = -bufferData.toSunDirection;
+    bufferData.directLightIrradiance =
+                                    _directLightIrradiance * _directLightColor;
     bufferData.roughnessToLod = float(specularMap().image().mipmapCount() - 1);
     return bufferData;
   }

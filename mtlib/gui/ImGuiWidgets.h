@@ -2,6 +2,8 @@
 
 #include <filesystem>
 
+#include <glm/glm.hpp>
+
 #include <imgui.h>
 
 #include <gui/ImGuiRAII.h>
@@ -34,6 +36,10 @@ namespace mt
   inline bool enumSelectionCombo( const char* label,
                                   EnumType& value,
                                   const Bimap<EnumType>& map);
+
+  //  Раскрывающийся выбор цвета
+  //  Возвращает true, если color был изменен
+  inline bool colorPicker(const char* id, glm::vec3& color);
 
   //-------------------------------------------------------------------------
   //  Реализации функций
@@ -90,6 +96,19 @@ namespace mt
     {
       value = newValue;
       return true;
+    }
+    return false;
+  }
+
+  inline bool colorPicker(const char* id, glm::vec3& color)
+  {
+    ImGuiPushID pushId(id);
+    ImVec4 color4{color.r, color.g, color.b, 1.0f};
+    static bool showPicker = false;
+    if(ImGui::ColorButton("##color", color4)) showPicker = !showPicker;
+    if(showPicker)
+    {
+      return ImGui::ColorPicker3("#olorPicker", &color.r);
     }
     return false;
   }
