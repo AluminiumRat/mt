@@ -58,55 +58,47 @@ shaderc_include_result* ShaderIncluder::GetInclude(
                                                   const char* requesting_source,
                                                   size_t include_depth)
 {
+  fs::path filePath((const char8_t*)requested_source);
+  filePath = filePath.lexically_normal();
+  if(_usedFiles != nullptr) _usedFiles->insert(filePath);
+  _resources[filePath] = ContentLoader::getLoader().lastWriteTime(filePath);
+
+  // Загружаем текст шейдера
+  std::string shaderText;
+  std::string errorString;
   try
   {
-    fs::path filePath((const char8_t*)requested_source);
-    filePath = filePath.lexically_normal();
-    if(_usedFiles != nullptr) _usedFiles->insert(filePath);
-    _resources[filePath] = ContentLoader::getLoader().lastWriteTime(filePath);
-
-    // Загружаем текст шейдера
-    std::string shaderText;
-    std::string errorString;
-    try
-    {
-      shaderText = ContentLoader::getLoader().loadText(filePath);
-      if (shaderText.empty()) throw std::runtime_error(std::string(requested_source) + " : file is empty");
-    }
-    catch (std::exception& error)
-    {
-      errorString = error.what();
-    }
-
-    // Формируем результат для shaderC
-    std::unique_ptr<IncludeInfo> include(new IncludeInfo{});
-    if(!shaderText.empty())
-    {
-      include->sourceNameStr = requested_source;
-      include->source_name = include->sourceNameStr.c_str();
-      include->source_name_length = include->sourceNameStr.length();
-      include->contentStr = std::move(shaderText);
-      include->content = include->contentStr.c_str();
-      include->content_length = include->contentStr.length();
-    }
-    else
-    {
-      include->source_name = nullptr;
-      include->source_name_length = 0;
-      include->contentStr = std::move(errorString);
-      include->content = include->contentStr.c_str();
-      include->content_length = include->contentStr.length();
-    }
-
-    IncludeInfo* includePtr = include.get();
-    _includes.push_back(std::move(include));
-    return includePtr;
+    shaderText = ContentLoader::getLoader().loadText(filePath);
+    if (shaderText.empty()) throw std::runtime_error(std::string(requested_source) + " : file is empty");
   }
-  catch(std::exception& error)
+  catch (std::exception& error)
   {
-    Log::error() << "ShaderIncluder::GetInclude: " << error.what();
-    Abort("ShaderIncluder::GetInclude: unable to load include file");
+    errorString = error.what();
   }
+
+  // Формируем результат для shaderC
+  std::unique_ptr<IncludeInfo> include(new IncludeInfo{});
+  if(!shaderText.empty())
+  {
+    include->sourceNameStr = requested_source;
+    include->source_name = include->sourceNameStr.c_str();
+    include->source_name_length = include->sourceNameStr.length();
+    include->contentStr = std::move(shaderText);
+    include->content = include->contentStr.c_str();
+    include->content_length = include->contentStr.length();
+  }
+  else
+  {
+    include->source_name = nullptr;
+    include->source_name_length = 0;
+    include->contentStr = std::move(errorString);
+    include->content = include->contentStr.c_str();
+    include->content_length = include->contentStr.length();
+  }
+
+  IncludeInfo* includePtr = include.get();
+  _includes.push_back(std::move(include));
+  return includePtr;
 }
 
 void ShaderIncluder::ReleaseInclude(shaderc_include_result* data)

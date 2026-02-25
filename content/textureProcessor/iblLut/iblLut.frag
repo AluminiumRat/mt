@@ -4,7 +4,7 @@
 //  Основное отличие - добавлен третий канал, в котором накапливается нормировочный коэффициент для
 //  ламбертового отражения.
 
-#include "lib/brdf.inl"
+#include "lib/lighting/brdf.inl"
 #include "lib/random.inl"
 
 layout (set = STATIC, binding = 1) uniform Params

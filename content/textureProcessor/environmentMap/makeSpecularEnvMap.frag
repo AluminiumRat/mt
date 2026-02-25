@@ -2,7 +2,7 @@
 //  Построение prefiltered environment map по cubemap-е окружения
 //  https://learnopengl.com/PBR/IBL/Specular-IBL
 
-#include "lib/brdf.inl"
+#include "lib/lighting/brdf.inl"
 #include "lib/cubemap.inl"
 #include "lib/random.inl"
 
