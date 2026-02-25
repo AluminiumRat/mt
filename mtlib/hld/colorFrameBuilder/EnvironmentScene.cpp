@@ -169,7 +169,7 @@ void EnvironmentScene::makeGui()
   if (window.visible())
   {
     {
-      ImGuiPropertyGrid grid("ColorGrading");
+      ImGuiPropertyGrid grid("EnvironmentGrid");
       grid.addRow("Sun azimuth");
       float azimuth = _sunAzimuth * 360.0f / (2.0f * pi);
       if(ImGui::SliderFloat("##azimuth",&azimuth, -360, 360))
