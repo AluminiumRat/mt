@@ -21,8 +21,11 @@ namespace mt
     Bloom& operator = (const Bloom&) = delete;
     ~Bloom() noexcept = default;
 
-    inline float treshold() const noexcept;
-    inline void setTreshold(float newValue);
+    inline float minTreshold() const noexcept;
+    inline void setMinTreshold(float newValue);
+
+    inline float maxTreshold() const noexcept;
+    inline void setMaxTreshold(float newValue);
 
     inline float intensity() const noexcept;
     inline void setIntensity(float newValue);
@@ -52,7 +55,8 @@ namespace mt
   private:
     Device& _device;
 
-    float _treshold;
+    float _minThreshold;
+    float _maxThreshold;
     float _intensity;
 
     ConstRef<ImageView> _sourceImage;
@@ -70,7 +74,8 @@ namespace mt
     ResourceBinding& _avgLumBinding;
     UniformVariable& _invSourceSizeUniform;
     UniformVariable& _targetSizeUniform;
-    UniformVariable& _tresholdUniform;
+    UniformVariable& _minThresholdUniform;
+    UniformVariable& _maxThresholdUniform;
     UniformVariable& _intensityUniform;
   };
 
@@ -86,16 +91,28 @@ namespace mt
     return _bloomImage.get();
   }
 
-  inline float Bloom::treshold() const noexcept
+  inline float Bloom::minTreshold() const noexcept
   {
-    return _treshold;
+    return _minThreshold;
   }
 
-  inline void Bloom::setTreshold(float newValue)
+  inline void Bloom::setMinTreshold(float newValue)
   {
-    if(_treshold == newValue) return;
-    _treshold = newValue;
-    _tresholdUniform.setValue(_treshold);
+    if(_minThreshold == newValue) return;
+    _minThreshold = newValue;
+    _minThresholdUniform.setValue(_minThreshold);
+  }
+
+  inline float Bloom::maxTreshold() const noexcept
+  {
+    return _maxThreshold;
+  }
+
+  inline void Bloom::setMaxTreshold(float newValue)
+  {
+    if(_maxThreshold == newValue) return;
+    _maxThreshold = newValue;
+    _maxThresholdUniform.setValue(_maxThreshold);
   }
 
   inline float Bloom::intensity() const noexcept

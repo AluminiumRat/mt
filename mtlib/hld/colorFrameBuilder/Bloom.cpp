@@ -9,7 +9,8 @@ using namespace mt;
 
 Bloom::Bloom(Device& device, const DataBuffer& avgLumBuffer) :
   _device(device),
-  _treshold(3.0f),
+  _minThreshold(3.0f),
+  _maxThreshold(30.0f),
   _intensity(0.1f),
   _sourceImageChanged(false),
   _bloomImageSize(1),
@@ -25,10 +26,12 @@ Bloom::Bloom(Device& device, const DataBuffer& avgLumBuffer) :
   _invSourceSizeUniform(_blurTechnique.getOrCreateUniform(
                                                       "params.invSourceSize")),
   _targetSizeUniform(_blurTechnique.getOrCreateUniform("params.targetSize")),
-  _tresholdUniform(_blurTechnique.getOrCreateUniform("params.threshold")),
+  _minThresholdUniform(_blurTechnique.getOrCreateUniform("params.minThreshold")),
+  _maxThresholdUniform(_blurTechnique.getOrCreateUniform("params.maxThreshold")),
   _intensityUniform(_blurTechnique.getOrCreateUniform("params.intensity"))
 {
-  _tresholdUniform.setValue(_treshold);
+  _minThresholdUniform.setValue(_minThreshold);
+  _maxThresholdUniform.setValue(_maxThreshold);
   _intensityUniform.setValue(_intensity);
 
   Ref<Sampler> sampler(new Sampler(_device));
@@ -177,10 +180,16 @@ void Bloom::makeGui()
 {
   ImGuiPropertyGrid grid("Bloom");
 
-  grid.addRow("Treshold");
-  if(ImGui::InputFloat("#treshold", &_treshold))
+  grid.addRow("MinThreshold");
+  if(ImGui::InputFloat("#minthreshold", &_minThreshold))
   {
-    _tresholdUniform.setValue(_treshold);
+    _minThresholdUniform.setValue(_minThreshold);
+  }
+
+  grid.addRow("MaxThreshold");
+  if(ImGui::InputFloat("#maxthreshold", &_maxThreshold))
+  {
+    _maxThresholdUniform.setValue(_maxThreshold);
   }
 
   grid.addRow("Intensity");

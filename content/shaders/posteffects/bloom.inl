@@ -19,7 +19,8 @@ layout (set = STATIC,
 {
   vec2 invSourceSize;
   ivec2 targetSize;
-  float threshold;
+  float minThreshold;
+  float maxThreshold;
   float intensity;
 } params;
 
