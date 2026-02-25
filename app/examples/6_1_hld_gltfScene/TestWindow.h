@@ -36,6 +36,7 @@ namespace mt
   private:
     void _clearScene() noexcept;
     void _loadModel(const std::filesystem::path& filename);
+    void _loadEnvironment(const std::filesystem::path& filename);
     void _makeMainMenu();
 
   private:
@@ -54,5 +55,6 @@ namespace mt
     std::vector<std::unique_ptr<Drawable>> _drawables;
 
     EnvironmentScene _environment;
+    std::filesystem::path _environmentFile;
   };
 }

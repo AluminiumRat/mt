@@ -6,7 +6,8 @@ include_directories(..
                     ${GLM_PATH}
                     ${Vulkan_INCLUDE_DIRS}
                     ${VKMEMALLOC_PATH}
-                    ${IMGUI_PATH})
+                    ${IMGUI_PATH}
+                    ${YamlCPP_INCLUDE_DIRS})
 
 set(SOURCES
     "colorFrameBuilder/AvgLum.cpp"
@@ -30,3 +31,5 @@ set(SOURCES
 
 add_library(hld
             ${SOURCES})
+
+target_compile_definitions(hld PRIVATE YAML_CPP_STATIC_DEFINE)

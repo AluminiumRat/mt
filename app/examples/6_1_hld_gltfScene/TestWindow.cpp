@@ -33,12 +33,6 @@ TestWindow::TestWindow(Device& device) :
   _cameraManipulator.setCamera(&_camera);
 
   _loadModel("examples/Duck/glTF/Duck.gltf");
-
-  //_environment.setDirectLightIrradiance(glm::vec3(0,0,0));
-  _environment.setIrradianceMap(
-                    "environment/monochrome_studio_03/irradiance_CUBEMAP.dds");
-  _environment.setSpecularMap(
-                      "environment/monochrome_studio_03/specular_CUBEMAP.dds");
 }
 
 void TestWindow::_loadModel(const std::filesystem::path& filename)
@@ -55,6 +49,13 @@ void TestWindow::_loadModel(const std::filesystem::path& filename)
     _drawables.push_back(std::move(mesh));
     _scene.registerDrawable(*_drawables.back());
   }
+}
+
+void TestWindow::_loadEnvironment(const std::filesystem::path& filename)
+{
+  _environmentFile.clear();
+  _environment.load(filename);
+  _environmentFile = filename;
 }
 
 void TestWindow::_clearScene() noexcept
@@ -108,7 +109,8 @@ void TestWindow::_makeMainMenu()
   mt::ImGuiMainMenuBar mainMenu;
   if(!mainMenu.created()) return;
 
-  if(ImGui::MenuItem("Open model", "Ctrl+O"))
+  //  Загрузка модели
+  if(ImGui::MenuItem("Model"))
   {
     std::filesystem::path file =
                 openFileDialog( this,
@@ -116,5 +118,37 @@ void TestWindow::_makeMainMenu()
                                               .description = "gltf(*.gltf)"}},
                                 "");
     if(!file.empty()) _loadModel(file);
+  }
+
+  //  Сохранение/загрузка окружения
+  mt::ImGuiMenu environmentMenu("Environment");
+  if(environmentMenu.created())
+  {
+    if(ImGui::MenuItem("Load"))
+    {
+      std::filesystem::path file =
+                openFileDialog( this,
+                                FileFilters{
+                                        { .expression = "*.env",
+                                          .description = "environment(*.env)"}},
+                                "");
+      if(!file.empty()) _loadEnvironment(file);
+    }
+
+    if(ImGui::MenuItem("Save"))
+    {
+      if(!_environmentFile.empty())
+      {
+        _environment.save(_environmentFile);
+      }
+      else
+      {
+        errorDialog(this,
+                    "Error",
+                    "The environment is not loaded properly");
+      }
+    }
+
+    environmentMenu.end();
   }
 }

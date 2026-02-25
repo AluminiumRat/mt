@@ -60,7 +60,6 @@ namespace mt
   {
     if (storedPath.empty()) return storedPath;
     if (storedPath.is_absolute()) return storedPath;
-    MT_ASSERT(projectFolder.is_absolute());
     return (projectFolder / storedPath).lexically_normal();
   }
 }

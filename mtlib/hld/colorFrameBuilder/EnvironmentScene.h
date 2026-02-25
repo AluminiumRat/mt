@@ -33,6 +33,9 @@ namespace mt
     EnvironmentScene& operator = (const EnvironmentScene&) = delete;
     virtual ~EnvironmentScene() noexcept = default;
 
+    void save(const std::filesystem::path& fileName);
+    void load(const std::filesystem::path& fileName);
+
     //  Расположение солнца на небе
     inline float sunAzimuth() const noexcept;
     inline void setSunAzimuth(float newValue) noexcept;

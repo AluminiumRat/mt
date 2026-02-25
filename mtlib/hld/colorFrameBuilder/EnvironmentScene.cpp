@@ -1,4 +1,7 @@
-﻿#include <stdexcept>
+﻿#include <fstream>
+#include <stdexcept>
+
+#include <yaml-cpp/yaml.h>
 
 #include <gui/GUIWindow.h>
 #include <gui/ImGuiRAII.h>
@@ -7,6 +10,8 @@
 #include <gui/modalDialogs.h>
 #include <hld/colorFrameBuilder/EnvironmentScene.h>
 #include <resourceManagement/TextureManager.h>
+#include <util/ContentLoader.h>
+#include <util/fileSystemHelpers.h>
 #include <util/pi.h>
 #include <vkr/Device.h>
 
@@ -57,6 +62,87 @@ void EnvironmentScene::setIrradianceMap(const fs::path& irradianceMap)
   }
 }
 
+void EnvironmentScene::save(const fs::path& fileName)
+{
+  fs::path projectFolder = fileName.parent_path();
+
+  // Создаем YAML разметку
+  YAML::Emitter out;
+
+  out << YAML::BeginMap;
+
+  out << YAML::Key << "sunAzimuth";
+  out << YAML::Value << _sunAzimuth;
+
+  out << YAML::Key << "sunAltitude";
+  out << YAML::Value << _sunAltitude;
+
+  out << YAML::Key << "directLightIrradiance";
+  out << YAML::Value << _directLightIrradiance;
+
+  out << YAML::Key << "directLightColor";
+  out << YAML::Value;
+  out << YAML::Flow << YAML::BeginSeq;
+  out << _directLightColor.r << _directLightColor.g << _directLightColor.b;
+  out << YAML::EndSeq;
+
+  out << YAML::Key << "irradianceMap";
+  out << YAML::Value << mt::pathToUtf8(mt::makeStoredPath(_irradianceMapFile,
+                                                          projectFolder));
+
+  out << YAML::Key << "specularMap";
+  out << YAML::Value << mt::pathToUtf8(mt::makeStoredPath(_specularMapFile,
+                                                          projectFolder));
+
+  out << YAML::EndMap;
+
+  // Сохраняем в файл
+  std::ofstream fileStream(fileName, std::ios::binary);
+  if(!fileStream.is_open())
+  {
+    throw std::runtime_error(std::string("Unable to open file ") + pathToUtf8(fileName));
+  }
+  fileStream.write(out.c_str(), out.size());
+}
+
+void EnvironmentScene::load(const fs::path& fileName)
+{
+  fs::path projectFolder = fileName.parent_path();
+
+  std::vector<char> data = ContentLoader::getLoader().loadData(fileName);
+  data.push_back(0);
+
+  YAML::Node rootNode = YAML::Load(data.data());
+  if(!rootNode.IsMap()) throw std::runtime_error(std::string("wrong file format: ") + pathToUtf8(fileName));
+
+  {
+    std::string irradianceMap = rootNode["irradianceMap"].as<std::string>("");
+    if(!irradianceMap.empty())
+    {
+      fs::path irradianceMapFile = utf8ToPath(irradianceMap);
+      irradianceMapFile = restoreAbsolutePath(irradianceMapFile, projectFolder);
+      setIrradianceMap(irradianceMapFile);
+    }
+  }
+
+  {
+    std::string specularMap = rootNode["specularMap"].as<std::string>("");
+    if(!specularMap.empty())
+    {
+      fs::path specularMapFile = utf8ToPath(specularMap);
+      specularMapFile = restoreAbsolutePath(specularMapFile, projectFolder);
+      setSpecularMap(specularMapFile);
+    }
+  }
+
+  _sunAzimuth = rootNode["sunAzimuth"].as<float>(0.0f);
+  _sunAltitude = rootNode["sunAltitude"].as<float>(pi / 4.0f);
+  _directLightIrradiance = rootNode["directLightIrradiance"].as<float>(3.0f);
+  _directLightColor.x = rootNode["directLightColor"][0].as<float>(1.0f);
+  _directLightColor.y = rootNode["directLightColor"][1].as<float>(1.0f);
+  _directLightColor.z = rootNode["directLightColor"][2].as<float>(1.0f);
+}
+
 void EnvironmentScene::setSpecularMap(const fs::path& specularMap)
 {
   try
@@ -77,7 +163,7 @@ void EnvironmentScene::setSpecularMap(const fs::path& specularMap)
 
 void EnvironmentScene::makeGui()
 {
-  ImGui::SetNextWindowSizeConstraints(ImVec2(300, 300),
+  ImGui::SetNextWindowSizeConstraints(ImVec2(300, 200),
                                       ImVec2(FLT_MAX, FLT_MAX));
   ImGuiWindow window("Environment");
   if (window.visible())
