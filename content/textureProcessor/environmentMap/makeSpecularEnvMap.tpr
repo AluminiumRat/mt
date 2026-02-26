@@ -34,4 +34,4 @@ shaderProps:
   intrinsic.mipLevelCount:
     int: [1]
   params.samplesPerTexel:
-    int: [256]
+    int: [3000]

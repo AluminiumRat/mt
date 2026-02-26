@@ -49,7 +49,7 @@ void main()
   float envMapSize = float( textureSize(samplerCube(environmentMap,
                                                     colorSampler),
                                         0).x);
-  float textelArea = 4.0f * M_PI / 6.0f / (envMapSize * envMapSize);
+  float textelArea = 4.0f * M_PI / (6.0f  * envMapSize * envMapSize);
 
   vec3 color = vec3(0.0f);
   float totalWeight = 0.0f;
@@ -73,12 +73,10 @@ void main()
       //  Вычисляем лод, из которого будем считывать яркость
       float pdf = ggxNormalDistribution(normDotHalf, roughness_2) / 4.0f;
       //  телесный угол, который должна охватывать наша выборка
-      float sampleArea = 1.0 /
-                              (float(params.samplesPerTexel) * (pdf + 0.0001f));
+      float sampleArea = 1.0 / (float(params.samplesPerTexel) * pdf + 0.0001f);
       float mipLevel = roughness == 0 ?
                         0 :
-                        max(0.5f * log2(sampleArea / textelArea) + 1.0f,
-                            0.0f);
+                        max(0.5f * log2(sampleArea / textelArea), 0.0f);
 
       //  Переводим направление сэмплирования из tbn базиса в мировые координаты
       sampleDirection = tbn * sampleDirection;

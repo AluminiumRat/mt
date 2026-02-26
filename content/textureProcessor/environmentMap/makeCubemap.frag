@@ -9,6 +9,12 @@ layout (set = STATIC) uniform IntrinsicData
   uint arrayIndex;
 } intrinsic;
 
+layout (set = STATIC) uniform Params
+{
+  //  Максимальная яркость, по которой обрезается результат
+  uint maxRadiance;
+} params;
+
 layout (set = STATIC) uniform texture2D colorTexture;
 layout (set = STATIC) uniform sampler colorSampler;
 
@@ -36,6 +42,9 @@ void main()
   float lat = asin(latSin);
   float vCoord = 0.5f - lat / M_PI;
 
-  outColor = texture( sampler2D(colorTexture, colorSampler),
-                      vec2(uCoord, vCoord));
+  vec3 radiance = texture(sampler2D(colorTexture, colorSampler),
+                          vec2(uCoord, vCoord)).rgb;
+  radiance = min(radiance, vec3(params.maxRadiance));
+
+  outColor = vec4(radiance, 1.0f);
 }
