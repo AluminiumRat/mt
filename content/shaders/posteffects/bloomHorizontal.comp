@@ -55,23 +55,28 @@ void main()
   //  На каком расстоянии находится сосед, с которым смешиваем
   //  цвета. Разлет будет увеличиваться на каждом шаге
   int neighborShift = 1;
-
-  for(int step = 0; step < BLOOR_STEPS; step++)
+  for(int step = 0; step < BLUR_STEPS; step++)
   {
     //  Сохраняем текущий цвет пикселя в общей памяти, чтобы соседи могли
     //  смешать с ним свои цветаю
-    textels[pixelCoord.x] = myColor * NEIGHBOR_WEIGHT;
+    textels[pixelCoord.x] = myColor;
 
     //  Ждем, когда соседи тоже сохранят свой цвет в общей памяти
     barrier();
 
     //  Считываем цвета соседей и смешиваем их со своим
     //  Координаты текселей, с которыми будем смешивать текущий
-    int leftNeighbor = max(pixelCoord.x - neighborShift, 0);
-    int rightNeighbor = min(pixelCoord.x + neighborShift,
-                            params.targetSize.x - 1);
-    myColor = myColor * CENTER_WEIGHT +
-                          textels[leftNeighbor] + textels[rightNeighbor];
+    int leftNeighbor1 = max(pixelCoord.x - neighborShift, 0);
+    int leftNeighbor2 = max(pixelCoord.x - neighborShift * 2, 0);
+    int rightNeighbor1 = min( pixelCoord.x + neighborShift,
+                              params.targetSize.x - 1);
+    int rightNeighbor2 = min( pixelCoord.x + neighborShift * 2,
+                              params.targetSize.x - 1);
+    myColor = CENTER_WEIGHT * myColor +
+              NEIGHBOR_WEIGHT1 * textels[leftNeighbor1] +
+              NEIGHBOR_WEIGHT2 * textels[leftNeighbor2] +
+              NEIGHBOR_WEIGHT1 * textels[rightNeighbor1] +
+              NEIGHBOR_WEIGHT2 * textels[rightNeighbor2];
     neighborShift *= 2;
   }
 
