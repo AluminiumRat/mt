@@ -1,5 +1,8 @@
 ﻿#pragma once
 
+#include <chrono>
+#include <optional>
+
 #include <technique/TechniqueConfigurator.h>
 #include <technique/Technique.h>
 #include <util/Ref.h>
@@ -31,9 +34,13 @@ namespace mt
     //  средняя яркость изображения
     inline const DataBuffer& resultBuffer() const noexcept;
 
+    inline float accommodationSpeed() const noexcept;
+    inline void setAccommodationSpeed(float newValue) noexcept;
+
   private:
     void _updateTechnique();
     void _updateBindings(CommandProducerCompute& commandProducer);
+    void _updateMixFactor();
     void _average(CommandProducerCompute& commandProducer);
 
   private:
@@ -55,9 +62,13 @@ namespace mt
     UniformVariable& _invSourceSizeUniform;
     UniformVariable& _areaSizeUniform;
     UniformVariable& _pixelRateUniform;
+    UniformVariable& _mixFactorUniform;
 
     //  Размер области, на которой будут работать компьют шейдеры
     glm::uvec2 _workAreaSize;
+
+    std::optional<std::chrono::system_clock::time_point> _lastUpadateTime;
+    float _accommodationSpeed;
   };
 
   inline void AvgLum::setSourceImage(const ImageView& newImage) noexcept
@@ -70,5 +81,15 @@ namespace mt
   inline const DataBuffer& AvgLum::resultBuffer() const noexcept
   {
     return *_resultBuffer;
+  }
+
+  inline float AvgLum::accommodationSpeed() const noexcept
+  {
+    return _accommodationSpeed;
+  }
+
+  inline void AvgLum::setAccommodationSpeed(float newValue) noexcept
+  {
+    _accommodationSpeed = newValue;
   }
 }

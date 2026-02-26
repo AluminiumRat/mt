@@ -22,12 +22,16 @@ AvgLum::AvgLum(Device& device) :
                                                           "intermediateImage")),
   _invSourceSizeUniform(_technique.getOrCreateUniform("params.invSourceSize")),
   _areaSizeUniform(_technique.getOrCreateUniform("params.areaSize")),
-  _pixelRateUniform(_technique.getOrCreateUniform("params.pixelRate"))
+  _pixelRateUniform(_technique.getOrCreateUniform("params.pixelRate")),
+  _mixFactorUniform(_technique.getOrCreateUniform("params.mixFactor")),
+  _accommodationSpeed(8.0f)
 {
   _resultBufferBinding.setBuffer(_resultBuffer);
 
   Ref<Sampler> sampler(new Sampler(_device));
   _technique.getOrCreateResourceBinding("linearSampler").setSampler(sampler);
+
+  _mixFactorUniform.setValue(1.0f);
 }
 
 void AvgLum::update(CommandProducerCompute& commandProducer)
@@ -46,6 +50,8 @@ void AvgLum::update(CommandProducerCompute& commandProducer)
     _updateTechnique();
     _updateBindings(commandProducer);
   }
+
+  _updateMixFactor();
 
   _average(commandProducer);
 
@@ -127,6 +133,36 @@ void AvgLum::_updateBindings(CommandProducerCompute& commandProducer)
                                 0);
 
   _sourceImageChanged = false;
+}
+
+void AvgLum::_updateMixFactor()
+{
+  if(!_lastUpadateTime.has_value())
+  {
+    //  Это первый вызов, запомним время и используем значение яркости только
+    //  из текущего кадра
+    _lastUpadateTime = std::chrono::system_clock::now();
+    _mixFactorUniform.setValue(1.0f);
+  }
+  else
+  {
+    //  Определяем, сколько времени прошло с прошлого обновления
+    std::chrono::system_clock::time_point currentTime =
+                                              std::chrono::system_clock::now();
+    std::chrono::system_clock::duration deltaTime =
+                                                currentTime - *_lastUpadateTime;
+    float deltaSecs =
+            (float) std::chrono::duration_cast<std::chrono::milliseconds>(
+                                                              deltaTime).count();
+    deltaSecs /= 1000.0f;
+
+    //  Аккомодация по обратной экспоненте
+    float mixFactor = 1.0f - exp2(-1.f * _accommodationSpeed * deltaSecs);
+    _mixFactorUniform.setValue(mixFactor);
+
+    //  Этот if - это защита от обновлений чаще чем раз в миллисекунду
+    if(deltaSecs != 0.0f) _lastUpadateTime = currentTime;
+  }
 }
 
 void AvgLum::_average(CommandProducerCompute& commandProducer)

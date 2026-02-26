@@ -9,16 +9,22 @@ layout( r32f,
         binding = 2) uniform image2D intermediateImage;
 
 layout( set = STATIC,
-        binding = 3) writeonly buffer AvgLumBuffer
+        binding = 3) buffer AvgLumBuffer
 {
   float value;
 } avgLumBuffer;
 
-layout (set = STATIC,
+layout (set = VOLATILE,
         binding = 4) uniform Params
 {
-  vec2 invSourceSize;   // 1.0f / размер исходного изображения
-  ivec2 areaSize;       // Размер сетки, по которой работают компьют шейдеры
-  vec2 pixelRate;       // Сколько пикселей по горизонтали и вертикали
-                        // приходится на 1 вызов горизонтального шейдера
+  //  1.0f / размер исходного изображения
+  vec2 invSourceSize;
+  //  Размер сетки, по которой работают компьют шейдеры
+  ivec2 areaSize;
+  //  Сколько пикселей по горизонтали и вертикали приходится на 1 вызов
+  //  горизонтального шейдера
+  vec2 pixelRate;
+  //  В какой пропорции надо смешивать яркость, полученную на текущем
+  //  кадре, со значениями предыдущих кадров
+  float mixFactor;
 } params;

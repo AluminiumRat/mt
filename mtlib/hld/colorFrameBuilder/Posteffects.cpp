@@ -108,6 +108,13 @@ void Posteffects::makeGui()
 
       grid.addRow("MaxWhite");
       if(ImGui::InputFloat("#maxwhite", &_maxWhite)) _updateProperties();
+
+      grid.addRow("Accomodation");
+      float accomodation = _avgLum.accommodationSpeed();
+      if(ImGui::InputFloat("#accomodation", &accomodation))
+      {
+        _avgLum.setAccommodationSpeed(accomodation);
+      }
     }
 
     if(ImGui::Checkbox("Bloom", &_bloomEnabled))

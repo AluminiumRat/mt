@@ -41,5 +41,5 @@ void main()
     luminance /= 2.0f;
   }
 
-  avgLumBuffer.value = luminance;
+  avgLumBuffer.value = mix(avgLumBuffer.value, luminance, params.mixFactor);
 }
