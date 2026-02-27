@@ -16,7 +16,8 @@ TestWindow::TestWindow(Device& device) :
   GUIWindow(device,
             "Test window",
             VK_PRESENT_MODE_FIFO_KHR,
-            std::nullopt,
+            VkSurfaceFormatKHR{ ColorFrameBuilder::frameFormat,
+                                VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
             VK_FORMAT_UNDEFINED),
   _asyncQueue(( [&](const mt::AsyncTaskQueue::Event& theEvent)
                 {

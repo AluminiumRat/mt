@@ -37,6 +37,9 @@ namespace mt
   public:
     static constexpr const char* frameTypeName = "ColorFrame";
 
+    //  Формат Image, в который в конечном счете будет записан результат
+    static constexpr VkFormat frameFormat = VK_FORMAT_B8G8R8A8_SRGB;
+
     static constexpr VkFormat hdrFormat = VK_FORMAT_B10G11R11_UFLOAT_PACK32;
     static constexpr VkFormat depthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
