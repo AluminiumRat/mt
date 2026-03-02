@@ -1,6 +1,10 @@
 #include <lib/commonSet.inl>
 #include <gltf/gltfMaterial.inl>
 
+#define NORMALTEXTURE_OFF 0
+#define NORMALTEXTURE_VERTEX_TANGENT 1
+#define NORMAL_TEXTURE_FRAGMENT_TANGENT 2
+
 layout (set = VOLATILE, binding = 0) uniform TransformData
 {
   mat4 positionMatrix[32];
@@ -40,7 +44,7 @@ layout (set = STATIC, binding = 3) readonly buffer NormalBuffer
 //  vec4 на каждую вершину. XYZ - нормализованный вектор тангента,
 //    W - знак(+1 или -1), указывающий на "рукость" tbn базиса
 //  Тангенты используются только для текстур нормалей
-#ifdef NORMALTEXTURE_ENABLED
+#if NORMALTEXTURE_MODE == NORMALTEXTURE_VERTEX_TANGENT
   layout (set = STATIC, binding = 4) readonly buffer TangentBuffer
   {
     vec4 data[];
@@ -56,7 +60,7 @@ layout (set = STATIC, binding = 3) readonly buffer NormalBuffer
   layout (set = STATIC, binding = 7) uniform texture2D occlusionTexture;
 #endif
 
-#ifdef NORMALTEXTURE_ENABLED
+#if NORMALTEXTURE_MODE != NORMALTEXTURE_OFF
   layout (set = STATIC, binding = 8) uniform texture2D normalTexture;
 #endif
 

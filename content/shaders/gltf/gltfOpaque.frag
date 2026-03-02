@@ -8,7 +8,7 @@
 layout(location = 0) in vec3 inNormal;
 layout(location = 1) in vec3 inWorldPosition;
 //  Тангент и бинормаль используются только для текстур нормалей
-#if NORMALTEXTURE_ENABLED == 1
+#if NORMALTEXTURE_MODE == NORMALTEXTURE_VERTEX_TANGENT
   layout(location = 2) in vec3 inTangent;
   layout(location = 3) in vec3 inBinormal;
 #endif
@@ -37,7 +37,7 @@ void main()
   #endif
 
   vec3 normal = normalize(inNormal);
-  #if NORMALTEXTURE_ENABLED == 1 && TEXCOORD_COUNT > 0
+  #if NORMALTEXTURE_MODE != NORMALTEXTURE_OFF && TEXCOORD_COUNT > 0
     vec3 textureNormal = texture( sampler2D(normalTexture,
                                             commonLinearSampler),
                                   inTexcoord0).rgb;
@@ -47,8 +47,15 @@ void main()
     textureNormal = linearToSrgbFast(textureNormal);
     textureNormal = textureNormal * 2.0f - 1.0f;
 
-    vec3 tangent = normalize(inTangent);
-    vec3 binormal = normalize(inBinormal);
+    #if NORMALTEXTURE_MODE == NORMALTEXTURE_VERTEX_TANGENT
+      vec3 tangent = normalize(inTangent);
+      vec3 binormal = normalize(inBinormal);
+    #else
+      //  NORMAL_TEXTURE_FRAGMENT_TANGENT
+      vec3 tangent = normalize(dFdx(inWorldPosition) * dFdx(inTexcoord0.x) +
+                                dFdy(inWorldPosition) * dFdy(inTexcoord0.x));
+      vec3 binormal = -normalize(cross(normal, tangent));
+    #endif
     mat3 tbn = mat3(tangent, binormal, normal);
 
     normal = mix( normal,

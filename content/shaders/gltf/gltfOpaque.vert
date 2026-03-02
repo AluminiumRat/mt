@@ -5,7 +5,7 @@
 layout(location = 0) out vec3 outNormal;
 layout(location = 1) out vec3 outWorldPosition;
 //  Тангент и бинормаль используются только для текстур нормалей
-#if NORMALTEXTURE_ENABLED == 1
+#if NORMALTEXTURE_MODE == NORMALTEXTURE_VERTEX_TANGENT
   layout(location = 2) out vec3 outTangent;
   layout(location = 3) out vec3 outBinormal;
 #endif
@@ -36,7 +36,7 @@ void main()
                       NORMAL.data[vertexShift + 1],
                       NORMAL.data[vertexShift + 2]);
   outNormal = transformData.bivecMatrix[gl_InstanceIndex] * normal;
-  #if NORMALTEXTURE_ENABLED == 1
+  #if NORMALTEXTURE_MODE == NORMALTEXTURE_VERTEX_TANGENT
     outTangent = transformData.bivecMatrix[gl_InstanceIndex] *
                                                   TANGENT.data[vertexIndex].xyz;
     outBinormal = cross(outNormal, outTangent);

@@ -585,12 +585,22 @@ bool GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
                                                               true));
   }
 
-  if(material.normalTexture != nullptr && verticesInfo.tangent != nullptr)
+  if(material.normalTexture != nullptr)
   {
-    targetAsset.setCommonSelection("NORMALTEXTURE_ENABLED", "1");
     targetAsset.setCommonResource("normalTexture", *material.normalTexture);
+    if(verticesInfo.tangent != nullptr)
+    {
+      targetAsset.setCommonSelection( "NORMALTEXTURE_MODE",
+                                      "NORMALTEXTURE_VERTEX_TANGENT");
+    }
+    else
+    {
+      targetAsset.setCommonSelection( "NORMALTEXTURE_MODE",
+                                      "NORMAL_TEXTURE_FRAGMENT_TANGENT");
+    }
   }
-  else targetAsset.setCommonSelection("NORMALTEXTURE_ENABLED", "0");
+  else targetAsset.setCommonSelection("NORMALTEXTURE_MODE",
+                                      "NORMALTEXTURE_OFF");
 
   if(material.occlusionTexture)
   {
