@@ -47,21 +47,17 @@ layout (set = STATIC, binding = 3) readonly buffer NormalBuffer
   } TANGENT;
 #endif
 
-#if BASECOLORTEXTURE_ENABLED == 1
+#if TEXCOORD_COUNT > 0
   layout (set = STATIC, binding = 5) uniform texture2D baseColorTexture;
-#endif
 
-#if METALLICROUGHNESSTEXTURE_ENABLED == 1
   layout (set = STATIC,
           binding = 6) uniform texture2D metallicRougghnessTexture;
+
+  layout (set = STATIC, binding = 7) uniform texture2D occlusionTexture;
 #endif
 
 #ifdef NORMALTEXTURE_ENABLED
-  layout (set = STATIC, binding = 7) uniform texture2D normalTexture;
-#endif
-
-#ifdef OCCLUSIONTEXTURE_ENABLED
-  layout (set = STATIC, binding = 8) uniform texture2D occlusionTexture;
+  layout (set = STATIC, binding = 8) uniform texture2D normalTexture;
 #endif
 
 #ifdef EMISSIVETEXTURE_ENABLED

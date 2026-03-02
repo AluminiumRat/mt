@@ -3,20 +3,14 @@ commonSetName : ColorFrameCommonSet
 selections:
   INDICES_ENABLED: [0, 1]
   TEXCOORD_COUNT: [0, 1]
-  BASECOLORTEXTURE_ENABLED: [0, 1]
-  METALLICROUGHNESSTEXTURE_ENABLED: [0, 1]
   NORMALTEXTURE_ENABLED: [0, 1]
-  OCCLUSIONTEXTURE_ENABLED: [0, 1]
   EMISSIVETEXTURE_ENABLED: [0, 1]
 
 passes:
   OpaquePass :
     selections: [ INDICES_ENABLED,
                   TEXCOORD_COUNT,
-                  BASECOLORTEXTURE_ENABLED,
-                  METALLICROUGHNESSTEXTURE_ENABLED,
                   NORMALTEXTURE_ENABLED,
-                  OCCLUSIONTEXTURE_ENABLED,
                   EMISSIVETEXTURE_ENABLED]
 
     frameType: ColorFrame

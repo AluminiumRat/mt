@@ -21,14 +21,14 @@ layout(location = 0) out vec4 outColor;
 void main()
 {
   vec4 baseColor = materialBuffer.material.baseColor;
-  #if BASECOLORTEXTURE_ENABLED == 1 && TEXCOORD_COUNT > 0
+  #if TEXCOORD_COUNT > 0
     baseColor *= texture( sampler2D(baseColorTexture, commonLinearSampler),
                           inTexcoord0);
   #endif
 
   float roughness = materialBuffer.material.roughness;
   float metallic = materialBuffer.material.metallic;
-  #if METALLICROUGHNESSTEXTURE_ENABLED == 1 && TEXCOORD_COUNT > 0
+  #if TEXCOORD_COUNT > 0
     vec4 mRFromTexture = texture( sampler2D(metallicRougghnessTexture,
                                             commonLinearSampler),
                                   inTexcoord0);
@@ -57,7 +57,7 @@ void main()
     normal = normalize(normal);
   #endif
 
-  #if OCCLUSIONTEXTURE_ENABLED == 1 && TEXCOORD_COUNT > 0
+  #if TEXCOORD_COUNT > 0
     float occlusion = texture(sampler2D(occlusionTexture,
                                         commonLinearSampler),
                               inTexcoord0).r;

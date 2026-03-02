@@ -552,19 +552,31 @@ bool GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
 
   if(material.baseColorTexture != nullptr)
   {
-    targetAsset.setCommonSelection("BASECOLORTEXTURE_ENABLED", "1");
     targetAsset.setCommonResource("baseColorTexture",
                                   *material.baseColorTexture);
   }
-  else targetAsset.setCommonSelection("BASECOLORTEXTURE_ENABLED", "0");
+  else
+  {
+    targetAsset.setCommonResource("baseColorTexture",
+                                  *_textureManager.scheduleLoading(
+                                                              "util/white.dds",
+                                                              _uploadingQueue,
+                                                              true));
+  }
 
   if(material.metallicRoughnessTexture != nullptr)
   {
-    targetAsset.setCommonSelection("METALLICROUGHNESSTEXTURE_ENABLED", "1");
     targetAsset.setCommonResource("metallicRougghnessTexture",
                                   *material.metallicRoughnessTexture);
   }
-  else targetAsset.setCommonSelection("METALLICROUGHNESSTEXTURE_ENABLED", "0");
+  else
+  {
+    targetAsset.setCommonResource("metallicRougghnessTexture",
+                                  *_textureManager.scheduleLoading(
+                                                              "util/white.dds",
+                                                              _uploadingQueue,
+                                                              true));
+  }
 
   if(material.normalTexture != nullptr && verticesInfo.tangentFound)
   {
@@ -575,11 +587,17 @@ bool GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
 
   if(material.occlusionTexture)
   {
-    targetAsset.setCommonSelection("OCCLUSIONTEXTURE_ENABLED", "1");
     targetAsset.setCommonResource("occlusionTexture",
                                   *material.occlusionTexture);
   }
-  else targetAsset.setCommonSelection("OCCLUSIONTEXTURE_ENABLED", "0");
+  else
+  {
+    targetAsset.setCommonResource("occlusionTexture",
+                                  *_textureManager.scheduleLoading(
+                                                              "util/white.dds",
+                                                              _uploadingQueue,
+                                                              true));
+  }
 
   if(material.emissiveTexture)
   {
