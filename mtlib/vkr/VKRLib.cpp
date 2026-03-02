@@ -400,13 +400,19 @@ PhysicalDevice* VKRLib::getBestPhysicalDevice(
       }
     }
 
-    // Если это первый обнаруженный девайс, то нам нет разницы - встройка это или
-    // нет, мы берем его как лучшего кандидата, так как лучше у нас всё равно
-    // пока нету.
-    // Если это не первый девайс, то выбираем тот у кого памяти больше. Встройки
-    // отпадают автоматом, так как у них будет 0 памяти.
-    if(bestDevice == nullptr || gpuMemorySize > bestMemorySize)
+    if(bestDevice == nullptr)
     {
+      // Если это первый обнаруженный девайс, то нам нет разницы - встройка это или
+      // нет, мы берем его как лучшего кандидата, так как лучше у нас всё равно
+      // пока нету.
+      bestDevice = device.get();
+    }
+    else if(device->properties()._properties10.deviceType ==
+                                        VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+            gpuMemorySize > bestMemorySize)
+    {
+      // Если это не первый девайс, то выбираем только из дискреток у кого памяти
+      // больше.
       bestDevice = device.get();
       bestMemorySize = gpuMemorySize;
     }
