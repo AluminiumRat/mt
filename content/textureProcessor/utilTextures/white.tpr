@@ -1,0 +1,10 @@
+shader: white.frag
+output: ..\..\util\white.dds
+outputFormat: VK_FORMAT_B8G8R8A8_SRGB
+outputWidth: 2
+outputHeight: 2
+outputMips: 1
+mipsAutogenerate: false
+outputArraySize: 1
+shaderProps:
+  {}
