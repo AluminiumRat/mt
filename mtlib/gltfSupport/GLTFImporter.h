@@ -55,11 +55,16 @@ namespace mt
     {
       //  Сколько всего вершин в меше
       uint32_t vertexCount = 0;
-      bool positionFound = false;
-      bool normalFound = false;
-      bool indicesFound = false;
-      bool texcoord0Found = false;
-      bool tangentFound = false;
+
+      AABB bound;
+      ConstRef<DataBuffer> indices;
+      ConstRef<DataBuffer> position;
+      ConstRef<DataBuffer> normals;
+      ConstRef<DataBuffer> texCoord0;
+      ConstRef<DataBuffer> texCoord1;
+      ConstRef<DataBuffer> texCoord2;
+      ConstRef<DataBuffer> texCoord3;
+      ConstRef<DataBuffer> tangent;
     };
 
     //  Информация по всем материалам gltf сцены. Индекс в векторе соответствует

@@ -456,7 +456,7 @@ void GLTFImporter::_createMeshAssets(int meshIndex)
     Ref<MeshAsset> asset(new MeshAsset(meshName.c_str()));
     VerticesInfo verticesInfo;
 
-    //  Прикрепляем вертекс-буфферы (атрибуты)
+    //  Создаем вертекс-буфферы (атрибуты)
     for(std::map<std::string, int>::const_iterator iAttribute =
                                                   primitive.attributes.begin();
         iAttribute != primitive.attributes.end();
@@ -472,20 +472,15 @@ void GLTFImporter::_createMeshAssets(int meshIndex)
                               meshName);
     }
 
-    //  Прикрепляем индексный буфер, если он есть
+    //  Создаем индексный буфер, если он есть
     if(primitive.indices >= 0)
     {
       const tinygltf::Accessor& accessor =
                                       _gltfModel->accessors[primitive.indices];
-      ConstRef<DataBuffer> indicesBuffer = _createIndexBuffer(
-                                                        accessor,
-                                                        meshName + ":INDICES");
-      asset->setCommonBuffer("INDICES", *indicesBuffer);
+      verticesInfo.indices = _createIndexBuffer(accessor,
+                                                meshName + ":INDICES");
       verticesInfo.vertexCount = (uint32_t)accessor.count;
-      verticesInfo.indicesFound = true;
     }
-    
-    asset->setVertexCount(verticesInfo.vertexCount);
 
     if(primitive.material < 0)
     {
@@ -513,8 +508,8 @@ bool GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
                                       const GLTFMaterial& material,
                                       const std::string& meshName)
 {
-  if(!verticesInfo.positionFound) throw std::runtime_error(meshName + ": POSITION buffer is not found");
-  if(!verticesInfo.normalFound) throw std::runtime_error(meshName + ": NORMAL buffer is not found");
+  if(verticesInfo.position == nullptr) throw std::runtime_error(meshName + ": POSITION buffer is not found");
+  if(verticesInfo.normals == nullptr) throw std::runtime_error(meshName + ": NORMAL buffer is not found");
 
   if(material.alphaMode != GLTFMaterial::OPAQUE_ALPHA_MODE)
   {
@@ -528,24 +523,36 @@ bool GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
       material.occlusionTexture != nullptr ||
       material.emissiveTexture != nullptr)
   {
-    if(!verticesInfo.texcoord0Found) throw std::runtime_error(meshName + ": there are some textures in material but TEXCOORD_0 attribute is not found");
+    if(verticesInfo.texCoord0 == nullptr) throw std::runtime_error(meshName + ": there are some textures in material but TEXCOORD_0 attribute is not found");
   }
 
-  if(material.normalTexture != nullptr && !verticesInfo.tangentFound)
+  if(material.normalTexture != nullptr && verticesInfo.tangent == nullptr)
   {
     Log::warning() << meshName << ": there is normal textures in material but TANGENT attribute is not found";
   }
 
-  targetAsset.setCommonBuffer("materialBuffer", *material.materialData);
+  targetAsset.setBound(verticesInfo.bound);
 
-  if(verticesInfo.indicesFound)
+  targetAsset.setCommonBuffer("materialBuffer", *material.materialData);
+  targetAsset.setVertexCount(verticesInfo.vertexCount);
+  targetAsset.setCommonBuffer("POSITION", *verticesInfo.position);
+  targetAsset.setCommonBuffer("NORMAL", *verticesInfo.normals);
+
+  if(verticesInfo.indices != nullptr)
   {
+    targetAsset.setCommonBuffer("INDICES", *verticesInfo.indices);
     targetAsset.setCommonSelection("INDICES_ENABLED", "1");
   }
   else targetAsset.setCommonSelection("INDICES_ENABLED", "0");
 
-  if(verticesInfo.texcoord0Found)
+  if(verticesInfo.tangent != nullptr)
   {
+    targetAsset.setCommonBuffer("TANGENT", *verticesInfo.tangent);
+  }
+
+  if(verticesInfo.texCoord0 != nullptr)
+  {
+    targetAsset.setCommonBuffer("TEXCOORD_0", *verticesInfo.texCoord0);
     targetAsset.setCommonSelection("TEXCOORD_COUNT", "1");
   }
   else targetAsset.setCommonSelection("TEXCOORD_COUNT", "0");
@@ -578,7 +585,7 @@ bool GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
                                                               true));
   }
 
-  if(material.normalTexture != nullptr && verticesInfo.tangentFound)
+  if(material.normalTexture != nullptr && verticesInfo.tangent != nullptr)
   {
     targetAsset.setCommonSelection("NORMALTEXTURE_ENABLED", "1");
     targetAsset.setCommonResource("normalTexture", *material.normalTexture);
@@ -624,28 +631,50 @@ void GLTFImporter::_processVertexAttribute( const std::string& attributeName,
   ConstRef<DataBuffer> componentData = _createAccessorBuffer(
                                             accessor,
                                             meshName + ":" + attributeName);
-  targetAsset.setCommonBuffer(attributeName.c_str(), *componentData);
+  //targetAsset.setCommonBuffer(attributeName.c_str(), *componentData);
   
   if(attributeName == "POSITION")
   {
     //  По этому аттрибуту определяем AABB и сколько вообще у нас есть
     //  вертек сов на отрисовку (если не обнаружим индексный буфер)
     verticesInfo.vertexCount = (uint32_t)accessor.count;
-    verticesInfo.positionFound = true;
+    verticesInfo.position = componentData;
+
     if(accessor.minValues.size() == 3 || accessor.maxValues.size() == 3)
     {
-      targetAsset.setBound(AABB((float)accessor.minValues[0],
+      verticesInfo.bound = AABB((float)accessor.minValues[0],
                                 (float)accessor.minValues[1],
                                 (float)accessor.minValues[2],
                                 (float)accessor.maxValues[0],
                                 (float)accessor.maxValues[1],
-                                (float)accessor.maxValues[2]));
+                                (float)accessor.maxValues[2]);
     }
     else Log::warning() << meshName << ":" << attributeName << "doesen't have correct minimal and maximal values";
   }
-  else if(attributeName == "NORMAL") verticesInfo.normalFound = true;
-  else if(attributeName == "TEXCOORD_0") verticesInfo.texcoord0Found = true;
-  else if(attributeName == "TANGENT") verticesInfo.tangentFound = true;
+  else if(attributeName == "NORMAL")
+  {
+    verticesInfo.normals = componentData;
+  }
+  else if(attributeName == "TEXCOORD_0")
+  {
+    verticesInfo.texCoord0 = componentData;
+  }
+  else if(attributeName == "TEXCOORD_1")
+  {
+    verticesInfo.texCoord1 = componentData;
+  }
+  else if(attributeName == "TEXCOORD_2")
+  {
+    verticesInfo.texCoord2 = componentData;
+  }
+  else if(attributeName == "TEXCOORD_3")
+  {
+    verticesInfo.texCoord3 = componentData;
+  }
+  else if(attributeName == "TANGENT")
+  {
+    verticesInfo.tangent = componentData;
+  }
 }
 
 void GLTFImporter::_processNode(int nodeIndex)
