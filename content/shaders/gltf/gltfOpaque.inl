@@ -69,9 +69,26 @@ layout (set = STATIC, binding = 3) readonly buffer NormalBuffer
 #endif
 
 // Текстурные координаты. По 2 float-а на вершину. Без разрывов
+// Текстурных координат может быть 0, 1 или 4
 #if TEXCOORD_COUNT > 0
   layout (set = STATIC, binding = 10) readonly buffer Texcoord0Buffer
   {
     float data[];
   } TEXCOORD_0;
+
+  #if TEXCOORD_COUNT > 1
+    layout (set = STATIC, binding = 11) readonly buffer Texcoord1Buffer
+    {
+      float data[];
+    } TEXCOORD_1;
+
+    layout (set = STATIC, binding = 12) readonly buffer Texcoord2Buffer
+    {
+      float data[];
+    } TEXCOORD_2;
+    layout (set = STATIC, binding = 13) readonly buffer Texcoord3Buffer
+    {
+      float data[];
+    } TEXCOORD_3;
+  #endif
 #endif

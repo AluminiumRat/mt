@@ -20,6 +20,14 @@ struct GLTFMaterial
   float roughness;
   float normalTextureScale;
   float occlusionTextureStrength;
+
+  //  Индексы текстурных координат(TEXCOORD_0, TEXCOORD_1) для соответствующих
+  //  текстур
+  int baseColorTexCoord;
+  int metallicRoughnessTexCoord;
+  int normalTexCoord;
+  int occlusionTexCoord;
+  int emissiveTexCoord;
 };
 
 #endif

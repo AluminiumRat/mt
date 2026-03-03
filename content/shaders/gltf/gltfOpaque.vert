@@ -9,8 +9,13 @@ layout(location = 1) out vec3 outWorldPosition;
   layout(location = 2) out vec3 outTangent;
   layout(location = 3) out vec3 outBinormal;
 #endif
-#if TEXCOORD_COUNT > 0
-  layout(location = 4) out vec2 outTexcoord0;
+
+// Текстурных координат может быть 0, 1 или 4
+#if TEXCOORD_COUNT == 1
+  layout(location = 4) out vec2 outTexcoord;
+#endif
+#if TEXCOORD_COUNT > 1
+  layout(location = 4) out vec2 outTexcoord[4];
 #endif
 
 void main()
@@ -36,6 +41,8 @@ void main()
                       NORMAL.data[vertexShift + 1],
                       NORMAL.data[vertexShift + 2]);
   outNormal = transformData.bivecMatrix[gl_InstanceIndex] * normal;
+
+  //  Тангент, если есть
   #if NORMALTEXTURE_MODE == NORMALTEXTURE_VERTEX_TANGENT
     outTangent = transformData.bivecMatrix[gl_InstanceIndex] *
                                                   TANGENT.data[vertexIndex].xyz;
@@ -43,9 +50,21 @@ void main()
     outBinormal *= TANGENT.data[vertexIndex].w;
   #endif
 
-  #if TEXCOORD_COUNT > 0
+  // Текстурные координаты
+  #if TEXCOORD_COUNT == 1
     int texCoordShift = vertexIndex * 2;
-    outTexcoord0 = vec2(TEXCOORD_0.data[texCoordShift],
+    outTexcoord = vec2(TEXCOORD_0.data[texCoordShift],
                         TEXCOORD_0.data[texCoordShift + 1]);
+  #endif
+  #if TEXCOORD_COUNT > 1
+    int texCoordShift = vertexIndex * 2;
+    outTexcoord[0] = vec2(TEXCOORD_0.data[texCoordShift],
+                          TEXCOORD_0.data[texCoordShift + 1]);
+    outTexcoord[1] = vec2(TEXCOORD_1.data[texCoordShift],
+                          TEXCOORD_1.data[texCoordShift + 1]);
+    outTexcoord[2] = vec2(TEXCOORD_2.data[texCoordShift],
+                          TEXCOORD_2.data[texCoordShift + 1]);
+    outTexcoord[3] = vec2(TEXCOORD_3.data[texCoordShift],
+                          TEXCOORD_3.data[texCoordShift + 1]);
   #endif
 }

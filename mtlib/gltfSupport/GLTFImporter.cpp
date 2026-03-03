@@ -289,32 +289,44 @@ void GLTFImporter::_createMaterialInfo(int materialIndex)
   newMaterial.occlusionTextureStrength =
                                   (float)gltfMaterial.occlusionTexture.strength;
 
-  // Заливаем данные материала на ГПУ
-  newMaterial.materialData = _createGPUMaterialInfo(
-                                              newMaterial,
-                                              _filename+":"+ gltfMaterial.name);
-
   // Грузим текстуры
   newMaterial.baseColorTexture = _getTexture(
                               gltfMaterial.pbrMetallicRoughness.baseColorTexture,
                               gltfMaterial.name.c_str(),
                               "baseColorTexture");
+  newMaterial.baseColorTexCoord =
+                    gltfMaterial.pbrMetallicRoughness.baseColorTexture.texCoord;
+
   newMaterial.metallicRoughnessTexture = _getTexture(
-                                            gltfMaterial.pbrMetallicRoughness.
-                                                          metallicRoughnessTexture,
-                                            gltfMaterial.name.c_str(),
-                                            "metallicRoughnessTexture");
+                                          gltfMaterial.pbrMetallicRoughness.
+                                                      metallicRoughnessTexture,
+                                          gltfMaterial.name.c_str(),
+                                          "metallicRoughnessTexture");
+  newMaterial.metallicRoughnessTexCoord =
+            gltfMaterial.pbrMetallicRoughness.metallicRoughnessTexture.texCoord;
+
   newMaterial.normalTexture = _getTexture(
                       (const tinygltf::TextureInfo&)gltfMaterial.normalTexture,
                       gltfMaterial.name.c_str(),
                       "normalTexture");
+  newMaterial.normalTexCoord = gltfMaterial.normalTexture.texCoord;
+
   newMaterial.occlusionTexture = _getTexture(
                     (const tinygltf::TextureInfo&)gltfMaterial.occlusionTexture,
                     gltfMaterial.name.c_str(),
                     "occlusionTexture");
+  newMaterial.occlusionTexCoord = gltfMaterial.occlusionTexture.texCoord;
+
   newMaterial.emissiveTexture = _getTexture(gltfMaterial.emissiveTexture,
                                             gltfMaterial.name.c_str(),
                                             "emissiveTexture");
+  newMaterial.emissiveTexCoord = gltfMaterial.emissiveTexture.texCoord;
+
+  // Заливаем данные материала на ГПУ
+  newMaterial.materialData = _createGPUMaterialInfo(
+                                              newMaterial,
+                                              _filename+":"+ gltfMaterial.name);
+
   _materials[materialIndex] = newMaterial;
 }
 
@@ -324,7 +336,6 @@ ConstRef<TechniqueResource> GLTFImporter::_getTexture(
                                               const char* textureName) const
 {
   if(info.index < 0) return ConstRef<TechniqueResource>();
-  if(info.texCoord != 0) Log::warning() << _filename << " material: " << materialName << " texture:" << textureName << " texture uses custom texture coordinates";
   return _textures[info.index];
 }
 
@@ -342,6 +353,11 @@ ConstRef<DataBuffer> GLTFImporter::_createGPUMaterialInfo(
   gpuData.roughness = material.roughness;
   gpuData.normalTextureScale = material.normalTextureScale;
   gpuData.occlusionTextureStrength = material.occlusionTextureStrength;
+  gpuData.baseColorTexCoord = material.baseColorTexCoord;
+  gpuData.metallicRoughnessTexCoord = material.metallicRoughnessTexCoord;
+  gpuData.normalTexCoord = material.normalTexCoord;
+  gpuData.occlusionTexCoord = material.occlusionTexCoord;
+  gpuData.emissiveTexCoord = material.emissiveTexCoord;
   return _uploadData(&gpuData, sizeof(gpuData), *_producer, bufferName);
 }
 
@@ -553,7 +569,31 @@ bool GLTFImporter::_attachTechniques( MeshAsset& targetAsset,
   if(verticesInfo.texCoord0 != nullptr)
   {
     targetAsset.setCommonBuffer("TEXCOORD_0", *verticesInfo.texCoord0);
-    targetAsset.setCommonSelection("TEXCOORD_COUNT", "1");
+    if(verticesInfo.texCoord1 == nullptr)
+    {
+      targetAsset.setCommonSelection("TEXCOORD_COUNT", "1");
+    }
+    else
+    {
+      targetAsset.setCommonBuffer("TEXCOORD_1", *verticesInfo.texCoord1);
+      if(verticesInfo.texCoord2 != nullptr)
+      {
+        targetAsset.setCommonBuffer("TEXCOORD_2", *verticesInfo.texCoord2);
+      }
+      else
+      {
+        targetAsset.setCommonBuffer("TEXCOORD_2", *verticesInfo.texCoord0);
+      }
+      if(verticesInfo.texCoord3 != nullptr)
+      {
+        targetAsset.setCommonBuffer("TEXCOORD_3", *verticesInfo.texCoord3);
+      }
+      else
+      {
+        targetAsset.setCommonBuffer("TEXCOORD_3", *verticesInfo.texCoord0);
+      }
+      targetAsset.setCommonSelection("TEXCOORD_COUNT", "4");
+    }
   }
   else targetAsset.setCommonSelection("TEXCOORD_COUNT", "0");
 

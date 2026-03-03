@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #include <glm/glm.hpp>
 
@@ -8,10 +8,10 @@
 
 namespace mt
 {
-  //  Данные материала, хранящиеся в буфере на GPU
+  //  Р”Р°РЅРЅС‹Рµ РјР°С‚РµСЂРёР°Р»Р°, С…СЂР°РЅСЏС‰РёРµСЃСЏ РІ Р±СѓС„РµСЂРµ РЅР° GPU
   struct GLTFMaterialGPU
   {
-    //  Режим смешивания альфы, сюда пишутся значения GLTFMaterial::AlphaMode
+    //  Р РµР¶РёРј СЃРјРµС€РёРІР°РЅРёСЏ Р°Р»СЊС„С‹, СЃСЋРґР° РїРёС€СѓС‚СЃСЏ Р·РЅР°С‡РµРЅРёСЏ GLTFMaterial::AlphaMode
     alignas(4) uint32_t alphaMode;
     alignas(4) float alphaCutoff;
     // 0 = false, 1 = true
@@ -22,11 +22,19 @@ namespace mt
     alignas(4) float roughness;
     alignas(4) float normalTextureScale;
     alignas(4) float occlusionTextureStrength;
+
+    //  РРЅРґРµРєСЃС‹ С‚РµРєСЃС‚СѓСЂРЅС‹С… РєРѕРѕСЂРґРёРЅР°С‚(TEXCOORD_0, TEXCOORD_1) РґР»СЏ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РёС…
+    //  С‚РµРєСЃС‚СѓСЂ
+    alignas(4) uint32_t baseColorTexCoord;
+    alignas(4) uint32_t metallicRoughnessTexCoord;
+    alignas(4) uint32_t normalTexCoord;
+    alignas(4) uint32_t occlusionTexCoord;
+    alignas(4) uint32_t emissiveTexCoord;
   };
 
   struct GLTFMaterial
   {
-    //  Режим смешивания по альфе
+    //  Р РµР¶РёРј СЃРјРµС€РёРІР°РЅРёСЏ РїРѕ Р°Р»СЊС„Рµ
     enum AlphaMode
     {
       OPAQUE_ALPHA_MODE = 0,
@@ -34,7 +42,7 @@ namespace mt
       BLEND_ALPHA_MODE = 2
     };
     AlphaMode alphaMode;
-    //  Граница для обрезания по альфе в режиме MASK_ALPHA_MODE
+    //  Р“СЂР°РЅРёС†Р° РґР»СЏ РѕР±СЂРµР·Р°РЅРёСЏ РїРѕ Р°Р»СЊС„Рµ РІ СЂРµР¶РёРјРµ MASK_ALPHA_MODE
     float alphaCutoff;
 
     bool doubleSided;
@@ -52,7 +60,15 @@ namespace mt
     ConstRef<TechniqueResource> occlusionTexture;
     ConstRef<TechniqueResource> emissiveTexture;
 
-    // storage буфер, в котором находится GLTFMaterialGPU
+    //  РРЅРґРµРєСЃС‹ С‚РµРєСЃС‚СѓСЂРЅС‹С… РєРѕРѕСЂРґРёРЅР°С‚(TEXCOORD_0, TEXCOORD_1) РґР»СЏ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓСЋС‰РёС…
+    //  С‚РµРєСЃС‚СѓСЂ
+    uint32_t baseColorTexCoord;
+    uint32_t metallicRoughnessTexCoord;
+    uint32_t normalTexCoord;
+    uint32_t occlusionTexCoord;
+    uint32_t emissiveTexCoord;
+
+    // storage Р±СѓС„РµСЂ, РІ РєРѕС‚РѕСЂРѕРј РЅР°С…РѕРґРёС‚СЃСЏ GLTFMaterialGPU
     ConstRef<DataBuffer> materialData;
   };
 }

@@ -12,35 +12,52 @@ layout(location = 1) in vec3 inWorldPosition;
   layout(location = 2) in vec3 inTangent;
   layout(location = 3) in vec3 inBinormal;
 #endif
-#if TEXCOORD_COUNT > 0
-  layout(location = 4) in vec2 inTexcoord0;
+
+#if TEXCOORD_COUNT == 1
+  layout(location = 4) in vec2 inTexCoord;
+#endif
+#if TEXCOORD_COUNT > 1
+  layout(location = 4) in vec2 inTexCoord[4];
 #endif
 
 layout(location = 0) out vec4 outColor;
 
+//  Получить текстурные координаты по их индексу
+#if TEXCOORD_COUNT > 0
+vec2 getTexCoord(int index)
+{
+  #if TEXCOORD_COUNT == 1
+    return inTexCoord;
+  #else
+    return inTexCoord[index];
+  #endif
+}
+#endif
+
 void main()
 {
   vec4 baseColor = materialBuffer.material.baseColor;
-  #if TEXCOORD_COUNT > 0
-    baseColor *= texture( sampler2D(baseColorTexture, commonLinearSampler),
-                          inTexcoord0);
+  #if TEXCOORD_COUNT != 0
+    baseColor *= texture(
+                        sampler2D(baseColorTexture, commonLinearSampler),
+                        getTexCoord(materialBuffer.material.baseColorTexCoord));
   #endif
 
   float roughness = materialBuffer.material.roughness;
   float metallic = materialBuffer.material.metallic;
   #if TEXCOORD_COUNT > 0
-    vec4 mRFromTexture = texture( sampler2D(metallicRougghnessTexture,
-                                            commonLinearSampler),
-                                  inTexcoord0);
+    vec4 mRFromTexture = texture(
+                sampler2D(metallicRougghnessTexture, commonLinearSampler),
+                getTexCoord(materialBuffer.material.metallicRoughnessTexCoord));
     roughness *= mRFromTexture.g;
     metallic *= mRFromTexture.b;
   #endif
 
   vec3 normal = normalize(inNormal);
   #if NORMALTEXTURE_MODE != NORMALTEXTURE_OFF && TEXCOORD_COUNT > 0
-    vec3 textureNormal = texture( sampler2D(normalTexture,
-                                            commonLinearSampler),
-                                  inTexcoord0).rgb;
+    vec3 textureNormal = texture(
+                      sampler2D(normalTexture, commonLinearSampler),
+                      getTexCoord(materialBuffer.material.normalTexCoord)).rgb;
     //  Считанное значение прошло в сэмплере через sRGB->linear преобразование.
     //  Но исходные значения и так были в линейном пространстве, поэтому
     //  переводим обратно
@@ -52,8 +69,8 @@ void main()
       vec3 binormal = normalize(inBinormal);
     #else
       //  NORMAL_TEXTURE_FRAGMENT_TANGENT
-      vec3 tangent = normalize(dFdx(inWorldPosition) * dFdx(inTexcoord0.x) +
-                                dFdy(inWorldPosition) * dFdy(inTexcoord0.x));
+      vec3 tangent = normalize( dFdx(inWorldPosition) * dFdx(getTexCoord(0).x) +
+                                dFdy(inWorldPosition) * dFdy(getTexCoord(0).x));
       vec3 binormal = -normalize(cross(normal, tangent));
     #endif
     mat3 tbn = mat3(tangent, binormal, normal);
@@ -65,9 +82,9 @@ void main()
   #endif
 
   #if TEXCOORD_COUNT > 0
-    float occlusion = texture(sampler2D(occlusionTexture,
-                                        commonLinearSampler),
-                              inTexcoord0).r;
+    float occlusion = texture(
+                      sampler2D(occlusionTexture,commonLinearSampler),
+                      getTexCoord(materialBuffer.material.occlusionTexCoord)).r;
     occlusion *= materialBuffer.material.occlusionTextureStrength;
   #else
     float occlusion = 1.0f;
@@ -100,8 +117,10 @@ void main()
                               commonData.environment.roughnessToLod);
 
   #if EMISSIVETEXTURE_ENABLED  && TEXCOORD_COUNT > 0
-    vec3 emission = texture(sampler2D(emissiveTexture, commonLinearSampler),
-                            inTexcoord0).rgb;
+    vec3 emission = texture(
+                    sampler2D(emissiveTexture, commonLinearSampler),
+                    getTexCoord(materialBuffer.material.emissiveTexCoord)).rgb;
+
     emission *= materialBuffer.material.emission;
     radiance += emission;
   #endif

@@ -2,7 +2,7 @@ commonSetName : ColorFrameCommonSet
 
 selections:
   INDICES_ENABLED: [0, 1]
-  TEXCOORD_COUNT: [0, 1]
+  TEXCOORD_COUNT: [0, 1, 4]
   NORMALTEXTURE_MODE: [ NORMALTEXTURE_OFF,
                         NORMALTEXTURE_VERTEX_TANGENT,
                         NORMAL_TEXTURE_FRAGMENT_TANGENT]
