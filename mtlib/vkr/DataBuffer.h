@@ -86,6 +86,11 @@ namespace mt
     inline VkBuffer handle() const noexcept;
     inline size_t size() const noexcept;
 
+    //  Адрес на GPU. Доступен только для STORAGE_BUFFER-ов или для буферов,
+    //  созданных с VkBufferUsageFlags VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
+    //  В остальных случаях будет возвращать 0
+    inline VkDeviceAddress deviceAddress() const noexcept;
+
     //  Загрузка данных с хоста на ГПУ.
     //  ВНИМАНИЕ! Буфер должен быть создан с Usage UPLOAD_BUFFER или 
     //    DOWNLOAD_BUFFER или с
@@ -106,6 +111,7 @@ namespace mt
     size_t _size;
 
     VmaAllocation _allocation;
+    VkDeviceAddress _deviceAddress;
 
     std::string _debugName;
   };
@@ -142,6 +148,11 @@ namespace mt
   inline size_t DataBuffer::size() const noexcept
   {
     return _size;
+  }
+
+  inline VkDeviceAddress DataBuffer::deviceAddress() const noexcept
+  {
+    return _deviceAddress;
   }
 
   inline const std::string& DataBuffer::debugName() const noexcept

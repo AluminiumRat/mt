@@ -134,6 +134,7 @@ void Device::_initVMA()
   allocatorInfo.device = _handle;
   allocatorInfo.instance = VKRLib::instance().handle();
   allocatorInfo.vulkanApiVersion = VKRLib::instance().vulkanApiVersion();
+  allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
   if(vmaCreateAllocator(&allocatorInfo, &_allocator) != VK_SUCCESS)
   {
     throw std::runtime_error("Device: Failed to create memory allocator.");

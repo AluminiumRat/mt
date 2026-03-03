@@ -18,6 +18,11 @@ ExtFunctions::ExtFunctions(VkDevice device) noexcept
 
   _vkCmdEndDebugUtilsLabelEXT =
           (PFN_vkCmdEndDebugUtilsLabelEXT)
-                            vkGetDeviceProcAddr(device,
+                              vkGetDeviceProcAddr(device,
                                                   "vkCmdEndDebugUtilsLabelEXT");
+
+  _vkGetBufferDeviceAddress =
+          (PFN_vkGetBufferDeviceAddress)
+                              vkGetDeviceProcAddr(device,
+                                                  "vkGetBufferDeviceAddress");
 }

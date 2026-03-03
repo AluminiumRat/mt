@@ -23,10 +23,14 @@ namespace mt
     inline VkResult vkCmdEndDebugUtilsLabelEXT(
                                           VkCommandBuffer commandBuffer) const;
 
+    inline VkDeviceAddress vkGetBufferDeviceAddress(
+                              VkBufferDeviceAddressInfoKHR* addressInfo) const;
+
   private:
     PFN_vkSetDebugUtilsObjectNameEXT _vkSetDebugUtilsObjectNameEXT = nullptr;
     PFN_vkCmdBeginDebugUtilsLabelEXT _vkCmdBeginDebugUtilsLabelEXT = nullptr;
     PFN_vkCmdEndDebugUtilsLabelEXT _vkCmdEndDebugUtilsLabelEXT = nullptr;
+    PFN_vkGetBufferDeviceAddress _vkGetBufferDeviceAddress = nullptr;
     VkDevice _device = VK_NULL_HANDLE;
   };
 
@@ -61,5 +65,11 @@ namespace mt
     }
     _vkCmdEndDebugUtilsLabelEXT(commandBuffer);
     return VK_SUCCESS;
+  }
+
+  inline VkDeviceAddress ExtFunctions::vkGetBufferDeviceAddress(
+                                VkBufferDeviceAddressInfoKHR* addressInfo) const
+  {
+    return _vkGetBufferDeviceAddress(_device, addressInfo);
   }
 }

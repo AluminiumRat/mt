@@ -87,7 +87,9 @@ static VkBufferUsageFlags getUsageFlags(DataBuffer::Usage usage)
 
     case DataBuffer::STORAGE_BUFFER:
       return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
-              VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+              VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
+              VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+              VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
   }
 
   Abort("DataBuffer::getUsageFlags: unknown usage");
@@ -132,6 +134,7 @@ DataBuffer::DataBuffer( Device& device,
   _handle(VK_NULL_HANDLE),
   _size(size),
   _allocation(VK_NULL_HANDLE),
+  _deviceAddress(0),
   _debugName(debugName)
 {
   try
@@ -154,6 +157,15 @@ DataBuffer::DataBuffer( Device& device,
       throw std::runtime_error("DataBuffer: Failed to create buffer " + _debugName);
     }
 
+    if(usage == STORAGE_BUFFER)
+    {
+      VkBufferDeviceAddressInfoKHR addressInfo{};
+      addressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR;
+      addressInfo.buffer = _handle;
+      _deviceAddress =
+                  _device.extFunctions().vkGetBufferDeviceAddress(&addressInfo);
+    }
+
     _setDebugName();
   }
   catch(...)
@@ -173,6 +185,7 @@ DataBuffer::DataBuffer( Device& device,
   _handle(VK_NULL_HANDLE),
   _size(size),
   _allocation(VK_NULL_HANDLE),
+  _deviceAddress(0),
   _debugName(debugName)
 {
   try
@@ -195,6 +208,15 @@ DataBuffer::DataBuffer( Device& device,
                         nullptr) != VK_SUCCESS)
     {
       throw std::runtime_error("DataBuffer: Failed to create buffer.");
+    }
+
+    if(bufferUsageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)
+    {
+      VkBufferDeviceAddressInfoKHR addressInfo{};
+      addressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO_KHR;
+      addressInfo.buffer = _handle;
+      _deviceAddress =
+                  _device.extFunctions().vkGetBufferDeviceAddress(&addressInfo);
     }
 
     _setDebugName();

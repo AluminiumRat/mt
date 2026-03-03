@@ -227,25 +227,6 @@ void GLTFImporter::_createTexture(int textureIndex)
                                                             true);
 }
 
-ConstRef<DataBuffer> GLTFImporter::_uploadData( const void* data,
-                                                size_t dataSize,
-                                                CommandProducerGraphic& producer,
-                                                const std::string& debugName)
-{
-  Device& device = producer.queue().device();
-  ConstRef<DataBuffer> gpuBuffer(new DataBuffer(device,
-                                                dataSize,
-                                                DataBuffer::STORAGE_BUFFER,
-                                                debugName.c_str()));
-  Ref<DataBuffer> stagingBuffer(new DataBuffer( device,
-                                                dataSize,
-                                                DataBuffer::UPLOADING_BUFFER,
-                                                "Uploading buffer"));
-  stagingBuffer->uploadData(data, 0, dataSize);
-  producer.copyFromBufferToBuffer(*stagingBuffer, *gpuBuffer, 0, 0, dataSize);
-  return gpuBuffer;
-}
-
 void GLTFImporter::_createMaterialInfo(int materialIndex)
 {
   const tinygltf::Material& gltfMaterial = _gltfModel->materials[materialIndex];
@@ -359,6 +340,26 @@ ConstRef<DataBuffer> GLTFImporter::_createGPUMaterialInfo(
   gpuData.occlusionTexCoord = material.occlusionTexCoord;
   gpuData.emissiveTexCoord = material.emissiveTexCoord;
   return _uploadData(&gpuData, sizeof(gpuData), *_producer, bufferName);
+}
+
+ConstRef<DataBuffer> GLTFImporter::_uploadData( const void* data,
+                                                size_t dataSize,
+                                                CommandProducerGraphic& producer,
+                                                const std::string& debugName)
+{
+  Device& device = producer.queue().device();
+  ConstRef<DataBuffer> gpuBuffer(new DataBuffer(
+                                            device,
+                                            dataSize,
+                                            DataBuffer::STORAGE_BUFFER,
+                                            debugName.c_str()));
+  Ref<DataBuffer> stagingBuffer(new DataBuffer( device,
+                                                dataSize,
+                                                DataBuffer::UPLOADING_BUFFER,
+                                                "Uploading buffer"));
+  stagingBuffer->uploadData(data, 0, dataSize);
+  producer.copyFromBufferToBuffer(*stagingBuffer, *gpuBuffer, 0, 0, dataSize);
+  return gpuBuffer;
 }
 
 ConstRef<DataBuffer> GLTFImporter::_createAccessorBuffer(
