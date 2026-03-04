@@ -67,8 +67,5 @@ namespace mt
     uint32_t normalTexCoord;
     uint32_t occlusionTexCoord;
     uint32_t emissiveTexCoord;
-
-    // storage буфер, в котором находится GLTFMaterialGPU
-    ConstRef<DataBuffer> materialData;
   };
 }

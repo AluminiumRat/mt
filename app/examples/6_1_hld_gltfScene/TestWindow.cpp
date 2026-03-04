@@ -42,7 +42,8 @@ void TestWindow::_loadModel(const std::filesystem::path& filename)
 
   GLTFImporter importer(*device().graphicQueue(),
                         _textureManager,
-                        _techniqueManager);
+                        _techniqueManager,
+                        GLTFImporter::LOAD_ASYNC);
   std::vector<std::unique_ptr<MeshDrawable>> meshes =
                                                   importer.importGLTF(filename);
   for(std::unique_ptr<MeshDrawable>& mesh : meshes)

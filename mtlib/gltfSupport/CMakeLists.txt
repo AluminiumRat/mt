@@ -9,6 +9,7 @@ include_directories(..
                     ${TINY_GLTF_PATH})
 
 set(SOURCES
+    "BaseGLTFImporter.cpp"
     "GLTFImporter.cpp")
 
 add_library(gltfSupport
