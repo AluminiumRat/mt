@@ -3,23 +3,21 @@
 #include <glm/glm.hpp>
 
 #include <util/Assert.h>
+#include <vkr/accelerationStructure/BLAS.h>
+#include <vkr/queue/CommandProducerCompute.h>
 #include <vkr/Device.h>
-
-#include <BLASAsset.h>
 
 using namespace mt;
 
-BLASAsset::BLASAsset( const std::vector<Geometry>& geometryData,
-                      CommandProducerGraphic& producer,
-                      const char* debugName) :
-  _device(geometryData[0].positions->device()),
+BLAS::BLAS( std::span<const BLASGeometry> geometry, const char* debugName) :
+  _device(geometry[0].positions->device()),
   _debugName(debugName),
   _handle(VK_NULL_HANDLE),
-  _geometry(geometryData)
+  _geometry(geometry.begin(), geometry.end())
 {
   try
   {
-    _makeHandle(producer);
+    _makeHandle();
   }
   catch(...)
   {
@@ -28,12 +26,12 @@ BLASAsset::BLASAsset( const std::vector<Geometry>& geometryData,
   }
 }
 
-BLASAsset::~BLASAsset() noexcept
+BLAS::~BLAS() noexcept
 {
   _clear();
 }
 
-void BLASAsset::_clear() noexcept
+void BLAS::_clear() noexcept
 {
   if(_handle != nullptr)
   {
@@ -42,18 +40,18 @@ void BLASAsset::_clear() noexcept
   }
 }
 
-void BLASAsset::_makeHandle(CommandProducerGraphic& producer)
+void BLAS::_makeHandle()
 {
-  std::vector<VkAccelerationStructureGeometryKHR> geometry =
-                                                            _makeGeometryInfo();
-  MT_ASSERT(!geometry.empty());
+  std::vector<VkAccelerationStructureGeometryKHR> geometryInfo =
+                                                makeBLASGeometryInfo(_geometry);
+  MT_ASSERT(!geometryInfo.empty());
 
   VkAccelerationStructureBuildGeometryInfoKHR buildGeometyInfo{};
   buildGeometyInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
   buildGeometyInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-  buildGeometyInfo.geometryCount = (uint32_t)geometry.size();
+  buildGeometyInfo.geometryCount = (uint32_t)geometryInfo.size();
   buildGeometyInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-  buildGeometyInfo.pGeometries = geometry.data();
+  buildGeometyInfo.pGeometries = geometryInfo.data();
 
   VkAccelerationStructureBuildSizesInfoKHR sizeInfo =
                                                 _getSizeInfo(buildGeometyInfo);
@@ -67,14 +65,15 @@ void BLASAsset::_makeHandle(CommandProducerGraphic& producer)
                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                         (_debugName + ":BLAS").c_str());
 
-  ConstRef<DataBuffer> scratchBuffer( new DataBuffer(
+  _scratchBuffer = new DataBuffer(
                         _device,
                         sizeInfo.buildScratchSize,
                         VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
+                          VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                           VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                         0,
                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                        (_debugName + ":Scratch").c_str()));
+                        (_debugName + ":Scratch").c_str());
 
   VkAccelerationStructureCreateInfoKHR createBLASInfo{};
   createBLASInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -88,59 +87,22 @@ void BLASAsset::_makeHandle(CommandProducerGraphic& producer)
   {
     throw std::runtime_error(_debugName + ": unbale to create BLAS");
   }
-
-  buildGeometyInfo.dstAccelerationStructure = _handle;
-  buildGeometyInfo.scratchData.deviceAddress = scratchBuffer->deviceAddress();
 }
 
-std::vector<VkAccelerationStructureGeometryKHR>
-                                            BLASAsset::_makeGeometryInfo() const
-{
-  std::vector<VkAccelerationStructureGeometryKHR> geometry;
-  geometry.resize(_geometry.size());
-
-  for(int setIndex = 0; setIndex < _geometry.size(); setIndex++)
-  {
-    const DataBuffer* positions = _geometry[setIndex].positions.get();
-    MT_ASSERT(positions != nullptr);
-    const DataBuffer* indices = _geometry[setIndex].indices.get();
-
-    VkAccelerationStructureGeometryDataKHR geometryData;
-    geometryData.triangles = {};
-    geometryData.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-    geometryData.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-    geometryData.triangles.vertexData.deviceAddress =
-                                                    positions->deviceAddress();
-    geometryData.triangles.vertexStride = sizeof(glm::vec3);
-    geometryData.triangles.maxVertex =
-                                  (uint32_t)_geometry[setIndex].vertexCount - 1;
-    if(indices != nullptr)
-    {
-      geometryData.triangles.indexType = VK_INDEX_TYPE_UINT32;
-      geometryData.triangles.indexData.deviceAddress = indices->deviceAddress();
-    }
-    else
-    {
-      geometryData.triangles.indexType = VK_INDEX_TYPE_NONE_KHR;
-    }
-
-    geometry[setIndex] = {};
-    geometry[setIndex].sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-    geometry[setIndex].geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-    geometry[setIndex].geometry = geometryData;
-    geometry[setIndex].flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-  }
-
-  return geometry;
-}
-
-VkAccelerationStructureBuildSizesInfoKHR BLASAsset::_getSizeInfo(
+VkAccelerationStructureBuildSizesInfoKHR BLAS::_getSizeInfo(
           const VkAccelerationStructureBuildGeometryInfoKHR& geometryInfo) const
 {
   std::vector<uint32_t> primitivesCount;
-  for(const Geometry& geometry : _geometry)
+  for(const BLASGeometry& geometry : _geometry)
   {
-    primitivesCount.push_back(uint32_t(geometry.indexCount) / 3);
+    if(geometry.indices != nullptr)
+    {
+      primitivesCount.push_back((uint32_t)geometry.indexCount / 3);
+    }
+    else
+    {
+      primitivesCount.push_back((uint32_t)geometry.vertexCount / 3);
+    }
   }
 
   VkAccelerationStructureBuildSizesInfoKHR sizeInfo{};
@@ -157,4 +119,10 @@ VkAccelerationStructureBuildSizesInfoKHR BLASAsset::_getSizeInfo(
     throw std::runtime_error("Unable to call vkGetAccelerationStructureBuildSizesKHR. Check the extension VK_KHR_acceleration_structure.");
   }
   return sizeInfo;
+}
+
+void BLAS::build(CommandProducerCompute& producer)
+{
+  if(_scratchBuffer == nullptr) return;
+  producer.buildBLAS(*this, *_scratchBuffer);
 }

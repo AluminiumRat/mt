@@ -40,10 +40,11 @@ namespace mt
                         VkAccelerationStructureKHR accelerationStructure) const;
 
     inline VkResult vkCmdBuildAccelerationStructuresKHR(
-      VkCommandBuffer commandBuffer,
-      uint32_t infoCount,
-      const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-      const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos);
+                      VkCommandBuffer commandBuffer,
+                      uint32_t infoCount,
+                      const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+                      const VkAccelerationStructureBuildRangeInfoKHR*
+                                                const* ppBuildRangeInfos) const;
 
   private:
     PFN_vkSetDebugUtilsObjectNameEXT _vkSetDebugUtilsObjectNameEXT = nullptr;
@@ -146,17 +147,18 @@ namespace mt
       VkCommandBuffer commandBuffer,
       uint32_t infoCount,
       const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
-      const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
+      const VkAccelerationStructureBuildRangeInfoKHR*
+                                                const* ppBuildRangeInfos) const
   {
     if(_vkCmdBuildAccelerationStructuresKHR == nullptr)
     {
       return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 
-    vkCmdBuildAccelerationStructuresKHR(commandBuffer,
-                                        infoCount,
-                                        pInfos,
-                                        ppBuildRangeInfos);
+    _vkCmdBuildAccelerationStructuresKHR( commandBuffer,
+                                          infoCount,
+                                          pInfos,
+                                          ppBuildRangeInfos);
 
     return VK_SUCCESS;
   }

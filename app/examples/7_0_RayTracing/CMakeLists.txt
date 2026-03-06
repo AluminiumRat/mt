@@ -10,7 +10,6 @@ include_directories(.
                     ${TINY_GLTF_PATH})
 
 add_executable (rayTracing_example
-                "BLASAsset.cpp"
                 "BLASImporter.cpp"
                 "main.cpp"
                 "TestWindow.cpp")

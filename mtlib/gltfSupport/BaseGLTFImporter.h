@@ -124,10 +124,10 @@ namespace mt
     //  producer используется для загрузки данных на GPU. То есть фактически
     //    данные будут записаны на GPU только после сабмита в очередь команд
     //  debugName - имя, которое будет выставлено буферу
-    static ConstRef<DataBuffer> uploadData( const void* data,
-                                            size_t dataSize,
-                                            CommandProducerGraphic& producer,
-                                            const std::string& debugName);
+    static void uploadData( const DataBuffer& targetBuffer,
+                            const void* data,
+                            size_t dataSize,
+                            CommandProducerGraphic& producer);
 
     //  Получить текстуру, соответствующую info
     //  Может вернуть пустой ресурс, если импортеру не передан мэнеджер текстур
@@ -167,6 +167,28 @@ namespace mt
     //    по всей иерархии нод
     static glm::mat4 getTransform(const tinygltf::Node& node);
 
+  protected:
+    //  Создать буфер для хранения для GPU данных материала.
+    //  Вызываеся в getGPUMaterial, позволяет создавать специализированные
+    //    буферы в зависимости от их использования после импорта.
+    //  По умолчанию создает DataBuffer::STORAGE_BUFFER
+    virtual ConstRef<DataBuffer> createMaterialBuffer(
+                                                  size_t dataSize,
+                                                  const char* bufferName) const;
+    //  Создать буфер для хранения индексов вершин.
+    //  Вызываеся в uploadVertices, позволяет создавать специализированные
+    //    буферы в зависимости от их использования после импорта.
+    //  По умолчанию создает DataBuffer::STORAGE_BUFFER
+    virtual ConstRef<DataBuffer> createIndexBuffer(
+                                                  size_t dataSize,
+                                                  const char* bufferName) const;
+    //  Создать буфер для хранения данных вершин.
+    //  Вызываеся в uploadVertices, позволяет создавать специализированные
+    //    буферы в зависимости от их использования после импорта.
+    //  По умолчанию создает DataBuffer::STORAGE_BUFFER
+    virtual ConstRef<DataBuffer> createVertexBuffer(
+                                                  size_t dataSize,
+                                                  const char* bufferName) const;
   private:
     //  Очистить внутреннее состояние перед импортом файла
     void _clear() noexcept;
@@ -190,10 +212,18 @@ namespace mt
     std::vector<uint32_t> _readIndices( const tinygltf::Accessor& accessor,
                                         const std::string& meshName) const;
 
+    //  Загрузить индексный буффер на GPU.
+    //  Если data пустой, возвращает nullptr
+    ConstRef<DataBuffer> _uploadIndexBuffer(
+                                          const std::vector<uint32_t>& data,
+                                          CommandProducerGraphic& producer,
+                                          const std::string& bufferName) const;
+
     //  Загрузить вершинный буффер на GPU.
     //  Если data пустой, возвращает nullptr
     template<typename ComponentType>
-    ConstRef<DataBuffer> _uploadBuffer( const std::vector<ComponentType>& data,
+    ConstRef<DataBuffer> _uploadVertexBuffer(
+                                        const std::vector<ComponentType>& data,
                                         CommandProducerGraphic& producer,
                                         const std::string& bufferName) const;
   private:

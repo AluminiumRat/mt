@@ -8,6 +8,8 @@ include_directories(..
                     ${VKMEMALLOC_PATH})
 
 set(SOURCES
+    "accelerationStructure/BLAS.cpp"
+    "accelerationStructure/BLASGeometry.cpp"
     "image/Image.cpp"
     "image/ImageAccess.cpp"
     "image/ImageAccessSet.cpp"

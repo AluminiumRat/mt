@@ -305,33 +305,37 @@ const DataBuffer& BaseGLTFImporter::getGPUMaterial(
   gpuData.normalTexCoord = material.normalTexCoord;
   gpuData.occlusionTexCoord = material.occlusionTexCoord;
   gpuData.emissiveTexCoord = material.emissiveTexCoord;
-  ConstRef<DataBuffer> newGpuMaterial = uploadData( &gpuData,
-                                                    sizeof(gpuData),
-                                                    producer,
-                                                    bufferName);
-  _gpuMaterials[materialIndex] = newGpuMaterial;
-  return *newGpuMaterial;
+
+  ConstRef<DataBuffer> gpuBuffer = createMaterialBuffer(sizeof(gpuData),
+                                                        bufferName.c_str());
+  uploadData(*gpuBuffer, &gpuData, sizeof(gpuData), producer);
+
+  _gpuMaterials[materialIndex] = gpuBuffer;
+  return *gpuBuffer;
 }
 
-ConstRef<DataBuffer> BaseGLTFImporter::uploadData(
-                                                const void* data,
-                                                size_t dataSize,
-                                                CommandProducerGraphic& producer,
-                                                const std::string& debugName)
+ConstRef<DataBuffer> BaseGLTFImporter::createMaterialBuffer(
+                                                  size_t dataSize,
+                                                  const char* bufferName) const
+{
+  return ConstRef(new DataBuffer( device(),
+                                  dataSize,
+                                  DataBuffer::STORAGE_BUFFER,
+                                  bufferName));
+}
+
+void BaseGLTFImporter::uploadData(const DataBuffer& targetBuffer,
+                                  const void* data,
+                                  size_t dataSize,
+                                  CommandProducerGraphic& producer)
 {
   Device& device = producer.queue().device();
-  ConstRef<DataBuffer> gpuBuffer(new DataBuffer(
-                                            device,
-                                            dataSize,
-                                            DataBuffer::STORAGE_BUFFER,
-                                            debugName.c_str()));
   Ref<DataBuffer> stagingBuffer(new DataBuffer( device,
                                                 dataSize,
                                                 DataBuffer::UPLOADING_BUFFER,
                                                 "Uploading buffer"));
   stagingBuffer->uploadData(data, 0, dataSize);
-  producer.copyFromBufferToBuffer(*stagingBuffer, *gpuBuffer, 0, 0, dataSize);
-  return gpuBuffer;
+  producer.copyFromBufferToBuffer(*stagingBuffer, targetBuffer, 0, 0, dataSize);
 }
 
 BaseGLTFImporter::VerticesData
@@ -524,51 +528,91 @@ BaseGLTFImporter::GPUVerticesData
   gpuData.vertexCount = data.vertexCount;
   gpuData.bound = data.bound;
 
-  gpuData.indices = _uploadBuffer(data.indices,
-                                  producer,
-                                  namePrefix + "INDICES");
+  gpuData.indices = _uploadIndexBuffer( data.indices,
+                                        producer,
+                                        namePrefix + "INDICES");
 
-  gpuData.positions = _uploadBuffer(data.positions,
-                                    producer,
-                                    namePrefix + "POSITION");
+  gpuData.positions = _uploadVertexBuffer(data.positions,
+                                          producer,
+                                          namePrefix + "POSITION");
 
-  gpuData.normals = _uploadBuffer(data.normals,
-                                  producer,
-                                  namePrefix + "NORMAL");
+  gpuData.normals = _uploadVertexBuffer(data.normals,
+                                        producer,
+                                        namePrefix + "NORMAL");
 
-  gpuData.tangents = _uploadBuffer( data.tangents,
-                                    producer,
-                                    namePrefix + "TANGENT");
+  gpuData.tangents = _uploadVertexBuffer( data.tangents,
+                                          producer,
+                                          namePrefix + "TANGENT");
 
-  gpuData.texCoord0 = _uploadBuffer(data.texCoord0,
-                                    producer,
-                                    namePrefix + "TEXCOORD_0");
+  gpuData.texCoord0 = _uploadVertexBuffer(data.texCoord0,
+                                          producer,
+                                          namePrefix + "TEXCOORD_0");
 
-  gpuData.texCoord1 = _uploadBuffer(data.texCoord1,
-                                    producer,
-                                    namePrefix + "TEXCOORD_1");
+  gpuData.texCoord1 = _uploadVertexBuffer(data.texCoord1,
+                                          producer,
+                                          namePrefix + "TEXCOORD_1");
 
-  gpuData.texCoord2 = _uploadBuffer(data.texCoord2,
-                                    producer,
-                                    namePrefix + "TEXCOORD_2");
+  gpuData.texCoord2 = _uploadVertexBuffer(data.texCoord2,
+                                          producer,
+                                          namePrefix + "TEXCOORD_2");
 
-  gpuData.texCoord3 = _uploadBuffer(data.texCoord3,
-                                    producer,
-                                    namePrefix + "TEXCOORD_3");
+  gpuData.texCoord3 = _uploadVertexBuffer(data.texCoord3,
+                                          producer,
+                                          namePrefix + "TEXCOORD_3");
   return gpuData;
 }
 
+ConstRef<DataBuffer> BaseGLTFImporter::_uploadIndexBuffer(
+                                            const std::vector<uint32_t>& data,
+                                            CommandProducerGraphic& producer,
+                                            const std::string& bufferName) const
+{
+  if(data.empty()) return ConstRef<DataBuffer>();
+  ConstRef<DataBuffer> gpuBuffer = createIndexBuffer(
+                                            data.size() * sizeof(uint32_t),
+                                            bufferName.c_str());
+  uploadData( *gpuBuffer,
+              data.data(),
+              data.size() * sizeof(uint32_t),
+              producer);
+  return gpuBuffer;
+}
+
+ConstRef<DataBuffer> BaseGLTFImporter::createIndexBuffer(
+                                                  size_t dataSize,
+                                                  const char* bufferName) const
+{
+  return ConstRef(new DataBuffer(device(),
+                                 dataSize,
+                                 DataBuffer::STORAGE_BUFFER,
+                                 bufferName));
+}
+
 template<typename ComponentType>
-ConstRef<DataBuffer> BaseGLTFImporter::_uploadBuffer(
+ConstRef<DataBuffer> BaseGLTFImporter::_uploadVertexBuffer(
                                         const std::vector<ComponentType>& data,
                                         CommandProducerGraphic& producer,
                                         const std::string& bufferName) const
 {
   if(data.empty()) return ConstRef<DataBuffer>();
-  return uploadData(data.data(),
-                    data.size() * sizeof(ComponentType),
-                    producer,
-                    bufferName);
+  ConstRef<DataBuffer> gpuBuffer = createVertexBuffer(
+                                            data.size() * sizeof(ComponentType),
+                                            bufferName.c_str());
+  uploadData( *gpuBuffer,
+              data.data(),
+              data.size() * sizeof(ComponentType),
+              producer);
+  return gpuBuffer;
+}
+
+ConstRef<DataBuffer> BaseGLTFImporter::createVertexBuffer(
+                                                  size_t dataSize,
+                                                  const char* bufferName) const
+{
+  return ConstRef(new DataBuffer(device(),
+                                 dataSize,
+                                 DataBuffer::STORAGE_BUFFER,
+                                 bufferName));
 }
 
 glm::mat4 BaseGLTFImporter::getTransform(const tinygltf::Node& node)

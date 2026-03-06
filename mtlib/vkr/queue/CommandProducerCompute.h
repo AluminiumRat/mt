@@ -8,6 +8,9 @@
 
 namespace mt
 {
+  class BLAS;
+  struct BLASGeometry;
+
   //  Продюсер команд, реализующий функционал компьют очереди
   //  Так же включает в себя функционал CommandProducerTransfer
   class CommandProducerCompute : public CommandProducerTransfer
@@ -36,6 +39,13 @@ namespace mt
     inline void dispatch(uint32_t gridSizeX, uint32_t gridSizeY);
     inline void dispatch(glm::uvec2 gridSize);
     inline void dispatch(uint32_t gridSize);
+
+  private:
+    //  Работа с acceleration structures (BLAS и TLAS), не предназначено для
+    //  внешнего использования
+    friend class BLAS;
+    //  Создать команду на заполнение(построение) BLAS
+    void buildBLAS(const BLAS& blas, const DataBuffer& scratchBuffer);
 
   protected:
     virtual void finalizeCommands() noexcept override;

@@ -52,17 +52,17 @@ void BLASImporter::_processNode(int nodeIndex, const glm::mat4& parentTransform)
 
 void BLASImporter::_processMesh(int gltfMeshIndex, const glm::mat4& tansform)
 {
-  const BLASAsset* asset = _getAsset(gltfMeshIndex);
+  const BLAS* asset = _getAsset(gltfMeshIndex);
 }
 
-const BLASAsset* BLASImporter::_getAsset(int meshIndex)
+const BLAS* BLASImporter::_getAsset(int meshIndex)
 {
   if(_assets[meshIndex] != nullptr) return _assets[meshIndex].get();
 
   const tinygltf::Mesh& gltfMesh = _model->meshes[meshIndex];
   std::string meshName = filename() + ":" + gltfMesh.name;
 
-  std::vector<BLASAsset::Geometry> buffers;
+  std::vector<BLASGeometry> buffers;
   for(const tinygltf::Primitive& primitive : gltfMesh.primitives)
   {
     if(primitive.mode != TINYGLTF_MODE_TRIANGLES)
@@ -81,8 +81,7 @@ const BLASAsset* BLASImporter::_getAsset(int meshIndex)
                                                   *_producer,
                                                   meshName);
     if(gpuVertices.positions == nullptr) continue;
-    buffers.push_back(BLASAsset::Geometry{
-                                    .positions = gpuVertices.positions,
+    buffers.push_back(BLASGeometry{ .positions = gpuVertices.positions,
                                     .vertexCount = cpuVertices.positions.size(),
                                     .indices = gpuVertices.indices,
                                     .indexCount = cpuVertices.indices.size()});
@@ -90,10 +89,40 @@ const BLASAsset* BLASImporter::_getAsset(int meshIndex)
 
   if(buffers.empty()) return nullptr;
 
-  ConstRef<BLASAsset> newBlas(new BLASAsset(buffers,
-                                            *_producer,
-                                            meshName.c_str()));
+  Ref<BLAS> newBlas(new BLAS( buffers,
+                              meshName.c_str()));
+  newBlas->build(*_producer);
   _assets[meshIndex] = newBlas;
 
   return newBlas.get();
+}
+
+ConstRef<DataBuffer> BLASImporter::createIndexBuffer(
+                                                  size_t dataSize,
+                                                  const char* bufferName) const
+{
+  return ConstRef(new DataBuffer( device(),
+                                  dataSize,
+                                  VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                    VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                                    VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+                                  0,
+                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                  bufferName));
+}
+
+ConstRef<DataBuffer> BLASImporter::createVertexBuffer(
+                                                  size_t dataSize,
+                                                  const char* bufferName) const
+{
+  return ConstRef(new DataBuffer( device(),
+                                  dataSize,
+                                  VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                    VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                                    VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+                                  0,
+                                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                  bufferName));
 }

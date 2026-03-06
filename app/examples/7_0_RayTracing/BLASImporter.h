@@ -4,8 +4,7 @@
 
 #include <gltfSupport/BaseGLTFImporter.h>
 #include <util/Ref.h>
-
-#include <BLASAsset.h>
+#include <vkr/accelerationStructure/BLAS.h>
 
 namespace mt
 {
@@ -19,18 +18,26 @@ namespace mt
 
     void import(const std::filesystem::path& file);
 
+  protected:
+    virtual ConstRef<DataBuffer> createIndexBuffer(
+                                        size_t dataSize,
+                                        const char* bufferName) const override;
+    virtual ConstRef<DataBuffer> createVertexBuffer(
+                                        size_t dataSize,
+                                        const char* bufferName) const override;
+
   private:
     void _clear() noexcept;
 
     void _processNode(int nodeIndex, const glm::mat4& parentTransform);
     void _processMesh(int gltfMeshIndex, const glm::mat4& tansform);
 
-    const BLASAsset* _getAsset(int meshIndex);
+    const BLAS* _getAsset(int meshIndex);
 
   private:
     const tinygltf::Model* _model;
     CommandProducerGraphic* _producer;
 
-    std::vector<ConstRef<BLASAsset>> _assets;
+    std::vector<ConstRef<BLAS>> _assets;
   };
 }
