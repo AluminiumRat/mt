@@ -83,6 +83,8 @@ namespace mt
     virtual ~DataBuffer();
 
   public:
+    inline Device& device() const noexcept;
+
     inline VkBuffer handle() const noexcept;
     inline size_t size() const noexcept;
 
@@ -138,6 +140,11 @@ namespace mt
     other._data = nullptr;
 
     return *this;
+  }
+
+  inline Device& DataBuffer::device() const noexcept
+  {
+    return _device;
   }
 
   inline VkBuffer DataBuffer::handle() const noexcept

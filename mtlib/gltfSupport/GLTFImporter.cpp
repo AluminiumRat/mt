@@ -54,11 +54,11 @@ GLTFImporter::DrawablesList GLTFImporter::importGLTF(
   _clear();
 
   _model = &parseFile(file);
+  _meshAssets.resize(_model->meshes.size());
 
   std::unique_ptr<CommandProducerGraphic> producer =
                               uploadingQueue().startCommands("GLTF uploading");
   _producer = producer.get();
-  _meshAssets.resize(_model->meshes.size());
 
   for(const tinygltf::Scene& scene : _model->scenes)
   {

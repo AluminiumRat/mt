@@ -6,9 +6,12 @@ include_directories(.
                     ../../../mtlib
                     ${GLM_PATH}
                     ${Vulkan_INCLUDE_DIRS}
-                    ${VKMEMALLOC_PATH})
+                    ${VKMEMALLOC_PATH}
+                    ${TINY_GLTF_PATH})
 
 add_executable (rayTracing_example
+                "BLASAsset.cpp"
+                "BLASImporter.cpp"
                 "main.cpp"
                 "TestWindow.cpp")
 
@@ -18,6 +21,7 @@ target_link_libraries(rayTracing_example
                       ${GLFW_PATH}/lib-vc2022/glfw3.lib
                       ${YamlCPP_LIBRARIES}
                       asyncTask
+                      gltfSupport
                       gui
                       imageIO
                       resourceManagement
