@@ -25,4 +25,24 @@ ExtFunctions::ExtFunctions(VkDevice device) noexcept
           (PFN_vkGetBufferDeviceAddress)
                               vkGetDeviceProcAddr(device,
                                                   "vkGetBufferDeviceAddress");
+
+  _vkGetAccelerationStructureBuildSizesKHR =
+    (PFN_vkGetAccelerationStructureBuildSizesKHR)
+                vkGetDeviceProcAddr(device,
+                                    "vkGetAccelerationStructureBuildSizesKHR");
+
+  _vkCreateAccelerationStructureKHR =
+        (PFN_vkCreateAccelerationStructureKHR)
+                        vkGetDeviceProcAddr(device,
+                                            "vkCreateAccelerationStructureKHR");
+
+  _vkDestroyAccelerationStructureKHR =
+        (PFN_vkDestroyAccelerationStructureKHR)
+                      vkGetDeviceProcAddr(device,
+                                          "vkDestroyAccelerationStructureKHR");
+
+  _vkCmdBuildAccelerationStructuresKHR =
+        (PFN_vkCmdBuildAccelerationStructuresKHR)
+                      vkGetDeviceProcAddr(device,
+                                        "vkCmdBuildAccelerationStructuresKHR");
 }

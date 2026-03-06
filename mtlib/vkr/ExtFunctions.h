@@ -26,11 +26,38 @@ namespace mt
     inline VkDeviceAddress vkGetBufferDeviceAddress(
                               VkBufferDeviceAddressInfoKHR* addressInfo) const;
 
+    inline VkResult vkGetAccelerationStructureBuildSizesKHR(
+                  VkAccelerationStructureBuildTypeKHR buildType,
+                  const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo,
+                  const uint32_t* pMaxPrimitiveCounts,
+                  VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) const;
+
+    inline VkResult vkCreateAccelerationStructureKHR(
+                      const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
+                      VkAccelerationStructureKHR* pAccelerationStructure) const;
+
+    inline void vkDestroyAccelerationStructureKHR(
+                        VkAccelerationStructureKHR accelerationStructure) const;
+
+    inline VkResult vkCmdBuildAccelerationStructuresKHR(
+      VkCommandBuffer commandBuffer,
+      uint32_t infoCount,
+      const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+      const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos);
+
   private:
     PFN_vkSetDebugUtilsObjectNameEXT _vkSetDebugUtilsObjectNameEXT = nullptr;
     PFN_vkCmdBeginDebugUtilsLabelEXT _vkCmdBeginDebugUtilsLabelEXT = nullptr;
     PFN_vkCmdEndDebugUtilsLabelEXT _vkCmdEndDebugUtilsLabelEXT = nullptr;
     PFN_vkGetBufferDeviceAddress _vkGetBufferDeviceAddress = nullptr;
+    PFN_vkGetAccelerationStructureBuildSizesKHR
+                            _vkGetAccelerationStructureBuildSizesKHR = nullptr;
+    PFN_vkCreateAccelerationStructureKHR
+                                    _vkCreateAccelerationStructureKHR = nullptr;
+    PFN_vkDestroyAccelerationStructureKHR
+                                  _vkDestroyAccelerationStructureKHR = nullptr;
+    PFN_vkCmdBuildAccelerationStructuresKHR
+                                _vkCmdBuildAccelerationStructuresKHR = nullptr;
     VkDevice _device = VK_NULL_HANDLE;
   };
 
@@ -71,5 +98,66 @@ namespace mt
                                 VkBufferDeviceAddressInfoKHR* addressInfo) const
   {
     return _vkGetBufferDeviceAddress(_device, addressInfo);
+  }
+
+  inline VkResult ExtFunctions::vkGetAccelerationStructureBuildSizesKHR(
+                VkAccelerationStructureBuildTypeKHR buildType,
+                const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo,
+                const uint32_t* pMaxPrimitiveCounts,
+                VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) const
+  {
+    if(_vkGetAccelerationStructureBuildSizesKHR == nullptr)
+    {
+      return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+
+    _vkGetAccelerationStructureBuildSizesKHR( _device,
+                                              buildType,
+                                              pBuildInfo,
+                                              pMaxPrimitiveCounts,
+                                              pSizeInfo);
+
+    return VK_SUCCESS;
+  }
+
+  inline VkResult ExtFunctions::vkCreateAccelerationStructureKHR(
+                        const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
+                        VkAccelerationStructureKHR* pAccelerationStructure) const
+  {
+    if(_vkCreateAccelerationStructureKHR == nullptr)
+    {
+      return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+    return _vkCreateAccelerationStructureKHR( _device,
+                                              pCreateInfo,
+                                              nullptr,
+                                              pAccelerationStructure);
+  }
+
+  inline void ExtFunctions::vkDestroyAccelerationStructureKHR(
+                        VkAccelerationStructureKHR accelerationStructure) const
+  {
+    _vkDestroyAccelerationStructureKHR( _device,
+                                        accelerationStructure,
+                                        nullptr);
+  }
+
+  inline VkResult ExtFunctions::vkCmdBuildAccelerationStructuresKHR(
+      VkCommandBuffer commandBuffer,
+      uint32_t infoCount,
+      const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+      const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
+  {
+    if(_vkCmdBuildAccelerationStructuresKHR == nullptr)
+    {
+      return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+
+    vkCmdBuildAccelerationStructuresKHR(commandBuffer,
+                                        infoCount,
+                                        pInfos,
+                                        ppBuildRangeInfos);
+
+    return VK_SUCCESS;
   }
 }

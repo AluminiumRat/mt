@@ -81,13 +81,18 @@ const BLASAsset* BLASImporter::_getAsset(int meshIndex)
                                                   *_producer,
                                                   meshName);
     if(gpuVertices.positions == nullptr) continue;
-    buffers.push_back(BLASAsset::Geometry{.positions = gpuVertices.positions,
-                                          .indices = gpuVertices.indices});
+    buffers.push_back(BLASAsset::Geometry{
+                                    .positions = gpuVertices.positions,
+                                    .vertexCount = cpuVertices.positions.size(),
+                                    .indices = gpuVertices.indices,
+                                    .indexCount = cpuVertices.indices.size()});
   }
 
   if(buffers.empty()) return nullptr;
 
-  ConstRef<BLASAsset> newBlas(new BLASAsset(buffers));
+  ConstRef<BLASAsset> newBlas(new BLASAsset(buffers,
+                                            *_producer,
+                                            meshName.c_str()));
   _assets[meshIndex] = newBlas;
 
   return newBlas.get();

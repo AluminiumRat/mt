@@ -53,8 +53,13 @@ void PhysicalDevice::_getProperties()
 
 void PhysicalDevice::_getFeatures()
 {
+  _features.accelerationFeature =
+                              VkPhysicalDeviceAccelerationStructureFeaturesKHR{};
+  _features.accelerationFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+
   _features.features14 = VkPhysicalDeviceVulkan14Features{};
   _features.features14.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES;
+  _features.features14.pNext = &_features.accelerationFeature;
 
   _features.features13 = VkPhysicalDeviceVulkan13Features{};
   _features.features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
@@ -294,6 +299,14 @@ bool PhysicalDevice::areFeaturesSupported(
   VKR_CHECK_FEATURE_14(pipelineRobustness)
   VKR_CHECK_FEATURE_14(hostImageCopy)
   VKR_CHECK_FEATURE_14(pushDescriptor)
+
+  #define VKR_CHECK_ACCELERATION_STRUCTURE(featureName) \
+    if(features.accelerationFeature.##featureName) featuresSupported &= bool(_features.accelerationFeature.##featureName);
+  VKR_CHECK_ACCELERATION_STRUCTURE(accelerationStructure)
+  VKR_CHECK_ACCELERATION_STRUCTURE(accelerationStructureCaptureReplay)
+  VKR_CHECK_ACCELERATION_STRUCTURE(accelerationStructureIndirectBuild)
+  VKR_CHECK_ACCELERATION_STRUCTURE(accelerationStructureHostCommands)
+  VKR_CHECK_ACCELERATION_STRUCTURE(descriptorBindingAccelerationStructureUpdateAfterBind)
 
   return featuresSupported;
 }

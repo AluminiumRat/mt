@@ -20,9 +20,11 @@ int main(int argc, char* argv[])
     GUILib guiLib;
 
     std::unique_ptr<Device> device = guiLib.createDevice(
-                                                      {},
-                                                      {},
-                                                      GRAPHICS_CONFIGURATION);
+                                        {.accelerationFeature = {
+                                            .accelerationStructure = VK_TRUE}},
+                                        { "VK_KHR_acceleration_structure",
+                                          "VK_KHR_deferred_host_operations"},
+                                        GRAPHICS_CONFIGURATION);
     TestWindow mainWindow(*device);
     while (!guiLib.shouldBeClosed())
     {

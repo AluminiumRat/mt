@@ -25,6 +25,7 @@ namespace mt
       VkPhysicalDeviceVulkan12Features features12;
       VkPhysicalDeviceVulkan13Features features13;
       VkPhysicalDeviceVulkan14Features features14;
+      VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationFeature;
     };
 
     struct Properties
