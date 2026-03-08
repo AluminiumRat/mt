@@ -10,6 +10,7 @@ include_directories(..
 set(SOURCES
     "accelerationStructure/BLAS.cpp"
     "accelerationStructure/BLASGeometry.cpp"
+    "accelerationStructure/TLAS.cpp"
     "image/Image.cpp"
     "image/ImageAccess.cpp"
     "image/ImageAccessSet.cpp"

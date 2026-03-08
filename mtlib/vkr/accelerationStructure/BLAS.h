@@ -31,6 +31,7 @@ namespace mt
 
     inline Device& device() const noexcept;
     inline VkAccelerationStructureKHR handle() const noexcept;
+    inline VkDeviceAddress deviceAddress() const noexcept;
 
     inline const std::vector<BLASGeometry>& geometry() const noexcept;
 
@@ -51,6 +52,7 @@ namespace mt
     ConstRef<DataBuffer> _blasBuffer;
     ConstRef<DataBuffer> _scratchBuffer;
     VkAccelerationStructureKHR _handle;
+    VkDeviceAddress _deviceAddress;
 
     //  Храним указатели на геометрию, чтобы защитить буферы от удаления
     std::vector<BLASGeometry> _geometry;
@@ -64,6 +66,11 @@ namespace mt
   inline VkAccelerationStructureKHR BLAS::handle() const noexcept
   {
     return _handle;
+  }
+
+  inline VkDeviceAddress BLAS::deviceAddress() const noexcept
+  {
+    return _deviceAddress;
   }
 
   inline const std::vector<BLASGeometry>& BLAS::geometry() const noexcept

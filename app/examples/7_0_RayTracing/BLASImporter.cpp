@@ -19,9 +19,10 @@ void BLASImporter::_clear() noexcept
   _model = nullptr;
   _producer = nullptr;
   _assets.clear();
+  _instances.clear();
 }
 
-void BLASImporter::import(const std::filesystem::path& file)
+BLASInstances BLASImporter::import(const std::filesystem::path& file)
 {
   _clear();
 
@@ -38,6 +39,8 @@ void BLASImporter::import(const std::filesystem::path& file)
   }
 
   uploadingQueue().submitCommands(std::move(producer));
+
+  return std::move(_instances);
 }
 
 void BLASImporter::_processNode(int nodeIndex, const glm::mat4& parentTransform)
@@ -53,6 +56,11 @@ void BLASImporter::_processNode(int nodeIndex, const glm::mat4& parentTransform)
 void BLASImporter::_processMesh(int gltfMeshIndex, const glm::mat4& tansform)
 {
   const BLAS* asset = _getAsset(gltfMeshIndex);
+  if(asset != nullptr)
+  {
+    _instances.push_back(BLASInstance{.blas = ConstRef(asset),
+                                      .transform = tansform});
+  }
 }
 
 const BLAS* BLASImporter::_getAsset(int meshIndex)

@@ -9,7 +9,7 @@
 namespace mt
 {
   class BLAS;
-  struct BLASGeometry;
+  class TLAS;
 
   //  Продюсер команд, реализующий функционал компьют очереди
   //  Так же включает в себя функционал CommandProducerTransfer
@@ -44,8 +44,13 @@ namespace mt
     //  Работа с acceleration structures (BLAS и TLAS), не предназначено для
     //  внешнего использования
     friend class BLAS;
-    //  Создать команду на заполнение(построение) BLAS
+    //  Добавить команду на заполнение(построение) BLAS
     void buildBLAS(const BLAS& blas, const DataBuffer& scratchBuffer);
+
+    friend class TLAS;
+    void buildTLAS( const TLAS& tlas,
+                    const DataBuffer& geometryBuffer,
+                    const DataBuffer& scratchBuffer);
 
   protected:
     virtual void finalizeCommands() noexcept override;

@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include <gui/RenderWindow.h>
+#include <util/Ref.h>
+#include <vkr/accelerationStructure/TLAS.h>
 
 namespace mt
 {
@@ -14,5 +16,8 @@ namespace mt
 
   protected:
     virtual void drawImplementation(FrameBuffer& frameBuffer) override;
+
+  private:
+    Ref<TLAS> _tlas;
   };
 }

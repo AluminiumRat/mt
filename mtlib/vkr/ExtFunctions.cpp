@@ -45,4 +45,9 @@ ExtFunctions::ExtFunctions(VkDevice device) noexcept
         (PFN_vkCmdBuildAccelerationStructuresKHR)
                       vkGetDeviceProcAddr(device,
                                         "vkCmdBuildAccelerationStructuresKHR");
+
+  _vkGetAccelerationStructureDeviceAddressKHR =
+        (PFN_vkGetAccelerationStructureDeviceAddressKHR)
+                      vkGetDeviceProcAddr(device,
+                                  "vkGetAccelerationStructureDeviceAddressKHR");
 }

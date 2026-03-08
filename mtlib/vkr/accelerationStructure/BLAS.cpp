@@ -13,6 +13,7 @@ BLAS::BLAS( std::span<const BLASGeometry> geometry, const char* debugName) :
   _device(geometry[0].positions->device()),
   _debugName(debugName),
   _handle(VK_NULL_HANDLE),
+  _deviceAddress(0),
   _geometry(geometry.begin(), geometry.end())
 {
   try
@@ -38,6 +39,9 @@ void BLAS::_clear() noexcept
     _device.extFunctions().vkDestroyAccelerationStructureKHR(_handle);
     _handle = VK_NULL_HANDLE;
   }
+  _deviceAddress = 0;
+  _blasBuffer = nullptr;
+  _scratchBuffer = nullptr;
 }
 
 void BLAS::_makeHandle()
@@ -49,8 +53,8 @@ void BLAS::_makeHandle()
   VkAccelerationStructureBuildGeometryInfoKHR buildGeometyInfo{};
   buildGeometyInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
   buildGeometyInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-  buildGeometyInfo.geometryCount = (uint32_t)geometryInfo.size();
   buildGeometyInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+  buildGeometyInfo.geometryCount = (uint32_t)geometryInfo.size();
   buildGeometyInfo.pGeometries = geometryInfo.data();
 
   VkAccelerationStructureBuildSizesInfoKHR sizeInfo =
@@ -73,7 +77,7 @@ void BLAS::_makeHandle()
                           VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                         0,
                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                        (_debugName + ":Scratch").c_str());
+                        (_debugName + ":BLASScratch").c_str());
 
   VkAccelerationStructureCreateInfoKHR createBLASInfo{};
   createBLASInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -87,6 +91,13 @@ void BLAS::_makeHandle()
   {
     throw std::runtime_error(_debugName + ": unbale to create BLAS");
   }
+
+  VkAccelerationStructureDeviceAddressInfoKHR blasInfo{};
+  blasInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+  blasInfo.accelerationStructure = _handle;
+  _deviceAddress = _device.extFunctions().
+                          vkGetAccelerationStructureDeviceAddressKHR(&blasInfo);
+  if(_deviceAddress == 0) throw std::runtime_error(_debugName + ": unbale to get BLAS's device address");
 }
 
 VkAccelerationStructureBuildSizesInfoKHR BLAS::_getSizeInfo(

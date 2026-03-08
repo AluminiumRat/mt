@@ -5,6 +5,7 @@
 #include <gltfSupport/BaseGLTFImporter.h>
 #include <util/Ref.h>
 #include <vkr/accelerationStructure/BLAS.h>
+#include <vkr/accelerationStructure/BLASInstance.h>
 
 namespace mt
 {
@@ -16,7 +17,7 @@ namespace mt
     BLASImporter& operator = (const BLASImporter&) = delete;
     virtual ~BLASImporter() noexcept = default;
 
-    void import(const std::filesystem::path& file);
+    BLASInstances import(const std::filesystem::path& file);
 
   protected:
     virtual ConstRef<DataBuffer> createIndexBuffer(
@@ -39,5 +40,7 @@ namespace mt
     CommandProducerGraphic* _producer;
 
     std::vector<ConstRef<BLAS>> _assets;
+
+    BLASInstances _instances;
   };
 }

@@ -1,4 +1,5 @@
-﻿#include <vkr/Device.h>
+﻿#include <vkr/queue/CommandProducerGraphic.h>
+#include <vkr/Device.h>
 
 #include <BLASImporter.h>
 #include <TestWindow.h>
@@ -13,7 +14,15 @@ TestWindow::TestWindow(Device& device) :
                 VK_FORMAT_UNDEFINED)
 {
   BLASImporter importer(*device.graphicQueue());
-  importer.import("examples/Duck/glTF/Duck.gltf");
+  BLASInstances importedInstances =
+                                importer.import("examples/Duck/glTF/Duck.gltf");
+  MT_ASSERT(!importedInstances.empty());
+  _tlas = new TLAS(device, importedInstances, "testTLAS");
+
+  std::unique_ptr<CommandProducerGraphic> producer =
+                                        device.graphicQueue()->startCommands();
+  _tlas->build(*producer);
+  device.graphicQueue()->submitCommands(std::move(producer));
 }
 
 void TestWindow::drawImplementation(FrameBuffer& frameBuffer)

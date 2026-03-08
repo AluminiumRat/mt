@@ -46,6 +46,9 @@ namespace mt
                       const VkAccelerationStructureBuildRangeInfoKHR*
                                                 const* ppBuildRangeInfos) const;
 
+    inline VkDeviceAddress vkGetAccelerationStructureDeviceAddressKHR(
+                      VkAccelerationStructureDeviceAddressInfoKHR* pInfo) const;
+
   private:
     PFN_vkSetDebugUtilsObjectNameEXT _vkSetDebugUtilsObjectNameEXT = nullptr;
     PFN_vkCmdBeginDebugUtilsLabelEXT _vkCmdBeginDebugUtilsLabelEXT = nullptr;
@@ -59,6 +62,8 @@ namespace mt
                                   _vkDestroyAccelerationStructureKHR = nullptr;
     PFN_vkCmdBuildAccelerationStructuresKHR
                                 _vkCmdBuildAccelerationStructuresKHR = nullptr;
+    PFN_vkGetAccelerationStructureDeviceAddressKHR
+                          _vkGetAccelerationStructureDeviceAddressKHR = nullptr;
     VkDevice _device = VK_NULL_HANDLE;
   };
 
@@ -161,5 +166,13 @@ namespace mt
                                           ppBuildRangeInfos);
 
     return VK_SUCCESS;
+  }
+
+  inline VkDeviceAddress
+            ExtFunctions::vkGetAccelerationStructureDeviceAddressKHR(
+                      VkAccelerationStructureDeviceAddressInfoKHR* pInfo) const
+  {
+    if(_vkGetAccelerationStructureDeviceAddressKHR == nullptr) return 0;
+    return _vkGetAccelerationStructureDeviceAddressKHR(_device, pInfo);
   }
 }
