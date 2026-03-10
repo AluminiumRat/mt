@@ -18,7 +18,7 @@ TestWindow::TestWindow(Device& device) :
   _tlasBinding(_technique.getOrCreateResourceBinding("tlas")),
   _pass(_technique.getOrCreatePass("RenderPass"))
 {
-  loadConfigurator(*_configurator, "examples/rayTracing/intersectionTest.tch");
+  loadConfigurator(*_configurator, "examples/rayTracing/rayQueryTest.tch");
   _configurator->rebuildConfiguration();
 
   BLASImporter importer(*device.graphicQueue());

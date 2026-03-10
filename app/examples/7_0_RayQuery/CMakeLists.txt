@@ -1,6 +1,6 @@
 ﻿cmake_minimum_required (VERSION 3.10)
 
-project (rayTracing_example)
+project (rayQuery)
 
 include_directories(.
                     ../../../mtlib
@@ -9,12 +9,12 @@ include_directories(.
                     ${VKMEMALLOC_PATH}
                     ${TINY_GLTF_PATH})
 
-add_executable (rayTracing_example
+add_executable (rayQuery
                 "BLASImporter.cpp"
                 "main.cpp"
                 "TestWindow.cpp")
 
-target_link_libraries(rayTracing_example
+target_link_libraries(rayQuery
                       ${Vulkan_LIBRARIES}
                       ${Shaderc_LIBRARIES}
                       ${GLFW_PATH}/lib-vc2022/glfw3.lib
