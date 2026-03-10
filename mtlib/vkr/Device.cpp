@@ -69,10 +69,13 @@ void Device::_createHandle( const std::vector<std::string>& requiredExtensions,
     }
   }
 
-  _features.accelerationFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+  _features.rayQuery.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+
+  _features.accelerationStructure.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+  _features.accelerationStructure.pNext = &_features.rayQuery;
 
   _features.features14.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES;
-  _features.features14.pNext = &_features.accelerationFeature;
+  _features.features14.pNext = &_features.accelerationStructure;
 
   _features.features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
   _features.features13.pNext = &_features.features14;

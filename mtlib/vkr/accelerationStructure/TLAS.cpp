@@ -125,7 +125,8 @@ std::vector<VkAccelerationStructureInstanceKHR> TLAS::makeInstancesInfo() const
     instance.transform.matrix[0][3] = blas.transform[3][0];
     instance.transform.matrix[1][3] = blas.transform[3][1];
     instance.transform.matrix[2][3] = blas.transform[3][2];
-    instance.flags = 0xFF;
+    //instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+    instance.mask = 0xFF;
     instance.accelerationStructureReference = blas.blas->deviceAddress();
     instances.push_back({instance});
   }

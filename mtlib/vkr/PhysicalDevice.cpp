@@ -53,13 +53,17 @@ void PhysicalDevice::_getProperties()
 
 void PhysicalDevice::_getFeatures()
 {
-  _features.accelerationFeature =
+  _features.rayQuery = VkPhysicalDeviceRayQueryFeaturesKHR{};
+  _features.rayQuery.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+
+  _features.accelerationStructure =
                               VkPhysicalDeviceAccelerationStructureFeaturesKHR{};
-  _features.accelerationFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+  _features.accelerationStructure.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+  _features.accelerationStructure.pNext = &_features.rayQuery;
 
   _features.features14 = VkPhysicalDeviceVulkan14Features{};
   _features.features14.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_4_FEATURES;
-  _features.features14.pNext = &_features.accelerationFeature;
+  _features.features14.pNext = &_features.accelerationStructure;
 
   _features.features13 = VkPhysicalDeviceVulkan13Features{};
   _features.features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
@@ -301,12 +305,16 @@ bool PhysicalDevice::areFeaturesSupported(
   VKR_CHECK_FEATURE_14(pushDescriptor)
 
   #define VKR_CHECK_ACCELERATION_STRUCTURE(featureName) \
-    if(features.accelerationFeature.##featureName) featuresSupported &= bool(_features.accelerationFeature.##featureName);
+    if(features.accelerationStructure.##featureName) featuresSupported &= bool(_features.accelerationStructure.##featureName);
   VKR_CHECK_ACCELERATION_STRUCTURE(accelerationStructure)
   VKR_CHECK_ACCELERATION_STRUCTURE(accelerationStructureCaptureReplay)
   VKR_CHECK_ACCELERATION_STRUCTURE(accelerationStructureIndirectBuild)
   VKR_CHECK_ACCELERATION_STRUCTURE(accelerationStructureHostCommands)
   VKR_CHECK_ACCELERATION_STRUCTURE(descriptorBindingAccelerationStructureUpdateAfterBind)
+
+  #define VKR_CHECK_RAY_QUERY(featureName) \
+    if(features.rayQuery.##featureName) featuresSupported &= bool(_features.rayQuery.##featureName);
+  VKR_CHECK_RAY_QUERY(rayQuery)
 
   return featuresSupported;
 }

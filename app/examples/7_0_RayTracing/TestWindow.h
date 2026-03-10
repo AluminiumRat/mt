@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <gui/RenderWindow.h>
+#include <technique/Technique.h>
 #include <util/Ref.h>
 #include <vkr/accelerationStructure/TLAS.h>
 
@@ -18,6 +19,11 @@ namespace mt
     virtual void drawImplementation(FrameBuffer& frameBuffer) override;
 
   private:
+    Ref<TechniqueConfigurator> _configurator;
+    Technique _technique;
+    TechniquePass& _pass;
+    ResourceBinding& _tlasBinding;
+
     Ref<TLAS> _tlas;
   };
 }

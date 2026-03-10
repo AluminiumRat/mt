@@ -1,4 +1,5 @@
-﻿#include <vkr/queue/CommandProducerGraphic.h>
+﻿#include <technique/TechniqueLoader.h>
+#include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/Device.h>
 
 #include <BLASImporter.h>
@@ -11,8 +12,15 @@ TestWindow::TestWindow(Device& device) :
                 "Test window",
                 std::nullopt,
                 std::nullopt,
-                VK_FORMAT_UNDEFINED)
+                VK_FORMAT_UNDEFINED),
+  _configurator(new TechniqueConfigurator(device, "Test technique")),
+  _technique(*_configurator),
+  _tlasBinding(_technique.getOrCreateResourceBinding("tlas")),
+  _pass(_technique.getOrCreatePass("RenderPass"))
 {
+  loadConfigurator(*_configurator, "examples/rayTracing/intersectionTest.tch");
+  _configurator->rebuildConfiguration();
+
   BLASImporter importer(*device.graphicQueue());
   BLASInstances importedInstances =
                                 importer.import("examples/Duck/glTF/Duck.gltf");
@@ -23,6 +31,8 @@ TestWindow::TestWindow(Device& device) :
                                         device.graphicQueue()->startCommands();
   _tlas->build(*producer);
   device.graphicQueue()->submitCommands(std::move(producer));
+
+  _tlasBinding.setTLAS(_tlas);
 }
 
 void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
@@ -31,6 +41,12 @@ void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
                                       device().graphicQueue()->startCommands();
 
   CommandProducerGraphic::RenderPass renderPass(*commandProducer, frameBuffer);
+    Technique::BindGraphic bind(_technique, _pass, *commandProducer);
+    if(bind.isValid())
+    {
+      commandProducer->draw(4);
+      bind.release();
+    }
   renderPass.endPass();
 
   device().graphicQueue()->submitCommands(std::move(commandProducer));
