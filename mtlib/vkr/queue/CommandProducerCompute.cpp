@@ -172,6 +172,7 @@ void CommandProducerCompute::buildTLAS( const TLAS& tlas,
   MT_ASSERT(!insideRenderPass());
 
   lockResource(tlas);
+  lockResource(geometryBuffer);
   lockResource(scratchBuffer);
 
   std::vector<VkAccelerationStructureInstanceKHR> instances =
@@ -198,14 +199,15 @@ void CommandProducerCompute::buildTLAS( const TLAS& tlas,
   geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
   geometry.geometry = geometryData;
 
-  VkAccelerationStructureBuildGeometryInfoKHR buildGeometyInfo{};
-  buildGeometyInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-  buildGeometyInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-  buildGeometyInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-  buildGeometyInfo.geometryCount = 1;
-  buildGeometyInfo.pGeometries = &geometry;
-  buildGeometyInfo.dstAccelerationStructure = tlas.handle();
-  buildGeometyInfo.scratchData.deviceAddress = scratchBuffer.deviceAddress();
+  VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo{};
+  buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+  buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+  buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+  buildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+  buildGeometryInfo.geometryCount = 1;
+  buildGeometryInfo.pGeometries = &geometry;
+  buildGeometryInfo.dstAccelerationStructure = tlas.handle();
+  buildGeometryInfo.scratchData.deviceAddress = scratchBuffer.deviceAddress();
 
   VkAccelerationStructureBuildRangeInfoKHR buildRange{};
   buildRange.primitiveCount = (uint32_t)tlas.blases().size();
@@ -215,6 +217,63 @@ void CommandProducerCompute::buildTLAS( const TLAS& tlas,
   queue().device().extFunctions().vkCmdBuildAccelerationStructuresKHR(
                                                               buffer.handle(),
                                                               1,
-                                                              &buildGeometyInfo,
+                                                              &buildGeometryInfo,
+                                                              &rangePtr);
+}
+
+void CommandProducerCompute::updateTLAS(const TLAS& tlas,
+                                        const DataBuffer& geometryBuffer,
+                                        const DataBuffer& scratchBuffer)
+{
+  MT_ASSERT(!insideRenderPass());
+
+  lockResource(tlas);
+  lockResource(geometryBuffer);
+  lockResource(scratchBuffer);
+
+  std::vector<VkAccelerationStructureInstanceKHR> instances =
+                                                      tlas.makeInstancesInfo();
+  size_t instancesSize = instances.size() * sizeof(instances[0]);
+  UniformMemoryPool::MemoryInfo stagingInfo =
+                              uniformMemorySession().write(
+                                                  (const char*)instances.data(),
+                                                  instancesSize);
+  copyFromBufferToBuffer( *stagingInfo.buffer,
+                          geometryBuffer,
+                          stagingInfo.offset,
+                          0,
+                          instancesSize);
+
+  VkAccelerationStructureGeometryDataKHR geometryData{};
+  geometryData.instances = VkAccelerationStructureGeometryInstancesDataKHR{};
+  geometryData.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+  geometryData.instances.arrayOfPointers = VK_FALSE;
+  geometryData.instances.data.deviceAddress = geometryBuffer.deviceAddress();
+
+  VkAccelerationStructureGeometryKHR geometry{};
+  geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+  geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+  geometry.geometry = geometryData;
+
+  VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo{};
+  buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+  buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+  buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+  buildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
+  buildGeometryInfo.geometryCount = 1;
+  buildGeometryInfo.pGeometries = &geometry;
+  buildGeometryInfo.srcAccelerationStructure = tlas.handle();
+  buildGeometryInfo.dstAccelerationStructure = tlas.handle();
+  buildGeometryInfo.scratchData.deviceAddress = scratchBuffer.deviceAddress();
+
+  VkAccelerationStructureBuildRangeInfoKHR buildRange{};
+  buildRange.primitiveCount = (uint32_t)tlas.blases().size();
+  const VkAccelerationStructureBuildRangeInfoKHR* rangePtr = &buildRange;
+
+  CommandBuffer& buffer = getOrCreateBuffer();
+  queue().device().extFunctions().vkCmdBuildAccelerationStructuresKHR(
+                                                              buffer.handle(),
+                                                              1,
+                                                              &buildGeometryInfo,
                                                               &rangePtr);
 }

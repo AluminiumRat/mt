@@ -3,6 +3,7 @@
 #include <gui/RenderWindow.h>
 #include <technique/Technique.h>
 #include <util/Ref.h>
+#include <vkr/accelerationStructure/BLASInstance.h>
 #include <vkr/accelerationStructure/TLAS.h>
 
 namespace mt
@@ -24,6 +25,7 @@ namespace mt
     TechniquePass& _pass;
     ResourceBinding& _tlasBinding;
 
+    BLASInstances _blasInstances;
     Ref<TLAS> _tlas;
   };
 }

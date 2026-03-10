@@ -22,10 +22,9 @@ TestWindow::TestWindow(Device& device) :
   _configurator->rebuildConfiguration();
 
   BLASImporter importer(*device.graphicQueue());
-  BLASInstances importedInstances =
-                                importer.import("examples/Duck/glTF/Duck.gltf");
-  MT_ASSERT(!importedInstances.empty());
-  _tlas = new TLAS(device, importedInstances, "testTLAS");
+  _blasInstances = importer.import("examples/Duck/glTF/Duck.gltf");
+  MT_ASSERT(!_blasInstances.empty());
+  _tlas = new TLAS(device, _blasInstances, "testTLAS");
 
   std::unique_ptr<CommandProducerGraphic> producer =
                                         device.graphicQueue()->startCommands();
@@ -48,6 +47,12 @@ void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
       bind.release();
     }
   renderPass.endPass();
+
+  // Анимация в TLAS
+  static int frameIndex = 0;
+  _blasInstances[0].transform[3] = glm::vec4(sin(frameIndex++ / 20.f), 0, 0, 1);
+  _blasInstances[0].mask = frameIndex % 200 > 180 ? 0 : 0xFF;
+  _tlas->update(_blasInstances, *commandProducer);
 
   device().graphicQueue()->submitCommands(std::move(commandProducer));
 }

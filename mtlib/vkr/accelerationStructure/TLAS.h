@@ -34,11 +34,22 @@ namespace mt
 
     void build(CommandProducerCompute& producer);
 
+    //  Пересобрать TLAS, если произошли изменения в расположении BLAS
+    //  instances должны содердать точно те же BLAS, что и в конструкторе, и
+    //  в том же порядке. Разрешается менять только BLASInstances::transform
+    //  и BLASInstances::mask
+    void update(const BLASInstances& instances,
+                CommandProducerCompute& producer);
+
   private:
     void _clear() noexcept;
     void _makeHandle();
-    VkAccelerationStructureBuildSizesInfoKHR _getSizeInfo(
-        const VkAccelerationStructureBuildGeometryInfoKHR& geometryInfo) const;
+    //  Сколько нужно памти для того чтобы построить TLAS
+    VkAccelerationStructureBuildSizesInfoKHR _getCreateSizeInfo(
+                  const VkAccelerationStructureGeometryKHR& geometryInfo) const;
+    //  Сколько нужно памяти чтобы обновить TLAS
+    VkAccelerationStructureBuildSizesInfoKHR _getUpdateSizeInfo(
+                  const VkAccelerationStructureGeometryKHR& geometryInfo) const;
 
   private:
     Device& _device;

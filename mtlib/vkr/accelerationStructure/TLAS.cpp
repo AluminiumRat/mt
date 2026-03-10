@@ -41,56 +41,26 @@ void TLAS::_clear() noexcept
 
 void TLAS::_makeHandle()
 {
-  std::vector<VkAccelerationStructureInstanceKHR> instances =
-                                                            makeInstancesInfo();
   VkAccelerationStructureGeometryDataKHR geometryData{};
   geometryData.instances = VkAccelerationStructureGeometryInstancesDataKHR{};
   geometryData.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
   geometryData.instances.arrayOfPointers = VK_FALSE;
-  geometryData.instances.data.hostAddress = instances.data();
 
   VkAccelerationStructureGeometryKHR geometry{};
   geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
   geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
   geometry.geometry = geometryData;
 
-  VkAccelerationStructureBuildGeometryInfoKHR buildGeometyInfo{};
-  buildGeometyInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-  buildGeometyInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-  buildGeometyInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-  buildGeometyInfo.geometryCount = 1;
-  buildGeometyInfo.pGeometries = &geometry;
-
-  VkAccelerationStructureBuildSizesInfoKHR sizeInfo =
-                                                _getSizeInfo(buildGeometyInfo);
+  VkAccelerationStructureBuildSizesInfoKHR createSizes =
+                                          _getCreateSizeInfo(geometry);
   _tlasBuffer = new DataBuffer(
                         _device,
-                        sizeInfo.accelerationStructureSize,
+                        createSizes.accelerationStructureSize,
                         VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
                           VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                         0,
                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                         (_debugName + ":TLAS").c_str());
-
-  _scratchBuffer = new DataBuffer(
-                        _device,
-                        sizeInfo.buildScratchSize,
-                        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
-                          VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
-                          VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                        0,
-                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                        (_debugName + ":TLASScratch").c_str());
-
-  _geometryBuffer = new DataBuffer(
-                          _device,
-                          instances.size() * sizeof(instances[0]),
-                          VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-                            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-                            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
-                          0,
-                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                          (_debugName + ":TLASGeometry").c_str());
 
   VkAccelerationStructureCreateInfoKHR createTLASInfo{};
   createTLASInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -104,6 +74,30 @@ void TLAS::_makeHandle()
   {
     throw std::runtime_error(_debugName + ": unbale to create TLAS");
   }
+
+  VkAccelerationStructureBuildSizesInfoKHR updateSizes =
+                                                  _getUpdateSizeInfo(geometry);
+  _scratchBuffer = new DataBuffer(
+                        _device,
+                        std::max( createSizes.buildScratchSize,
+                                  updateSizes.updateScratchSize),
+                        VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
+                          VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                          VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                        0,
+                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                        (_debugName + ":TLASScratch").c_str());
+
+  _geometryBuffer = new DataBuffer(
+                          _device,
+                          _blases.size() *
+                                    sizeof(VkAccelerationStructureInstanceKHR),
+                          VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+                          0,
+                          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                          (_debugName + ":TLASGeometry").c_str());
 }
 
 std::vector<VkAccelerationStructureInstanceKHR> TLAS::makeInstancesInfo() const
@@ -125,17 +119,31 @@ std::vector<VkAccelerationStructureInstanceKHR> TLAS::makeInstancesInfo() const
     instance.transform.matrix[0][3] = blas.transform[3][0];
     instance.transform.matrix[1][3] = blas.transform[3][1];
     instance.transform.matrix[2][3] = blas.transform[3][2];
-    //instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-    instance.mask = 0xFF;
+
+    instance.instanceCustomIndex = blas.instanceCustomIndex;
+    instance.mask = blas.mask;
+    instance.instanceShaderBindingTableRecordOffset =
+                                    blas.instanceShaderBindingTableRecordOffset;
+    instance.flags = blas.flags;
+
     instance.accelerationStructureReference = blas.blas->deviceAddress();
+
     instances.push_back({instance});
   }
   return instances;
 }
 
-VkAccelerationStructureBuildSizesInfoKHR TLAS::_getSizeInfo(
-          const VkAccelerationStructureBuildGeometryInfoKHR& geometryInfo) const
+VkAccelerationStructureBuildSizesInfoKHR TLAS::_getCreateSizeInfo(
+                  const VkAccelerationStructureGeometryKHR& geometryInfo) const
 {
+  VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo{};
+  buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+  buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+  buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+  buildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+  buildGeometryInfo.geometryCount = 1;
+  buildGeometryInfo.pGeometries = &geometryInfo;
+
   VkAccelerationStructureBuildSizesInfoKHR sizeInfo{};
   sizeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
 
@@ -143,7 +151,37 @@ VkAccelerationStructureBuildSizesInfoKHR TLAS::_getSizeInfo(
   VkResult result =
     _device.extFunctions().vkGetAccelerationStructureBuildSizesKHR(
                                 VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
-                                &geometryInfo,
+                                &buildGeometryInfo,
+                                &blasCount,
+                                &sizeInfo);
+  if(result != VK_SUCCESS)
+  {
+    throw std::runtime_error("Unable to call vkGetAccelerationStructureBuildSizesKHR. Check the extension VK_KHR_acceleration_structure.");
+  }
+  return sizeInfo;
+}
+
+VkAccelerationStructureBuildSizesInfoKHR TLAS::_getUpdateSizeInfo(
+                  const VkAccelerationStructureGeometryKHR& geometryInfo) const
+{
+  VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo{};
+  buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+  buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+  buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+  buildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR;
+  buildGeometryInfo.srcAccelerationStructure = _handle;
+  buildGeometryInfo.dstAccelerationStructure = _handle;
+  buildGeometryInfo.geometryCount = 1;
+  buildGeometryInfo.pGeometries = &geometryInfo;
+
+  VkAccelerationStructureBuildSizesInfoKHR sizeInfo{};
+  sizeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+
+  uint32_t blasCount = (uint32_t)_blases.size();
+  VkResult result =
+    _device.extFunctions().vkGetAccelerationStructureBuildSizesKHR(
+                                VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+                                &buildGeometryInfo,
                                 &blasCount,
                                 &sizeInfo);
   if(result != VK_SUCCESS)
@@ -155,7 +193,21 @@ VkAccelerationStructureBuildSizesInfoKHR TLAS::_getSizeInfo(
 
 void TLAS::build(CommandProducerCompute& producer)
 {
-  if(_scratchBuffer == nullptr) return;
-
   producer.buildTLAS(*this, *_geometryBuffer, *_scratchBuffer);
+}
+
+void TLAS::update(const BLASInstances& instances,
+                  CommandProducerCompute& producer)
+{
+  MT_ASSERT(instances.size() == _blases.size())
+  for(size_t i = 0; i < instances.size(); i++)
+  {
+    MT_ASSERT(_blases[i].blas == instances[i].blas);
+    MT_ASSERT(_blases[i].instanceCustomIndex == instances[i].instanceCustomIndex);
+    MT_ASSERT(_blases[i].instanceShaderBindingTableRecordOffset == instances[i].instanceShaderBindingTableRecordOffset);
+    MT_ASSERT(_blases[i].flags == instances[i].flags);
+    _blases[i].transform = instances[i].transform;
+    _blases[i].mask = instances[i].mask;
+  }
+  producer.updateTLAS(*this, *_geometryBuffer, *_scratchBuffer);
 }

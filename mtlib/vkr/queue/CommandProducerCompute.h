@@ -51,6 +51,9 @@ namespace mt
     void buildTLAS( const TLAS& tlas,
                     const DataBuffer& geometryBuffer,
                     const DataBuffer& scratchBuffer);
+    void updateTLAS(const TLAS& tlas,
+                    const DataBuffer& geometryBuffer,
+                    const DataBuffer& scratchBuffer);
 
   protected:
     virtual void finalizeCommands() noexcept override;
