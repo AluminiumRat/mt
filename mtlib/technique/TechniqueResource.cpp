@@ -38,13 +38,19 @@ void TechniqueResource::Observer::onResourceUpdated()
 
 void TechniqueResource::setImage(const ImageView* image)
 {
+  _buffer = nullptr;
+  _sampler = nullptr;
+  _tlas = nullptr;
   if(_image == image) return;
-  _image= image;
+  _image = image;
   _notifyObservers();
 }
 
 void TechniqueResource::setBuffer(const DataBuffer* buffer)
 {
+  _image = nullptr;
+  _sampler = nullptr;
+  _tlas = nullptr;
   if (_buffer == buffer) return;
   _buffer = buffer;
   _notifyObservers();
@@ -52,8 +58,21 @@ void TechniqueResource::setBuffer(const DataBuffer* buffer)
 
 void TechniqueResource::setSampler(const Sampler* sampler)
 {
+  _image = nullptr;
+  _buffer = nullptr;
+  _tlas = nullptr;
   if (_sampler == sampler) return;
   _sampler = sampler;
+  _notifyObservers();
+}
+
+void TechniqueResource::setTLAS(const TLAS* tlas)
+{
+  _image = nullptr;
+  _buffer = nullptr;
+  _sampler = nullptr;
+  if (_tlas == tlas) return;
+  _tlas = tlas;
   _notifyObservers();
 }
 

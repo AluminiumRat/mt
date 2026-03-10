@@ -140,6 +140,19 @@ void ResourceBinding::setSampler( TechniqueVolatileContext& context,
   if(empty()) context.resourcesBinded++;
 }
 
+void ResourceBinding::setTLAS(TechniqueVolatileContext& context,
+                              const TLAS& tlas) const
+{
+  if(_description == nullptr) return;
+  if(_description->set != DescriptorSetType::VOLATILE)
+  {
+    Log::warning() << _technique.debugName() << " : " << _name << ": resource is not volatile";
+    return;
+  }
+  context.descriptorSet->attachTLAS(tlas, _description->bindingIndex);
+  if(empty()) context.resourcesBinded++;
+}
+
 void ResourceBinding::setResource(const TechniqueResource* theResource)
 {
   _defaultValue = false;
@@ -156,6 +169,7 @@ void ResourceBinding::onResourceUpdated()
   _buffer.reset();
   _images.clear();
   _sampler.reset();
+  _tlas.reset();
   _empty = true;
 
   if(resource()->buffer() != nullptr)
@@ -171,6 +185,11 @@ void ResourceBinding::onResourceUpdated()
   else if(resource()->sampler() != nullptr)
   {
     _sampler = ConstRef(resource()->sampler());
+    _empty = false;
+  }
+  else if(resource()->tlas() != nullptr)
+  {
+    _tlas = ConstRef(resource()->tlas());
     _empty = false;
   }
 
@@ -201,6 +220,10 @@ void ResourceBindingImpl::bindToDescriptorSet(DescriptorSet& set) const
   case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
   case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:
     _bindImage(set);
+    break;
+
+  case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+    _bindTLAS(set);
     break;
 
   default:
@@ -252,4 +275,10 @@ void ResourceBindingImpl::_bindImage(DescriptorSet& set) const
                     _description->writeAccess,
                     layout);
   }
+}
+
+void ResourceBindingImpl::_bindTLAS(DescriptorSet& set) const
+{
+  if(_tlas == nullptr) return;
+  set.attachTLAS( *_tlas, _description->bindingIndex);
 }

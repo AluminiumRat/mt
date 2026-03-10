@@ -5,6 +5,7 @@
 #include <util/RefCounter.h>
 #include <util/Ref.h>
 #include <util/SpinLock.h>
+#include <vkr/accelerationStructure/TLAS.h>
 #include <vkr/image/ImageView.h>
 #include <vkr/DataBuffer.h>
 #include <vkr/Sampler.h>
@@ -12,9 +13,6 @@
 namespace mt
 {
   class TechniqueResource;
-  class ImageView;
-  class DataBuffer;
-  class Sampler;
 
   //  Динамический источник данных для техник. Работает в паре с ResourceBinding
   //  Предоставляет технике данные, которые могут меняться со временем.
@@ -86,6 +84,9 @@ namespace mt
     //  Установить сэмплер. Те же особенности, что и для ImageView
     void setSampler(const Sampler* sampler);
     inline const Sampler* sampler() const noexcept;
+    //  Установить TLAS(рэй трэйсинг). Те же особенности, что и для ImageView
+    void setTLAS(const TLAS* tlas);
+    inline const TLAS* tlas() const noexcept;
 
   private:
     //  Методы для вызова из Observer-а
@@ -99,6 +100,7 @@ namespace mt
     ConstRef<ImageView> _image;
     ConstRef<DataBuffer> _buffer;
     ConstRef<Sampler> _sampler;
+    ConstRef<TLAS> _tlas;
 
     using Observers = std::vector<Observer*>;
     mutable Observers _observers;
@@ -124,5 +126,10 @@ namespace mt
   inline const Sampler* TechniqueResource::sampler() const noexcept
   {
     return _sampler.get();
+  }
+
+  inline const TLAS* TechniqueResource::tlas() const noexcept
+  {
+    return _tlas.get();
   }
 }

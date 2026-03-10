@@ -20,7 +20,8 @@ CommandPool::CommandPool(CommandQueue& queue) :
                     .storageTexelBuffers = 10,
                     .uniformBuffers = 1024,
                     .storageBuffers = 10,
-                    .inputAttachments = 20 },
+                    .inputAttachments = 20,
+                    .accelerationStructures = 100},
                   1024,
                   _device),
   _nextBuffer(0)

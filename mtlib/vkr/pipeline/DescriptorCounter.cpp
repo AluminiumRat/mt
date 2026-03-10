@@ -43,6 +43,13 @@ void DescriptorCounter::add(
     case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
       inputAttachments += value;
       break;
+
+    case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+      accelerationStructures += value;
+      break;
+
+    default:
+      MT_ASSERT(false && "Unknown descriptor type");
   };
 }
 
@@ -86,6 +93,13 @@ void DescriptorCounter::reduce(
     case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
       inputAttachments -= value;
       break;
+
+    case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+      accelerationStructures -= value;
+      break;
+
+    default:
+      MT_ASSERT(false && "Unknown descriptor type");
   };
 }
 
@@ -155,6 +169,13 @@ std::vector<VkDescriptorPoolSize> DescriptorCounter::makeSizeInfo() const
     sizeInfoPart.descriptorCount = inputAttachments;
     sizeInfo.push_back(sizeInfoPart);
   }
+  if (accelerationStructures != 0)
+  {
+    VkDescriptorPoolSize sizeInfoPart{};
+    sizeInfoPart.type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+    sizeInfoPart.descriptorCount = accelerationStructures;
+    sizeInfo.push_back(sizeInfoPart);
+  }
   return sizeInfo;
 }
 
@@ -193,6 +214,9 @@ DescriptorCounter DescriptorCounter::createFrom(
       break;
     case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
       counter.inputAttachments += binding.descriptorCount;
+      break;
+    case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+      counter.accelerationStructures += binding.descriptorCount;
       break;
     default:
       MT_ASSERT(false && "Unknown descriptor type");

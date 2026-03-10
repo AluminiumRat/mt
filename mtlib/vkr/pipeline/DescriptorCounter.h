@@ -20,6 +20,7 @@ namespace mt
     uint32_t uniformBuffers = 0;
     uint32_t storageBuffers = 0;
     uint32_t inputAttachments = 0;
+    uint32_t accelerationStructures = 0;
 
     inline void reset() noexcept;
 
@@ -48,6 +49,7 @@ namespace mt
     uniformBuffers = 0;
     storageBuffers = 0;
     inputAttachments = 0;
+    accelerationStructures = 0;
   }
 
   inline bool DescriptorCounter::contains(
@@ -61,7 +63,8 @@ namespace mt
             storageTexelBuffers >= other.storageTexelBuffers &&
             uniformBuffers >= other.uniformBuffers &&
             storageBuffers >= other.storageBuffers &&
-            inputAttachments >= other.inputAttachments;
+            inputAttachments >= other.inputAttachments &&
+            accelerationStructures >= other.accelerationStructures;
   }
 
   inline void DescriptorCounter::add(const DescriptorCounter& other) noexcept
@@ -75,6 +78,7 @@ namespace mt
     uniformBuffers += other.uniformBuffers;
     storageBuffers += other.storageBuffers;
     inputAttachments += other.inputAttachments;
+    accelerationStructures += other.accelerationStructures;
   }
 
   inline void DescriptorCounter::reduce(const DescriptorCounter& other) noexcept
@@ -88,5 +92,6 @@ namespace mt
     uniformBuffers -= other.uniformBuffers;
     storageBuffers -= other.storageBuffers;
     inputAttachments -= other.inputAttachments;
+    accelerationStructures -= other.accelerationStructures;
   }
 }

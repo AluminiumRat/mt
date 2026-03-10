@@ -17,6 +17,7 @@ namespace mt
   class DescriptorPool;
   class Device;
   class Sampler;
+  class TLAS;
 
   class DescriptorSet : public RefCounter
   {
@@ -74,6 +75,9 @@ namespace mt
                                     const Sampler& sampler,
                                     uint32_t binding,
                                     VkPipelineStageFlags stages);
+
+    // Подключить acceleration structure для рэй трэсинга
+    void attachTLAS(const TLAS& tlas, uint32_t binding);
 
     //  В финализированные сеты нельзя добавлять новые ресурсы, но можно
     //    биндить в комманд продюсерах. Это защита от изменения сета во время

@@ -1,4 +1,5 @@
 ﻿#include <util/Assert.h>
+#include <vkr/accelerationStructure/TLAS.h>
 #include <vkr/image/ImageView.h>
 #include <vkr/pipeline/DescriptorPool.h>
 #include <vkr/pipeline/DescriptorSet.h>
@@ -236,6 +237,33 @@ void DescriptorSet::attachCombinedImageSampler( const ImageView& imageView,
   descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
   descriptorWrite.descriptorCount = 1;
   descriptorWrite.pImageInfo = &imageInfo;
+
+  vkUpdateDescriptorSets( _device.handle(),
+                          1,
+                          &descriptorWrite,
+                          0,
+                          nullptr);
+}
+
+void DescriptorSet::attachTLAS( const TLAS& tlas, uint32_t binding)
+{
+  MT_ASSERT(!isFinalized());
+
+  _resources.push_back(ConstRef(&tlas));
+
+  VkWriteDescriptorSetAccelerationStructureKHR tlasInfo{};
+  tlasInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+  tlasInfo.accelerationStructureCount = 1;
+  VkAccelerationStructureKHR handle = tlas.handle();
+  tlasInfo.pAccelerationStructures = &handle;
+
+  VkWriteDescriptorSet descriptorWrite{};
+  descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+  descriptorWrite.dstSet = _handle;
+  descriptorWrite.dstBinding = binding;
+  descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+  descriptorWrite.descriptorCount = 1;
+  descriptorWrite.pNext = &tlasInfo;
 
   vkUpdateDescriptorSets( _device.handle(),
                           1,

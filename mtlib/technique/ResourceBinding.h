@@ -8,6 +8,7 @@
 #include <technique/TechniqueResource.h>
 #include <util/Assert.h>
 #include <util/Ref.h>
+#include <vkr/accelerationStructure/TLAS.h>
 #include <vkr/image/ImageView.h>
 #include <vkr/DataBuffer.h>
 #include <vkr/Sampler.h>
@@ -46,7 +47,8 @@ namespace mt
     inline const DataBuffer* buffer() const noexcept;
     inline const ImageView* image(size_t arrayIndex = 0) const noexcept;
     inline const Sampler* sampler() const noexcept;
-    //  К ресурсу не прибинжен ни image, ни буффер, ни сэмплер
+    inline const TLAS* tlas() const noexcept;
+    //  К ресурсу не прибинжен ни image, ни буффер, ни сэмплер, ни TLAS
     inline bool empty() const noexcept;
 
     inline const TechniqueResource* resource() const noexcept;
@@ -98,6 +100,20 @@ namespace mt
     inline void setSampler( TechniqueVolatileContext& context,
                             const ConstRef<Sampler>& sampler) const;
 
+    //  Установить TLAS, сохранив указатель на него в сам ResourceBinding
+    //  Ссылка сохраняется в технике между циклами рендера
+    inline void setTLAS(const TLAS* tlas);
+    inline void setTLAS(const Ref<TLAS>& tlas);
+    inline void setTLAS(const ConstRef<TLAS>& tlas);
+    //  Установить TLAS в контекст отрисовки. Ссылка в технике не сохраняется.
+    void setTLAS( TechniqueVolatileContext& context,
+                  const TLAS& tlas) const;
+    inline void setTLAS(TechniqueVolatileContext& context,
+                        const Ref<TLAS>& tlas) const;
+    inline void setTLAS(TechniqueVolatileContext& context,
+                        const ConstRef<TLAS>& tlas) const;
+
+
     void setResource(const TechniqueResource* theResource);
     inline void setResource(const Ref<TechniqueResource>& theResource);
     inline void setResource(const ConstRef<TechniqueResource>& theResource);
@@ -123,6 +139,7 @@ namespace mt
     ConstRef<DataBuffer> _buffer;
     std::vector<ConstRef<ImageView>> _images;
     ConstRef<Sampler> _sampler;
+    ConstRef<TLAS> _tlas;
 
     //  К ресурсу не прибинжен ни image, ни буффер, ни сэмплер
     bool _empty;
@@ -154,6 +171,7 @@ namespace mt
     void _bindSampler(DescriptorSet& set) const;
     void _bindBuffer(DescriptorSet& set) const;
     void _bindImage(DescriptorSet& set) const;
+    void _bindTLAS(DescriptorSet& set) const;
   };
 
   inline const std::string& ResourceBinding::name() const noexcept
@@ -166,6 +184,7 @@ namespace mt
     _buffer.reset();
     _images.clear();
     _sampler.reset();
+    _tlas.reset();
     detach();
 
     _empty = true;
@@ -335,6 +354,44 @@ namespace mt
   {
     MT_ASSERT(sampler != nullptr);
     setSampler(context, *sampler);
+  }
+
+  inline const TLAS* ResourceBinding::tlas() const noexcept
+  {
+    return _tlas.get();
+  }
+
+  inline void ResourceBinding::setTLAS(const TLAS* tlas)
+  {
+    _defaultValue = false;
+    if(tlas == _tlas) return;
+    clear();
+    _tlas = ConstRef(tlas);
+    if(_tlas != nullptr) _empty = false;
+  }
+
+  inline void ResourceBinding::setTLAS(const Ref<TLAS>& tlas)
+  {
+    setTLAS(tlas.get());
+  }
+
+  inline void ResourceBinding::setTLAS(const ConstRef<TLAS>& tlas)
+  {
+    setTLAS(tlas.get());
+  }
+
+  inline void ResourceBinding::setTLAS( TechniqueVolatileContext& context,
+                                        const Ref<TLAS>& tlas) const
+  {
+    MT_ASSERT(tlas != nullptr);
+    setTLAS(context, *tlas);
+  }
+
+  inline void ResourceBinding::setTLAS( TechniqueVolatileContext& context,
+                                        const ConstRef<TLAS>& tlas) const
+  {
+    MT_ASSERT(tlas != nullptr);
+    setTLAS(context, *tlas);
   }
 
   inline bool ResourceBinding::empty() const noexcept
