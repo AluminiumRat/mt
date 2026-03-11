@@ -8,6 +8,11 @@ using namespace mt;
 
 static constexpr size_t uniformBufferPoolInitialSize = 32 * 1024;
 
+static bool accelerationStructIsEnabled(const CommandQueue& queue)
+{
+  return queue.device().features().accelerationStructure.accelerationStructure == VK_TRUE;
+}
+
 CommandPool::CommandPool(CommandQueue& queue) :
   _handle(VK_NULL_HANDLE),
   _device(queue.device()),
@@ -21,7 +26,8 @@ CommandPool::CommandPool(CommandQueue& queue) :
                     .uniformBuffers = 1024,
                     .storageBuffers = 10,
                     .inputAttachments = 20,
-                    .accelerationStructures = 100},
+                    .accelerationStructures =
+                                accelerationStructIsEnabled(queue) ? 100u : 0u},
                   1024,
                   _device),
   _nextBuffer(0)
