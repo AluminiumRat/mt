@@ -1,5 +1,4 @@
 ﻿#include <vkr/image/Image.h>
-#include <vkr/image/ImageFormatFeatures.h>
 #include <vkr/queue/CommandQueueTransfer.h>
 
 using namespace mt;
@@ -16,8 +15,8 @@ CommandQueueTransfer::CommandQueueTransfer( Device& device,
 std::unique_ptr<CommandProducerTransfer> CommandQueueTransfer::startCommands(
                                                   const char* producerDebugName)
 {
-  std::lock_guard lock(commonMutex);
-  return std::make_unique<CommandProducerTransfer>( commonPoolSet,
+  std::lock_guard lock(commonMutex());
+  return std::make_unique<CommandProducerTransfer>( commonPoolSet(),
                                                     producerDebugName);
 }
 
@@ -27,35 +26,7 @@ void CommandQueueTransfer::uploadToBuffer(const DataBuffer& dstBuffer,
                                           const void* srcData)
 {
   std::unique_ptr<CommandProducerTransfer> producer = startCommands();
-
-  if(dataSize <= CommandPool::memoryPoolChunkSize)
-  {
-    //  Данные можно протолкнуть через UniformMemoryPool
-    UniformMemoryPool::MemoryInfo stagingInfo =
-                          producer->uniformMemorySession().write(
-                                                          (const char*)srcData,
-                                                          dataSize);
-    producer->copyFromBufferToBuffer( *stagingInfo.buffer,
-                                      dstBuffer,
-                                      stagingInfo.offset,
-                                      shiftInDstBuffer,
-                                      dataSize);
-  }
-  else
-  {
-    //  Кусок данных слишком большой, протаскиваем его через отдельный
-    //  upload буфер
-    Ref<DataBuffer> stagingBuffer(new DataBuffer( device(),
-                                                  dataSize,
-                                                  DataBuffer::UPLOADING_BUFFER,
-                                                  "Uploading buffer"));
-    stagingBuffer->uploadData(srcData, 0, dataSize);
-    producer->copyFromBufferToBuffer( *stagingBuffer,
-                                      dstBuffer,
-                                      0,
-                                      0,
-                                      dataSize);
-  }
+  producer->uploadToBuffer(dstBuffer, shiftInDstBuffer, dataSize, srcData);
   submitCommands(std::move(producer));
 }
 
@@ -67,28 +38,13 @@ void CommandQueueTransfer::uploadToImage( const Image& dstImage,
                                           glm::uvec3 dstExtent,
                                           const void* srcData)
 {
-  uint32_t texelSize = getFormatFeatures(dstImage.format()).texelSize;
-  size_t dataSize = size_t(texelSize) * dstExtent.x * dstExtent.y * dstExtent.z;
-  dataSize = dataSize / 8 + (dataSize % 8 == 0 ? 0 : 1);
-  Ref<DataBuffer> stagingBuffer(new DataBuffer( device(),
-                                                dataSize,
-                                                DataBuffer::UPLOADING_BUFFER,
-                                                "Uploading buffer"));
-  stagingBuffer->uploadData(srcData, 0, dataSize);
-
   std::unique_ptr<CommandProducerTransfer> producer = startCommands();
-
-  producer->copyFromBufferToImage(*stagingBuffer,
-                                  0,
-                                  dstExtent.x,
-                                  dstExtent.y,
-                                  dstImage,
-                                  dstAspectMask,
-                                  dstArrayIndex,
-                                  1,
-                                  dstMipLevel,
-                                  dstOffset,
-                                  dstExtent);
-
+  producer->uploadToImage(dstImage,
+                          dstAspectMask,
+                          dstArrayIndex,
+                          dstMipLevel,
+                          dstOffset,
+                          dstExtent,
+                          srcData);
   submitCommands(std::move(producer));
 }

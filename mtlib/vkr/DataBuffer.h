@@ -99,7 +99,7 @@ namespace mt
     //    requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
     //  ВНИМАНИЕ! Не используйте одновременно маппер и метод
     //    DataBuffer::uploadData на одном и том же буфере
-    void uploadData(const void* data, size_t shift, size_t dataSize);
+    void uploadData(const void* data, size_t shift, size_t dataSize) const;
 
     inline const std::string& debugName() const noexcept;
 

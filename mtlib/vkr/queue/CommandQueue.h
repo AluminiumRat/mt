@@ -13,6 +13,7 @@
 #include <vkr/queue/Semaphore.h>
 #include <vkr/queue/SyncPoint.h>
 #include <vkr/queue/TimelineSemaphore.h>
+#include <vkr/queue/UploadingBufferPool.h>
 
 namespace mt
 {
@@ -118,6 +119,15 @@ namespace mt
     template <typename FunctorType>
     inline void runSafe(FunctorType functor) const;
 
+  protected:
+    // Пулы команд общего назначения, из них создаются комманд продюсеры,
+    // которые отдаются наружу.
+    inline CommandPoolSet& commonPoolSet() noexcept;
+
+    // Мьютекс, общий для всех очередей одного логического устройства.
+    // Служит для синхронизации межпотока между очередями.
+    inline std::recursive_mutex& commonMutex() const noexcept;
+
   private:
     void _cleanup() noexcept;
     // ВНИМАНИЕ!!! Этот метод не захватывает владение семафором, он работает
@@ -133,20 +143,21 @@ namespace mt
 
     void _makeFullMemoryBarrier();
 
-  protected:
-    // Пулы команд общего назначения, из них создаются комманд продюсеры,
-    // которые отдаются наружу.
-    CommandPoolSet commonPoolSet;
-
-    // Мьютекс, общий для всех очередей одного логического устройства.
-    // Служит для синхронизации межпотока между очередями.
-    std::recursive_mutex& commonMutex;
-
   private:
     VkQueue _handle;
     Device& _device;
 
     QueueFamily _family;
+
+    UploadingBufferPool _uploadingBufferPool;
+
+    // Пулы команд общего назначения, из них создаются комманд продюсеры,
+    // которые отдаются наружу.
+    CommandPoolSet _commonPoolSet;
+
+    // Мьютекс, общий для всех очередей одного логического устройства.
+    // Служит для синхронизации межпотока между очередями.
+    std::recursive_mutex& _commonMutex;
 
     // Основной семафор очереди команд, существующий на протяжении всей
     // жизни очереди. Основное средство синхронизации очередей между собой.
@@ -172,7 +183,17 @@ namespace mt
   template <typename FunctorType>
   inline void CommandQueue::runSafe(FunctorType functor) const
   {
-    std::lock_guard lock(commonMutex);
+    std::lock_guard lock(_commonMutex);
     functor();
+  }
+
+  inline CommandPoolSet& CommandQueue::commonPoolSet() noexcept
+  {
+    return _commonPoolSet;
+  }
+
+  inline std::recursive_mutex& CommandQueue::commonMutex() const noexcept
+  {
+    return _commonMutex;
   }
 }

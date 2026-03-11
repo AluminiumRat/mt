@@ -1,4 +1,5 @@
 ﻿#include <vkr/image/Image.h>
+#include <vkr/image/ImageFormatFeatures.h>
 #include <vkr/queue/CommandBuffer.h>
 #include <vkr/queue/CommandProducerTransfer.h>
 
@@ -6,7 +7,9 @@ using namespace mt;
 
 CommandProducerTransfer::CommandProducerTransfer( CommandPoolSet& poolSet,
                                                   const char* debugName) :
-  CommandProducer(poolSet, debugName)
+  CommandProducer(poolSet, debugName),
+  _uploadingBuffer(nullptr),
+  _uploadingBufferCursor(0)
 {
 }
 
@@ -177,4 +180,73 @@ void CommandProducerTransfer::copyFromImageToBuffer(
                           dstBuffer.handle(),
                           1,
                           &region);
+}
+
+void CommandProducerTransfer::uploadToBuffer( const DataBuffer& dstBuffer,
+                                              size_t shiftInDstBuffer,
+                                              size_t dataSize,
+                                              const void* srcData)
+{
+  if(dataSize <= CommandPool::memoryPoolChunkSize)
+  {
+    //  Данные можно протолкнуть через UniformMemoryPool
+    UniformMemoryPool::MemoryInfo stagingInfo =
+                                    uniformMemorySession().write(
+                                                          (const char*)srcData,
+                                                          dataSize);
+    copyFromBufferToBuffer( *stagingInfo.buffer,
+                            dstBuffer,
+                            stagingInfo.offset,
+                            shiftInDstBuffer,
+                            dataSize);
+    return;
+  }
+  //  Копируем данные через общий uploading буфер
+  if( _uploadingBuffer == nullptr ||
+      _uploadingBufferCursor + dataSize > _uploadingBuffer->size())
+  {
+    _uploadingBuffer = &getUploadingBuffer(dataSize);
+    _uploadingBufferCursor = 0;
+  }
+  _uploadingBuffer->uploadData(srcData, _uploadingBufferCursor, dataSize);
+  copyFromBufferToBuffer( *_uploadingBuffer,
+                          dstBuffer,
+                          _uploadingBufferCursor,
+                          shiftInDstBuffer,
+                          dataSize);
+  _uploadingBufferCursor += dataSize;
+}
+
+void CommandProducerTransfer::uploadToImage(const Image& dstImage,
+                                            VkImageAspectFlags dstAspectMask,
+                                            uint32_t dstArrayIndex,
+                                            uint32_t dstMipLevel,
+                                            glm::uvec3 dstOffset,
+                                            glm::uvec3 dstExtent,
+                                            const void* srcData)
+{
+  uint32_t texelSize = getFormatFeatures(dstImage.format()).texelSize;
+  size_t dataSize = size_t(texelSize) * dstExtent.x * dstExtent.y * dstExtent.z;
+  dataSize = dataSize / 8 + (dataSize % 8 == 0 ? 0 : 1);
+
+  if( _uploadingBuffer == nullptr ||
+      _uploadingBufferCursor + dataSize > _uploadingBuffer->size())
+  {
+    _uploadingBuffer = &getUploadingBuffer(dataSize);
+    _uploadingBufferCursor = 0;
+  }
+  _uploadingBuffer->uploadData(srcData, _uploadingBufferCursor, dataSize);
+
+  copyFromBufferToImage(*_uploadingBuffer,
+                        _uploadingBufferCursor,
+                        dstExtent.x,
+                        dstExtent.y,
+                        dstImage,
+                        dstAspectMask,
+                        dstArrayIndex,
+                        1,
+                        dstMipLevel,
+                        dstOffset,
+                        dstExtent);
+  _uploadingBufferCursor += dataSize;
 }

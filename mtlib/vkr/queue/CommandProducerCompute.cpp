@@ -178,15 +178,7 @@ void CommandProducerCompute::buildTLAS( const TLAS& tlas,
   std::vector<VkAccelerationStructureInstanceKHR> instances =
                                                       tlas.makeInstancesInfo();
   size_t instancesSize = instances.size() * sizeof(instances[0]);
-  UniformMemoryPool::MemoryInfo stagingInfo =
-                              uniformMemorySession().write(
-                                                  (const char*)instances.data(),
-                                                  instancesSize);
-  copyFromBufferToBuffer( *stagingInfo.buffer,
-                          geometryBuffer,
-                          stagingInfo.offset,
-                          0,
-                          instancesSize);
+  uploadToBuffer(geometryBuffer, 0, instancesSize, instances.data());
 
   VkAccelerationStructureGeometryDataKHR geometryData{};
   geometryData.instances = VkAccelerationStructureGeometryInstancesDataKHR{};
@@ -234,15 +226,7 @@ void CommandProducerCompute::updateTLAS(const TLAS& tlas,
   std::vector<VkAccelerationStructureInstanceKHR> instances =
                                                       tlas.makeInstancesInfo();
   size_t instancesSize = instances.size() * sizeof(instances[0]);
-  UniformMemoryPool::MemoryInfo stagingInfo =
-                              uniformMemorySession().write(
-                                                  (const char*)instances.data(),
-                                                  instancesSize);
-  copyFromBufferToBuffer( *stagingInfo.buffer,
-                          geometryBuffer,
-                          stagingInfo.offset,
-                          0,
-                          instancesSize);
+  uploadToBuffer(geometryBuffer, 0, instancesSize, instances.data());
 
   VkAccelerationStructureGeometryDataKHR geometryData{};
   geometryData.instances = VkAccelerationStructureGeometryInstancesDataKHR{};

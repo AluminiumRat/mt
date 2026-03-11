@@ -9,6 +9,7 @@
 namespace mt
 {
   class CommandQueue;
+  class UploadingBufferPool;
 
   //  Пул пулов команд. Передержка для пулов команд, чтобы они могли дождаться,
   //    когда все их команды будут выполнены. Необходим для того чтобы
@@ -18,7 +19,8 @@ namespace mt
   class CommandPoolSet
   {
   public:
-    CommandPoolSet(CommandQueue& commandQueue);
+    CommandPoolSet( CommandQueue& commandQueue,
+                    UploadingBufferPool& uploadingBufferPool);
     CommandPoolSet(const CommandPoolSet&) = delete;
     CommandPoolSet& operator = (const CommandPoolSet&) = delete;
     ~CommandPoolSet() noexcept = default;
@@ -36,6 +38,7 @@ namespace mt
 
   private:
     CommandQueue& _queue;
+    UploadingBufferPool& _uploadingBufferPool;
 
     // Все созданные в этом сете пулы. Сохраняем для удаления вместе с сетом.
     std::vector<std::unique_ptr<CommandPool>> _pools;

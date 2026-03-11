@@ -8,11 +8,13 @@
 #include <vkr/queue/CommandBuffer.h>
 #include <vkr/queue/UniformMemoryPool.h>
 #include <vkr/queue/VolatileDescriptorPool.h>
+#include <vkr/DataBuffer.h>
 
 namespace mt
 {
   class CommandQueue;
   class Device;
+  class UploadingBufferPool;
 
   //  Пул всего необходимого для того чтобы полноценно построить буфер команд.
   //    Здесь и обертка вокруг VkCommandPool, и пул объектов CommandBuffer, и
@@ -31,7 +33,8 @@ namespace mt
     static constexpr size_t memoryPoolChunkSize = 32 * 1024;
 
   public:
-    CommandPool(CommandQueue& queue);
+    CommandPool(CommandQueue& queue,
+                UploadingBufferPool& uploadingBufferPool);
     CommandPool(const CommandPool&) = delete;
     CommandPool& operator = (const CommandPool&) = delete;
     virtual ~CommandPool() noexcept;
@@ -42,9 +45,13 @@ namespace mt
     inline VolatileDescriptorPool& descriptorPool() noexcept;
     inline const VolatileDescriptorPool& descriptorPool() const noexcept;
 
-    // Взять из пула не используемый буфер или создать новый, если свободных
-    // нет.
+    //  Взять из пула не используемый буфер или создать новый, если свободных
+    //  нет.
     CommandBuffer& getNextBuffer();
+
+    //  Получить из общего пула буфер аплоада. Размер не менее requiredSize,
+    //  но может вернуть и больше.
+    const DataBuffer& getUploadingBuffer(size_t requiredSize);
 
     //  Захватить владение ресурсом. Это продляет жизнь ресурса и позволяет
     //  предотвратить его удаление, пока буферы команд находятся на исполнении в
@@ -52,7 +59,8 @@ namespace mt
     inline void lockResource(const RefCounter& resource);
 
     //  Сбросить пул комманд, все работающие с ним буферы команд и
-    //    волатильные дескриптер-сеты. Освободить все захваченные ресурсы.
+    //    волатильные дескриптер-сеты, освободить все захваченные ресурсы,
+    //    вернуть буферы загрузки в uploadingBufferPool
     //  ВНИМАНИЕ!!! Убедитесь, что ни один из буферов команд не находится
     //    в очереди команд
     void reset();
@@ -72,6 +80,9 @@ namespace mt
     size_t _nextBuffer;
 
     std::vector<RefCounterReference> _lockedResources;
+
+    UploadingBufferPool& _uploadingBufferPool;
+    std::vector<ConstRef<DataBuffer>> _uploadingBuffers;
   };
 
   inline UniformMemoryPool& CommandPool::memoryPool() noexcept

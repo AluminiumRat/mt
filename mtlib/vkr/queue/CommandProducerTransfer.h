@@ -93,5 +93,34 @@ namespace mt
                                 VkDeviceSize dstBufferOffset,
                                 uint32_t dstRowLength,
                                 uint32_t dstImageHeight);
+
+    //  Загрузить данные в буфер.
+    //  Если dstBuffer создается с явным указанием VkBufferUsageFlags, то для
+    //    него должен быть включен VK_BUFFER_USAGE_TRANSFER_DST_BIT
+    void uploadToBuffer(const DataBuffer& dstBuffer,
+                        size_t shiftInDstBuffer,
+                        size_t dataSize,
+                        const void* srcData);
+
+    //  Загрузить данные в один слой Image
+    //  dstImage должна быть либо со включенным автоконтролем лэйаута, либо
+    //    находиться в лэйауте VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+    //  dstImage должна быть создана со включенным
+    //    VK_IMAGE_USAGE_TRANSFER_DST_BIT
+    //  srcData должен содержать достаточное количество данных для копирования
+    void uploadToImage( const Image& dstImage,
+                        VkImageAspectFlags dstAspectMask,
+                        uint32_t dstArrayIndex,
+                        uint32_t dstMipLevel,
+                        glm::uvec3 dstOffset,
+                        glm::uvec3 dstExtent,
+                        const void* srcData);
+
+  private:
+    //  Последний использованный аплоадинг буффер, который, верятно, можно
+    //  использовать ещё раз
+    const DataBuffer* _uploadingBuffer;
+    //  Место в _uploadingBuffer, куда можно писать новые данные
+    size_t _uploadingBufferCursor;
   };
 };

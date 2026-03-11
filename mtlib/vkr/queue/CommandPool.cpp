@@ -2,6 +2,7 @@
 
 #include <vkr/queue/CommandPool.h>
 #include <vkr/queue/CommandQueue.h>
+#include <vkr/queue/UploadingBufferPool.h>
 #include <vkr/Device.h>
 
 using namespace mt;
@@ -13,7 +14,8 @@ static bool accelerationStructIsEnabled(const CommandQueue& queue)
   return queue.device().features().accelerationStructure.accelerationStructure == VK_TRUE;
 }
 
-CommandPool::CommandPool(CommandQueue& queue) :
+CommandPool::CommandPool( CommandQueue& queue,
+                          UploadingBufferPool& uploadingBufferPool) :
   _handle(VK_NULL_HANDLE),
   _device(queue.device()),
   _memoryPool(uniformBufferPoolInitialSize, _device),
@@ -30,7 +32,8 @@ CommandPool::CommandPool(CommandQueue& queue) :
                                 accelerationStructIsEnabled(queue) ? 100u : 0u},
                   1024,
                   _device),
-  _nextBuffer(0)
+  _nextBuffer(0),
+  _uploadingBufferPool(uploadingBufferPool)
 {
   try
   {
@@ -81,6 +84,13 @@ void CommandPool::reset()
   _lockedResources.clear();
 
   _nextBuffer = 0;
+
+  std::vector<ConstRef<DataBuffer>> uploadingBuffers =
+                                                  std::move(_uploadingBuffers);
+  for(ConstRef<DataBuffer>& buffer : uploadingBuffers)
+  {
+    _uploadingBufferPool.putBack(*buffer);
+  }
 }
 
 CommandBuffer& CommandPool::getNextBuffer()
@@ -94,4 +104,11 @@ CommandBuffer& CommandPool::getNextBuffer()
     _buffers.push_back(std::move(newBuffer));
   }
   return *_buffers[_nextBuffer++];
+}
+
+const DataBuffer& CommandPool::getUploadingBuffer(size_t requiredSize)
+{
+  ConstRef<DataBuffer> buffer = _uploadingBufferPool.get(requiredSize);
+  _uploadingBuffers.push_back(buffer);
+  return *buffer;
 }

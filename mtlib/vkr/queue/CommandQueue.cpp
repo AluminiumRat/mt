@@ -16,11 +16,12 @@ CommandQueue::CommandQueue( Device& device,
                             uint32_t queueIndex,
                             const QueueFamily& family,
                             std::recursive_mutex& commonMutex) :
-  commonPoolSet(*this),
-  commonMutex(commonMutex),
   _handle(VK_NULL_HANDLE),
   _device(device),
   _family(family),
+  _uploadingBufferPool(device),
+  _commonPoolSet(*this, _uploadingBufferPool),
+  _commonMutex(commonMutex),
   _semaphore(new TimelineSemaphore(0, device)),
   _lastSemaphoreValue(0)
 {
@@ -51,7 +52,7 @@ void CommandQueue::_cleanup() noexcept
 
 void CommandQueue::addSignalSemaphore(Semaphore& semaphore)
 {
-  std::lock_guard lock(commonMutex);
+  std::lock_guard lock(_commonMutex);
 
   VkSubmitInfo submitInfo{};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -71,7 +72,7 @@ void CommandQueue::addSignalSemaphore(Semaphore& semaphore)
 
 SyncPoint CommandQueue::createSyncPoint()
 {
-  std::lock_guard lock(commonMutex);
+  std::lock_guard lock(_commonMutex);
 
   _lastSemaphoreValue++;
 
@@ -101,8 +102,8 @@ SyncPoint CommandQueue::createSyncPoint()
 std::unique_ptr<CommandProducer> CommandQueue::startCommands(
                                                   const char* producerDebugName)
 {
-  std::lock_guard lock(commonMutex);
-  return std::make_unique<CommandProducer>(commonPoolSet, producerDebugName);
+  std::lock_guard lock(_commonMutex);
+  return std::make_unique<CommandProducer>(_commonPoolSet, producerDebugName);
 }
 
 void CommandQueue::submitCommands(std::unique_ptr<CommandProducer> producer)
@@ -110,7 +111,7 @@ void CommandQueue::submitCommands(std::unique_ptr<CommandProducer> producer)
   MT_ASSERT(producer != nullptr);
   MT_ASSERT(&producer->queue() == this);
 
-  std::lock_guard lock(commonMutex);
+  std::lock_guard lock(_commonMutex);
 
   std::optional<CommandProducer::FinalizeResult> finalizeResult =
                                                           producer->finalize();
@@ -226,7 +227,7 @@ void CommandQueue::addWaitingForQueue(
   CommandQueue& queue,
   VkPipelineStageFlags waitStages)
 {
-  std::lock_guard lock(commonMutex);
+  std::lock_guard lock(_commonMutex);
 
   if(&queue == this)
   {
@@ -269,7 +270,7 @@ void CommandQueue::_addWaitingForSyncPoint(
 
 void CommandQueue::waitIdle() const
 {
-  std::lock_guard lock(commonMutex);
+  std::lock_guard lock(_commonMutex);
 
   if(vkQueueWaitIdle(_handle) != VK_SUCCESS)
   {
@@ -293,7 +294,7 @@ SyncPoint CommandQueue::ownershipTransfer(CommandQueue& oldQueue,
 {
   MT_ASSERT(image.owner == nullptr || image.owner == &oldQueue);
 
-  std::lock_guard lock(oldQueue.commonMutex);
+  std::lock_guard lock(oldQueue._commonMutex);
 
   if(oldQueue.family().index() == newQueue.family().index())
   {
@@ -337,7 +338,7 @@ SyncPoint CommandQueue::ownershipTransfer(CommandQueue& oldQueue,
                                           CommandQueue& newQueue,
                                           const DataBuffer& buffer)
 {
-  std::lock_guard lock(oldQueue.commonMutex);
+  std::lock_guard lock(oldQueue._commonMutex);
 
   if(oldQueue.family().index() == newQueue.family().index())
   {

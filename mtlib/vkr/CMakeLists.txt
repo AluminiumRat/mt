@@ -46,6 +46,7 @@ set(SOURCES
     "queue/Semaphore.cpp"
     "queue/TimelineSemaphore.cpp"
     "queue/UniformMemoryPool.cpp"
+    "queue/UploadingBufferPool.cpp"
     "queue/VolatileDescriptorPool.cpp"
     "DataBuffer.cpp"
     "Device.cpp"

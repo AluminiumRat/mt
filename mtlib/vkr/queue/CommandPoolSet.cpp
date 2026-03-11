@@ -7,8 +7,10 @@
 
 using namespace mt;
 
-CommandPoolSet::CommandPoolSet(CommandQueue& commandQueue) :
-  _queue(commandQueue)
+CommandPoolSet::CommandPoolSet( CommandQueue& commandQueue,
+                                UploadingBufferPool& uploadingBufferPool) :
+  _queue(commandQueue),
+  _uploadingBufferPool(uploadingBufferPool)
 {
 }
 
@@ -29,7 +31,8 @@ CommandPool& CommandPoolSet::getPool()
   }
 
   // Свободных пулов нет, создаем новый
-  std::unique_ptr<CommandPool> newPool(new CommandPool(_queue));
+  std::unique_ptr<CommandPool> newPool(new CommandPool( _queue,
+                                                        _uploadingBufferPool));
   CommandPool& newPoolRef = *newPool;
   _pools.push_back(std::move(newPool));
   return newPoolRef;

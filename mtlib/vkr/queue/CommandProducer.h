@@ -174,6 +174,8 @@ namespace mt
     void endRenderPassBlock() noexcept;
     inline bool insideRenderPass() const noexcept;
 
+    inline const DataBuffer& getUploadingBuffer(size_t requiredSize);
+
   protected:
     //  Вызывается при финализации продюсера. Предназначен для классов-потомков,
     //  чтобы они могли корректно завершать запись команд.
@@ -239,5 +241,11 @@ namespace mt
   inline bool CommandProducer::insideRenderPass() const noexcept
   {
     return _insideRenderPass;
+  }
+
+  inline const DataBuffer& CommandProducer::getUploadingBuffer(
+                                                            size_t requiredSize)
+  {
+    return _commandPool->getUploadingBuffer(requiredSize);
   }
 }

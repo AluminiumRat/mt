@@ -256,7 +256,9 @@ void DataBuffer::_cleanup() noexcept
   }
 }
 
-void DataBuffer::uploadData(const void* data, size_t shift, size_t dataSize)
+void DataBuffer::uploadData(const void* data,
+                            size_t shift,
+                            size_t dataSize) const
 {
   void* bufferData;
   if(vmaMapMemory(_device.allocator(),
