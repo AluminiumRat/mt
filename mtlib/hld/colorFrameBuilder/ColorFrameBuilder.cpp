@@ -31,18 +31,11 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
                               const Camera& viewCamera,
                               const EnvironmentScene& environment)
 {
-  //  Вычисляем регион в таргете, в который мы будем рисовать новое изображение
-  Region targetRegion(target.extent());
-  if(_drawRegion.valid()) targetRegion = targetRegion.intersection(_drawRegion);
+  //  Определяем регион в который мы будем рисовать новое изображение
+  Region targetRegion = _drawRegion.valid() ? _drawRegion : target.extent();
   if(!targetRegion.valid()) return;
 
   _updateBuffers(targetRegion.size());
-
-  //  Вьюпорт при отрисовке в промежуточные буферы. Нужен для того чтобы
-  //  корректно обрабатывать случай когда _drawRegion уходит за пределы
-  //  таргета
-  glm::uvec2 buffersViewport = targetRegion.size();
-  if(_drawRegion.valid()) buffersViewport = _drawRegion.size();
 
   FrameBuildContext frameContext{};
   frameContext.frameType = _frameTypeIndex;
@@ -70,8 +63,7 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
       ColorFrameCommonSet::Bind bindCommonSet(_commonSet, *preopaqueProducer);
       _opaquePrepassStage.draw( *preopaqueProducer,
                                 _drawPlan,
-                                frameContext,
-                                glm::uvec2(_halfDepthBuffer->extent()));
+                                frameContext);
     }
     _device.graphicQueue()->submitCommands(std::move(preopaqueProducer));
   }
@@ -85,9 +77,8 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
       ColorFrameCommonSet::Bind bindCommonSet(_commonSet, *opaqueProducer);
       _opaqueColorStage.draw( *opaqueProducer,
                               _drawPlan,
-                              frameContext,
-                              buffersViewport);
-      _backgroundRender.draw(*opaqueProducer, buffersViewport);
+                              frameContext);
+      _backgroundRender.draw(*opaqueProducer);
     }
     _device.graphicQueue()->submitCommands(std::move(opaqueProducer));
   }

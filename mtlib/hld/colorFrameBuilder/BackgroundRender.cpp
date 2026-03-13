@@ -32,19 +32,14 @@ void BackgroundRender::_buildFrameBuffer()
   _frameBuffer = new FrameBuffer( std::span(&colorAttachment, 1),
                                   &depthAttachment);}
 
-void BackgroundRender::draw(CommandProducerGraphic& commandProducer,
-                            glm::uvec2 viewport)
+void BackgroundRender::draw(CommandProducerGraphic& commandProducer)
 {
   MT_ASSERT(_hdrBuffer != nullptr);
   MT_ASSERT(_depthBuffer != nullptr);
-  MT_ASSERT(viewport.x != 0 && viewport.y != 0);
 
   if(_frameBuffer == nullptr) _buildFrameBuffer();
 
-  CommandProducerGraphic::RenderPass renderPass(commandProducer,
-                                                *_frameBuffer,
-                                                std::nullopt,
-                                                viewport);
+  CommandProducerGraphic::RenderPass renderPass(commandProducer, *_frameBuffer);
     Technique::BindGraphic bind(*_envmapTechnique,
                                 _envmapPass,
                                 commandProducer);

@@ -24,8 +24,7 @@ namespace mt
     BackgroundRender& operator = (const BackgroundRender&) = delete;
     ~BackgroundRender() noexcept = default;
 
-    void draw(CommandProducerGraphic& commandProducer,
-              glm::uvec2 viewport);
+    void draw(CommandProducerGraphic& commandProducer);
 
     inline void setBuffers( const ImageView& hdrBuffer,
                             const ImageView& depthBuffer);

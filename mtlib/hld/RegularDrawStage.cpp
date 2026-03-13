@@ -20,11 +20,8 @@ RegularDrawStage::RegularDrawStage( Device& device,
 
 void RegularDrawStage::draw(CommandProducerGraphic& commandProducer,
                             const DrawPlan& drawPlan,
-                            const FrameBuildContext& frameContext,
-                            glm::uvec2 viewport)
+                            const FrameBuildContext& frameContext)
 {
-  MT_ASSERT(viewport.x != 0 && viewport.y != 0);
-
   _drawCommands.clear();
   _commandMemoryPool.reset();
 
@@ -36,10 +33,7 @@ void RegularDrawStage::draw(CommandProducerGraphic& commandProducer,
   if(_frameBuffer == nullptr) _frameBuffer = buildFrameBuffer();
   MT_ASSERT(_frameBuffer != nullptr);
 
-  CommandProducerGraphic::RenderPass renderPass(commandProducer,
-                                                *_frameBuffer,
-                                                std::nullopt,
-                                                viewport);
+  CommandProducerGraphic::RenderPass renderPass(commandProducer, *_frameBuffer);
   _drawCommands.draw(commandProducer, _sorting);
   renderPass.endPass();
 }

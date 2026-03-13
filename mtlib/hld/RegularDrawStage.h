@@ -27,8 +27,7 @@ namespace mt
 
     virtual void draw(CommandProducerGraphic& commandProducer,
                       const DrawPlan& drawPlan,
-                      const FrameBuildContext& frameContext,
-                      glm::uvec2 viewport);
+                      const FrameBuildContext& frameContext);
 
     inline Device& device() const noexcept;
 
