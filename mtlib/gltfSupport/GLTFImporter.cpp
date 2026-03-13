@@ -285,12 +285,18 @@ bool GLTFImporter::_adjustAsset(MeshAsset& targetAsset,
     targetAsset.addTechnique(
                         _techniqueManager.scheduleLoading("gltf/gltfOpaque.tch",
                                                           device()));
+    targetAsset.addTechnique(
+                      _techniqueManager.scheduleLoading("gltf/gltfPrepass.tch",
+                                                        device()));
   }
   else
   {
     targetAsset.addTechnique(
                         _techniqueManager.loadImmediately("gltf/gltfOpaque.tch",
                                                           device()));
+    targetAsset.addTechnique(
+                      _techniqueManager.loadImmediately("gltf/gltfPrepass.tch",
+                                                        device()));
   }
 
   return true;

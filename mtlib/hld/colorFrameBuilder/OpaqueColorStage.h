@@ -20,7 +20,7 @@ namespace mt
     inline void setBuffers( const ImageView& hdrBuffer,
                             const ImageView& depthBuffer);
 
-  private:
+  protected:
     virtual ConstRef<FrameBuffer> buildFrameBuffer() const override;
 
   private:

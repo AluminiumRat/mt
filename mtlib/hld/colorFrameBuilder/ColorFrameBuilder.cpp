@@ -6,6 +6,7 @@
 #include <hld/HLDLib.h>
 #include <technique/DescriptorSetType.h>
 #include <util/Camera.h>
+#include <util/floorPow.h>
 #include <vkr/image/ImageView.h>
 #include <vkr/queue/CommandQueueGraphic.h>
 #include <vkr/Device.h>
@@ -18,6 +19,7 @@ ColorFrameBuilder::ColorFrameBuilder( Device& device,
   _device(device),
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(frameTypeName)),
   _commonSet(device, textureManager),
+  _opaquePrepassStage(device),
   _opaqueColorStage(device),
   _backgroundRender(device, techniqueManager),
   _posteffects(device)
@@ -34,13 +36,13 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
   if(_drawRegion.valid()) targetRegion = targetRegion.intersection(_drawRegion);
   if(!targetRegion.valid()) return;
 
+  _updateBuffers(targetRegion.size());
+
   //  Вьюпорт при отрисовке в промежуточные буферы. Нужен для того чтобы
   //  корректно обрабатывать случай когда _drawRegion уходит за пределы
   //  таргета
   glm::uvec2 buffersViewport = targetRegion.size();
   if(_drawRegion.valid()) buffersViewport = _drawRegion.size();
-
-  _updateBuffers(targetRegion.size());
 
   FrameBuildContext frameContext{};
   frameContext.frameType = _frameTypeIndex;
@@ -57,6 +59,21 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
     _initBuffersLayout(*prepareProducer);
     _commonSet.update(*prepareProducer, frameContext, environment);
     _device.graphicQueue()->submitCommands(std::move(prepareProducer));
+  }
+
+  {
+    //  Предварительный проход
+    std::unique_ptr<CommandProducerGraphic> preopaqueProducer =
+                                  _device.graphicQueue()->startCommands(
+                                                OpaquePrepassStage::stageName);
+    {
+      ColorFrameCommonSet::Bind bindCommonSet(_commonSet, *preopaqueProducer);
+      _opaquePrepassStage.draw( *preopaqueProducer,
+                                _drawPlan,
+                                frameContext,
+                                glm::uvec2(_halfDepthBuffer->extent()));
+    }
+    _device.graphicQueue()->submitCommands(std::move(preopaqueProducer));
   }
 
   {
@@ -96,6 +113,10 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
     return;
   }
 
+  glm::uvec2 alignedSize = floorPow(targetExtent);
+  alignedSize = glm::max(alignedSize, glm::uvec2(1));
+  glm::uvec2 alignedHalfSize = glm::max(alignedSize / 2u, glm::uvec2(1));;
+
   _hdrBuffer = new Image( _device,
                           VK_IMAGE_TYPE_2D,
                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
@@ -128,6 +149,22 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                                     ImageSlice(*_depthBuffer),
                                     VK_IMAGE_VIEW_TYPE_2D);
 
+  _halfDepthBuffer = new Image( _device,
+                                VK_IMAGE_TYPE_2D,
+                                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                                0,
+                                depthFormat,
+                                glm::uvec3(alignedHalfSize, 1),
+                                VK_SAMPLE_COUNT_1_BIT,
+                                1,
+                                1,
+                                false,
+                                "DepthHalfBuffer");
+  _halfDepthBufferView = new ImageView( *_halfDepthBuffer,
+                                        ImageSlice(*_depthBuffer),
+                                        VK_IMAGE_VIEW_TYPE_2D);
+
+  _opaquePrepassStage.setBuffer(*_halfDepthBufferView);
   _opaqueColorStage.setBuffers(*_hdrBufferView, *_depthBufferView);
   _backgroundRender.setBuffers(*_hdrBufferView, *_depthBufferView);
   _posteffects.setHdrBuffer(*_hdrBufferView);
@@ -148,6 +185,16 @@ void ColorFrameBuilder::_initBuffersLayout(
   commandProducer.imageBarrier(
                               *_depthBuffer,
                               ImageSlice(*_depthBuffer),
+                              VK_IMAGE_LAYOUT_UNDEFINED,
+                              VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                              0,
+                              0,
+                              0,
+                              0);
+
+  commandProducer.imageBarrier(
+                              *_halfDepthBuffer,
+                              ImageSlice(*_halfDepthBuffer),
                               VK_IMAGE_LAYOUT_UNDEFINED,
                               VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                               0,

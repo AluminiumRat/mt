@@ -207,7 +207,6 @@ namespace mt
                               frameBufferDescription,
                               target.name(),
                               usedFiles);
-      if(frameBufferDescription.colorTargets.empty()) throw std::runtime_error(target.name() + ": unable to find 'color' targets in 'frameBuffer' description");
       FrameBufferFormat fbFormat( frameBufferDescription.colorTargets,
                                   frameBufferDescription.depthTarget,
                                   frameBufferDescription.samples);

@@ -8,6 +8,7 @@
 #include <hld/colorFrameBuilder/ColorFrameCommonSet.h>
 #include <hld/colorFrameBuilder/OpaqueColorStage.h>
 #include <hld/colorFrameBuilder/Posteffects.h>
+#include <hld/colorFrameBuilder/OpaquePrepassStage.h>
 #include <hld/drawCommand/CommandMemoryPool.h>
 #include <hld/DrawPlan.h>
 #include <hld/FrameTypeIndex.h>
@@ -87,9 +88,12 @@ namespace mt
     Ref<ImageView> _hdrBufferView;
     Ref<Image> _depthBuffer;
     Ref<ImageView> _depthBufferView;
+    Ref<Image> _halfDepthBuffer;
+    Ref<ImageView> _halfDepthBufferView;
 
     ColorFrameCommonSet _commonSet;
 
+    OpaquePrepassStage _opaquePrepassStage;
     OpaqueColorStage _opaqueColorStage;
     BackgroundRender _backgroundRender;
     Posteffects _posteffects;
