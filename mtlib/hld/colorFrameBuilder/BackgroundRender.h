@@ -27,8 +27,8 @@ namespace mt
     void draw(CommandProducerGraphic& commandProducer,
               glm::uvec2 viewport);
 
-    inline void setHdrBuffer(const ImageView& newBuffer) noexcept;
-    inline void setDepthBuffer(const ImageView& newBuffer) noexcept;
+    inline void setBuffers( const ImageView& hdrBuffer,
+                            const ImageView& depthBuffer);
 
   private:
     void _buildFrameBuffer();
@@ -44,19 +44,13 @@ namespace mt
     ConstRef<FrameBuffer> _frameBuffer;
   };
 
-  inline void BackgroundRender::setHdrBuffer(
-                                            const ImageView& newBuffer) noexcept
+  inline void BackgroundRender::setBuffers(
+                                          const ImageView& hdrBuffer,
+                                          const ImageView& depthBuffer)
   {
-    if(_hdrBuffer == &newBuffer) return;
-    _hdrBuffer = &newBuffer;
-    _frameBuffer = nullptr;
-  }
-
-  inline void BackgroundRender::setDepthBuffer(
-                                            const ImageView& newBuffer) noexcept
-  {
-    if(_depthBuffer == &newBuffer) return;
-    _depthBuffer = &newBuffer;
+    if(_hdrBuffer == &hdrBuffer && _depthBuffer == &depthBuffer) return;
+    _hdrBuffer = &hdrBuffer;
+    _depthBuffer = &depthBuffer;
     _frameBuffer = nullptr;
   }
 }

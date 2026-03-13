@@ -89,50 +89,48 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
 
 void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
 {
-  if (_hdrBuffer == nullptr ||
-      glm::uvec2(_hdrBuffer->extent()) != targetExtent)
+  //  Проверка, а надо ли вообще пересоздавать буферы
+  if (_hdrBuffer != nullptr &&
+      glm::uvec2(_hdrBuffer->extent()) == targetExtent)
   {
-    _hdrBuffer = new Image( _device,
+    return;
+  }
+
+  _hdrBuffer = new Image( _device,
+                          VK_IMAGE_TYPE_2D,
+                          VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                            VK_IMAGE_USAGE_SAMPLED_BIT |
+                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                          0,
+                          hdrFormat,
+                          glm::uvec3(targetExtent, 1),
+                          VK_SAMPLE_COUNT_1_BIT,
+                          1,
+                          1,
+                          false,
+                          "HDRBuffer");
+  _hdrBufferView = new ImageView( *_hdrBuffer,
+                                  ImageSlice(*_hdrBuffer),
+                                  VK_IMAGE_VIEW_TYPE_2D);
+
+  _depthBuffer = new Image( _device,
                             VK_IMAGE_TYPE_2D,
-                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-                              VK_IMAGE_USAGE_SAMPLED_BIT |
-                              VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                             0,
-                            hdrFormat,
+                            depthFormat,
                             glm::uvec3(targetExtent, 1),
                             VK_SAMPLE_COUNT_1_BIT,
                             1,
                             1,
                             false,
-                            "HDRBuffer");
-    _hdrBufferView = new ImageView( *_hdrBuffer,
-                                    ImageSlice(*_hdrBuffer),
+                            "DepthBuffer");
+  _depthBufferView = new ImageView( *_depthBuffer,
+                                    ImageSlice(*_depthBuffer),
                                     VK_IMAGE_VIEW_TYPE_2D);
-    _opaqueColorStage.setHdrBuffer(*_hdrBufferView);
-    _backgroundRender.setHdrBuffer(*_hdrBufferView);
-    _posteffects.setHdrBuffer(*_hdrBufferView);
-  }
 
-  if (_depthBuffer == nullptr ||
-      glm::uvec2(_depthBuffer->extent()) != targetExtent)
-  {
-    _depthBuffer = new Image( _device,
-                              VK_IMAGE_TYPE_2D,
-                              VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                              0,
-                              depthFormat,
-                              glm::uvec3(targetExtent, 1),
-                              VK_SAMPLE_COUNT_1_BIT,
-                              1,
-                              1,
-                              false,
-                              "DepthBuffer");
-    _depthBufferView = new ImageView( *_depthBuffer,
-                                      ImageSlice(*_depthBuffer),
-                                      VK_IMAGE_VIEW_TYPE_2D);
-    _opaqueColorStage.setDepthBuffer(*_depthBufferView);
-    _backgroundRender.setDepthBuffer(*_depthBufferView);
-  }
+  _opaqueColorStage.setBuffers(*_hdrBufferView, *_depthBufferView);
+  _backgroundRender.setBuffers(*_hdrBufferView, *_depthBufferView);
+  _posteffects.setHdrBuffer(*_hdrBufferView);
 }
 
 void ColorFrameBuilder::_initBuffersLayout(

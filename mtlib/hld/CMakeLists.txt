@@ -18,6 +18,7 @@ set(SOURCES
     "colorFrameBuilder/ColorFrameCommonSetBindings.cpp"
     "colorFrameBuilder/EnvironmentScene.cpp"
     "colorFrameBuilder/OpaqueColorStage.cpp"
+    "colorFrameBuilder/OpaquePrepassStage.cpp"
     "colorFrameBuilder/Posteffects.cpp"
     "drawCommand/CommandMemoryPool.cpp"
     "drawCommand/DrawCommandList.cpp"
@@ -27,7 +28,8 @@ set(SOURCES
     "meshDrawable/MeshDrawCommand.cpp"
     "drawScene/Drawable3D.cpp"
     "drawScene/DrawScene.cpp"
-    "HLDLib.cpp")
+    "HLDLib.cpp"
+    "RegularDrawStage.cpp")
 
 add_library(hld
             ${SOURCES})

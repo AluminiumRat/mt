@@ -8,43 +8,15 @@
 using namespace mt;
 
 OpaqueColorStage::OpaqueColorStage(Device& device) :
-  _device(device),
-  _stageIndex(HLDLib::instance().getStageIndex(stageName)),
-  _commandMemoryPool(4 * 1024),
-  _drawCommands(_commandMemoryPool)
+  RegularDrawStage(device, stageName, DrawCommandList::BY_GROUP_INDEX_SORTING)
 {
 }
 
-void OpaqueColorStage::draw(CommandProducerGraphic& commandProducer,
-                            const DrawPlan& drawPlan,
-                            const FrameBuildContext& frameContext,
-                            glm::uvec2 viewport)
+ConstRef<FrameBuffer> OpaqueColorStage::buildFrameBuffer() const
 {
   MT_ASSERT(_hdrBuffer != nullptr);
   MT_ASSERT(_depthBuffer != nullptr);
-  MT_ASSERT(viewport.x != 0 && viewport.y != 0);
 
-  _drawCommands.clear();
-  _commandMemoryPool.reset();
-
-  _drawCommands.fillFromStagePlan(drawPlan.stagePlan(_stageIndex),
-                                  frameContext,
-                                  _stageIndex,
-                                  nullptr);
-
-  if(_frameBuffer == nullptr) _buildFrameBuffer();
-
-  CommandProducerGraphic::RenderPass renderPass(commandProducer,
-                                                *_frameBuffer,
-                                                std::nullopt,
-                                                viewport);
-    _drawCommands.draw( commandProducer,
-                        DrawCommandList::BY_GROUP_INDEX_SORTING);
-  renderPass.endPass();
-}
-
-void OpaqueColorStage::_buildFrameBuffer()
-{
   FrameBuffer::ColorAttachmentInfo colorAttachment = {
                     .target = _hdrBuffer.get(),
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -58,7 +30,7 @@ void OpaqueColorStage::_buildFrameBuffer()
                                         .clearValue = { .depth = 0,
                                                         .stencil = 0}};
 
-  _frameBuffer = new FrameBuffer( std::span(&colorAttachment, 1),
-                                  &depthAttachment);
+  return ConstRef(new FrameBuffer(std::span(&colorAttachment, 1),
+                                  &depthAttachment));
 }
 
