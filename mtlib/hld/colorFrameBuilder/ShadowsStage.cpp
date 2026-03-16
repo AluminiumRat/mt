@@ -1,7 +1,9 @@
 ﻿#include <hld/colorFrameBuilder/ShadowsStage.h>
+#include <hld/drawScene/DrawScene.h>
 #include <hld/FrameBuildContext.h>
 #include <technique/TechniqueLoader.h>
 #include <vkr/queue/CommandProducerGraphic.h>
+#include <vkr/Device.h>
 
 using namespace mt;
 
@@ -10,10 +12,14 @@ ShadowsStage::ShadowsStage(Device& device) :
   _resolveConfigurator(new TechniqueConfigurator(device, "ShadowsResolve")),
   _resolveTechnique(*_resolveConfigurator),
   _resolvePass(_resolveTechnique.getOrCreatePass("ResolvePass")),
-  _depthBufferBinding(_resolveTechnique.getOrCreateResourceBinding("depthMap"))
+  _depthBufferBinding(_resolveTechnique.getOrCreateResourceBinding("depthMap")),
+  _tlasBinding(_resolveTechnique.getOrCreateResourceBinding("tlas"))
 {
-  loadConfigurator(*_resolveConfigurator, "shadows/resolve.tch");
-  _resolveConfigurator->rebuildConfiguration();
+  if(device.features().rayQuery.rayQuery == VK_TRUE)
+  {
+    loadConfigurator(*_resolveConfigurator, "shadows/resolve.tch");
+    _resolveConfigurator->rebuildConfiguration();
+  }
 }
 
 void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
@@ -24,8 +30,12 @@ void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
   MT_ASSERT(_depthBuffer != nullptr);
   _depthBufferBinding.setImage(_depthBuffer);
 
+  const TLAS* tlas = frameContext.drawScene->tlas();
+  _tlasBinding.setTLAS(tlas);
+
   CommandProducerGraphic::RenderPass renderPass(commandProducer,
                                                 *_resolveFrameBuffer);
+  if(_resolveTechnique.isReady())
   {
     Technique::BindGraphic bind(_resolveTechnique,
                                 _resolvePass,
@@ -33,6 +43,7 @@ void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
     MT_ASSERT(bind.isValid())
     commandProducer.draw(4);
   }
+
   renderPass.endPass();
 }
 

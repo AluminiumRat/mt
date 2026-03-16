@@ -30,6 +30,8 @@ int main(int argc, char* argv[])
                                         { "VK_KHR_acceleration_structure",
                                           "VK_KHR_deferred_host_operations",
                                           "VK_KHR_ray_query"},
+                                        /*{},
+                                        {},*/
                                         GRAPHICS_CONFIGURATION);
     TestWindow mainWindow(*device);
     mainWindow.loadConfiguration();

@@ -42,6 +42,7 @@ namespace mt
     Technique _resolveTechnique;
     TechniquePass& _resolvePass;
     ResourceBinding& _depthBufferBinding;
+    ResourceBinding& _tlasBinding;
 
     ConstRef<ImageView> _depthBuffer;
     ConstRef<ImageView> _shadowBuffer;

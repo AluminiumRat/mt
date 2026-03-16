@@ -45,6 +45,7 @@ void TestWindow::_loadModel(const std::filesystem::path& filename)
                         _techniqueManager,
                         GLTFImporter::LOAD_ASYNC,
                         true);
+                        //false);
   GLTFImporter::Results imported = importer.importGLTF(filename);
   for(std::unique_ptr<MeshDrawable>& mesh : imported.drawables)
   {
