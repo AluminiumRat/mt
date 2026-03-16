@@ -18,11 +18,13 @@ using namespace mt;
 GLTFImporter::GLTFImporter( CommandQueueGraphic& uploadingQueue,
                             TextureManager& textureManager,
                             TechniqueManager& techniqueManager,
-                            LoadingPolicy resourcesLoadingPolicy) :
+                            LoadingPolicy resourcesLoadingPolicy,
+                            bool createBLAS) :
   BaseGLTFImporter(uploadingQueue, &textureManager, resourcesLoadingPolicy),
   _producer(nullptr),
   _techniqueManager(techniqueManager),
-  _resourcesLoadingPolicy(resourcesLoadingPolicy)
+  _resourcesLoadingPolicy(resourcesLoadingPolicy),
+  _createBLAS(createBLAS)
 {
   if(resourcesLoadingPolicy == LOAD_ASYNC)
   {
@@ -46,15 +48,17 @@ void GLTFImporter::_clear() noexcept
   _producer = nullptr;
   _drawables.clear();
   _meshAssets.clear();
+  _blasAssets.clear();
 }
 
-GLTFImporter::DrawablesList GLTFImporter::importGLTF(
+GLTFImporter::Results GLTFImporter::importGLTF(
                                               const std::filesystem::path& file)
 {
   _clear();
 
   _model = &parseFile(file);
   _meshAssets.resize(_model->meshes.size());
+  _blasAssets.resize(_model->meshes.size());
 
   std::unique_ptr<CommandProducerGraphic> producer =
                               uploadingQueue().startCommands("GLTF uploading");
@@ -66,7 +70,11 @@ GLTFImporter::DrawablesList GLTFImporter::importGLTF(
   }
 
   uploadingQueue().submitCommands(std::move(producer));
-  return std::move(_drawables);
+
+  Results results;
+  results.drawables = std::move(_drawables);
+  results.blases = std::move(_blases);
+  return results;
 }
 
 void GLTFImporter::_processNode(int nodeIndex, const glm::mat4& parentTransform)
@@ -81,16 +89,27 @@ void GLTFImporter::_processNode(int nodeIndex, const glm::mat4& parentTransform)
 
 void GLTFImporter::_processMesh(int gltfMeshIndex, const glm::mat4& tansform)
 {
-  const MeshAssets& assets = _getAsset(gltfMeshIndex);
+  const MeshAssets& assets = _getMeshAsset(gltfMeshIndex);
   for(ConstRef<MeshAsset> asset : assets)
   {
     std::unique_ptr<MeshDrawable> drawable(new MeshDrawable(*asset));
     drawable->setPositionMatrix(tansform);
     _drawables.push_back(std::move(drawable));
   }
+
+  if(_createBLAS)
+  {
+    const BLAS* blas = _getBLAS(gltfMeshIndex);
+    if(blas != nullptr)
+    {
+      _blases.push_back(std::unique_ptr<BLASInstance>(
+                                    new BLASInstance{ .blas = ConstRef(blas),
+                                                      .transform = tansform}));
+    }
+  }
 }
 
-const GLTFImporter::MeshAssets& GLTFImporter::_getAsset(int meshIndex)
+const GLTFImporter::MeshAssets& GLTFImporter::_getMeshAsset(int meshIndex)
 {
   if(!_meshAssets[meshIndex].empty()) return _meshAssets[meshIndex];
   _meshAssets[meshIndex] = _createMeshAssets(meshIndex);
@@ -130,7 +149,11 @@ GLTFImporter::MeshAssets GLTFImporter::_createMeshAssets(int meshIndex)
                                                     *_producer);
 
     Ref<MeshAsset> asset(new MeshAsset(meshName.c_str()));
-    if(!_adjustAsset( *asset, gpuVertices, cpuMaterial, gpuMaterial, meshName))
+    if(!_adjustMeshAsset( *asset,
+                          gpuVertices,
+                          cpuMaterial,
+                          gpuMaterial,
+                          meshName))
     {
       continue;
     }
@@ -141,11 +164,11 @@ GLTFImporter::MeshAssets GLTFImporter::_createMeshAssets(int meshIndex)
   return newSet;
 }
 
-bool GLTFImporter::_adjustAsset(MeshAsset& targetAsset,
-                                const GPUVerticesData& vertices,
-                                const GLTFMaterial& material,
-                                const DataBuffer& gpuMaterial,
-                                const std::string& meshName)
+bool GLTFImporter::_adjustMeshAsset(MeshAsset& targetAsset,
+                                    const GPUVerticesData& vertices,
+                                    const GLTFMaterial& material,
+                                    const DataBuffer& gpuMaterial,
+                                    const std::string& meshName)
 {
   if(vertices.positions == nullptr) throw std::runtime_error(meshName + ": POSITION buffer is not found");
   if(vertices.normals == nullptr) throw std::runtime_error(meshName + ": NORMAL buffer is not found");
@@ -300,4 +323,84 @@ bool GLTFImporter::_adjustAsset(MeshAsset& targetAsset,
   }
 
   return true;
+}
+
+const BLAS* GLTFImporter::_getBLAS(int meshIndex)
+{
+  if(_blasAssets[meshIndex] != nullptr) return _blasAssets[meshIndex].get();
+
+  const tinygltf::Mesh& gltfMesh = _model->meshes[meshIndex];
+  std::string meshName = filename() + ":" + gltfMesh.name;
+
+  std::vector<BLASGeometry> buffers;
+  for(const tinygltf::Primitive& primitive : gltfMesh.primitives)
+  {
+    if(primitive.mode != TINYGLTF_MODE_TRIANGLES)
+    {
+      Log::warning() << filename() << " : unsupported mesh mode: " << primitive.mode;
+      continue;
+    }
+    if(primitive.material == -1)
+    {
+      Log::warning() << meshName << " : the primitive doesn't have any material";
+      continue;
+    }
+
+    VerticesData cpuVertices = getVerticesData(primitive, meshName);
+    GPUVerticesData gpuVertices = uploadVertices( cpuVertices,
+                                                  *_producer,
+                                                  meshName);
+    if(gpuVertices.positions == nullptr) continue;
+    buffers.push_back(BLASGeometry{ .positions = gpuVertices.positions,
+                                    .vertexCount = cpuVertices.positions.size(),
+                                    .indices = gpuVertices.indices,
+                                    .indexCount = cpuVertices.indices.size()});
+  }
+
+  if(buffers.empty()) return nullptr;
+
+  Ref<BLAS> newBlas(new BLAS( buffers,
+                              meshName.c_str()));
+  newBlas->build(*_producer);
+  _blasAssets[meshIndex] = newBlas;
+
+  return newBlas.get();
+}
+
+ConstRef<DataBuffer> GLTFImporter::createIndexBuffer(
+                                                  size_t dataSize,
+                                                  const char* bufferName) const
+{
+  if(_createBLAS)
+  {
+    return ConstRef(new DataBuffer( device(),
+                                    dataSize,
+                                    VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                      VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                                      VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+                                    0,
+                                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                    bufferName));
+  }
+  else return BaseGLTFImporter::createIndexBuffer(dataSize, bufferName);
+}
+
+ConstRef<DataBuffer> GLTFImporter::createVertexBuffer(
+                                                  size_t dataSize,
+                                                  const char* bufferName) const
+{
+  if(_createBLAS)
+  {
+    return ConstRef(new DataBuffer( device(),
+                                    dataSize,
+                                    VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                                      VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                                      VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+                                    0,
+                                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                    bufferName));
+  }
+  else return BaseGLTFImporter::createVertexBuffer(dataSize, bufferName);
 }

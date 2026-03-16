@@ -16,6 +16,7 @@
 #include <resourceManagement/TextureManager.h>
 #include <util/Camera.h>
 #include <util/Ref.h>
+#include <vkr/accelerationStructure/BLASInstance.h>
 
 namespace mt
 {
@@ -53,6 +54,7 @@ namespace mt
 
     DrawScene _scene;
     std::vector<std::unique_ptr<Drawable>> _drawables;
+    std::vector<std::unique_ptr<BLASInstance>> _blases;
 
     EnvironmentScene _environment;
     std::filesystem::path _environmentFile;

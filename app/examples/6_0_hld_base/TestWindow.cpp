@@ -123,6 +123,10 @@ void TestWindow::_fillScene()
 
 void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
 {
+  std::unique_ptr<CommandProducerGraphic> commandProducer =
+                        device().graphicQueue()->startCommands(colorFrameType);
+  _scene.updateGPUData(*commandProducer);
+
   FrameBuildContext frameContext{};
   frameContext.frameType = _frameTypeIndex;
   frameContext.viewCamera = &_camera;
@@ -130,9 +134,6 @@ void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
 
   _drawPlan.clear();
   _scene.fillDrawPlan(_drawPlan, frameContext);
-
-  std::unique_ptr<CommandProducerGraphic> commandProducer =
-                        device().graphicQueue()->startCommands(colorFrameType);
 
   CommandProducerGraphic::RenderPass renderPass(*commandProducer, frameBuffer);
 

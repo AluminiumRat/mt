@@ -43,13 +43,18 @@ void TestWindow::_loadModel(const std::filesystem::path& filename)
   GLTFImporter importer(*device().graphicQueue(),
                         _textureManager,
                         _techniqueManager,
-                        GLTFImporter::LOAD_ASYNC);
-  std::vector<std::unique_ptr<MeshDrawable>> meshes =
-                                                  importer.importGLTF(filename);
-  for(std::unique_ptr<MeshDrawable>& mesh : meshes)
+                        GLTFImporter::LOAD_ASYNC,
+                        true);
+  GLTFImporter::Results imported = importer.importGLTF(filename);
+  for(std::unique_ptr<MeshDrawable>& mesh : imported.drawables)
   {
     _drawables.push_back(std::move(mesh));
     _scene.registerDrawable(*_drawables.back());
+  }
+  for(std::unique_ptr<BLASInstance>& blas : imported.blases)
+  {
+    _blases.push_back(std::move(blas));
+    _scene.registerBLAS(*_blases.back());
   }
 }
 
@@ -67,14 +72,25 @@ void TestWindow::_clearScene() noexcept
     _scene.unregisterDrawable(*drawable);
   }
   _drawables.clear();
+
+  for(std::unique_ptr<BLASInstance>& blas : _blases)
+  {
+    _scene.unregisterBLAS(*blas);
+  }
+  _drawables.clear();
 }
 
 void TestWindow::update()
 {
+  GUIWindow::update();
+
   _asyncQueue.update();
   _fileWatcher.propagateChanges();
 
-  GUIWindow::update();
+  std::unique_ptr<CommandProducerGraphic> updateProducer =
+                                device().graphicQueue()->startCommands("Update");
+  _scene.updateGPUData(*updateProducer);
+  device().graphicQueue()->submitCommands(std::move(updateProducer));
 }
 
 void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
@@ -84,12 +100,12 @@ void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
                       _camera,
                       _environment);
 
-  std::unique_ptr<CommandProducerGraphic> commandProducer =
+  std::unique_ptr<CommandProducerGraphic> guiProducer =
                                 device().graphicQueue()->startCommands("ImGui");
-    CommandProducerGraphic::RenderPass renderPass(*commandProducer, frameBuffer);
-    drawGUI(*commandProducer);
+    CommandProducerGraphic::RenderPass renderPass(*guiProducer, frameBuffer);
+    drawGUI(*guiProducer);
     renderPass.endPass();
-  device().graphicQueue()->submitCommands(std::move(commandProducer));
+  device().graphicQueue()->submitCommands(std::move(guiProducer));
 }
 
 void TestWindow::guiImplementation()

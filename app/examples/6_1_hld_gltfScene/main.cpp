@@ -24,9 +24,13 @@ int main(int argc, char* argv[])
     HLDLib hldLib;
 
     std::unique_ptr<Device> device = guiLib.createDevice(
-                                                      {},
-                                                      {},
-                                                      GRAPHICS_CONFIGURATION);
+                                        { .accelerationStructure = {
+                                              .accelerationStructure = VK_TRUE},
+                                          .rayQuery = {.rayQuery = VK_TRUE}},
+                                        { "VK_KHR_acceleration_structure",
+                                          "VK_KHR_deferred_host_operations",
+                                          "VK_KHR_ray_query"},
+                                        GRAPHICS_CONFIGURATION);
     TestWindow mainWindow(*device);
     mainWindow.loadConfiguration();
     while (!guiLib.shouldBeClosed())
