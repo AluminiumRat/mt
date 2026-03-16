@@ -10,12 +10,16 @@ layout(location = 1) out vec3 outWorldPosition;
   layout(location = 3) out vec3 outBinormal;
 #endif
 
+//  Текстурные координаты для извлечения данных из полноэкранных
+//  буферов
+layout(location = 4) out vec2 outSSCoords;
+
 // Текстурных координат может быть 0, 1 или 4
 #if TEXCOORD_COUNT == 1
-  layout(location = 4) out vec2 outTexcoord;
+  layout(location = 5) out vec2 outTexcoord;
 #endif
 #if TEXCOORD_COUNT > 1
-  layout(location = 4) out vec2 outTexcoord[4];
+  layout(location = 5) out vec2 outTexcoord[4];
 #endif
 
 void main()
@@ -36,6 +40,8 @@ void main()
   position = transformData.positionMatrix[gl_InstanceIndex] * position;
   outWorldPosition = position.xyz;
   gl_Position = commonData.cameraData.viewProjectionMatrix * position;
+
+  outSSCoords = gl_Position.xy / gl_Position.w * 0.5f + 0.5f;
 
   vec3 normal = vec3( NORMAL.data[vertexShift],
                       NORMAL.data[vertexShift + 1],

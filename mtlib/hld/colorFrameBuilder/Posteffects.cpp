@@ -4,7 +4,6 @@
 #include <gui/ImGuiRAII.h>
 #include <hld/colorFrameBuilder/ColorFrameBuilder.h>
 #include <hld/colorFrameBuilder/Posteffects.h>
-#include <hld/FrameBuildContext.h>
 #include <technique/TechniqueLoader.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 
@@ -39,8 +38,7 @@ Posteffects::Posteffects(Device& device) :
 
 void Posteffects::makeLDR(FrameBuffer& target,
                           const Region& drawRegion,
-                          CommandProducerGraphic& commandProducer,
-                          const FrameBuildContext& frameContext)
+                          CommandProducerGraphic& commandProducer)
 {
   MT_ASSERT(drawRegion.valid());
   MT_ASSERT(_hdrBuffer != nullptr);

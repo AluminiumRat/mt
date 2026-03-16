@@ -9,6 +9,7 @@
 #include <hld/colorFrameBuilder/OpaqueColorStage.h>
 #include <hld/colorFrameBuilder/Posteffects.h>
 #include <hld/colorFrameBuilder/OpaquePrepassStage.h>
+#include <hld/colorFrameBuilder/ShadowsStage.h>
 #include <hld/drawCommand/CommandMemoryPool.h>
 #include <hld/DrawPlan.h>
 #include <hld/FrameTypeIndex.h>
@@ -43,6 +44,8 @@ namespace mt
 
     static constexpr VkFormat hdrFormat = VK_FORMAT_B10G11R11_UFLOAT_PACK32;
     static constexpr VkFormat depthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
+    static constexpr VkFormat halfDepthFormat = VK_FORMAT_D32_SFLOAT;
+    static constexpr VkFormat shadowFormat = VK_FORMAT_R8_UNORM;
 
   public:
     explicit ColorFrameBuilder( Device& device,
@@ -73,6 +76,8 @@ namespace mt
   private:
     void _updateBuffers(glm::uvec2 targetExtent);
     void _initBuffersLayout(CommandProducerGraphic& commandProducer);
+    void _shadowsLayout(CommandProducerGraphic& commandProducer);
+    void _opaquePassLayout(CommandProducerGraphic& commandProducer);
     void _posteffectsLayouts(CommandProducerGraphic& commandProducer);
 
   private:
@@ -90,10 +95,13 @@ namespace mt
     Ref<ImageView> _depthBufferView;
     Ref<Image> _halfDepthBuffer;
     Ref<ImageView> _halfDepthBufferView;
+    Ref<Image> _shadowBuffer;
+    Ref<ImageView> _shadowBufferView;
 
     ColorFrameCommonSet _commonSet;
 
     OpaquePrepassStage _opaquePrepassStage;
+    ShadowsStage _shadowsStage;
     OpaqueColorStage _opaqueColorStage;
     BackgroundRender _backgroundRender;
     Posteffects _posteffects;

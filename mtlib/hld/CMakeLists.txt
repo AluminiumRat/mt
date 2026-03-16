@@ -20,6 +20,7 @@ set(SOURCES
     "colorFrameBuilder/OpaqueColorStage.cpp"
     "colorFrameBuilder/OpaquePrepassStage.cpp"
     "colorFrameBuilder/Posteffects.cpp"
+    "colorFrameBuilder/ShadowsStage.cpp"
     "drawCommand/CommandMemoryPool.cpp"
     "drawCommand/DrawCommandList.cpp"
     "drawScene/Drawable.cpp"

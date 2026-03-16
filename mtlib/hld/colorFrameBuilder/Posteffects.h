@@ -13,7 +13,6 @@ namespace mt
   class CommandProducerGraphic;
   class Device;
   struct FrameBuildContext;
-  class TechniqueManager;
 
   //  Преобразование HDL в LDR и пострендер
   class Posteffects
@@ -39,8 +38,7 @@ namespace mt
     //  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     void makeLDR( FrameBuffer& target,
                   const Region& drawRegion,
-                  CommandProducerGraphic& commandProducer,
-                  const FrameBuildContext& frameContext);
+                  CommandProducerGraphic& commandProducer);
 
     inline void setHdrBuffer(const ImageView& newBuffer) noexcept;
 

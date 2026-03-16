@@ -13,11 +13,15 @@ layout(location = 1) in vec3 inWorldPosition;
   layout(location = 3) in vec3 inBinormal;
 #endif
 
+//  Текстурные координаты для извлечения данных из полноэкранных
+//  буферов
+layout(location = 4) in vec2 inSSCoords;
+
 #if TEXCOORD_COUNT == 1
-  layout(location = 4) in vec2 inTexCoord;
+  layout(location = 5) in vec2 inTexCoord;
 #endif
 #if TEXCOORD_COUNT > 1
-  layout(location = 4) in vec2 inTexCoord[4];
+  layout(location = 5) in vec2 inTexCoord[4];
 #endif
 
 layout(location = 0) out vec4 outColor;
@@ -103,13 +107,13 @@ void main()
                                         observedSurface,
                                         commonData.environment.toSunDirection);
 
-  //  Теней пока нет, поэтому вместо shadowFactor передаем ambientOcclusion
-  //  Костыль, но позволяет сделать немного покарасивее
+  float shadowFactor = texture( sampler2D( shadowBuffer, commonLinearSampler),
+                                inSSCoords).r;
   vec3 radiance = getDirectLightRadiance(
                                   observedSurface,
                                   litSurface,
                                   commonData.environment.directLightIrradiance,
-                                  observedSurface.ambientOcclusion);
+                                  shadowFactor);
 
   radiance += getIBLRadiance( observedSurface,
                               iblIrradianceMap,

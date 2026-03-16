@@ -57,7 +57,8 @@ void ColorFrameCommonSet::_createLayouts()
 
 void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
                                   const FrameBuildContext& frameContext,
-                                  const EnvironmentScene& environment)
+                                  const EnvironmentScene& environment,
+                                  const ImageView& shadowBuffer)
 {
   _updateuniformBuffer(commandProducer, frameContext, environment);
 
@@ -77,6 +78,9 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
                                       VK_SHADER_STAGE_ALL);
   _descriptorSet->attachSampledImage( environment.specularMap(),
                                       iblspecularMapBinding,
+                                      VK_SHADER_STAGE_ALL);
+  _descriptorSet->attachSampledImage( shadowBuffer,
+                                      shadowBufferBinding,
                                       VK_SHADER_STAGE_ALL);
   _descriptorSet->attachSampler(*_commonLinearSampler,
                                 commonLinearSamplerBinding);
