@@ -12,7 +12,7 @@ layout(location = 1) out vec3 outWorldPosition;
 
 //  Текстурные координаты для извлечения данных из полноэкранных
 //  буферов
-layout(location = 4) out vec2 outSSCoords;
+layout(location = 4) noperspective out vec2 outSSCoords;
 
 // Текстурных координат может быть 0, 1 или 4
 #if TEXCOORD_COUNT == 1

@@ -15,7 +15,7 @@ layout(location = 1) in vec3 inWorldPosition;
 
 //  Текстурные координаты для извлечения данных из полноэкранных
 //  буферов
-layout(location = 4) in vec2 inSSCoords;
+layout(location = 4) noperspective in vec2 inSSCoords;
 
 #if TEXCOORD_COUNT == 1
   layout(location = 5) in vec2 inTexCoord;
