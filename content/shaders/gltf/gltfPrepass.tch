@@ -17,7 +17,7 @@ passes:
     maxInstances: 32
 
     shaders:
-      VERTEX : gltf/gltfOpaque.vert
+      VERTEX : gltf/gltf.vert
       FRAGMENT : gltf/gltfPrepass.frag
 
     frameBuffer:

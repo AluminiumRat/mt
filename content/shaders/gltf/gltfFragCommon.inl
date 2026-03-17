@@ -1,8 +1,8 @@
 // Библиотека с общим кодом для фрагментных шейдеров рендера gltf моделей
-#ifndef GLTF_FRAG_INL
-#define GLTF_FRAG_INL
+#ifndef GLTF_FRAG_COMMONINL
+#define GLTF_FRAG_COMMONINL
 
-#include "gltf/gltfOpaque.inl"
+#include "gltf/gltfInput.inl"
 #include "lib/color.inl"
 
 layout(location = 0) in vec3 inNormal;

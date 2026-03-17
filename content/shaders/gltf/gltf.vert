@@ -1,6 +1,7 @@
+//  Универсальный вершинный шейдер для gltf моделей
 #version 450
 
-#include "gltf/gltfOpaque.inl"
+#include "gltf/gltfInput.inl"
 
 layout(location = 0) out vec3 outNormal;
 layout(location = 1) out vec3 outWorldPosition;

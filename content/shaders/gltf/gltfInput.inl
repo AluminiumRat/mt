@@ -1,3 +1,7 @@
+//  Входные данные для отрисовки gltf моделей
+#ifndef GLTF_INPUT_INL
+#define GLTF_INPUT_INL
+
 #include <lib/commonSet.inl>
 #include <gltf/gltfMaterial.inl>
 
@@ -91,4 +95,6 @@ layout (set = STATIC, binding = 3) readonly buffer NormalBuffer
       float data[];
     } TEXCOORD_3;
   #endif
+#endif
+
 #endif
