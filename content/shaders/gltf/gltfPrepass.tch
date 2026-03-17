@@ -2,18 +2,26 @@ commonSetName : ColorFrameCommonSet
 
 selections:
   INDICES_ENABLED: [0, 1]
+  TEXCOORD_COUNT: [0, 1, 4]
+  NORMALTEXTURE_MODE: [ NORMALTEXTURE_OFF,
+                        NORMALTEXTURE_VERTEX_TANGENT,
+                        NORMAL_TEXTURE_FRAGMENT_TANGENT]
 
 passes:
   Prepass:
-    selections: [INDICES_ENABLED]
+    selections: [ INDICES_ENABLED,
+                  TEXCOORD_COUNT,
+                  NORMALTEXTURE_MODE]
     frameType: ColorFrame
     stageName: OpaquePrepass
     maxInstances: 32
 
     shaders:
-      VERTEX : gltf/gltfPrepass.vert
+      VERTEX : gltf/gltfOpaque.vert
+      FRAGMENT : gltf/gltfPrepass.frag
 
     frameBuffer:
+      color: VK_FORMAT_R16G16_SNORM
       depthStencil: VK_FORMAT_D32_SFLOAT
 
     graphicSettings:

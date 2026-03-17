@@ -123,7 +123,7 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
 
   glm::uvec2 alignedSize = floorPow(targetExtent);
   alignedSize = glm::max(alignedSize, glm::uvec2(1));
-  glm::uvec2 alignedHalfSize = glm::max(alignedSize / 2u, glm::uvec2(1));;
+  glm::uvec2 alignedHalfSize = glm::max(alignedSize / 2u, glm::uvec2(1));
 
   _hdrBuffer = new Image( _device,
                           VK_IMAGE_TYPE_2D,
@@ -172,6 +172,21 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
   _halfDepthBufferView = new ImageView( *_halfDepthBuffer,
                                         ImageSlice(*_halfDepthBuffer),
                                         VK_IMAGE_VIEW_TYPE_2D);
+  _halfNormalBuffer = new Image(_device,
+                                VK_IMAGE_TYPE_2D,
+                                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                                  VK_IMAGE_USAGE_SAMPLED_BIT,
+                                0,
+                                halfNormalFormat,
+                                glm::uvec3(alignedHalfSize, 1),
+                                VK_SAMPLE_COUNT_1_BIT,
+                                1,
+                                1,
+                                false,
+                                "NormalHalfBuffer");
+  _halfNormalBufferView = new ImageView(*_halfNormalBuffer,
+                                        ImageSlice(*_halfNormalBuffer),
+                                        VK_IMAGE_VIEW_TYPE_2D);
   _shadowBuffer = new Image(_device,
                             VK_IMAGE_TYPE_2D,
                             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
@@ -188,7 +203,7 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                                     ImageSlice(*_shadowBuffer),
                                     VK_IMAGE_VIEW_TYPE_2D);
 
-  _opaquePrepassStage.setBuffer(*_halfDepthBufferView);
+  _opaquePrepassStage.setBuffers(*_halfDepthBufferView, *_halfNormalBufferView);
   _shadowsStage.setBuffers(*_halfDepthBufferView, *_shadowBufferView);
   _opaqueColorStage.setBuffers(*_hdrBufferView, *_depthBufferView);
   _backgroundRender.setBuffers(*_hdrBufferView, *_depthBufferView);
@@ -228,6 +243,16 @@ void ColorFrameBuilder::_initBuffersLayout(
                               0);
 
   commandProducer.imageBarrier(
+                              *_halfNormalBuffer,
+                              ImageSlice(*_halfNormalBuffer),
+                              VK_IMAGE_LAYOUT_UNDEFINED,
+                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                              0,
+                              0,
+                              0,
+                              0);
+
+  commandProducer.imageBarrier(
                               *_shadowBuffer,
                               ImageSlice(*_shadowBuffer),
                               VK_IMAGE_LAYOUT_UNDEFINED,
@@ -249,6 +274,16 @@ void ColorFrameBuilder::_shadowsLayout(CommandProducerGraphic& commandProducer)
                                 VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
                               VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                               VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                              VK_ACCESS_SHADER_READ_BIT);
+
+  commandProducer.imageBarrier(
+                              *_halfNormalBuffer,
+                              ImageSlice(*_halfNormalBuffer),
+                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                              VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                              VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                              VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                               VK_ACCESS_SHADER_READ_BIT);
 }
 

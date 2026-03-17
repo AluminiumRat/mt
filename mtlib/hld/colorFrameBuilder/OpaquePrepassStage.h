@@ -18,19 +18,23 @@ namespace mt
     OpaquePrepassStage& operator = (const OpaquePrepassStage&) = delete;
     virtual ~OpaquePrepassStage() noexcept = default;
 
-    inline void setBuffer(const ImageView& depthBuffer);
+    inline void setBuffers( const ImageView& depthBuffer,
+                            const ImageView& normalBuffer);
 
   protected:
     virtual ConstRef<FrameBuffer> buildFrameBuffer() const override;
 
   private:
     ConstRef<ImageView> _depthBuffer;
+    ConstRef<ImageView> _normalBuffer;
   };
 
-  inline void OpaquePrepassStage::setBuffer(const ImageView& depthBuffer)
+  inline void OpaquePrepassStage::setBuffers( const ImageView& depthBuffer,
+                                              const ImageView& normalBuffer)
   {
-    if(_depthBuffer == &depthBuffer) return;
+    if(_depthBuffer == &depthBuffer && _normalBuffer == &normalBuffer) return;
     _depthBuffer = &depthBuffer;
+    _normalBuffer = &normalBuffer;
     resetFrameBuffer();
   }
 }

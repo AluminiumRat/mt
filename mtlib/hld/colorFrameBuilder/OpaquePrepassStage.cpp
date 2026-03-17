@@ -15,6 +15,13 @@ OpaquePrepassStage::OpaquePrepassStage(Device& device) :
 ConstRef<FrameBuffer> OpaquePrepassStage::buildFrameBuffer() const
 {
   MT_ASSERT(_depthBuffer != nullptr);
+  MT_ASSERT(_normalBuffer != nullptr);
+
+  FrameBuffer::ColorAttachmentInfo colorAttachment = {
+                    .target = _normalBuffer.get(),
+                    .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                    .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                    .clearValue = VkClearColorValue{0.0f, 0.0f, 0.0f, 1.0f}};
 
   FrameBuffer::DepthStencilAttachmentInfo depthAttachment = {
                                         .target = _depthBuffer.get(),
@@ -23,7 +30,6 @@ ConstRef<FrameBuffer> OpaquePrepassStage::buildFrameBuffer() const
                                         .clearValue = { .depth = 0,
                                                         .stencil = 0}};
 
-  return ConstRef(new FrameBuffer(
-                            std::span<const FrameBuffer::ColorAttachmentInfo>(),
-                            &depthAttachment));
+  return ConstRef(new FrameBuffer(std::span(&colorAttachment, 1),
+                                  &depthAttachment));
 }

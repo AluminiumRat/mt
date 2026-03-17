@@ -45,6 +45,7 @@ namespace mt
     static constexpr VkFormat hdrFormat = VK_FORMAT_B10G11R11_UFLOAT_PACK32;
     static constexpr VkFormat depthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
     static constexpr VkFormat halfDepthFormat = VK_FORMAT_D32_SFLOAT;
+    static constexpr VkFormat halfNormalFormat = VK_FORMAT_R16G16_SNORM;
     static constexpr VkFormat shadowFormat = VK_FORMAT_R8_UNORM;
 
   public:
@@ -95,6 +96,8 @@ namespace mt
     Ref<ImageView> _depthBufferView;
     Ref<Image> _halfDepthBuffer;
     Ref<ImageView> _halfDepthBufferView;
+    Ref<Image> _halfNormalBuffer;
+    Ref<ImageView> _halfNormalBufferView;
     Ref<Image> _shadowBuffer;
     Ref<ImageView> _shadowBufferView;
 
