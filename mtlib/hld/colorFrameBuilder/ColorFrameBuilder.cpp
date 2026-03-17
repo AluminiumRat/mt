@@ -42,6 +42,7 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
   frameContext.frameType = _frameTypeIndex;
   frameContext.viewCamera = &viewCamera;
   frameContext.drawScene = &scene;
+  frameContext.frameExtent = targetRegion.size();
 
   _drawPlan.clear();
   scene.fillDrawPlan(_drawPlan, frameContext);
@@ -54,6 +55,8 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
     _commonSet.update(*prepareProducer,
                       frameContext,
                       environment,
+                      *_halfDepthBufferView,
+                      *_halfNormalBufferView,
                       *_shadowBufferView);
     _device.graphicQueue()->submitCommands(std::move(prepareProducer));
   }
@@ -121,9 +124,7 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
     return;
   }
 
-  glm::uvec2 alignedSize = floorPow(targetExtent);
-  alignedSize = glm::max(alignedSize, glm::uvec2(1));
-  glm::uvec2 alignedHalfSize = glm::max(alignedSize / 2u, glm::uvec2(1));
+  glm::uvec2 halfSize = glm::max(targetExtent / 2u, glm::uvec2(1));
 
   _hdrBuffer = new Image( _device,
                           VK_IMAGE_TYPE_2D,
@@ -163,7 +164,7 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                                   VK_IMAGE_USAGE_SAMPLED_BIT,
                                 0,
                                 halfDepthFormat,
-                                glm::uvec3(alignedHalfSize, 1),
+                                glm::uvec3(halfSize, 1),
                                 VK_SAMPLE_COUNT_1_BIT,
                                 1,
                                 1,
@@ -178,7 +179,7 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                                   VK_IMAGE_USAGE_SAMPLED_BIT,
                                 0,
                                 halfNormalFormat,
-                                glm::uvec3(alignedHalfSize, 1),
+                                glm::uvec3(halfSize, 1),
                                 VK_SAMPLE_COUNT_1_BIT,
                                 1,
                                 1,
@@ -193,7 +194,7 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                               VK_IMAGE_USAGE_SAMPLED_BIT,
                             0,
                             shadowFormat,
-                            glm::uvec3(alignedHalfSize, 1),
+                            glm::uvec3(halfSize, 1),
                             VK_SAMPLE_COUNT_1_BIT,
                             1,
                             1,

@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <glm/glm.hpp>
+
 #include <hld/FrameTypeIndex.h>
 
 namespace mt
@@ -12,5 +14,8 @@ namespace mt
     FrameTypeIndex frameType;
     const Camera* viewCamera;
     const DrawScene* drawScene;
+
+    //  Размер области, в которую отрисовывается конечная картинка
+    glm::uvec2 frameExtent;
   };
 }

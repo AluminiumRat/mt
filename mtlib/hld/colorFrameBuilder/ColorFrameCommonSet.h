@@ -20,15 +20,17 @@ namespace mt
   {
   public:
     static constexpr const char* setName = "ColorFrameCommonSet";
-    static const VkDescriptorSetLayoutBinding bindings[7];
+    static const VkDescriptorSetLayoutBinding bindings[9];
 
     static constexpr uint32_t uniformBufferBinding = 0;
     static constexpr uint32_t iblLutBinding = 1;
     static constexpr uint32_t iblLutSamplerBinding = 2;
     static constexpr uint32_t iblIrradianceMapBinding = 3;
     static constexpr uint32_t iblspecularMapBinding = 4;
-    static constexpr uint32_t shadowBufferBinding = 5;
-    static constexpr uint32_t commonLinearSamplerBinding = 6;
+    static constexpr uint32_t depthHalfBufferBinding = 5;
+    static constexpr uint32_t normalHalfBufferBinding = 6;
+    static constexpr uint32_t shadowBufferBinding = 7;
+    static constexpr uint32_t commonLinearSamplerBinding = 8;
 
   public:
     //  Хелпер, который биндит сет в конструкторе и анбиндит в деструкторе
@@ -55,6 +57,8 @@ namespace mt
     void update(CommandProducerGraphic& commandProducer,
                 const FrameBuildContext& frameContext,
                 const EnvironmentScene& environment,
+                const ImageView& depthHalfBuffer,
+                const ImageView& normalHalfBuffer,
                 const ImageView& shadowBuffer);
 
   private:
@@ -63,10 +67,18 @@ namespace mt
     void unbind(CommandProducerGraphic& commandProducer) const noexcept;
 
   private:
+    struct ExtentInfo
+    {
+      alignas(16) glm::vec4 frameExtent;
+      alignas(16) glm::vec4 halfExtent;
+    };
+
+  private:
     void _createLayouts();
     void _updateuniformBuffer(CommandProducerGraphic& commandProducer,
                               const FrameBuildContext& frameContext,
-                              const EnvironmentScene& environment);
+                              const EnvironmentScene& environment,
+                              glm::uvec2 halfFrameSize);
 
   private:
     Device& _device;

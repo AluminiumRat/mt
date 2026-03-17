@@ -20,7 +20,8 @@ ColorFrameCommonSet::ColorFrameCommonSet( Device& device,
 
   _uniformBuffer = new DataBuffer(_device,
                                   sizeof(Camera::ShaderData) +
-                                    sizeof(EnvironmentScene::UniformBufferData),
+                                    sizeof(EnvironmentScene::UniformBufferData) +
+                                    sizeof(ExtentInfo),
                                   DataBuffer::UNIFORM_BUFFER,
                                   "ColorFrameCommonData");
 
@@ -58,9 +59,14 @@ void ColorFrameCommonSet::_createLayouts()
 void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
                                   const FrameBuildContext& frameContext,
                                   const EnvironmentScene& environment,
+                                  const ImageView& depthHalfBuffer,
+                                  const ImageView& normalHalfBuffer,
                                   const ImageView& shadowBuffer)
 {
-  _updateuniformBuffer(commandProducer, frameContext, environment);
+  _updateuniformBuffer( commandProducer,
+                        frameContext,
+                        environment,
+                        glm::uvec2(depthHalfBuffer.extent()));
 
   Ref<DescriptorPool> pool(new DescriptorPool(_device,
                                               _setLayout->descriptorCounter(),
@@ -79,6 +85,12 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
   _descriptorSet->attachSampledImage( environment.specularMap(),
                                       iblspecularMapBinding,
                                       VK_SHADER_STAGE_ALL);
+  _descriptorSet->attachSampledImage( depthHalfBuffer,
+                                      depthHalfBufferBinding,
+                                      VK_SHADER_STAGE_ALL);
+  _descriptorSet->attachSampledImage( normalHalfBuffer,
+                                      normalHalfBufferBinding,
+                                      VK_SHADER_STAGE_ALL);
   _descriptorSet->attachSampledImage( shadowBuffer,
                                       shadowBufferBinding,
                                       VK_SHADER_STAGE_ALL);
@@ -90,7 +102,8 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
 void ColorFrameCommonSet::_updateuniformBuffer(
                                         CommandProducerGraphic& commandProducer,
                                         const FrameBuildContext& frameContext,
-                                        const EnvironmentScene& environment)
+                                        const EnvironmentScene& environment,
+                                        glm::uvec2 halfFrameExtent)
 {
   size_t uniformBufferCursor = 0;
 
@@ -112,6 +125,23 @@ void ColorFrameCommonSet::_updateuniformBuffer(
                                           uniformBufferCursor,
                                           sizeof(environmentData));
   uniformBufferCursor += sizeof(environmentData);
+
+  ExtentInfo extentInfo{.frameExtent = glm::vec4(
+                                            (float)frameContext.frameExtent.x,
+                                            (float)frameContext.frameExtent.y,
+                                            1.0f / frameContext.frameExtent.x,
+                                            1.0f / frameContext.frameExtent.y),
+                        .halfExtent = glm::vec4((float)halfFrameExtent.x,
+                                                (float)halfFrameExtent.y,
+                                                1.0f / halfFrameExtent.x,
+                                                1.0f / halfFrameExtent.y)};
+  uploadedData = commandProducer.uniformMemorySession().write(extentInfo);
+  commandProducer.copyFromBufferToBuffer( *uploadedData.buffer,
+                                          *_uniformBuffer,
+                                          uploadedData.offset,
+                                          uniformBufferCursor,
+                                          sizeof(extentInfo));
+  uniformBufferCursor += sizeof(extentInfo);
 }
 
 void ColorFrameCommonSet::bind(CommandProducerGraphic& commandProducer) const

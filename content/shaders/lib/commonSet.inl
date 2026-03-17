@@ -8,6 +8,12 @@ layout (set = COMMON, binding = 0) uniform CommonData
 {
   CameraData cameraData;
   EnvironmentData environment;
+  //  Размер области, в которую отрисовывается конечная картинка
+  //  zw = 1 / xy
+  vec4 frameBufferExtent;
+  //  Размер половинных буферов
+  //  zw = 1 / xy
+  vec4 halfFrameExtent;
 } commonData;
 
 //  LUT текстура для image based lighting и сэмплер для её чтения
@@ -24,13 +30,21 @@ layout (set = COMMON,
 layout (set = COMMON,
         binding = 4) uniform textureCube iblSpecularMap;
 
+//  Буфер глубины в половинном разрешении
+layout (set = COMMON,
+        binding = 5) uniform texture2D depthHalfBuffer;
+
+//  Буфер нормалей в половинном разрешении
+layout (set = COMMON,
+        binding = 6) uniform texture2D normalHalfBuffer;
+
 //  Скринспейсовый буфер с тенями
 layout (set = COMMON,
-        binding = 5) uniform texture2D shadowBuffer;
+        binding = 7) uniform texture2D shadowBuffer;
 
 //  Дефолтный сэмплер общего назначения.
 //  Линейная фильтрация, VK_SAMPLER_ADDRESS_MODE_REPEAT, анизотропия 4
 layout (set = COMMON,
-        binding = 6) uniform sampler commonLinearSampler;
+        binding = 8) uniform sampler commonLinearSampler;
 
 #endif
