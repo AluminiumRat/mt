@@ -3,8 +3,43 @@
 #include "gltf/gltfFragCommon.inl"
 #include "lib/lighting/brdf.inl"
 #include "lib/lighting/ibl.inl"
+#include "lib/octahedronEncoding.inl"
 
 layout(location = 0) out vec4 outColor;
+
+float getShadowFactor(vec3 normal)
+{
+  //  Считываем сразу 4 значения из карты теней
+  vec2 gatherCoords = inSSCoords;// - commonData.halfFrameExtent.zw * 0.5f;
+  vec4 shadowValues = textureGather(sampler2D( shadowBuffer, commonLinearSampler),
+                                    gatherCoords,
+                                    0);
+  //  Взвешиваем их по расстояниям до центров текселей буфера теней
+  vec2 shifts = fract(gatherCoords * commonData.halfFrameExtent.xy);
+  vec4 weights = vec4(shifts.x * (1.0 - shifts.y),
+                      (1.0f  - shifts.x) * (1.0 - shifts.y),
+                      (1.0f  - shifts.x) * shifts.y,
+                      shifts.x * shifts.y);
+
+  //  Взвешиваем по нормалям
+  vec4 normalValues1 = textureGather(sampler2D(normalHalfBuffer, commonLinearSampler),
+                                     gatherCoords,
+                                     0);
+  vec4 normalValues2 = textureGather(sampler2D(normalHalfBuffer, commonLinearSampler),
+                                     gatherCoords,
+                                     1);
+  vec4 normalWeights = vec4(
+          dot(octahedronDecode(vec2(normalValues1.x, normalValues2.x)), normal),
+          dot(octahedronDecode(vec2(normalValues1.y, normalValues2.y)), normal),
+          dot(octahedronDecode(vec2(normalValues1.z, normalValues2.z)), normal),
+          dot(octahedronDecode(vec2(normalValues1.w, normalValues2.w)), normal));
+  normalWeights = clamp(normalWeights, 0.001f, 1.0f);
+  weights *= normalWeights;
+
+  //  Возвращаем средневзвешанное значение
+  return dot(shadowValues, weights) /
+          max((weights.x + weights.y + weights.z + weights.w), 0.001f);
+}
 
 void main()
 {
@@ -49,8 +84,7 @@ void main()
                                         observedSurface,
                                         commonData.environment.toSunDirection);
 
-  float shadowFactor = texture( sampler2D( shadowBuffer, commonLinearSampler),
-                                inSSCoords).r;
+  float shadowFactor = getShadowFactor(normal);
   vec3 radiance = getDirectLightRadiance(
                                   observedSurface,
                                   litSurface,
