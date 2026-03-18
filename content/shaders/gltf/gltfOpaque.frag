@@ -36,6 +36,18 @@ float getShadowFactor(vec3 normal)
   normalWeights = clamp(normalWeights, 0.001f, 1.0f);
   weights *= normalWeights;
 
+  //  Взвешивание по дистанции
+  //  Размер пикселя в метрах в точке, где накладываем тень.
+  float pixelSize = commonData.cameraData.fovY * inWorldPosition.w *
+                                                commonData.halfFrameExtent.w;
+  float depthTreshold = 5.0f * pixelSize;
+  vec4 depths = textureGather(sampler2D(linearDepthHalfBuffer,
+                                        commonLinearSampler),
+                              gatherCoords,
+                              0);
+  vec4 depthDeltas = abs(vec4(inWorldPosition.w) - depths);
+  weights *= clamp(vec4(depthTreshold) - depthDeltas, 0.001f, depthTreshold);
+
   //  Возвращаем средневзвешанное значение
   return dot(shadowValues, weights) /
           max((weights.x + weights.y + weights.z + weights.w), 0.001f);

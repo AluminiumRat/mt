@@ -8,7 +8,8 @@ Camera::Camera() noexcept :
   _viewMatrix(1),
   _projectionMatrix(1),
   _nearDistance(0),
-  _farDistance(1)
+  _farDistance(1),
+  _fovY(0)
 {
   _updateFromPositionMatrix();
   _updateFromProjectionMatrix();
@@ -61,14 +62,38 @@ void Camera::setProjectionMatrix(glm::mat4 newValue) noexcept
 void Camera::_updateFromProjectionMatrix() noexcept
 {
   _inverseProjectionMatrix = glm::inverse(_projectionMatrix);
+  _calculateNearFar();
+  _calculateFovY();
+  _frustum.setInverseViewProjectionMatrix(_inverseProjectionMatrix);
+}
 
+void Camera::_calculateNearFar() noexcept
+{
   glm::vec4 nearPoint = _inverseProjectionMatrix * glm::vec4(0, 0, 1, 1);
   _nearDistance = fabs(nearPoint.z / nearPoint.w);
 
   glm::vec4 farPoint = _inverseProjectionMatrix * glm::vec4(0, 0, 0, 1);
   _farDistance = fabs(farPoint.z / farPoint.w);
+}
 
-  _frustum.setInverseViewProjectionMatrix(_inverseProjectionMatrix);
+void Camera::_calculateFovY() noexcept
+{
+  //  Вычисляем вектор из камеры по верхнему краю видимости
+  glm::vec4 nearUp = _inverseProjectionMatrix * glm::vec4(0, -1, 1, 1);
+  nearUp /= nearUp.w;
+  glm::vec4 farUp = _inverseProjectionMatrix * glm::vec4(0, -1, 0, 1);
+  farUp /= farUp.w;
+  glm::vec3 upDir = glm::normalize(glm::vec3(farUp - nearUp));
+
+  //  Вычисляем вектор из камеры по нижнему краю видимости
+  glm::vec4 nearDown = _inverseProjectionMatrix * glm::vec4(0, 1, 1, 1);
+  nearDown /= nearDown.w;
+  glm::vec4 farDown = _inverseProjectionMatrix * glm::vec4(0, 1, 0, 1);
+  farDown /= farDown.w;
+  glm::vec3 downDir = glm::normalize(glm::vec3(farDown - nearDown));
+
+  //  Угол между этими векторами - это и есть fov
+  _fovY = acos(glm::dot(upDir, downDir));
 }
 
 glm::vec3 Camera::getDirection(

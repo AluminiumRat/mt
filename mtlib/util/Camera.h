@@ -15,16 +15,27 @@ namespace mt
     //    кадр. Поэтому сюда записывается как можно больше информации.
     struct ShaderData
     {
+      //  Матрицы преобразования, связанные с камерой
       alignas(16) glm::mat4 viewMatrix;
       alignas(16) glm::mat4 projectionMatrix;
       alignas(16) glm::mat4 viewProjectionMatrix;
       alignas(16) glm::mat4 viewToWorldMatix;
       alignas(16) glm::mat4 invProjectionMatrix;
       alignas(16) glm::mat4 cullToWorldMatrix;
+
+      //  Условное место, откуда происходит наблюдение
+      //  Для перспективной проекции - центр проекции
       alignas(16) glm::vec3 eyePoint;
+
+      //  Векторы, задающие ориентацию камеры в мировых координатах
       alignas(16) glm::vec3 frontVector;
       alignas(16) glm::vec3 upVector;
       alignas(16) glm::vec3 rightVector;
+
+      alignas(4) float nearDistance;
+      alignas(4) float farDistance;
+
+      alignas(4) float fovY;
     };
 
   public:
@@ -84,6 +95,8 @@ namespace mt
   private:
     void _updateFromPositionMatrix() noexcept;
     void _updateFromProjectionMatrix() noexcept;
+    void _calculateNearFar() noexcept;
+    void _calculateFovY() noexcept;
 
   private:
     glm::mat4 _viewMatrix;
@@ -100,6 +113,7 @@ namespace mt
 
     float _nearDistance;
     float _farDistance;
+    float _fovY;
   };
 
   inline const glm::mat4& Camera::transformMatrix() const noexcept
@@ -174,10 +188,18 @@ namespace mt
     shaderData.viewToWorldMatix = _transformMatrix;
     shaderData.invProjectionMatrix = _inverseProjectionMatrix;
     shaderData.cullToWorldMatrix = _transformMatrix * _inverseProjectionMatrix;
+
     shaderData.eyePoint = eyePoint();
+
     shaderData.frontVector = frontVector();
     shaderData.upVector = upVector();
     shaderData.rightVector = rightVector();
+
+    shaderData.nearDistance = _nearDistance;
+    shaderData.farDistance = _farDistance;
+
+    shaderData.fovY = _fovY;
+
     return shaderData;
   }
 }

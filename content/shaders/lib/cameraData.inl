@@ -21,6 +21,12 @@ struct CameraData
   vec3 frontVector;
   vec3 upVector;
   vec3 rightVector;
+
+  float nearDistance;
+  float farDistance;
+
+  //  Угол между верхней и нижней плоскостями отсечения в радианах
+  float fovY;
 };
 
 #endif
