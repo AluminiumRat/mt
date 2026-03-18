@@ -9,15 +9,17 @@ using namespace mt;
 
 ShadowsStage::ShadowsStage(Device& device) :
   _device(device),
-  _resolveConfigurator(new TechniqueConfigurator(device, "ShadowsResolve")),
-  _resolveTechnique(*_resolveConfigurator),
-  _resolvePass(_resolveTechnique.getOrCreatePass("ResolvePass")),
-  _tlasBinding(_resolveTechnique.getOrCreateResourceBinding("tlas"))
+  _rayQueryTechniqueConfigurator(new TechniqueConfigurator( device,
+                                                            "RayQueryShadows")),
+  _rayQueryTechnique(*_rayQueryTechniqueConfigurator),
+  _rayQueryPass(_rayQueryTechnique.getOrCreatePass("ResolvePass")),
+  _tlasBinding(_rayQueryTechnique.getOrCreateResourceBinding("tlas"))
 {
   if(device.features().rayQuery.rayQuery == VK_TRUE)
   {
-    loadConfigurator(*_resolveConfigurator, "shadows/resolve.tch");
-    _resolveConfigurator->rebuildConfiguration();
+    loadConfigurator( *_rayQueryTechniqueConfigurator,
+                      "shadows/rayQueryShadows.tch");
+    _rayQueryTechniqueConfigurator->rebuildConfiguration();
   }
 }
 
@@ -31,10 +33,10 @@ void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
 
   CommandProducerGraphic::RenderPass renderPass(commandProducer,
                                                 *_resolveFrameBuffer);
-  if(_resolveTechnique.isReady())
+  if(_rayQueryTechnique.isReady())
   {
-    Technique::BindGraphic bind(_resolveTechnique,
-                                _resolvePass,
+    Technique::BindGraphic bind(_rayQueryTechnique,
+                                _rayQueryPass,
                                 commandProducer);
     MT_ASSERT(bind.isValid())
     commandProducer.draw(4);

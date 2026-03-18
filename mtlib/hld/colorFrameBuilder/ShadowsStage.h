@@ -34,9 +34,9 @@ namespace mt
   private:
     Device& _device;
 
-    Ref<TechniqueConfigurator> _resolveConfigurator;
-    Technique _resolveTechnique;
-    TechniquePass& _resolvePass;
+    Ref<TechniqueConfigurator> _rayQueryTechniqueConfigurator;
+    Technique _rayQueryTechnique;
+    TechniquePass& _rayQueryPass;
     ResourceBinding& _tlasBinding;
 
     ConstRef<ImageView> _shadowBuffer;

@@ -10,7 +10,7 @@ passes:
   ResolvePass :
     shaders:
       VERTEX : lib/fsQuadCamera.vert
-      FRAGMENT : shadows/resolve.frag
+      FRAGMENT : shadows/rayQueryShadows.frag
 
     frameBuffer:
       color: VK_FORMAT_R8_UNORM
