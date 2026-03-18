@@ -1,0 +1,10 @@
+shader: diskSampler.frag
+output: ..\..\util\diskSampler1024.dds
+outputFormat: VK_FORMAT_R16G16_SNORM
+outputWidth: 1024
+outputHeight: 1
+outputMips: 1
+mipsAutogenerate: false
+outputArraySize: 1
+shaderProps:
+  {}

@@ -317,8 +317,10 @@ bool formatSelectionLine(VkFormat &format)
     "Output formats",
     {
       {VK_FORMAT_B8G8R8A8_SRGB, "B8G8R8A8_SRGB"},
+      {VK_FORMAT_R8_UNORM, "R8_UNORM"},
       {VK_FORMAT_R32G32B32A32_SFLOAT, "R32G32B32A32_SFLOAT"},
-      {VK_FORMAT_B10G11R11_UFLOAT_PACK32, "B10G11R11_UFLOAT"}
+      {VK_FORMAT_B10G11R11_UFLOAT_PACK32, "B10G11R11_UFLOAT"},
+      {VK_FORMAT_R16G16_SNORM, "R16G16_SNORM"}
     }};
   return mt::enumSelectionCombo("##format", format, formatsMap);
 }
