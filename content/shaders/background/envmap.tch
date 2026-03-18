@@ -9,7 +9,7 @@ defaultSamplers:
 passes:
   RenderPass :
     shaders:
-      VERTEX : background/envmap.vert
+      VERTEX : lib/fsQuadCamera.vert
       FRAGMENT : background/envmap.frag
 
     frameBuffer:

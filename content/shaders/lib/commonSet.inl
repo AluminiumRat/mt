@@ -30,9 +30,9 @@ layout (set = COMMON,
 layout (set = COMMON,
         binding = 4) uniform textureCube iblSpecularMap;
 
-//  Буфер глубины в половинном разрешении
+//  Линейный буфер глубины в половинном разрешении
 layout (set = COMMON,
-        binding = 5) uniform texture2D depthHalfBuffer;
+        binding = 5) uniform texture2D linearDepthHalfBuffer;
 
 //  Буфер нормалей в половинном разрешении
 layout (set = COMMON,

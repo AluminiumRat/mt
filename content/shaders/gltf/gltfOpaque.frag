@@ -71,7 +71,7 @@ void main()
     float occlusion = 1.0f;
   #endif
 
-  vec3 toViewer = commonData.cameraData.eyePoint - inWorldPosition;
+  vec3 toViewer = commonData.cameraData.eyePoint - inWorldPosition.xyz;
   toViewer = normalize(toViewer);
 
   ObservedSurface observedSurface = makeObservedSurface(baseColor.rgb,

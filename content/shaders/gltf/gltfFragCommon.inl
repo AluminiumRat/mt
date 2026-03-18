@@ -6,7 +6,8 @@
 #include "lib/color.inl"
 
 layout(location = 0) in vec3 inNormal;
-layout(location = 1) in vec3 inWorldPosition;
+//  xyz - положение в мировых координатах; w - линейная глубина
+layout(location = 1) in vec4 inWorldPosition;
 //  Тангент и бинормаль используются только для текстур нормалей
 #if NORMALTEXTURE_MODE == NORMALTEXTURE_VERTEX_TANGENT
   layout(location = 2) in vec3 inTangent;
@@ -56,8 +57,9 @@ vec3 getNormal()
       vec3 binormal = normalize(inBinormal);
     #else
       //  NORMAL_TEXTURE_FRAGMENT_TANGENT
-      vec3 tangent = normalize( dFdx(inWorldPosition) * dFdx(getTexCoord(0).x) +
-                                dFdy(inWorldPosition) * dFdy(getTexCoord(0).x));
+      vec3 tangent = normalize(
+                            dFdx(inWorldPosition.xyz) * dFdx(getTexCoord(0).x) +
+                            dFdy(inWorldPosition.xyz) * dFdy(getTexCoord(0).x));
       vec3 binormal = -normalize(cross(normal, tangent));
     #endif
     mat3 tbn = mat3(tangent, binormal, normal);

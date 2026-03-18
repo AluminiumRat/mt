@@ -9,7 +9,7 @@ defaultSamplers:
 passes:
   ResolvePass :
     shaders:
-      VERTEX : lib/fsQuad.vert
+      VERTEX : lib/fsQuadCamera.vert
       FRAGMENT : shadows/resolve.frag
 
     frameBuffer:

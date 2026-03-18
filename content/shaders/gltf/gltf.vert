@@ -4,7 +4,8 @@
 #include "gltf/gltfInput.inl"
 
 layout(location = 0) out vec3 outNormal;
-layout(location = 1) out vec3 outWorldPosition;
+//  xyz - положение в мировых координатах; w - линейная глубина
+layout(location = 1) out vec4 outWorldPosition;
 //  Тангент и бинормаль используются только для текстур нормалей
 #if NORMALTEXTURE_MODE == NORMALTEXTURE_VERTEX_TANGENT
   layout(location = 2) out vec3 outTangent;
@@ -39,8 +40,9 @@ void main()
                         POSITION.data[vertexShift + 2],
                         1.0);
   position = transformData.positionMatrix[gl_InstanceIndex] * position;
-  outWorldPosition = position.xyz;
   gl_Position = commonData.cameraData.viewProjectionMatrix * position;
+  outWorldPosition.xyz = position.xyz;
+  outWorldPosition.w = gl_Position.w;
 
   outSSCoords = gl_Position.xy / gl_Position.w * 0.5f + 0.5f;
 

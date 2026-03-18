@@ -21,8 +21,8 @@ passes:
       FRAGMENT : gltf/gltfPrepass.frag
 
     frameBuffer:
-      color: VK_FORMAT_R16G16_SNORM
-      depthStencil: VK_FORMAT_D32_SFLOAT
+      color: [VK_FORMAT_R32_SFLOAT, VK_FORMAT_R16G16_SNORM]
+      depthStencil: VK_FORMAT_D32_SFLOAT_S8_UINT
 
     graphicSettings:
       topology: TRIANGLE_LIST

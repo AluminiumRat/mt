@@ -6,7 +6,7 @@
 
 namespace mt
 {
-  //  Создание depth/stencil, normal и roughtness буферов
+  //  Создание depth/stencil, linear depth и normal буферов
   class OpaquePrepassStage : public RegularDrawStage
   {
   public:
@@ -19,6 +19,7 @@ namespace mt
     virtual ~OpaquePrepassStage() noexcept = default;
 
     inline void setBuffers( const ImageView& depthBuffer,
+                            const ImageView& linearDepthBuffer,
                             const ImageView& normalBuffer);
 
   protected:
@@ -26,14 +27,20 @@ namespace mt
 
   private:
     ConstRef<ImageView> _depthBuffer;
+    ConstRef<ImageView> _linearDepthBuffer;
     ConstRef<ImageView> _normalBuffer;
   };
 
-  inline void OpaquePrepassStage::setBuffers( const ImageView& depthBuffer,
-                                              const ImageView& normalBuffer)
+  inline void OpaquePrepassStage::setBuffers(
+                                            const ImageView& depthBuffer,
+                                            const ImageView& linearDepthBuffer,
+                                            const ImageView& normalBuffer)
   {
-    if(_depthBuffer == &depthBuffer && _normalBuffer == &normalBuffer) return;
+    if( _depthBuffer == &depthBuffer &&
+        _linearDepthBuffer == &linearDepthBuffer &&
+        _normalBuffer == &normalBuffer) return;
     _depthBuffer = &depthBuffer;
+    _linearDepthBuffer = &linearDepthBuffer;
     _normalBuffer = &normalBuffer;
     resetFrameBuffer();
   }

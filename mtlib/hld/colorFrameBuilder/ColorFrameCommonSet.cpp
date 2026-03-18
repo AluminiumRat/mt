@@ -59,14 +59,14 @@ void ColorFrameCommonSet::_createLayouts()
 void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
                                   const FrameBuildContext& frameContext,
                                   const EnvironmentScene& environment,
-                                  const ImageView& depthHalfBuffer,
+                                  const ImageView& linearDepthHalfBuffer,
                                   const ImageView& normalHalfBuffer,
                                   const ImageView& shadowBuffer)
 {
   _updateuniformBuffer( commandProducer,
                         frameContext,
                         environment,
-                        glm::uvec2(depthHalfBuffer.extent()));
+                        glm::uvec2(linearDepthHalfBuffer.extent()));
 
   Ref<DescriptorPool> pool(new DescriptorPool(_device,
                                               _setLayout->descriptorCounter(),
@@ -85,8 +85,8 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
   _descriptorSet->attachSampledImage( environment.specularMap(),
                                       iblspecularMapBinding,
                                       VK_SHADER_STAGE_ALL);
-  _descriptorSet->attachSampledImage( depthHalfBuffer,
-                                      depthHalfBufferBinding,
+  _descriptorSet->attachSampledImage( linearDepthHalfBuffer,
+                                      linearDepthHalfBufferBinding,
                                       VK_SHADER_STAGE_ALL);
   _descriptorSet->attachSampledImage( normalHalfBuffer,
                                       normalHalfBufferBinding,

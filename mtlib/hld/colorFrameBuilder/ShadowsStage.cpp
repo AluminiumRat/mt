@@ -12,7 +12,6 @@ ShadowsStage::ShadowsStage(Device& device) :
   _resolveConfigurator(new TechniqueConfigurator(device, "ShadowsResolve")),
   _resolveTechnique(*_resolveConfigurator),
   _resolvePass(_resolveTechnique.getOrCreatePass("ResolvePass")),
-  _depthBufferBinding(_resolveTechnique.getOrCreateResourceBinding("depthMap")),
   _tlasBinding(_resolveTechnique.getOrCreateResourceBinding("tlas"))
 {
   if(device.features().rayQuery.rayQuery == VK_TRUE)
@@ -26,9 +25,6 @@ void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
                         const FrameBuildContext& frameContext)
 {
   if(_resolveFrameBuffer == nullptr) _buildFrameBuffer();
-
-  MT_ASSERT(_depthBuffer != nullptr);
-  _depthBufferBinding.setImage(_depthBuffer);
 
   const TLAS* tlas = frameContext.drawScene->tlas();
   _tlasBinding.setTLAS(tlas);

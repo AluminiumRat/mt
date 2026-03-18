@@ -27,7 +27,7 @@ namespace mt
     static constexpr uint32_t iblLutSamplerBinding = 2;
     static constexpr uint32_t iblIrradianceMapBinding = 3;
     static constexpr uint32_t iblspecularMapBinding = 4;
-    static constexpr uint32_t depthHalfBufferBinding = 5;
+    static constexpr uint32_t linearDepthHalfBufferBinding = 5;
     static constexpr uint32_t normalHalfBufferBinding = 6;
     static constexpr uint32_t shadowBufferBinding = 7;
     static constexpr uint32_t commonLinearSamplerBinding = 8;
@@ -57,7 +57,7 @@ namespace mt
     void update(CommandProducerGraphic& commandProducer,
                 const FrameBuildContext& frameContext,
                 const EnvironmentScene& environment,
-                const ImageView& depthHalfBuffer,
+                const ImageView& linearDepthHalfBuffer,
                 const ImageView& normalHalfBuffer,
                 const ImageView& shadowBuffer);
 
