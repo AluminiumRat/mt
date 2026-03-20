@@ -1,4 +1,8 @@
-﻿#include <hld/colorFrameBuilder/ShadowsStage.h>
+﻿#include <ImGui.h>
+
+#include <gui/ImGuiPropertyGrid.h>
+#include <gui/ImGuiRAII.h>
+#include <hld/colorFrameBuilder/ShadowsStage.h>
 #include <hld/drawScene/DrawScene.h>
 #include <hld/FrameBuildContext.h>
 #include <resourceManagement/TextureManager.h>
@@ -18,7 +22,13 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
   _noiseTextureBinding(
                 _rayQueryTechnique.getOrCreateResourceBinding("noiseTexture")),
   _samplerTextureBinding(
-              _rayQueryTechnique.getOrCreateResourceBinding("samplerTexture"))
+              _rayQueryTechnique.getOrCreateResourceBinding("samplerTexture")),
+  _rayForwardShiftUniform(
+              _rayQueryTechnique.getOrCreateUniform("params.rayForwardShift")),
+  _rayNormalShiftUniform(
+              _rayQueryTechnique.getOrCreateUniform("params.rayNormalShift")),
+  _rayForwardShift(0.5f),
+  _rayNormalShift(2.0f)
 {
   ConstRef<TechniqueResource> noiseTexture =
                         textureManager.loadImmediately( "util/noiseR8x32.dds",
@@ -41,6 +51,9 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
                       "shadows/rayQueryShadows.tch");
     _rayQueryTechniqueConfigurator->rebuildConfiguration();
   }
+
+  _rayForwardShiftUniform.setValue(_rayForwardShift);
+  _rayNormalShiftUniform.setValue(_rayNormalShift);
 }
 
 void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
@@ -76,4 +89,23 @@ void ShadowsStage::_buildFrameBuffer()
                     .clearValue = VkClearColorValue{0.0f, 0.0f, 0.0f, 1.0f}};
   _resolveFrameBuffer = new FrameBuffer(std::span(&colorAttachment, 1),
                                         nullptr);
+}
+
+void ShadowsStage::makeGui()
+{
+  ImGuiPropertyGrid grid("Shadows");
+
+  grid.addRow("rayForwardShift");
+  float forwardShiftValue = _rayForwardShift;
+  if(ImGui::InputFloat("#rayForwardShift", &forwardShiftValue))
+  {
+    setRayForwardShift(forwardShiftValue);
+  }
+
+  grid.addRow("rayNormalShift");
+  float normalShiftValue = _rayNormalShift;
+  if(ImGui::InputFloat("#rayNormalShift", &normalShiftValue))
+  {
+    setRayNormalShift(normalShiftValue);
+  }
 }

@@ -37,9 +37,7 @@ float getShadowFactor(vec3 normal)
   weights *= normalWeights;
 
   //  Взвешивание по дистанции
-  //  Размер пикселя в метрах в точке, где накладываем тень.
-  float pixelSize = commonData.cameraData.fovY * inWorldPosition.w *
-                                                commonData.halfFrameExtent.w;
+  float pixelSize = getHalfBufferPixelSize(inWorldPosition.w);
   float depthTreshold = 5.0f * pixelSize;
   vec4 depths = textureGather(sampler2D(linearDepthHalfBuffer,
                                         commonLinearSampler),

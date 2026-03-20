@@ -361,7 +361,16 @@ void ColorFrameBuilder::makeGui()
   ImGuiWindow window("Color frame");
   if (window.visible())
   {
-    _posteffects.makeGui();
+    {
+      ImGuiTreeNode shadowsNode("Shadows");
+      if(shadowsNode.open()) _shadowsStage.makeGui();
+    }
+
+    {
+      ImGuiTreeNode posteffectsNode("Posteffects");
+      if(posteffectsNode.open()) _posteffects.makeGui();
+    }
+
     window.end();
   }
 }

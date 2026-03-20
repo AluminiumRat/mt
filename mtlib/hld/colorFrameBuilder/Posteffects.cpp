@@ -94,32 +94,28 @@ void Posteffects::_updateProperties()
 
 void Posteffects::makeGui()
 {
-  ImGuiTreeNode node("Posteffects");
-  if(node.open())
   {
+    ImGui::Text("Color grading");
+    ImGuiPropertyGrid grid("ColorGrading");
+
+    grid.addRow("brightness");
+    if(ImGui::InputFloat("#Brightness", &_brightness)) _updateProperties();
+
+    grid.addRow("MaxWhite");
+    if(ImGui::InputFloat("#maxwhite", &_maxWhite)) _updateProperties();
+
+    grid.addRow("Accomodation");
+    float accomodation = _avgLum.accommodationSpeed();
+    if(ImGui::InputFloat("#accomodation", &accomodation))
     {
-      ImGui::Text("Color grading");
-      ImGuiPropertyGrid grid("ColorGrading");
-
-      grid.addRow("brightness");
-      if(ImGui::InputFloat("#Brightness", &_brightness)) _updateProperties();
-
-      grid.addRow("MaxWhite");
-      if(ImGui::InputFloat("#maxwhite", &_maxWhite)) _updateProperties();
-
-      grid.addRow("Accomodation");
-      float accomodation = _avgLum.accommodationSpeed();
-      if(ImGui::InputFloat("#accomodation", &accomodation))
-      {
-        _avgLum.setAccommodationSpeed(accomodation);
-      }
+      _avgLum.setAccommodationSpeed(accomodation);
     }
-
-    if(ImGui::Checkbox("Bloom", &_bloomEnabled))
-    {
-      _needUpdateBindings = true;
-      _updateProperties();
-    }
-    if(_bloomEnabled) _bloom.makeGui();
   }
+
+  if(ImGui::Checkbox("Bloom", &_bloomEnabled))
+  {
+    _needUpdateBindings = true;
+    _updateProperties();
+  }
+  if(_bloomEnabled) _bloom.makeGui();
 }

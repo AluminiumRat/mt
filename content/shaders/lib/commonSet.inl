@@ -47,4 +47,12 @@ layout (set = COMMON,
 layout (set = COMMON,
         binding = 8) uniform sampler commonLinearSampler;
 
+//  Получить размер пикселя для половинных буферов на определенной дистанции
+//  от камеры
+float getHalfBufferPixelSize(float linearDepth)
+{
+  return commonData.cameraData.fovY * linearDepth *
+                                                  commonData.halfFrameExtent.w;
+}
+
 #endif

@@ -2,11 +2,18 @@
 #extension GL_EXT_ray_query : enable
 
 #include "lib/commonSet.inl"
+#include "lib/octahedronEncoding.inl"
 
-layout (set = STATIC, binding = 0) uniform sampler nearestSampler;
-layout (set = STATIC, binding = 1) uniform accelerationStructureEXT tlas;
-layout (set = STATIC, binding = 2) uniform texture2D noiseTexture;
-layout (set = STATIC, binding = 3) uniform texture1D samplerTexture;
+layout (set = STATIC, binding = 0) uniform Params
+{
+  float rayForwardShift;
+  float rayNormalShift;
+} params;
+
+layout (set = STATIC, binding = 1) uniform sampler nearestSampler;
+layout (set = STATIC, binding = 2) uniform accelerationStructureEXT tlas;
+layout (set = STATIC, binding = 3) uniform texture2D noiseTexture;
+layout (set = STATIC, binding = 4) uniform texture1D samplerTexture;
 
 layout(location = 0) in vec2 texCoord;
 layout(location = 2) in vec3 inPosRestoreVec;
@@ -35,6 +42,13 @@ void main()
 
     vec3 worldPosition = commonData.cameraData.eyePoint +
                                                         inPosRestoreVec * depth;
+    float pixelSize = getHalfBufferPixelSize(depth);
+    vec3 normal = octahedronDecode(
+                            texture(sampler2D(normalHalfBuffer, nearestSampler),
+                                    texCoord).xy);
+    float normalShiftValue = clamp(1.0f - dot(normal, rayDirection), 0.0f, 1.0f);
+    normalShiftValue *= params.rayNormalShift * pixelSize;
+    worldPosition += normal * normalShiftValue;
 
     rayQueryEXT rayQuery;
     rayQueryInitializeEXT(rayQuery,
@@ -42,7 +56,7 @@ void main()
                           gl_RayFlagsTerminateOnFirstHitEXT,
                           0xFF,
                           worldPosition,
-                          0.01f,
+                          params.rayForwardShift * pixelSize,
                           rayDirection,
                           1000.0f);
     rayQueryProceedEXT(rayQuery);

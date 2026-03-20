@@ -29,6 +29,16 @@ namespace mt
     //    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
     inline void setBuffers(const ImageView& shadowBuffer);
 
+    //  Смещение луча в направлении солнца при трассировке
+    inline float rayForwardShift() const noexcept;
+    inline void setRayForwardShift(float newValue) noexcept;
+
+    //  Смещение луча в направлении нормали при трассировке
+    inline float rayNormalShift() const noexcept;
+    inline void setRayNormalShift(float newValue) noexcept;
+
+    void makeGui();
+
   private:
     void _buildFrameBuffer();
 
@@ -41,6 +51,12 @@ namespace mt
     ResourceBinding& _tlasBinding;
     ResourceBinding& _noiseTextureBinding;
     ResourceBinding& _samplerTextureBinding;
+    UniformVariable& _rayForwardShiftUniform;
+    UniformVariable& _rayNormalShiftUniform;
+
+    //  Смещения начала луча при рэй трэйсинге
+    float _rayForwardShift;
+    float _rayNormalShift;
 
     ConstRef<ImageView> _shadowBuffer;
     ConstRef<FrameBuffer> _resolveFrameBuffer;
@@ -51,5 +67,29 @@ namespace mt
     if(_shadowBuffer == &shadowBuffer) return;
     _shadowBuffer = &shadowBuffer;
     _resolveFrameBuffer.reset();
+  }
+
+  inline float ShadowsStage::rayForwardShift() const noexcept
+  {
+    return _rayForwardShift;
+  }
+
+  inline void ShadowsStage::setRayForwardShift(float newValue) noexcept
+  {
+    if(newValue == _rayForwardShift) return;
+    _rayForwardShift = newValue;
+    _rayForwardShiftUniform.setValue(newValue);
+  }
+
+  inline float ShadowsStage::rayNormalShift() const noexcept
+  {
+    return _rayNormalShift;
+  }
+
+  inline void ShadowsStage::setRayNormalShift(float newValue) noexcept
+  {
+    if(newValue == _rayNormalShift) return;
+    _rayNormalShift = newValue;
+    _rayNormalShiftUniform.setValue(newValue);
   }
 }
