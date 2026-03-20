@@ -22,6 +22,15 @@ namespace mt
     {
       alignas(16) glm::vec3 fromSunDirection;
       alignas(16) glm::vec3 toSunDirection;
+      //  Вектор, перпендикулярный toSunDirection и линии горимзонта
+      alignas(16) glm::vec3 sunLongitudeDirection;
+      //  Вектор, перпендикулярный toSunDirection и параллельный горизонту
+      alignas(16) glm::vec3 sunLatitudeDirection;
+
+      //  Угловой размер(диаметр) солнца в радианах
+      alignas(4) float sunAngleSize;
+
+      //  Освещенность от солнца (поверхность перпендикулярна fromSunDirection)
       alignas(16) glm::vec3 directLightIrradiance;
       //  Коэффициент для перевода рафнеса материала в номер лода спекулар мапы
       alignas(4) float roughnessToLod;
@@ -41,6 +50,10 @@ namespace mt
     inline void setSunAzimuth(float newValue) noexcept;
     inline float sunAltitude() const noexcept;
     inline void setSunAltitude(float newValue) noexcept;
+
+    //  Угловой размер(диаметр) солнца в радианах
+    inline float sunAngleSize() const noexcept;
+    inline void setSunAngleSize(float newValue) noexcept;
 
     //  Освещенность от прямых лучей солнца на плоскости, перпендикулярной
     //    sunDirection
@@ -79,6 +92,7 @@ namespace mt
 
     float _sunAzimuth;
     float _sunAltitude;
+    float _sunAngleSize;
     float _directLightIrradiance;
     glm::vec3 _directLightColor;
 
@@ -109,6 +123,16 @@ namespace mt
   inline void EnvironmentScene::setSunAltitude(float newValue) noexcept
   {
     _sunAltitude = newValue;
+  }
+
+  inline float EnvironmentScene::sunAngleSize() const noexcept
+  {
+    return _sunAngleSize;
+  }
+
+  inline void EnvironmentScene::setSunAngleSize(float newValue) noexcept
+  {
+    _sunAngleSize = newValue;
   }
 
   inline float EnvironmentScene::directLightIrradiance() const noexcept
@@ -142,6 +166,14 @@ namespace mt
                                           sin(_sunAzimuth) * cos(_sunAltitude),
                                           sin(_sunAltitude));
     bufferData.fromSunDirection = -bufferData.toSunDirection;
+    bufferData.sunLongitudeDirection = glm::vec3(
+                                          -sin(_sunAltitude) * cos(_sunAzimuth),
+                                          -sin(_sunAltitude) * sin(_sunAzimuth),
+                                          cos(_sunAltitude));
+    bufferData.sunLatitudeDirection = glm::vec3(sin(_sunAzimuth),
+                                                -cos(_sunAzimuth),
+                                                0);
+    bufferData.sunAngleSize = _sunAngleSize;
     bufferData.directLightIrradiance =
                                     _directLightIrradiance * _directLightColor;
     bufferData.roughnessToLod = float(specularMap().image().mipmapCount() - 1);

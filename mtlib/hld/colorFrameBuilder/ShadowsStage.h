@@ -10,12 +10,13 @@ namespace mt
   class CommandProducerGraphic;
   class Device;
   struct FrameBuildContext;
+  class TextureManager;
 
   //  Строит screen-space карту теней
   class ShadowsStage
   {
   public:
-    explicit ShadowsStage(Device& device);
+    ShadowsStage(Device& device, TextureManager& textureManager);
     ShadowsStage(const ShadowsStage&) = delete;
     ShadowsStage& operator = (const ShadowsStage&) = delete;
     ~ShadowsStage() noexcept = default;
@@ -38,6 +39,8 @@ namespace mt
     Technique _rayQueryTechnique;
     TechniquePass& _rayQueryPass;
     ResourceBinding& _tlasBinding;
+    ResourceBinding& _noiseTextureBinding;
+    ResourceBinding& _samplerTextureBinding;
 
     ConstRef<ImageView> _shadowBuffer;
     ConstRef<FrameBuffer> _resolveFrameBuffer;

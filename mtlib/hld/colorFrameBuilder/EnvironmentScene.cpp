@@ -25,6 +25,7 @@ EnvironmentScene::EnvironmentScene( Device& device,
   _textureManager(textureManager),
   _sunAzimuth(0.0f),
   _sunAltitude(pi / 4.0f),
+  _sunAngleSize(0.01f),
   _directLightIrradiance(3),
   _directLightColor(1.0f)
 {
@@ -76,6 +77,9 @@ void EnvironmentScene::save(const fs::path& fileName)
 
   out << YAML::Key << "sunAltitude";
   out << YAML::Value << _sunAltitude;
+
+  out << YAML::Key << "sunAngleSize";
+  out << YAML::Value << _sunAngleSize;
 
   out << YAML::Key << "directLightIrradiance";
   out << YAML::Value << _directLightIrradiance;
@@ -137,6 +141,7 @@ void EnvironmentScene::load(const fs::path& fileName)
 
   _sunAzimuth = rootNode["sunAzimuth"].as<float>(0.0f);
   _sunAltitude = rootNode["sunAltitude"].as<float>(pi / 4.0f);
+  _sunAngleSize = rootNode["sunAngleSize"].as<float>(0.01f);
   _directLightIrradiance = rootNode["directLightIrradiance"].as<float>(3.0f);
   _directLightColor.x = rootNode["directLightColor"][0].as<float>(1.0f);
   _directLightColor.y = rootNode["directLightColor"][1].as<float>(1.0f);
@@ -182,6 +187,13 @@ void EnvironmentScene::makeGui()
       if(ImGui::SliderFloat("##altitude", &altitude, -90, 90))
       {
         _sunAltitude = altitude / 360.0f * 2.0f * pi;
+      }
+
+      grid.addRow("Sun size");
+      float sunSize = _sunAngleSize * 360.0f / (2.0f * pi);
+      if(ImGui::SliderFloat("##sunsize", &sunSize, 0, 10))
+      {
+        _sunAngleSize = sunSize / 360.0f * 2.0f * pi;
       }
 
       grid.addRow("Sun irradiance");

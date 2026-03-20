@@ -20,7 +20,7 @@ ColorFrameBuilder::ColorFrameBuilder( Device& device,
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(frameTypeName)),
   _commonSet(device, textureManager),
   _opaquePrepassStage(device),
-  _shadowsStage(device),
+  _shadowsStage(device, textureManager),
   _opaqueColorStage(device),
   _backgroundRender(device, techniqueManager),
   _posteffects(device)

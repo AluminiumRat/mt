@@ -1,20 +1,40 @@
 ﻿#include <hld/colorFrameBuilder/ShadowsStage.h>
 #include <hld/drawScene/DrawScene.h>
 #include <hld/FrameBuildContext.h>
+#include <resourceManagement/TextureManager.h>
 #include <technique/TechniqueLoader.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/Device.h>
 
 using namespace mt;
 
-ShadowsStage::ShadowsStage(Device& device) :
+ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
   _device(device),
   _rayQueryTechniqueConfigurator(new TechniqueConfigurator( device,
                                                             "RayQueryShadows")),
   _rayQueryTechnique(*_rayQueryTechniqueConfigurator),
   _rayQueryPass(_rayQueryTechnique.getOrCreatePass("ResolvePass")),
-  _tlasBinding(_rayQueryTechnique.getOrCreateResourceBinding("tlas"))
+  _tlasBinding(_rayQueryTechnique.getOrCreateResourceBinding("tlas")),
+  _noiseTextureBinding(
+                _rayQueryTechnique.getOrCreateResourceBinding("noiseTexture")),
+  _samplerTextureBinding(
+              _rayQueryTechnique.getOrCreateResourceBinding("samplerTexture"))
 {
+  ConstRef<TechniqueResource> noiseTexture =
+                        textureManager.loadImmediately( "util/noiseR8x32.dds",
+                                                        *device.graphicQueue(),
+                                                        false);
+  if(noiseTexture->image() == nullptr) throw std::runtime_error("ShadowsStage: unable to load 'util/noiseR8x32.dds'");
+  _noiseTextureBinding.setResource(noiseTexture);
+
+  ConstRef<TechniqueResource> samplerTexture =
+                          textureManager.loadImmediately(
+                                                    "util/diskSampler1024.dds",
+                                                    *device.graphicQueue(),
+                                                    false);
+  if(samplerTexture->image() == nullptr) throw std::runtime_error("ShadowsStage: unable to load 'util/diskSampler1024.dds'");
+  _samplerTextureBinding.setResource(samplerTexture);
+
   if(device.features().rayQuery.rayQuery == VK_TRUE)
   {
     loadConfigurator( *_rayQueryTechniqueConfigurator,

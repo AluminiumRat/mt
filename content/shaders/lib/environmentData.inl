@@ -6,6 +6,15 @@ struct EnvironmentData
 {
   vec3 fromSunDirection;
   vec3 toSunDirection;
+
+  //  Вектор, перпендикулярный toSunDirection и линии горимзонта
+  vec3 sunLongitudeDirection;
+  //  Вектор, перпендикулярный toSunDirection и параллельный горизонту
+  vec3 sunLatitudeDirection;
+
+  //  Угловой размер(диаметр) солнца в радианах
+  float sunAngleSize;
+
   //  Освещенность от солнца.
   //  Измеряется на поверхности, перпендикулярной направлению света
   vec3 directLightIrradiance;
