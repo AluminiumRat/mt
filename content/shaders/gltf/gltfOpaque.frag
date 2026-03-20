@@ -33,7 +33,7 @@ float getShadowFactor(vec3 normal)
           dot(octahedronDecode(vec2(normalValues1.y, normalValues2.y)), normal),
           dot(octahedronDecode(vec2(normalValues1.z, normalValues2.z)), normal),
           dot(octahedronDecode(vec2(normalValues1.w, normalValues2.w)), normal));
-  normalWeights = clamp(normalWeights, 0.001f, 1.0f);
+  normalWeights = max(normalWeights, 0.0f);
   weights *= normalWeights;
 
   //  Взвешивание по дистанции
@@ -44,11 +44,12 @@ float getShadowFactor(vec3 normal)
                               gatherCoords,
                               0);
   vec4 depthDeltas = abs(vec4(inWorldPosition.w) - depths);
-  weights *= clamp(vec4(depthTreshold) - depthDeltas, 0.001f, depthTreshold);
+  weights *= max(vec4(depthTreshold) - depthDeltas, 0.0f);
 
   //  Возвращаем средневзвешанное значение
+  weights = max(weights, 0.001 * pixelSize);
   return dot(shadowValues, weights) /
-          max((weights.x + weights.y + weights.z + weights.w), 0.001f);
+          (weights.x + weights.y + weights.z + weights.w);
 }
 
 void main()
