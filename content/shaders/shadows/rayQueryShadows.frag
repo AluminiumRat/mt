@@ -20,6 +20,36 @@ layout(location = 2) in vec3 inPosRestoreVec;
 
 layout(location = 0) out float outShadowFactor;
 
+//  Получить направление на случайную точку на солце
+vec3 getRayDirection(int sampleIndex)
+{
+  vec2 samplerValue = texelFetch( sampler1D(samplerTexture, nearestSampler),
+                                  sampleIndex,
+                                  0).rg;
+  samplerValue *= commonData.environment.sunAngleSize / 2.0f;
+  vec3 rayDirection =
+            commonData.environment.toSunDirection +
+              commonData.environment.sunLatitudeDirection * samplerValue.x +
+              commonData.environment.sunLongitudeDirection * samplerValue.y;
+  return rayDirection;
+}
+
+//  Стартовая точка при трэйсе теней
+vec3 getStartPoint(float depth, vec3 rayDirection, float pixelSize)
+{
+  vec3 startPoint = commonData.cameraData.eyePoint + inPosRestoreVec * depth;
+
+  //  Смещаем вдоль нормали, чтобы погасить артефакты терминатора
+  vec3 normal = octahedronDecode(
+                            texture(sampler2D(normalHalfBuffer, nearestSampler),
+                                    texCoord).xy);
+  float normalShiftValue = clamp(1.0f - dot(normal, rayDirection), 0.0f, 1.0f);
+  normalShiftValue *= params.rayNormalShift * pixelSize;
+  startPoint += normal * normalShiftValue;
+
+  return startPoint;
+}
+
 void main()
 {
   float depth = texture(sampler2D(linearDepthHalfBuffer, nearestSampler),
@@ -30,32 +60,18 @@ void main()
                                 ivec2(int(gl_FragCoord.x) % 32,
                                       int(gl_FragCoord.y) % 32),
                                 0).r;
-    int sampleIndex = int(random * 255.f);
-    vec2 samplerValue = texelFetch( sampler1D(samplerTexture, nearestSampler),
-                                    sampleIndex,
-                                    0).rg;
-    samplerValue *= commonData.environment.sunAngleSize / 2.0f;
-    vec3 rayDirection =
-              commonData.environment.toSunDirection +
-                commonData.environment.sunLatitudeDirection * samplerValue.x +
-                commonData.environment.sunLongitudeDirection * samplerValue.y;
+    int sampleIndex = int(random * 255.0f);
+    vec3 rayDirection = getRayDirection(sampleIndex);
 
-    vec3 worldPosition = commonData.cameraData.eyePoint +
-                                                        inPosRestoreVec * depth;
     float pixelSize = getHalfBufferPixelSize(depth);
-    vec3 normal = octahedronDecode(
-                            texture(sampler2D(normalHalfBuffer, nearestSampler),
-                                    texCoord).xy);
-    float normalShiftValue = clamp(1.0f - dot(normal, rayDirection), 0.0f, 1.0f);
-    normalShiftValue *= params.rayNormalShift * pixelSize;
-    worldPosition += normal * normalShiftValue;
+    vec3 rayStart = getStartPoint(depth, rayDirection, pixelSize);
 
     rayQueryEXT rayQuery;
     rayQueryInitializeEXT(rayQuery,
                           tlas,
                           gl_RayFlagsTerminateOnFirstHitEXT,
                           0xFF,
-                          worldPosition,
+                          rayStart,
                           params.rayForwardShift * pixelSize,
                           rayDirection,
                           1000.0f);
