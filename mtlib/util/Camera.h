@@ -21,7 +21,7 @@ namespace mt
       alignas(16) glm::mat4 viewProjectionMatrix;
       alignas(16) glm::mat4 viewToWorldMatix;
       alignas(16) glm::mat4 invProjectionMatrix;
-      alignas(16) glm::mat4 cullToWorldMatrix;
+      alignas(16) glm::mat4 clipToWorldMatrix;
 
       //  Условное место, откуда происходит наблюдение
       //  Для перспективной проекции - центр проекции
@@ -105,7 +105,7 @@ namespace mt
     void _calculateFovY() noexcept;
     inline glm::vec3 _getDirection(
                             glm::vec2 cullCoords,
-                            const glm::mat4& cullToWorldMatrix) const noexcept;
+                            const glm::mat4& clipToWorldMatrix) const noexcept;
 
   private:
     glm::mat4 _viewMatrix;
@@ -196,7 +196,7 @@ namespace mt
                             shaderData.projectionMatrix * shaderData.viewMatrix;
     shaderData.viewToWorldMatix = _transformMatrix;
     shaderData.invProjectionMatrix = _inverseProjectionMatrix;
-    shaderData.cullToWorldMatrix = _transformMatrix * _inverseProjectionMatrix;
+    shaderData.clipToWorldMatrix = _transformMatrix * _inverseProjectionMatrix;
 
     shaderData.eyePoint = eyePoint();
 
@@ -210,13 +210,13 @@ namespace mt
     shaderData.fovY = _fovY;
 
     shaderData.leftTopRPV = _getDirection(glm::vec2(-1, -1),
-                                          shaderData.cullToWorldMatrix);
+                                          shaderData.clipToWorldMatrix);
     shaderData.leftToRightRPV = _getDirection(glm::vec2(1, -1),
-                                              shaderData.cullToWorldMatrix);
+                                              shaderData.clipToWorldMatrix);
     shaderData.leftToRightRPV -= shaderData.leftTopRPV;
 
     shaderData.topToBottomRPV = _getDirection(glm::vec2(-1, 1),
-                                              shaderData.cullToWorldMatrix);
+                                              shaderData.clipToWorldMatrix);
     shaderData.topToBottomRPV -= shaderData.leftTopRPV;
 
     return shaderData;
@@ -224,9 +224,9 @@ namespace mt
 
   inline glm::vec3 Camera::_getDirection(
                               glm::vec2 cullCoords,
-                              const glm::mat4& cullToWorldMatrix) const noexcept
+                              const glm::mat4& clipToWorldMatrix) const noexcept
   {
-    glm::vec4 worldPos = cullToWorldMatrix * glm::vec4(cullCoords, 0.0f, 1.0f);
+    glm::vec4 worldPos = clipToWorldMatrix * glm::vec4(cullCoords, 0.0f, 1.0f);
     worldPos /= worldPos.w;
     return (glm::vec3(worldPos) - eyePoint()) / _farDistance;
   }

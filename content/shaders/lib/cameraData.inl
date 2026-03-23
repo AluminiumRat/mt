@@ -11,7 +11,7 @@ struct CameraData
   mat4 viewProjectionMatrix;
   mat4 viewToWorldMatix;
   mat4 invProjectionMatrix;
-  mat4 cullToWorldMatrix;
+  mat4 clipToWorldMatrix;
 
   //  Условное место, откуда происходит наблюдение
   //  Для перспективной проекции - центр проекции
