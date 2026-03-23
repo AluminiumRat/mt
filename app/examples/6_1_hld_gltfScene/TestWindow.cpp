@@ -38,14 +38,11 @@ TestWindow::TestWindow(Device& device) :
 
 void TestWindow::_loadModel(const std::filesystem::path& filename)
 {
-  _clearScene();
-
   GLTFImporter importer(*device().graphicQueue(),
                         _textureManager,
                         _techniqueManager,
                         GLTFImporter::LOAD_ASYNC,
                         true);
-                        //false);
   GLTFImporter::Results imported = importer.importGLTF(filename);
   for(std::unique_ptr<MeshDrawable>& mesh : imported.drawables)
   {
@@ -129,14 +126,36 @@ void TestWindow::_makeMainMenu()
   if(!mainMenu.created()) return;
 
   //  Загрузка модели
-  if(ImGui::MenuItem("Model"))
+  mt::ImGuiMenu modelMenu("Model");
+  if(modelMenu.created())
   {
-    std::filesystem::path file =
-                openFileDialog( this,
-                                FileFilters{{ .expression = "*.gltf",
-                                              .description = "gltf(*.gltf)"}},
-                                "");
-    if(!file.empty()) _loadModel(file);
+    if(ImGui::MenuItem("Load"))
+    {
+      std::filesystem::path file =
+                  openFileDialog( this,
+                                  FileFilters{{ .expression = "*.gltf",
+                                                .description = "gltf(*.gltf)"}},
+                                  "");
+      if(!file.empty())
+      {
+        _clearScene();
+        _loadModel(file);
+      }
+    }
+
+    if(ImGui::MenuItem("Add"))
+    {
+      std::filesystem::path file =
+                  openFileDialog( this,
+                                  FileFilters{{ .expression = "*.gltf",
+                                                .description = "gltf(*.gltf)"}},
+                                  "");
+      if(!file.empty()) _loadModel(file);
+    }
+
+    if(ImGui::MenuItem("Clear")) _clearScene();
+
+    modelMenu.end();
   }
 
   //  Сохранение/загрузка окружения
