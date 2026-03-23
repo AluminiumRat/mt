@@ -1,11 +1,9 @@
 ﻿#include <stdexcept>
 
 #include <hld/colorFrameBuilder/ColorFrameCommonSet.h>
-#include <hld/colorFrameBuilder/EnvironmentScene.h>
 #include <hld/FrameBuildContext.h>
 #include <resourceManagement/TextureManager.h>
 #include <technique/DescriptorSetType.h>
-#include <util/Camera.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/Device.h>
 
@@ -14,14 +12,13 @@ using namespace mt;
 ColorFrameCommonSet::ColorFrameCommonSet( Device& device,
                                           TextureManager& textureManager) :
   _device(device),
-  _textureManager(textureManager)
+  _textureManager(textureManager),
+  _frameIndex(0)
 {
   _createLayouts();
 
   _uniformBuffer = new DataBuffer(_device,
-                                  sizeof(Camera::ShaderData) +
-                                    sizeof(EnvironmentScene::UniformBufferData) +
-                                    sizeof(ExtentInfo),
+                                  sizeof(UniformCommonData),
                                   DataBuffer::UNIFORM_BUFFER,
                                   "ColorFrameCommonData");
 
@@ -104,6 +101,8 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
   _descriptorSet->attachSampler(*_commonNearestSampler,
                                 commonNearestSamplerBinding);
   _descriptorSet->finalize();
+
+  _frameIndex++;
 }
 
 void ColorFrameCommonSet::_updateuniformBuffer(
@@ -112,45 +111,25 @@ void ColorFrameCommonSet::_updateuniformBuffer(
                                         const EnvironmentScene& environment,
                                         glm::uvec2 halfFrameExtent)
 {
-  size_t uniformBufferCursor = 0;
+  UniformCommonData uniformData{};
+  uniformData.cameraData = frameContext.viewCamera->makeShaderData();
+  uniformData.environment = environment.uniformData();
+  uniformData.frameExtent = glm::vec4((float)frameContext.frameExtent.x,
+                                      (float)frameContext.frameExtent.y,
+                                      1.0f / frameContext.frameExtent.x,
+                                      1.0f / frameContext.frameExtent.y);
+  uniformData.iFrameExtent = frameContext.frameExtent;
+  uniformData.halfExtent = glm::vec4((float)halfFrameExtent.x,
+                                      (float)halfFrameExtent.y,
+                                      1.0f / halfFrameExtent.x,
+                                      1.0f / halfFrameExtent.y);
+  uniformData.iHalfExtent = halfFrameExtent;
+  uniformData.frameIndex = _frameIndex;
 
-  Camera::ShaderData cameraData = frameContext.viewCamera->makeShaderData();
-  UniformMemoryPool::MemoryInfo uploadedData =
-                      commandProducer.uniformMemorySession().write(cameraData);
-  commandProducer.copyFromBufferToBuffer( *uploadedData.buffer,
-                                          *_uniformBuffer,
-                                          uploadedData.offset,
-                                          uniformBufferCursor,
-                                          sizeof(cameraData));
-  uniformBufferCursor += sizeof(cameraData);
-
-  EnvironmentScene::UniformBufferData environmentData = environment.uniformData();
-  uploadedData = commandProducer.uniformMemorySession().write(environmentData);
-  commandProducer.copyFromBufferToBuffer( *uploadedData.buffer,
-                                          *_uniformBuffer,
-                                          uploadedData.offset,
-                                          uniformBufferCursor,
-                                          sizeof(environmentData));
-  uniformBufferCursor += sizeof(environmentData);
-
-  ExtentInfo extentInfo{.frameExtent = glm::vec4(
-                                            (float)frameContext.frameExtent.x,
-                                            (float)frameContext.frameExtent.y,
-                                            1.0f / frameContext.frameExtent.x,
-                                            1.0f / frameContext.frameExtent.y),
-                        .iFrameExtent = frameContext.frameExtent,
-                        .halfExtent = glm::vec4((float)halfFrameExtent.x,
-                                                (float)halfFrameExtent.y,
-                                                1.0f / halfFrameExtent.x,
-                                                1.0f / halfFrameExtent.y),
-                        .iHalfExtent = halfFrameExtent};
-  uploadedData = commandProducer.uniformMemorySession().write(extentInfo);
-  commandProducer.copyFromBufferToBuffer( *uploadedData.buffer,
-                                          *_uniformBuffer,
-                                          uploadedData.offset,
-                                          uniformBufferCursor,
-                                          sizeof(extentInfo));
-  uniformBufferCursor += sizeof(extentInfo);
+  commandProducer.uploadToBuffer( *_uniformBuffer,
+                                  0,
+                                  sizeof(uniformData),
+                                  &uniformData);
 }
 
 void ColorFrameCommonSet::bind(CommandProducerGraphic& commandProducer) const

@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <hld/colorFrameBuilder/EnvironmentScene.h>
+#include <util/Camera.h>
 #include <util/Ref.h>
 #include <vkr/image/ImageView.h>
 #include <vkr/pipeline/DescriptorSet.h>
@@ -68,12 +70,17 @@ namespace mt
     void unbind(CommandProducerGraphic& commandProducer) const noexcept;
 
   private:
-    struct ExtentInfo
+    struct UniformCommonData
     {
+      Camera::ShaderData cameraData;
+      EnvironmentScene::UniformBufferData environment;
+
       alignas(16) glm::vec4 frameExtent;
       alignas(16) glm::uvec2 iFrameExtent;
       alignas(16) glm::vec4 halfExtent;
       alignas(16) glm::uvec2 iHalfExtent;
+
+      alignas(4) uint32_t frameIndex;
     };
 
   private:
@@ -94,6 +101,8 @@ namespace mt
     //  Дефолтные сэмплеры общего назначения
     Ref<Sampler> _commonLinearSampler;
     Ref<Sampler> _commonNearestSampler;
+
+    uint32_t _frameIndex;
 
     ConstRef<DescriptorSetLayout> _setLayout;
     Ref<PipelineLayout> _pipelineLayout;

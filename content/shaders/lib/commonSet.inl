@@ -8,6 +8,7 @@ layout (set = COMMON, binding = 0) uniform CommonData
 {
   CameraData cameraData;
   EnvironmentData environment;
+
   //  Размер области, в которую отрисовывается конечная картинка
   //  zw = 1 / xy
   vec4 frameBufferExtent;
@@ -16,6 +17,9 @@ layout (set = COMMON, binding = 0) uniform CommonData
   //  zw = 1 / xy
   vec4 halfFrameExtent;
   ivec2 iHalfFrameExtent;
+
+  //  Номер кадра, начиная с 0. Относится только к конкретному ColorFrameBuilder
+  int frameIndex;
 } commonData;
 
 //  LUT текстура для image based lighting и сэмплер для её чтения
