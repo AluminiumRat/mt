@@ -12,7 +12,7 @@ namespace mt
   struct FrameBuildContext;
   class TextureManager;
 
-  //  Строит screen-space карту теней
+  //  Строит screen-space маску теней
   class ShadowsStage
   {
   public:
@@ -21,12 +21,15 @@ namespace mt
     ShadowsStage& operator = (const ShadowsStage&) = delete;
     ~ShadowsStage() noexcept = default;
 
+    //  К моменту вызова shadowBuffer должен находиться в лэйауте
+    //    VK_IMAGE_LAYOUT_GENERAL
     void draw(CommandProducerGraphic& commandProducer,
               const FrameBuildContext& frameContext);
 
-    //  shadowBuffer - таргет-буфер для карты теней, в него будет рендериться
-    //    результат. К моменту вызова должен находиться в лэйауте
-    //    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    //  shadowBuffer - таргет-буфер для карты теней, в него будет уложена
+    //    результирующая маска теней.
+    //  Должен поддерживать использование в качестве storage буфера.
+    //  Формат VK_FORMAT_R8_UNORM
     inline void setBuffers(const ImageView& shadowBuffer);
 
     //  Смещение луча в направлении солнца при трассировке
@@ -40,7 +43,7 @@ namespace mt
     void makeGui();
 
   private:
-    void _buildFrameBuffer();
+    void _createBuffers(CommandProducerGraphic& commandProducer);
 
   private:
     Device& _device;
@@ -48,9 +51,12 @@ namespace mt
     Ref<TechniqueConfigurator> _rayQueryTechniqueConfigurator;
     Technique _rayQueryTechnique;
     TechniquePass& _rayQueryPass;
+    TechniquePass& _spatialFilterPass;
     ResourceBinding& _tlasBinding;
     ResourceBinding& _noiseTextureBinding;
     ResourceBinding& _samplerTextureBinding;
+    ResourceBinding& _rawShadowMaskBinding;
+    ResourceBinding& _finalShadowMaskBinding;
     UniformVariable& _rayForwardShiftUniform;
     UniformVariable& _rayNormalShiftUniform;
 
@@ -58,15 +64,22 @@ namespace mt
     float _rayForwardShift;
     float _rayNormalShift;
 
+    //  Буфер, куда кладутся сырые результаты трассировки теней
+    ConstRef<ImageView> _rawShadowsBuffer;
+    //  Буфер, куда кладется окончательно отфильтрованная маска теней
     ConstRef<ImageView> _shadowBuffer;
-    ConstRef<FrameBuffer> _resolveFrameBuffer;
+
+    //  Размеры сетки для компьют шейдеров
+    glm::uvec2 _gridSize;
   };
 
   inline void ShadowsStage::setBuffers(const ImageView& shadowBuffer)
   {
     if(_shadowBuffer == &shadowBuffer) return;
+
     _shadowBuffer = &shadowBuffer;
-    _resolveFrameBuffer.reset();
+
+    _rawShadowsBuffer.reset();
   }
 
   inline float ShadowsStage::rayForwardShift() const noexcept

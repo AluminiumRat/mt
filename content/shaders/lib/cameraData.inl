@@ -27,6 +27,12 @@ struct CameraData
 
   //  Угол между верхней и нижней плоскостями отсечения в радианах
   float fovY;
+
+  //  Векторы, предназначенные для восстановления мировых координат точки по
+  //  линейному depth буферу
+  vec3 leftTopRPV;
+  vec3 leftToRightRPV;
+  vec3 topToBottomRPV;
 };
 
 #endif

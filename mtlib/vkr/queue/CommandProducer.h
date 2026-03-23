@@ -79,6 +79,9 @@ namespace mt
                       VkAccessFlags srcAccesMask,
                       VkAccessFlags dstAccesMask);
 
+    //  Инициализация image из VK_IMAGE_LAYOUT_UNDEFINED в dstLayout
+    void initLayout(const Image& image, VkImageLayout dstLayout);
+
     //  Зафорсить перевод Image-а в конкретный лэйаут
     //  Можно использовать только на Image-ах со включенным автоконтролем
     //    лэйаута

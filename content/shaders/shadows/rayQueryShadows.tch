@@ -1,19 +1,12 @@
 commonSetName : ColorFrameCommonSet
 
-defaultSamplers:
-  nearestSampler:
-    magFilter: NEAREST
-    minFilter: NEAREST
-    mipmapMode: NEAREST
-
 passes:
-  ResolvePass :
+  RayTracePass :
+    pipeline: COMPUTE
     shaders:
-      VERTEX : lib/fsQuadCamera.vert
-      FRAGMENT : shadows/rayQueryShadows.frag
+      COMPUTE : shadows/rayTracePass.comp
 
-    frameBuffer:
-      color: VK_FORMAT_R8_UNORM
-
-    graphicSettings:
-      topology: TRIANGLE_STRIP
+  SpatialFilterPass :
+    pipeline: COMPUTE
+    shaders:
+      COMPUTE : shadows/spatialFilterPass.comp

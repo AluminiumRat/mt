@@ -342,6 +342,18 @@ void CommandProducer::imageBarrier( const Image& image,
                       dstAccesMask);
 }
 
+void CommandProducer::initLayout(const Image& image, VkImageLayout dstLayout)
+{
+  imageBarrier( image,
+                ImageSlice(image),
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                dstLayout,
+                0,
+                0,
+                0,
+                0);
+}
+
 void CommandProducer::forceLayout(const Image& image,
                                   const ImageSlice& slice,
                                   VkImageLayout dstLayout,

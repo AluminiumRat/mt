@@ -1,29 +1,20 @@
 #version 460
 #extension GL_EXT_ray_query : enable
 
-#include "lib/commonSet.inl"
 #include "lib/octahedronEncoding.inl"
+#include "shadows/rayQueryShadows.inl"
 
-layout (set = STATIC, binding = 0) uniform Params
-{
-  float rayForwardShift;
-  float rayNormalShift;
-} params;
-
-layout (set = STATIC, binding = 1) uniform sampler nearestSampler;
-layout (set = STATIC, binding = 2) uniform accelerationStructureEXT tlas;
-layout (set = STATIC, binding = 3) uniform texture2D noiseTexture;
-layout (set = STATIC, binding = 4) uniform texture1D samplerTexture;
-
-layout(location = 0) in vec2 texCoord;
-layout(location = 2) in vec3 inPosRestoreVec;
-
-layout(location = 0) out float outShadowFactor;
+layout (set = STATIC, binding = 0) uniform accelerationStructureEXT tlas;
+        
+layout (local_size_x = 8,
+        local_size_y = 8,
+        local_size_z = 1) in;
 
 //  Получить направление на случайную точку на солце
 vec3 getRayDirection(int sampleIndex)
 {
-  vec2 samplerValue = texelFetch( sampler1D(samplerTexture, nearestSampler),
+  vec2 samplerValue = texelFetch( sampler1D(samplerTexture,
+                                            commonNearestSampler),
                                   sampleIndex,
                                   0).rg;
   samplerValue *= commonData.environment.sunAngleSize / 2.0f;
@@ -35,14 +26,15 @@ vec3 getRayDirection(int sampleIndex)
 }
 
 //  Стартовая точка при трэйсе теней
-vec3 getStartPoint(float depth, vec3 rayDirection, float pixelSize)
+vec3 getStartPoint(vec2 ssCoords, float depth, vec3 rayDirection, float pixelSize)
 {
-  vec3 startPoint = commonData.cameraData.eyePoint + inPosRestoreVec * depth;
+  vec3 posRestoreVec = getPosRestoreVec(ssCoords);
+  vec3 startPoint = commonData.cameraData.eyePoint + posRestoreVec * depth;
 
   //  Смещаем вдоль нормали, чтобы погасить артефакты терминатора
-  vec3 normal = octahedronDecode(
-                            texture(sampler2D(normalHalfBuffer, nearestSampler),
-                                    texCoord).xy);
+  vec3 normal = octahedronDecode( texture(sampler2D(normalHalfBuffer,
+                                                    commonNearestSampler),
+                                          ssCoords).xy);
   float normalShiftValue = clamp(1.0f - dot(normal, rayDirection), 0.0f, 1.0f);
   normalShiftValue *= params.rayNormalShift * pixelSize;
   startPoint += normal * normalShiftValue;
@@ -52,19 +44,27 @@ vec3 getStartPoint(float depth, vec3 rayDirection, float pixelSize)
 
 void main()
 {
-  float depth = texture(sampler2D(linearDepthHalfBuffer, nearestSampler),
-                        texCoord).r;
+  vec2 invocationId = vec2(gl_GlobalInvocationID.xy);
+  if( invocationId.x >= commonData.halfFrameExtent.x ||
+      invocationId.y >= commonData.halfFrameExtent.y) return;
+
+  vec2 ssCoords = (invocationId + vec2(0.5f)) * commonData.halfFrameExtent.zw;
+
+  float shadowFactor;
+
+  float depth = texture(sampler2D(linearDepthHalfBuffer, commonNearestSampler),
+                        ssCoords).r;
   if(depth != 10000.0f)
   {
-    float random = texelFetch( sampler2D(noiseTexture, nearestSampler),
-                                ivec2(int(gl_FragCoord.x) % 32,
-                                      int(gl_FragCoord.y) % 32),
+    float random = texelFetch( sampler2D(noiseTexture, commonNearestSampler),
+                                ivec2(int(gl_GlobalInvocationID.x) % 32,
+                                      int(gl_GlobalInvocationID.y) % 32),
                                 0).r;
     int sampleIndex = int(random * 255.0f);
     vec3 rayDirection = getRayDirection(sampleIndex);
 
     float pixelSize = getHalfBufferPixelSize(depth);
-    vec3 rayStart = getStartPoint(depth, rayDirection, pixelSize);
+    vec3 rayStart = getStartPoint(ssCoords, depth, rayDirection, pixelSize);
 
     rayQueryEXT rayQuery;
     rayQueryInitializeEXT(rayQuery,
@@ -79,9 +79,13 @@ void main()
     if (rayQueryGetIntersectionTypeEXT(rayQuery, true) ==
                                     gl_RayQueryCommittedIntersectionTriangleEXT)
     {
-      outShadowFactor = 0.0f;
+      shadowFactor = 0.0f;
     }
-    else outShadowFactor = 1.0f;
+    else shadowFactor = 1.0f;
   }
-  else outShadowFactor = 1.0f;
+  else shadowFactor = 1.0f;
+
+  imageStore( rawShadowMask,
+              ivec2(gl_GlobalInvocationID.xy),
+              vec4(shadowFactor));
 }

@@ -48,6 +48,11 @@ ColorFrameCommonSet::ColorFrameCommonSet( Device& device,
                                       0,
                                       true,
                                       4.0f);
+
+  _commonNearestSampler = new Sampler(_device,
+                                      VK_FILTER_NEAREST,
+                                      VK_FILTER_NEAREST,
+                                      VK_SAMPLER_MIPMAP_MODE_NEAREST);
 }
 
 void ColorFrameCommonSet::_createLayouts()
@@ -96,6 +101,8 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
                                       VK_SHADER_STAGE_ALL);
   _descriptorSet->attachSampler(*_commonLinearSampler,
                                 commonLinearSamplerBinding);
+  _descriptorSet->attachSampler(*_commonNearestSampler,
+                                commonNearestSamplerBinding);
   _descriptorSet->finalize();
 }
 
@@ -131,10 +138,12 @@ void ColorFrameCommonSet::_updateuniformBuffer(
                                             (float)frameContext.frameExtent.y,
                                             1.0f / frameContext.frameExtent.x,
                                             1.0f / frameContext.frameExtent.y),
+                        .iFrameExtent = frameContext.frameExtent,
                         .halfExtent = glm::vec4((float)halfFrameExtent.x,
                                                 (float)halfFrameExtent.y,
                                                 1.0f / halfFrameExtent.x,
-                                                1.0f / halfFrameExtent.y)};
+                                                1.0f / halfFrameExtent.y),
+                        .iHalfExtent = halfFrameExtent};
   uploadedData = commandProducer.uniformMemorySession().write(extentInfo);
   commandProducer.copyFromBufferToBuffer( *uploadedData.buffer,
                                           *_uniformBuffer,
@@ -150,11 +159,16 @@ void ColorFrameCommonSet::bind(CommandProducerGraphic& commandProducer) const
   commandProducer.bindDescriptorSetGraphic( *_descriptorSet,
                                             (uint32_t)DescriptorSetType::COMMON,
                                             *_pipelineLayout);
+  commandProducer.bindDescriptorSetCompute( *_descriptorSet,
+                                            (uint32_t)DescriptorSetType::COMMON,
+                                            *_pipelineLayout);
 }
 
 void ColorFrameCommonSet::unbind(
                         CommandProducerGraphic& commandProducer) const noexcept
 {
+  commandProducer.unbindDescriptorSetCompute(
+                                          (uint32_t)DescriptorSetType::COMMON);
   commandProducer.unbindDescriptorSetGraphic(
                                           (uint32_t)DescriptorSetType::COMMON);
 }

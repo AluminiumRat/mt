@@ -20,7 +20,7 @@ namespace mt
   {
   public:
     static constexpr const char* setName = "ColorFrameCommonSet";
-    static const VkDescriptorSetLayoutBinding bindings[9];
+    static const VkDescriptorSetLayoutBinding bindings[10];
 
     static constexpr uint32_t uniformBufferBinding = 0;
     static constexpr uint32_t iblLutBinding = 1;
@@ -31,6 +31,7 @@ namespace mt
     static constexpr uint32_t normalHalfBufferBinding = 6;
     static constexpr uint32_t shadowBufferBinding = 7;
     static constexpr uint32_t commonLinearSamplerBinding = 8;
+    static constexpr uint32_t commonNearestSamplerBinding = 9;
 
   public:
     //  Хелпер, который биндит сет в конструкторе и анбиндит в деструкторе
@@ -70,7 +71,9 @@ namespace mt
     struct ExtentInfo
     {
       alignas(16) glm::vec4 frameExtent;
+      alignas(16) glm::uvec2 iFrameExtent;
       alignas(16) glm::vec4 halfExtent;
+      alignas(16) glm::uvec2 iHalfExtent;
     };
 
   private:
@@ -88,8 +91,9 @@ namespace mt
     Ref<DataBuffer> _uniformBuffer;
     ConstRef<ImageView> _iblLut;
     Ref<Sampler> _iblLutSampler;
-    //  Дефолтный сэмплер общего назначения
+    //  Дефолтные сэмплеры общего назначения
     Ref<Sampler> _commonLinearSampler;
+    Ref<Sampler> _commonNearestSampler;
 
     ConstRef<DescriptorSetLayout> _setLayout;
     Ref<PipelineLayout> _pipelineLayout;

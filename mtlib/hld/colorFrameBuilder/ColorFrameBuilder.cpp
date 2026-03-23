@@ -207,7 +207,7 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                                         VK_IMAGE_VIEW_TYPE_2D);
   _shadowBuffer = new Image(_device,
                             VK_IMAGE_TYPE_2D,
-                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                            VK_IMAGE_USAGE_STORAGE_BIT |
                               VK_IMAGE_USAGE_SAMPLED_BIT,
                             0,
                             shadowFormat,
@@ -233,64 +233,22 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
 void ColorFrameBuilder::_initBuffersLayout(
                                         CommandProducerGraphic& commandProducer)
 {
-  commandProducer.imageBarrier( *_hdrBuffer,
-                                ImageSlice(*_hdrBuffer),
-                                VK_IMAGE_LAYOUT_UNDEFINED,
-                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                0,
-                                0,
-                                0,
-                                0);
+  commandProducer.initLayout( *_hdrBuffer,
+                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-  commandProducer.imageBarrier(
-                              *_depthBuffer,
-                              ImageSlice(*_depthBuffer),
-                              VK_IMAGE_LAYOUT_UNDEFINED,
-                              VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                              0,
-                              0,
-                              0,
-                              0);
+  commandProducer.initLayout( *_depthBuffer,
+                              VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-  commandProducer.imageBarrier(
-                              *_halfDepthBuffer,
-                              ImageSlice(*_halfDepthBuffer),
-                              VK_IMAGE_LAYOUT_UNDEFINED,
-                              VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                              0,
-                              0,
-                              0,
-                              0);
+  commandProducer.initLayout( *_halfDepthBuffer,
+                              VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-  commandProducer.imageBarrier(
-                              *_halfLinearDepthBuffer,
-                              ImageSlice(*_halfLinearDepthBuffer),
-                              VK_IMAGE_LAYOUT_UNDEFINED,
-                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                              0,
-                              0,
-                              0,
-                              0);
+  commandProducer.initLayout( *_halfLinearDepthBuffer,
+                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-  commandProducer.imageBarrier(
-                              *_halfNormalBuffer,
-                              ImageSlice(*_halfNormalBuffer),
-                              VK_IMAGE_LAYOUT_UNDEFINED,
-                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                              0,
-                              0,
-                              0,
-                              0);
+  commandProducer.initLayout( *_halfNormalBuffer,
+                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-  commandProducer.imageBarrier(
-                              *_shadowBuffer,
-                              ImageSlice(*_shadowBuffer),
-                              VK_IMAGE_LAYOUT_UNDEFINED,
-                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                              0,
-                              0,
-                              0,
-                              0);
+  commandProducer.initLayout(*_shadowBuffer, VK_IMAGE_LAYOUT_GENERAL);
 }
 
 void ColorFrameBuilder::_shadowsLayout(CommandProducerGraphic& commandProducer)
@@ -333,11 +291,11 @@ void ColorFrameBuilder::_opaquePassLayout(
   commandProducer.imageBarrier(
                               *_shadowBuffer,
                               ImageSlice(*_shadowBuffer),
-                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                              VK_IMAGE_LAYOUT_GENERAL,
                               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                              VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                              VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                               VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                              VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                              VK_ACCESS_SHADER_WRITE_BIT,
                               VK_ACCESS_SHADER_READ_BIT);
 }
 

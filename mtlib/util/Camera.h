@@ -36,6 +36,12 @@ namespace mt
       alignas(4) float farDistance;
 
       alignas(4) float fovY;
+
+      //  Векторы, предназначенные для восстановления мировых координат точки по
+      //  линейному depth буферу
+      alignas(16) glm::vec3 leftTopRPV;
+      alignas(16) glm::vec3 leftToRightRPV;
+      alignas(16) glm::vec3 topToBottomRPV;
     };
 
   public:
@@ -97,6 +103,9 @@ namespace mt
     void _updateFromProjectionMatrix() noexcept;
     void _calculateNearFar() noexcept;
     void _calculateFovY() noexcept;
+    inline glm::vec3 _getDirection(
+                            glm::vec2 cullCoords,
+                            const glm::mat4& cullToWorldMatrix) const noexcept;
 
   private:
     glm::mat4 _viewMatrix;
@@ -200,6 +209,25 @@ namespace mt
 
     shaderData.fovY = _fovY;
 
+    shaderData.leftTopRPV = _getDirection(glm::vec2(-1, -1),
+                                          shaderData.cullToWorldMatrix);
+    shaderData.leftToRightRPV = _getDirection(glm::vec2(1, -1),
+                                              shaderData.cullToWorldMatrix);
+    shaderData.leftToRightRPV -= shaderData.leftTopRPV;
+
+    shaderData.topToBottomRPV = _getDirection(glm::vec2(-1, 1),
+                                              shaderData.cullToWorldMatrix);
+    shaderData.topToBottomRPV -= shaderData.leftTopRPV;
+
     return shaderData;
+  }
+
+  inline glm::vec3 Camera::_getDirection(
+                              glm::vec2 cullCoords,
+                              const glm::mat4& cullToWorldMatrix) const noexcept
+  {
+    glm::vec4 worldPos = cullToWorldMatrix * glm::vec4(cullCoords, 0.0f, 1.0f);
+    worldPos /= worldPos.w;
+    return (glm::vec3(worldPos) - eyePoint()) / _farDistance;
   }
 }
