@@ -6,7 +6,11 @@
 
 layout (set = COMMON, binding = 0) uniform CommonData
 {
+  //  Информация о положении камеры на текущем кадре
   CameraData cameraData;
+  //  Информация о положении камеры на предыдущем кадре
+  CameraData prevCameraData;
+
   EnvironmentData environment;
 
   //  Размер области, в которую отрисовывается конечная картинка

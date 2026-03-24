@@ -72,7 +72,11 @@ namespace mt
   private:
     struct UniformCommonData
     {
+      //  Информация о положении камеры на текущем кадре
       Camera::ShaderData cameraData;
+      //  Информация о положении камеры на предыдущем кадре
+      Camera::ShaderData prevCameraData;
+
       EnvironmentScene::UniformBufferData environment;
 
       alignas(16) glm::vec4 frameExtent;
@@ -101,6 +105,11 @@ namespace mt
     //  Дефолтные сэмплеры общего назначения
     Ref<Sampler> _commonLinearSampler;
     Ref<Sampler> _commonNearestSampler;
+
+    //  Информация о камере на текущем отрисовываемом кадре
+    Camera::ShaderData _currentCameraData;
+    //  Информация о камере на предыдущем кадре
+    Camera::ShaderData _prevCameraData;
 
     uint32_t _frameIndex;
 

@@ -65,6 +65,18 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
                                   const ImageView& normalHalfBuffer,
                                   const ImageView& shadowBuffer)
 {
+  //  Апдэйтим информацию о камере
+  if(_frameIndex == 0)
+  {
+    _currentCameraData = frameContext.viewCamera->makeShaderData();
+    _prevCameraData = _currentCameraData;
+  }
+  else
+  {
+    _prevCameraData = _currentCameraData;
+    _currentCameraData = frameContext.viewCamera->makeShaderData();
+  }
+
   _updateuniformBuffer( commandProducer,
                         frameContext,
                         environment,
@@ -112,8 +124,11 @@ void ColorFrameCommonSet::_updateuniformBuffer(
                                         glm::uvec2 halfFrameExtent)
 {
   UniformCommonData uniformData{};
-  uniformData.cameraData = frameContext.viewCamera->makeShaderData();
+  uniformData.cameraData = _currentCameraData;
+  uniformData.prevCameraData = _prevCameraData;
+
   uniformData.environment = environment.uniformData();
+
   uniformData.frameExtent = glm::vec4((float)frameContext.frameExtent.x,
                                       (float)frameContext.frameExtent.y,
                                       1.0f / frameContext.frameExtent.x,
