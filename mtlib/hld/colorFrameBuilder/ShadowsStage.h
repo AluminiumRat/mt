@@ -55,6 +55,7 @@ namespace mt
     ResourceBinding& _noiseTextureBinding;
     ResourceBinding& _samplerTextureBinding;
     ResourceBinding& _rawShadowMaskBinding;
+    ResourceBinding& _prevShadowMaskBinding;
     ResourceBinding& _finalShadowMaskBinding;
     UniformVariable& _rayForwardShiftUniform;
     UniformVariable& _rayNormalShiftUniform;
@@ -63,8 +64,11 @@ namespace mt
     float _rayForwardShift;
     float _rayNormalShift;
 
-    //  Буфер, куда кладутся сырые результаты трассировки теней
-    ConstRef<ImageView> _rawShadowsBuffer;
+    //  Буферы, куда кладутся результаты трассировки теней
+    //  Один из буферов - предыдущий кадр, другой - текущий
+    ConstRef<ImageView> _rayShadowBuffers[2];
+    //  Индекс для выбора, в какой из _rayShadowBuffers отрисовывать тени
+    int _targetBuffer;
     //  Буфер, куда кладется окончательно отфильтрованная маска теней
     ConstRef<ImageView> _shadowBuffer;
 
@@ -78,7 +82,8 @@ namespace mt
 
     _shadowBuffer = &shadowBuffer;
 
-    _rawShadowsBuffer.reset();
+    _rayShadowBuffers[0].reset();
+    _rayShadowBuffers[1].reset();
   }
 
   inline float ShadowsStage::rayForwardShift() const noexcept

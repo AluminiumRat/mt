@@ -27,6 +27,8 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
               _rayQueryTechnique.getOrCreateResourceBinding("samplerTexture")),
   _rawShadowMaskBinding(
               _rayQueryTechnique.getOrCreateResourceBinding("rawShadowMask")),
+  _prevShadowMaskBinding(
+              _rayQueryTechnique.getOrCreateResourceBinding("prevShadowMask")),
   _finalShadowMaskBinding(
               _rayQueryTechnique.getOrCreateResourceBinding("finalShadowMask")),
   _rayForwardShiftUniform(
@@ -35,6 +37,7 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
               _rayQueryTechnique.getOrCreateUniform("params.rayNormalShift")),
   _rayForwardShift(0.5f),
   _rayNormalShift(2.0f),
+  _targetBuffer(0),
   _gridSize(1)
 {
   ConstRef<TechniqueResource> noiseTexture =
@@ -66,10 +69,14 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
 void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
                         const FrameBuildContext& frameContext)
 {
-  if(_rawShadowsBuffer == nullptr) _createBuffers(commandProducer);
+  if(_rayShadowBuffers[0] == nullptr) _createBuffers(commandProducer);
 
   const TLAS* tlas = frameContext.drawScene->tlas();
   _tlasBinding.setTLAS(tlas);
+
+  _rawShadowMaskBinding.setImage(_rayShadowBuffers[_targetBuffer]);
+  _targetBuffer = (_targetBuffer + 1) % 2;
+  _prevShadowMaskBinding.setImage(_rayShadowBuffers[_targetBuffer]);
 
   if(_rayQueryTechnique.isReady())
   {
@@ -101,8 +108,10 @@ void ShadowsStage::_createBuffers(CommandProducerGraphic& commandProducer)
 
   _gridSize = (glm::uvec2(_shadowBuffer->extent()) + glm::uvec2(7)) / 8u;
 
-  //  Буфер для трэйса теней
-  ConstRef<Image> rawShadowsBufferImage(new Image(
+  //  Буферы для трэйса теней
+  for(int i = 0; i < 2; i++)
+  {
+    ConstRef<Image> rayShadowsBufferImage(new Image(
                                                 _device,
                                                 VK_IMAGE_TYPE_2D,
                                                 VK_IMAGE_USAGE_STORAGE_BIT |
@@ -113,14 +122,14 @@ void ShadowsStage::_createBuffers(CommandProducerGraphic& commandProducer)
                                                 VK_SAMPLE_COUNT_1_BIT,
                                                 1,
                                                 1,
-                                                false,
+                                                true,
                                                 "ShadowsStage::TracingBuffer"));
-  commandProducer.initLayout(*rawShadowsBufferImage, VK_IMAGE_LAYOUT_GENERAL);
-  _rawShadowsBuffer = new ImageView(*rawShadowsBufferImage,
-                                    ImageSlice(*rawShadowsBufferImage),
-                                    VK_IMAGE_VIEW_TYPE_2D);
+    //commandProducer.initLayout(*rayShadowsBufferImage, VK_IMAGE_LAYOUT_GENERAL);
+    _rayShadowBuffers[i] = new ImageView( *rayShadowsBufferImage,
+                                          ImageSlice(*rayShadowsBufferImage),
+                                          VK_IMAGE_VIEW_TYPE_2D);
+  }
 
-  _rawShadowMaskBinding.setImage(_rawShadowsBuffer);
   _finalShadowMaskBinding.setImage(_shadowBuffer);
 }
 

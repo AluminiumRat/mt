@@ -18,9 +18,11 @@ layout (set = STATIC, binding = 2) uniform texture2D noiseTexture;
 layout (set = STATIC, binding = 3) uniform texture1D samplerTexture;
 
 //  Здесь хранятся неотфильтрованные результаты трассировки лучей
-layout(r8, set = STATIC, binding = 4) uniform image2D rawShadowMask;
+layout(r8, set = VOLATILE, binding = 0) uniform image2D rawShadowMask;
+//  Результаты трассировки лучей с предыдущего кадра
+layout(set = VOLATILE, binding = 1) uniform texture2D prevShadowMask;
 
 //  Сюда склыдываем окончательную отфильтрованную маску теней
-layout(r8, set = STATIC, binding = 5) uniform image2D finalShadowMask;
+layout(r8, set = STATIC, binding = 4) uniform image2D finalShadowMask;
 
 #endif

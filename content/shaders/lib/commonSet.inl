@@ -89,4 +89,13 @@ vec3 getPosRestoreVec(vec2 ssCoords)
             ssCoords.y * commonData.cameraData.topToBottomRPV;
 }
 
+//  Получить скринспэйс координаты точки на предыдущем кадре
+//  currentFrameSSCoords - скрин спэйс координаты в текущем кадре
+vec2 getPrevFrameSSCoords(vec2 currentFrameSSCoords)
+{
+  vec2 positionShift = texture( sampler2D(velocityBuffer, commonLinearSampler),
+                                currentFrameSSCoords).xy;
+  return currentFrameSSCoords + positionShift;
+}
+
 #endif

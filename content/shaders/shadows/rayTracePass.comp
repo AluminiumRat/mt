@@ -43,6 +43,28 @@ vec3 getStartPoint(vec2 ssCoords, float depth, vec3 rayDirection, float pixelSiz
   return startPoint;
 }
 
+//  Получить тень из предыдущего кадра
+//  r компонент - значение тени
+//  g компонент - коэффициент смешивания с тенью текущего кадра
+vec2 getPrevShadow(vec2 ssCoords, float depth)
+{
+  vec2 prevSSCoords = getPrevFrameSSCoords(ssCoords);
+  float prevShadow = texture( sampler2D(prevShadowMask, commonNearestSampler),
+                              prevSSCoords).r;
+
+  float pixelSize = getHalfBufferPixelSize(depth);
+  float depthTreshold = 5.0f * pixelSize;
+  float prevDepth = texture(sampler2D(linearDepthHalfBuffer,
+                                      commonNearestSampler),
+                            prevSSCoords).r;
+  float depthDelta = abs(depth - prevDepth);
+  float mixFactor = clamp((depthTreshold - depthDelta) / depthTreshold,
+                          0.0f,
+                          0.9f);
+
+  return vec2(prevShadow, mixFactor);
+}
+
 void main()
 {
   vec2 invocationId = vec2(gl_GlobalInvocationID.xy);
@@ -86,10 +108,11 @@ void main()
   }
   else shadowFactor = 1.0f;
 
-  float oldShadow = imageLoad(rawShadowMask,
-                              ivec2(gl_GlobalInvocationID.xy)).x;
+  //  Смешиваем с тенью из предыдущего кадра
+  vec2 prevShadow = getPrevShadow(ssCoords, depth);
+  shadowFactor = mix(shadowFactor, prevShadow.r, prevShadow.g);
 
   imageStore( rawShadowMask,
               ivec2(gl_GlobalInvocationID.xy),
-              vec4(shadowFactor * 0.1 + 0.9 * oldShadow));
+              vec4(shadowFactor));
 }
