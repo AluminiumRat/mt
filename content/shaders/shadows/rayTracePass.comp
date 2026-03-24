@@ -13,6 +13,7 @@ layout (local_size_x = 8,
 //  Получить направление на случайную точку на солце
 vec3 getRayDirection(int sampleIndex)
 {
+  sampleIndex = sampleIndex % 1024;
   vec2 samplerValue = texelFetch( sampler1D(samplerTexture,
                                             commonNearestSampler),
                                   sampleIndex,
@@ -60,7 +61,7 @@ void main()
                                 ivec2(int(gl_GlobalInvocationID.x) % 32,
                                       int(gl_GlobalInvocationID.y) % 32),
                                 0).r;
-    int sampleIndex = int(random * 255.0f);
+    int sampleIndex = int(random * 255.0f) + commonData.frameIndex;
     vec3 rayDirection = getRayDirection(sampleIndex);
 
     float pixelSize = getHalfBufferPixelSize(depth);
@@ -85,7 +86,10 @@ void main()
   }
   else shadowFactor = 1.0f;
 
+  float oldShadow = imageLoad(rawShadowMask,
+                              ivec2(gl_GlobalInvocationID.xy)).x;
+
   imageStore( rawShadowMask,
               ivec2(gl_GlobalInvocationID.xy),
-              vec4(shadowFactor));
+              vec4(shadowFactor * 0.1 + 0.9 * oldShadow));
 }
