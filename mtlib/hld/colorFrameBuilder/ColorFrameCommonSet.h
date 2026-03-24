@@ -22,7 +22,7 @@ namespace mt
   {
   public:
     static constexpr const char* setName = "ColorFrameCommonSet";
-    static const VkDescriptorSetLayoutBinding bindings[10];
+    static const VkDescriptorSetLayoutBinding bindings[11];
 
     static constexpr uint32_t uniformBufferBinding = 0;
     static constexpr uint32_t iblLutBinding = 1;
@@ -31,9 +31,10 @@ namespace mt
     static constexpr uint32_t iblspecularMapBinding = 4;
     static constexpr uint32_t linearDepthHalfBufferBinding = 5;
     static constexpr uint32_t normalHalfBufferBinding = 6;
-    static constexpr uint32_t shadowBufferBinding = 7;
-    static constexpr uint32_t commonLinearSamplerBinding = 8;
-    static constexpr uint32_t commonNearestSamplerBinding = 9;
+    static constexpr uint32_t velocityBufferBinding = 7;
+    static constexpr uint32_t shadowBufferBinding = 8;
+    static constexpr uint32_t commonLinearSamplerBinding = 9;
+    static constexpr uint32_t commonNearestSamplerBinding = 10;
 
   public:
     //  Хелпер, который биндит сет в конструкторе и анбиндит в деструкторе
@@ -62,6 +63,7 @@ namespace mt
                 const EnvironmentScene& environment,
                 const ImageView& linearDepthHalfBuffer,
                 const ImageView& normalHalfBuffer,
+                const ImageView& velocityBuffer,
                 const ImageView& shadowBuffer);
 
   private:

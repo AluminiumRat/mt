@@ -1,0 +1,37 @@
+#version 450
+
+#include "lib/commonSet.inl"
+
+layout (local_size_x = 8,
+        local_size_y = 8,
+        local_size_z = 1) in;
+
+layout(rg16f, set = STATIC, binding = 0) uniform image2D outVelocityBuffer;
+
+void main()
+{
+  if( gl_GlobalInvocationID.x >= commonData.iHalfFrameExtent.x ||
+      gl_GlobalInvocationID.y >= commonData.iHalfFrameExtent.y) return;
+
+  float depth = texelFetch( sampler2D(linearDepthHalfBuffer,
+                                      commonNearestSampler),
+                            ivec2(gl_GlobalInvocationID.xy),
+                            0).x;
+  vec2 velocity = vec2(0);
+  if(depth != 10000.0f)
+  {
+    vec2 ssCoords = commonData.halfFrameExtent.zw *
+                                  (vec2(gl_GlobalInvocationID.xy) + vec2(0.5f));
+    vec3 posRestoreVec = getPosRestoreVec(ssCoords);
+    vec3 worldPosition = commonData.cameraData.eyePoint + posRestoreVec * depth;
+
+    vec4 prevClipPosition =
+        commonData.prevCameraData.viewProjectionMatrix * vec4(worldPosition, 1);
+    vec2 prevSSCoord = (prevClipPosition.xy / prevClipPosition.w) * 0.5f + 0.5f;
+    velocity = prevSSCoord - ssCoords;
+  }
+
+  imageStore( outVelocityBuffer,
+              ivec2(gl_GlobalInvocationID.xy),
+              vec4(velocity, 0, 0));
+}

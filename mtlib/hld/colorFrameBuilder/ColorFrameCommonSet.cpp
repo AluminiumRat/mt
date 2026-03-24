@@ -63,6 +63,7 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
                                   const EnvironmentScene& environment,
                                   const ImageView& linearDepthHalfBuffer,
                                   const ImageView& normalHalfBuffer,
+                                  const ImageView& velocityBuffer,
                                   const ImageView& shadowBuffer)
 {
   //  Апдэйтим информацию о камере
@@ -104,6 +105,9 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
                                       VK_SHADER_STAGE_ALL);
   _descriptorSet->attachSampledImage( normalHalfBuffer,
                                       normalHalfBufferBinding,
+                                      VK_SHADER_STAGE_ALL);
+  _descriptorSet->attachSampledImage( velocityBuffer,
+                                      velocityBufferBinding,
                                       VK_SHADER_STAGE_ALL);
   _descriptorSet->attachSampledImage( shadowBuffer,
                                       shadowBufferBinding,

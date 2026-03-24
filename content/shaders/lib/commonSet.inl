@@ -4,6 +4,10 @@
 #include <lib/cameraData.inl>
 #include <lib/environmentData.inl>
 
+//  Магическое число, если оно встречается в линейном буфере глубины, значит
+//  туда не было отрендерено никакой геометрии. Т.е это фон
+#define LINEAR_DEPTH_EMPTY_VALUE 10000.0f
+
 layout (set = COMMON, binding = 0) uniform CommonData
 {
   //  Информация о положении камеры на текущем кадре
@@ -48,19 +52,23 @@ layout (set = COMMON,
 layout (set = COMMON,
         binding = 6) uniform texture2D normalHalfBuffer;
 
+//  velocity буфер в половинном разрешении
+layout (set = COMMON,
+        binding = 7) uniform texture2D velocityBuffer;
+
 //  Скринспейсовый буфер с тенями
 layout (set = COMMON,
-        binding = 7) uniform texture2D shadowBuffer;
+        binding = 8) uniform texture2D shadowBuffer;
 
 //  Дефолтный сэмплер общего назначения.
 //  Линейная фильтрация, VK_SAMPLER_ADDRESS_MODE_REPEAT, анизотропия 4
 layout (set = COMMON,
-        binding = 8) uniform sampler commonLinearSampler;
+        binding = 9) uniform sampler commonLinearSampler;
 
 //  Дефолтный сэмплер общего назначения.
 //  Nearest фильтрация
 layout (set = COMMON,
-        binding = 9) uniform sampler commonNearestSampler;
+        binding = 10) uniform sampler commonNearestSampler;
 
 //  Получить размер пикселя для половинных буферов на определенной дистанции
 //  от камеры

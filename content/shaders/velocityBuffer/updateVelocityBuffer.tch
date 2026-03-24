@@ -1,0 +1,7 @@
+commonSetName : ColorFrameCommonSet
+
+passes:
+  UpdatePass :
+    pipeline: COMPUTE
+    shaders:
+      COMPUTE : velocityBuffer/updateVelocityBuffer.comp

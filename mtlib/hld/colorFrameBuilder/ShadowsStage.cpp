@@ -7,6 +7,7 @@
 #include <hld/FrameBuildContext.h>
 #include <resourceManagement/TextureManager.h>
 #include <technique/TechniqueLoader.h>
+#include <util/Assert.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/Device.h>
 

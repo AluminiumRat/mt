@@ -3,7 +3,6 @@
 #include <technique/TechniqueConfigurator.h>
 #include <technique/Technique.h>
 #include <util/Ref.h>
-#include <vkr/FrameBuffer.h>
 
 namespace mt
 {

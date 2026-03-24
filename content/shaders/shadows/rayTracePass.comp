@@ -55,7 +55,7 @@ void main()
 
   float depth = texture(sampler2D(linearDepthHalfBuffer, commonNearestSampler),
                         ssCoords).r;
-  if(depth != 10000.0f)
+  if(depth != LINEAR_DEPTH_EMPTY_VALUE)
   {
     float random = texelFetch( sampler2D(noiseTexture, commonNearestSampler),
                                 ivec2(int(gl_GlobalInvocationID.x) % 32,

@@ -20,6 +20,7 @@ ColorFrameBuilder::ColorFrameBuilder( Device& device,
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(frameTypeName)),
   _commonSet(device, textureManager),
   _opaquePrepassStage(device),
+  _velocityBufferUpdater(device),
   _shadowsStage(device, textureManager),
   _opaqueColorStage(device),
   _backgroundRender(device, techniqueManager),
@@ -57,6 +58,7 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
                       environment,
                       *_halfLinearDepthBufferView,
                       *_halfNormalBufferView,
+                      *_velocityBufferView,
                       *_shadowBufferView);
     _device.graphicQueue()->submitCommands(std::move(prepareProducer));
   }
@@ -71,6 +73,9 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
       _opaquePrepassStage.draw( *preopaqueProducer,
                                 _drawPlan,
                                 frameContext);
+      _updateVelocityBufferLayout(*preopaqueProducer);
+      _velocityBufferUpdater.updateVelocityBuffer(*preopaqueProducer,
+                                                  *_velocityBufferView);
     }
     _device.graphicQueue()->submitCommands(std::move(preopaqueProducer));
   }
@@ -205,6 +210,23 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
   _halfNormalBufferView = new ImageView(*_halfNormalBuffer,
                                         ImageSlice(*_halfNormalBuffer),
                                         VK_IMAGE_VIEW_TYPE_2D);
+
+  _velocityBuffer = new Image(_device,
+                              VK_IMAGE_TYPE_2D,
+                              VK_IMAGE_USAGE_STORAGE_BIT |
+                                VK_IMAGE_USAGE_SAMPLED_BIT,
+                              0,
+                              velocityBufferFormat,
+                              glm::uvec3(halfSize, 1),
+                              VK_SAMPLE_COUNT_1_BIT,
+                              1,
+                              1,
+                              false,
+                              "VelocityBuffer");
+  _velocityBufferView = new ImageView(*_velocityBuffer,
+                                      ImageSlice(*_velocityBuffer),
+                                      VK_IMAGE_VIEW_TYPE_2D);
+
   _shadowBuffer = new Image(_device,
                             VK_IMAGE_TYPE_2D,
                             VK_IMAGE_USAGE_STORAGE_BIT |
@@ -248,55 +270,56 @@ void ColorFrameBuilder::_initBuffersLayout(
   commandProducer.initLayout( *_halfNormalBuffer,
                               VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
+  commandProducer.initLayout( *_velocityBuffer, VK_IMAGE_LAYOUT_GENERAL);
+
   commandProducer.initLayout(*_shadowBuffer, VK_IMAGE_LAYOUT_GENERAL);
+}
+
+void ColorFrameBuilder::_updateVelocityBufferLayout(
+                                        CommandProducerGraphic& commandProducer)
+{
+  commandProducer.imageBarrier( *_halfLinearDepthBuffer,
+                                ImageSlice(*_halfLinearDepthBuffer),
+                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                VK_ACCESS_SHADER_READ_BIT);
 }
 
 void ColorFrameBuilder::_shadowsLayout(CommandProducerGraphic& commandProducer)
 {
-  commandProducer.imageBarrier(
-                              *_halfDepthBuffer,
-                              ImageSlice(*_halfDepthBuffer),
-                              VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                              VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                                VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                              VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                              VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                              VK_ACCESS_SHADER_READ_BIT);
+  commandProducer.imageBarrier( *_velocityBuffer,
+                                ImageSlice(*_velocityBuffer),
+                                VK_IMAGE_LAYOUT_GENERAL,
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                VK_ACCESS_SHADER_WRITE_BIT,
+                                VK_ACCESS_SHADER_READ_BIT);
 
-  commandProducer.imageBarrier(
-                              *_halfLinearDepthBuffer,
-                              ImageSlice(*_halfLinearDepthBuffer),
-                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                              VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                              VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                              VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                              VK_ACCESS_SHADER_READ_BIT);
-
-  commandProducer.imageBarrier(
-                              *_halfNormalBuffer,
-                              ImageSlice(*_halfNormalBuffer),
-                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                              VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                              VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                              VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                              VK_ACCESS_SHADER_READ_BIT);
+  commandProducer.imageBarrier( *_halfNormalBuffer,
+                                ImageSlice(*_halfNormalBuffer),
+                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                VK_ACCESS_SHADER_READ_BIT);
 }
 
 void ColorFrameBuilder::_opaquePassLayout(
                                       CommandProducerGraphic& commandProducer)
 {
-  commandProducer.imageBarrier(
-                              *_shadowBuffer,
-                              ImageSlice(*_shadowBuffer),
-                              VK_IMAGE_LAYOUT_GENERAL,
-                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                              VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                              VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                              VK_ACCESS_SHADER_WRITE_BIT,
-                              VK_ACCESS_SHADER_READ_BIT);
+  commandProducer.imageBarrier( *_shadowBuffer,
+                                ImageSlice(*_shadowBuffer),
+                                VK_IMAGE_LAYOUT_GENERAL,
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                VK_ACCESS_SHADER_WRITE_BIT,
+                                VK_ACCESS_SHADER_READ_BIT);
 }
 
 void ColorFrameBuilder::_posteffectsLayouts(
