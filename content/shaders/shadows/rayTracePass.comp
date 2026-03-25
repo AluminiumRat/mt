@@ -27,15 +27,16 @@ vec3 getRayDirection(int sampleIndex)
 }
 
 //  Стартовая точка при трэйсе теней
-vec3 getStartPoint(vec2 ssCoords, float depth, vec3 rayDirection, float pixelSize)
+vec3 getStartPoint( vec2 ssCoords,
+                    float depth,
+                    vec3 normal,
+                    vec3 rayDirection,
+                    float pixelSize)
 {
   vec3 posRestoreVec = getPosRestoreVec(ssCoords);
   vec3 startPoint = commonData.cameraData.eyePoint + posRestoreVec * depth;
 
   //  Смещаем вдоль нормали, чтобы погасить артефакты терминатора
-  vec3 normal = octahedronDecode( texture(sampler2D(normalHalfBuffer,
-                                                    commonNearestSampler),
-                                          ssCoords).xy);
   float normalShiftValue = clamp(1.0f - dot(normal, rayDirection), 0.0f, 1.0f);
   normalShiftValue *= params.rayNormalShift * pixelSize;
   startPoint += normal * normalShiftValue;
@@ -79,25 +80,36 @@ void main()
     int sampleIndex = int(random * 255.0f) + commonData.frameIndex;
     vec3 rayDirection = getRayDirection(sampleIndex);
 
-    float pixelSize = getHalfBufferPixelSize(depth);
-    vec3 rayStart = getStartPoint(ssCoords, depth, rayDirection, pixelSize);
-
-    rayQueryEXT rayQuery;
-    rayQueryInitializeEXT(rayQuery,
-                          tlas,
-                          gl_RayFlagsTerminateOnFirstHitEXT,
-                          0xFF,
-                          rayStart,
-                          params.rayForwardShift * pixelSize,
-                          rayDirection,
-                          1000.0f);
-    rayQueryProceedEXT(rayQuery);
-    if (rayQueryGetIntersectionTypeEXT(rayQuery, true) ==
-                                    gl_RayQueryCommittedIntersectionTriangleEXT)
+    vec3 normal = octahedronDecode( texture(sampler2D(normalHalfBuffer,
+                                                      commonNearestSampler),
+                                            ssCoords).xy);
+    if(dot(normal, rayDirection) > 0)
     {
-      shadowFactor = 0.0f;
+      float pixelSize = getHalfBufferPixelSize(depth);
+      vec3 rayStart = getStartPoint(ssCoords,
+                                    depth,
+                                    normal,
+                                    rayDirection,
+                                    pixelSize);
+
+      rayQueryEXT rayQuery;
+      rayQueryInitializeEXT(rayQuery,
+                            tlas,
+                            gl_RayFlagsTerminateOnFirstHitEXT,
+                            0xFF,
+                            rayStart,
+                            params.rayForwardShift * pixelSize,
+                            rayDirection,
+                            1000.0f);
+      rayQueryProceedEXT(rayQuery);
+      if (rayQueryGetIntersectionTypeEXT(rayQuery, true) ==
+                                    gl_RayQueryCommittedIntersectionTriangleEXT)
+      {
+        shadowFactor = 0.0f;
+      }
+      else shadowFactor = 1.0f;
     }
-    else shadowFactor = 1.0f;
+    else shadowFactor = 0.0f;
   }
   else shadowFactor = 1.0f;
 
