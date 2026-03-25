@@ -74,8 +74,7 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
                                 _drawPlan,
                                 frameContext);
       _reprojectionStageLayout(*preopaqueProducer);
-      _reprojectionBufferUpdater.updateReprojection(*preopaqueProducer,
-                                                    *_reprojectionBufferView);
+      _reprojectionBufferUpdater.updateReprojection(*preopaqueProducer);
     }
     _device.graphicQueue()->submitCommands(std::move(preopaqueProducer));
   }
@@ -246,6 +245,7 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
   _opaquePrepassStage.setBuffers( *_halfDepthBufferView,
                                   *_halfLinearDepthBufferView,
                                   *_halfNormalBufferView);
+  _reprojectionBufferUpdater.setBuffers(*_reprojectionBufferView);
   _shadowsStage.setBuffers(*_shadowBufferView);
   _opaqueColorStage.setBuffers(*_hdrBufferView, *_depthBufferView);
   _backgroundRender.setBuffers(*_hdrBufferView, *_depthBufferView);

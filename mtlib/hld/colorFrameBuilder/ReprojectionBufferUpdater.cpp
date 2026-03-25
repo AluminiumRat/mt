@@ -12,7 +12,8 @@ ReprojectionBufferUpdater::ReprojectionBufferUpdater(Device& device) :
   _technique(*_techniqueConfigurator),
   _pass(_technique.getOrCreatePass("UpdatePass")),
   _reprojectionBufferBinding(
-                _technique.getOrCreateResourceBinding("outReprojectionBuffer"))
+                _technique.getOrCreateResourceBinding("outReprojectionBuffer")),
+  _gridSize(1)
 {
   loadConfigurator( *_techniqueConfigurator,
                     "reprojectionBuffer/updateReprojectionBuffer.tch");
@@ -20,14 +21,9 @@ ReprojectionBufferUpdater::ReprojectionBufferUpdater(Device& device) :
 }
 
 void ReprojectionBufferUpdater::updateReprojection(
-                                        CommandProducerGraphic& commandProducer,
-                                        const ImageView& reprojectionBuffer)
+                                        CommandProducerGraphic& commandProducer)
 {
-  _reprojectionBufferBinding.setImage(&reprojectionBuffer);
-
-  glm::uvec2 gridSize =
-                (glm::uvec2(reprojectionBuffer.extent()) + glm::uvec2(7)) / 8u;
   Technique::BindCompute bind(_technique, _pass, commandProducer);
   MT_ASSERT(bind.isValid())
-  commandProducer.dispatch(gridSize);
+  commandProducer.dispatch(_gridSize);
 }

@@ -28,12 +28,26 @@ namespace mt
 
     //  К моменту вызова reprojectionBuffer должен находиться в лэйауте
     //    VK_IMAGE_LAYOUT_GENERAL
-    void updateReprojection(CommandProducerGraphic& commandProducer,
-                            const ImageView& reprojectionBuffer);
+    void updateReprojection(CommandProducerGraphic& commandProducer);
+
+    inline void setBuffers(const ImageView& reprojectionBuffer);
+
   private:
     Ref<TechniqueConfigurator> _techniqueConfigurator;
     Technique _technique;
     TechniquePass& _pass;
     ResourceBinding& _reprojectionBufferBinding;
+
+    //  Размер сетки для вызова компьют шейдеров
+    glm::uvec2 _gridSize;
   };
+
+  inline void ReprojectionBufferUpdater::setBuffers(
+                                            const ImageView& reprojectionBuffer)
+  {
+    if(_reprojectionBufferBinding.image() == &reprojectionBuffer) return;
+
+    _reprojectionBufferBinding.setImage(&reprojectionBuffer);
+    _gridSize = (glm::uvec2(reprojectionBuffer.extent()) + glm::uvec2(7)) / 8u;
+  }
 }
