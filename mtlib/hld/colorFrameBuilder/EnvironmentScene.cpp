@@ -191,7 +191,7 @@ void EnvironmentScene::makeGui()
 
       grid.addRow("Sun size");
       float sunSize = _sunAngleSize * 360.0f / (2.0f * pi);
-      if(ImGui::SliderFloat("##sunsize", &sunSize, 0, 10))
+      if(ImGui::SliderFloat("##sunsize", &sunSize, 0, 30))
       {
         _sunAngleSize = sunSize / 360.0f * 2.0f * pi;
       }
