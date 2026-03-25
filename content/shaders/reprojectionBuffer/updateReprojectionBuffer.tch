@@ -1,7 +1,16 @@
 commonSetName : ColorFrameCommonSet
 
+selections:
+  HISTORY_AVAILABLE: [0, 1]
+
 passes:
   UpdatePass :
+    selections: [HISTORY_AVAILABLE]
     pipeline: COMPUTE
     shaders:
       COMPUTE : reprojectionBuffer/updateReprojectionBuffer.comp
+
+  CopyDepthHistoryPass :
+    pipeline: COMPUTE
+    shaders:
+      COMPUTE : reprojectionBuffer/copyDepthHistory.comp

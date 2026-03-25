@@ -48,21 +48,14 @@ vec3 getStartPoint(vec2 ssCoords, float depth, vec3 rayDirection, float pixelSiz
 //  g компонент - коэффициент смешивания с тенью текущего кадра
 vec2 getPrevShadow(vec2 ssCoords, float depth)
 {
-  vec2 prevSSCoords = getPrevFrameSSCoords(ssCoords);
+  vec3 reprojection = texture(sampler2D(reprojectionBuffer,
+                                        commonLinearSampler),
+                              ssCoords).xyw;
+  vec2 prevSSCoords = ssCoords + reprojection.xy;
   float prevShadow = texture( sampler2D(prevShadowMask, commonNearestSampler),
                               prevSSCoords).r;
 
-  float pixelSize = getHalfBufferPixelSize(depth);
-  float depthTreshold = 5.0f * pixelSize;
-  float prevDepth = texture(sampler2D(linearDepthHalfBuffer,
-                                      commonNearestSampler),
-                            prevSSCoords).r;
-  float depthDelta = abs(depth - prevDepth);
-  float mixFactor = clamp((depthTreshold - depthDelta) / depthTreshold,
-                          0.0f,
-                          0.9f);
-
-  return vec2(prevShadow, mixFactor);
+  return vec2(prevShadow, reprojection.z * 0.9f);
 }
 
 void main()

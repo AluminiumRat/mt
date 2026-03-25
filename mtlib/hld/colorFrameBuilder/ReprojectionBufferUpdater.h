@@ -33,10 +33,21 @@ namespace mt
     inline void setBuffers(const ImageView& reprojectionBuffer);
 
   private:
+    void createBuffers(CommandProducerGraphic& commandProducer);
+
+  private:
+    Device& _device;
+
     Ref<TechniqueConfigurator> _techniqueConfigurator;
     Technique _technique;
-    TechniquePass& _pass;
+    TechniquePass& _updatePass;
+    TechniquePass& _copyHistoryPass;
+    Selection& _historyAvailableSelection;
     ResourceBinding& _reprojectionBufferBinding;
+    ResourceBinding& _depthHistoryBinding;
+
+    //  Буфер глубины с предыдущего кадра
+    ConstRef<ImageView> _depthHistory;
 
     //  Размер сетки для вызова компьют шейдеров
     glm::uvec2 _gridSize;

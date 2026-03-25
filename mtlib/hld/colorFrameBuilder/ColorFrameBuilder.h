@@ -48,7 +48,7 @@ namespace mt
     static constexpr VkFormat linearDepthFormat = VK_FORMAT_R32_SFLOAT;
     static constexpr VkFormat halfNormalFormat = VK_FORMAT_R16G16_SNORM;
     static constexpr VkFormat reprojectionBufferFormat =
-                                                        VK_FORMAT_R16G16_SFLOAT;
+                                                  VK_FORMAT_R16G16B16A16_SFLOAT;
     static constexpr VkFormat shadowFormat = VK_FORMAT_R8_UNORM;
 
   public:

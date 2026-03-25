@@ -1,37 +1,78 @@
 #version 450
 
-#include "lib/commonSet.inl"
+#include "reprojectionBuffer/updateReprojectionBuffer.inl"
 
 layout (local_size_x = 8,
         local_size_y = 8,
         local_size_z = 1) in;
 
-layout(rg16f, set = STATIC, binding = 0) uniform image2D outReprojectionBuffer;
+#if HISTORY_AVAILABLE == 1
+//  Определить надежность репроекции. Проверяем по разнице между
+//  предсказанным значением глубины и рельным, сохраненным с предыдущего
+//  кадра
+float getReliability(vec2 prevSSCoord, float expectedDepth)
+{
+  float pixelSize = getHalfBufferPixelSize(expectedDepth);
+  float depthTreshold = 5.0f * pixelSize;
+
+  vec2 pixelCoord = prevSSCoord * commonData.halfFrameExtent.xy;
+  float prevDepth = imageLoad(depthHistory, ivec2(pixelCoord)).r;
+
+  float depthDelta = abs(expectedDepth - prevDepth);
+  float reliability = clamp(1.5f * (depthTreshold - depthDelta) / depthTreshold,
+                            0.0f,
+                            1.0f);
+  if(prevSSCoord.x < 0 || prevSSCoord.y < 0 || prevSSCoord.x > 1 || prevSSCoord.y > 1) return 0;
+  return reliability;
+}
+#endif
 
 void main()
 {
   if( gl_GlobalInvocationID.x >= commonData.iHalfFrameExtent.x ||
       gl_GlobalInvocationID.y >= commonData.iHalfFrameExtent.y) return;
 
-  float depth = texelFetch( sampler2D(linearDepthHalfBuffer,
-                                      commonNearestSampler),
-                            ivec2(gl_GlobalInvocationID.xy),
-                            0).x;
-  vec2 shift = vec2(0);
-  if(depth != 10000.0f)
-  {
-    vec2 ssCoords = commonData.halfFrameExtent.zw *
+  #if HISTORY_AVAILABLE == 1
+    float depth = texelFetch( sampler2D(linearDepthHalfBuffer,
+                                        commonNearestSampler),
+                              ivec2(gl_GlobalInvocationID.xy),
+                              0).x;
+    vec2 ssCoordShift = vec2(0.0f);
+    float depthShift = 0.0f;
+    float reliability = 0.0f;
+
+    //  Проверка, что мы не попали в небо
+    if(depth != LINEAR_DEPTH_EMPTY_VALUE)
+    {
+      //  Вычислем координаты точки в мировых координатах
+      vec2 ssCoords = commonData.halfFrameExtent.zw *
                                   (vec2(gl_GlobalInvocationID.xy) + vec2(0.5f));
-    vec3 posRestoreVec = getPosRestoreVec(ssCoords);
-    vec3 worldPosition = commonData.cameraData.eyePoint + posRestoreVec * depth;
+      vec3 posRestoreVec = getPosRestoreVec(ssCoords);
+      vec3 worldPosition =
+                        commonData.cameraData.eyePoint + posRestoreVec * depth;
 
-    vec4 prevClipPosition =
+      //  Проецируем точку по камере из предыдущего кадра
+      vec4 prevClipPosition =
         commonData.prevCameraData.viewProjectionMatrix * vec4(worldPosition, 1);
-    vec2 prevSSCoord = (prevClipPosition.xy / prevClipPosition.w) * 0.5f + 0.5f;
-    shift = prevSSCoord - ssCoords;
-  }
+      vec2 prevSSCoord =
+                      (prevClipPosition.xy / prevClipPosition.w) * 0.5f + 0.5f;
+      ssCoordShift = prevSSCoord - ssCoords;
 
-  imageStore( outReprojectionBuffer,
-              ivec2(gl_GlobalInvocationID.xy),
-              vec4(shift, 0, 0));
+      //  Ожидаемая(расчетная) глубина на предыдущем кадре
+      float prevExpectedDepth = prevClipPosition.w;
+      depthShift = prevExpectedDepth - depth;
+
+      reliability = getReliability(prevSSCoord, prevExpectedDepth);
+    }
+
+    imageStore( outReprojectionBuffer,
+                ivec2(gl_GlobalInvocationID.xy),
+                vec4(ssCoordShift, depthShift, reliability));
+  #else
+    //  У нас нет предыдущего кадра. Пишем, что ничего не перемещалось, но
+    //  это не точно
+    imageStore( outReprojectionBuffer,
+                ivec2(gl_GlobalInvocationID.xy),
+                vec4(0));
+  #endif
 }
