@@ -5,10 +5,9 @@
 #include "shadows/rayQueryShadows.inl"
 
 layout (set = STATIC, binding = 0) uniform accelerationStructureEXT tlas;
-        
-layout (local_size_x = 8,
-        local_size_y = 8,
-        local_size_z = 1) in;
+
+//  Какое максимальное количество раз можно вызвать rayQueryProceedEXT за проход
+#define MAX_RAY_CASTS 8
 
 //  Получить направление на случайную точку на солце
 vec3 getRayDirection(int sampleIndex)
@@ -44,6 +43,43 @@ vec3 getStartPoint( vec2 ssCoords,
   return startPoint;
 }
 
+float castRay(vec2 ssCoords,
+              float depth,
+              vec3 normal,
+              int sampleIndex)
+{
+  float result = 0.0f;
+
+  vec3 rayDirection = getRayDirection(sampleIndex);
+  if(dot(normal, rayDirection) > 0.0f)
+  {
+    float pixelSize = getHalfBufferPixelSize(depth);
+    vec3 rayStart = getStartPoint(ssCoords,
+                                  depth,
+                                  normal,
+                                  rayDirection,
+                                  pixelSize);
+
+    rayQueryEXT rayQuery;
+    rayQueryInitializeEXT(rayQuery,
+                          tlas,
+                          gl_RayFlagsTerminateOnFirstHitEXT,
+                          0xFF,
+                          rayStart,
+                          params.rayForwardShift * pixelSize,
+                          rayDirection,
+                          1000.0f);
+    rayQueryProceedEXT(rayQuery);
+    if (rayQueryGetIntersectionTypeEXT(rayQuery, true) !=
+                                    gl_RayQueryCommittedIntersectionTriangleEXT)
+    {
+      result = 1.0f;
+    }
+  }
+
+  return result;
+}
+
 //  Получить тень из предыдущего кадра
 //  r компонент - значение тени
 //  g компонент - коэффициент смешивания с тенью текущего кадра
@@ -53,12 +89,15 @@ vec2 getPrevShadow(vec2 ssCoords, float depth)
                                         commonLinearSampler),
                               ssCoords).xyw;
   vec2 prevSSCoords = ssCoords + reprojection.xy;
-  float prevShadow = texture( sampler2D(prevShadowMask, commonNearestSampler),
+  float prevShadow = texture( sampler2D(prevShadowMask, commonLinearSampler),
                               prevSSCoords).r;
 
   return vec2(prevShadow, reprojection.z * 0.9f);
 }
 
+layout (local_size_x = 8,
+        local_size_y = 8,
+        local_size_z = 1) in;
 void main()
 {
   vec2 invocationId = vec2(gl_GlobalInvocationID.xy);
@@ -67,7 +106,7 @@ void main()
 
   vec2 ssCoords = (invocationId + vec2(0.5f)) * commonData.halfFrameExtent.zw;
 
-  float shadowFactor;
+  float shadowFactor = 0.0f;
 
   float depth = texture(sampler2D(linearDepthHalfBuffer, commonNearestSampler),
                         ssCoords).r;
@@ -78,38 +117,16 @@ void main()
                                       int(gl_GlobalInvocationID.y) % 32),
                                 0).r;
     int sampleIndex = int(random * 255.0f) + commonData.frameIndex;
-    vec3 rayDirection = getRayDirection(sampleIndex);
 
     vec3 normal = octahedronDecode( texture(sampler2D(normalHalfBuffer,
                                                       commonNearestSampler),
                                             ssCoords).xy);
-    if(dot(normal, rayDirection) > 0)
-    {
-      float pixelSize = getHalfBufferPixelSize(depth);
-      vec3 rayStart = getStartPoint(ssCoords,
-                                    depth,
-                                    normal,
-                                    rayDirection,
-                                    pixelSize);
 
-      rayQueryEXT rayQuery;
-      rayQueryInitializeEXT(rayQuery,
-                            tlas,
-                            gl_RayFlagsTerminateOnFirstHitEXT,
-                            0xFF,
-                            rayStart,
-                            params.rayForwardShift * pixelSize,
-                            rayDirection,
-                            1000.0f);
-      rayQueryProceedEXT(rayQuery);
-      if (rayQueryGetIntersectionTypeEXT(rayQuery, true) ==
-                                    gl_RayQueryCommittedIntersectionTriangleEXT)
-      {
-        shadowFactor = 0.0f;
-      }
-      else shadowFactor = 1.0f;
+    for(int i = 0; i < MAX_RAY_CASTS; i++)
+    {
+      shadowFactor += castRay(ssCoords, depth, normal, sampleIndex + i);
     }
-    else shadowFactor = 0.0f;
+    shadowFactor /= MAX_RAY_CASTS;
   }
   else shadowFactor = 1.0f;
 
