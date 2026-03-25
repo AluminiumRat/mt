@@ -6,7 +6,7 @@ layout (local_size_x = 8,
         local_size_y = 8,
         local_size_z = 1) in;
 
-layout(rg16f, set = STATIC, binding = 0) uniform image2D outVelocityBuffer;
+layout(rg16f, set = STATIC, binding = 0) uniform image2D outReprojectionBuffer;
 
 void main()
 {
@@ -17,7 +17,7 @@ void main()
                                       commonNearestSampler),
                             ivec2(gl_GlobalInvocationID.xy),
                             0).x;
-  vec2 velocity = vec2(0);
+  vec2 shift = vec2(0);
   if(depth != 10000.0f)
   {
     vec2 ssCoords = commonData.halfFrameExtent.zw *
@@ -28,10 +28,10 @@ void main()
     vec4 prevClipPosition =
         commonData.prevCameraData.viewProjectionMatrix * vec4(worldPosition, 1);
     vec2 prevSSCoord = (prevClipPosition.xy / prevClipPosition.w) * 0.5f + 0.5f;
-    velocity = prevSSCoord - ssCoords;
+    shift = prevSSCoord - ssCoords;
   }
 
-  imageStore( outVelocityBuffer,
+  imageStore( outReprojectionBuffer,
               ivec2(gl_GlobalInvocationID.xy),
-              vec4(velocity, 0, 0));
+              vec4(shift, 0, 0));
 }

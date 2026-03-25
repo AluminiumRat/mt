@@ -20,7 +20,7 @@ ColorFrameBuilder::ColorFrameBuilder( Device& device,
   _frameTypeIndex(HLDLib::instance().getFrameTypeIndex(frameTypeName)),
   _commonSet(device, textureManager),
   _opaquePrepassStage(device),
-  _velocityBufferUpdater(device),
+  _reprojectionBufferUpdater(device),
   _shadowsStage(device, textureManager),
   _opaqueColorStage(device),
   _backgroundRender(device, techniqueManager),
@@ -58,7 +58,7 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
                       environment,
                       *_halfLinearDepthBufferView,
                       *_halfNormalBufferView,
-                      *_velocityBufferView,
+                      *_reprojectionBufferView,
                       *_shadowBufferView);
     _device.graphicQueue()->submitCommands(std::move(prepareProducer));
   }
@@ -73,9 +73,9 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
       _opaquePrepassStage.draw( *preopaqueProducer,
                                 _drawPlan,
                                 frameContext);
-      _updateVelocityBufferLayout(*preopaqueProducer);
-      _velocityBufferUpdater.updateVelocityBuffer(*preopaqueProducer,
-                                                  *_velocityBufferView);
+      _reprojectionStageLayout(*preopaqueProducer);
+      _reprojectionBufferUpdater.updateReprojection(*preopaqueProducer,
+                                                    *_reprojectionBufferView);
     }
     _device.graphicQueue()->submitCommands(std::move(preopaqueProducer));
   }
@@ -211,21 +211,21 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                                         ImageSlice(*_halfNormalBuffer),
                                         VK_IMAGE_VIEW_TYPE_2D);
 
-  _velocityBuffer = new Image(_device,
-                              VK_IMAGE_TYPE_2D,
-                              VK_IMAGE_USAGE_STORAGE_BIT |
-                                VK_IMAGE_USAGE_SAMPLED_BIT,
-                              0,
-                              velocityBufferFormat,
-                              glm::uvec3(halfSize, 1),
-                              VK_SAMPLE_COUNT_1_BIT,
-                              1,
-                              1,
-                              false,
-                              "VelocityBuffer");
-  _velocityBufferView = new ImageView(*_velocityBuffer,
-                                      ImageSlice(*_velocityBuffer),
-                                      VK_IMAGE_VIEW_TYPE_2D);
+  _reprojectionBuffer = new Image(_device,
+                                  VK_IMAGE_TYPE_2D,
+                                  VK_IMAGE_USAGE_STORAGE_BIT |
+                                    VK_IMAGE_USAGE_SAMPLED_BIT,
+                                  0,
+                                  reprojectionBufferFormat,
+                                  glm::uvec3(halfSize, 1),
+                                  VK_SAMPLE_COUNT_1_BIT,
+                                  1,
+                                  1,
+                                  false,
+                                  "ReprojectionBuffer");
+  _reprojectionBufferView = new ImageView(*_reprojectionBuffer,
+                                          ImageSlice(*_reprojectionBuffer),
+                                          VK_IMAGE_VIEW_TYPE_2D);
 
   _shadowBuffer = new Image(_device,
                             VK_IMAGE_TYPE_2D,
@@ -270,12 +270,12 @@ void ColorFrameBuilder::_initBuffersLayout(
   commandProducer.initLayout( *_halfNormalBuffer,
                               VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-  commandProducer.initLayout( *_velocityBuffer, VK_IMAGE_LAYOUT_GENERAL);
+  commandProducer.initLayout( *_reprojectionBuffer, VK_IMAGE_LAYOUT_GENERAL);
 
   commandProducer.initLayout(*_shadowBuffer, VK_IMAGE_LAYOUT_GENERAL);
 }
 
-void ColorFrameBuilder::_updateVelocityBufferLayout(
+void ColorFrameBuilder::_reprojectionStageLayout(
                                         CommandProducerGraphic& commandProducer)
 {
   commandProducer.imageBarrier( *_halfLinearDepthBuffer,
@@ -290,8 +290,8 @@ void ColorFrameBuilder::_updateVelocityBufferLayout(
 
 void ColorFrameBuilder::_shadowsLayout(CommandProducerGraphic& commandProducer)
 {
-  commandProducer.imageBarrier( *_velocityBuffer,
-                                ImageSlice(*_velocityBuffer),
+  commandProducer.imageBarrier( *_reprojectionBuffer,
+                                ImageSlice(*_reprojectionBuffer),
                                 VK_IMAGE_LAYOUT_GENERAL,
                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,

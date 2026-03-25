@@ -10,7 +10,7 @@
 #include <hld/colorFrameBuilder/Posteffects.h>
 #include <hld/colorFrameBuilder/OpaquePrepassStage.h>
 #include <hld/colorFrameBuilder/ShadowsStage.h>
-#include <hld/colorFrameBuilder/VelocityBufferUpdater.h>
+#include <hld/colorFrameBuilder/ReprojectionBufferUpdater.h>
 #include <hld/drawCommand/CommandMemoryPool.h>
 #include <hld/DrawPlan.h>
 #include <hld/FrameTypeIndex.h>
@@ -47,7 +47,8 @@ namespace mt
     static constexpr VkFormat depthBufferFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
     static constexpr VkFormat linearDepthFormat = VK_FORMAT_R32_SFLOAT;
     static constexpr VkFormat halfNormalFormat = VK_FORMAT_R16G16_SNORM;
-    static constexpr VkFormat velocityBufferFormat = VK_FORMAT_R16G16_SFLOAT;
+    static constexpr VkFormat reprojectionBufferFormat =
+                                                        VK_FORMAT_R16G16_SFLOAT;
     static constexpr VkFormat shadowFormat = VK_FORMAT_R8_UNORM;
 
   public:
@@ -79,7 +80,7 @@ namespace mt
   private:
     void _updateBuffers(glm::uvec2 targetExtent);
     void _initBuffersLayout(CommandProducerGraphic& commandProducer);
-    void _updateVelocityBufferLayout(CommandProducerGraphic& commandProducer);
+    void _reprojectionStageLayout(CommandProducerGraphic& commandProducer);
     void _shadowsLayout(CommandProducerGraphic& commandProducer);
     void _opaquePassLayout(CommandProducerGraphic& commandProducer);
     void _posteffectsLayouts(CommandProducerGraphic& commandProducer);
@@ -103,15 +104,15 @@ namespace mt
     Ref<ImageView> _halfLinearDepthBufferView;
     Ref<Image> _halfNormalBuffer;
     Ref<ImageView> _halfNormalBufferView;
-    Ref<Image> _velocityBuffer;
-    Ref<ImageView> _velocityBufferView;
+    Ref<Image> _reprojectionBuffer;
+    Ref<ImageView> _reprojectionBufferView;
     Ref<Image> _shadowBuffer;
     Ref<ImageView> _shadowBufferView;
 
     ColorFrameCommonSet _commonSet;
 
     OpaquePrepassStage _opaquePrepassStage;
-    VelocityBufferUpdater _velocityBufferUpdater;
+    ReprojectionBufferUpdater _reprojectionBufferUpdater;
     ShadowsStage _shadowsStage;
     OpaqueColorStage _opaqueColorStage;
     BackgroundRender _backgroundRender;

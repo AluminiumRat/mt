@@ -31,7 +31,7 @@ namespace mt
     static constexpr uint32_t iblspecularMapBinding = 4;
     static constexpr uint32_t linearDepthHalfBufferBinding = 5;
     static constexpr uint32_t normalHalfBufferBinding = 6;
-    static constexpr uint32_t velocityBufferBinding = 7;
+    static constexpr uint32_t reprojectionBufferBinding = 7;
     static constexpr uint32_t shadowBufferBinding = 8;
     static constexpr uint32_t commonLinearSamplerBinding = 9;
     static constexpr uint32_t commonNearestSamplerBinding = 10;
@@ -63,7 +63,7 @@ namespace mt
                 const EnvironmentScene& environment,
                 const ImageView& linearDepthHalfBuffer,
                 const ImageView& normalHalfBuffer,
-                const ImageView& velocityBuffer,
+                const ImageView& reprojectionBuffer,
                 const ImageView& shadowBuffer);
 
   private:

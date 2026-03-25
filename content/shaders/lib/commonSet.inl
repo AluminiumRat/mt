@@ -52,9 +52,14 @@ layout (set = COMMON,
 layout (set = COMMON,
         binding = 6) uniform texture2D normalHalfBuffer;
 
-//  velocity буфер в половинном разрешении
+//  Буфер репроекции из текущего кадра в предыдущий. В половинном разрешении.
+//  XY - смещение скрин спэйс координат точки
+//  Z - ожидаемое смещение в линейном буфере глубины
+//  W - достоверность репроецкии (1 - уверены, что репроекция
+//      корректная, 0 - уверены, что репроекция не корректная, то есть точка
+//      не имеет истории на экране и появилась только в этом фрэйме)
 layout (set = COMMON,
-        binding = 7) uniform texture2D velocityBuffer;
+        binding = 7) uniform texture2D reprojectionBuffer;
 
 //  Скринспейсовый буфер с тенями
 layout (set = COMMON,
@@ -93,7 +98,8 @@ vec3 getPosRestoreVec(vec2 ssCoords)
 //  currentFrameSSCoords - скрин спэйс координаты в текущем кадре
 vec2 getPrevFrameSSCoords(vec2 currentFrameSSCoords)
 {
-  vec2 positionShift = texture( sampler2D(velocityBuffer, commonLinearSampler),
+  vec2 positionShift = texture( sampler2D(reprojectionBuffer,
+                                commonLinearSampler),
                                 currentFrameSSCoords).xy;
   return currentFrameSSCoords + positionShift;
 }

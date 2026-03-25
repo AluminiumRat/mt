@@ -4,4 +4,4 @@ passes:
   UpdatePass :
     pipeline: COMPUTE
     shaders:
-      COMPUTE : velocityBuffer/updateVelocityBuffer.comp
+      COMPUTE : reprojectionBuffer/updateReprojectionBuffer.comp
