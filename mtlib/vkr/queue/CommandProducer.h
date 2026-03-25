@@ -60,6 +60,11 @@ namespace mt
     inline VolatileDescriptorPool& descriptorPool() noexcept;
     inline UniformMemoryPool::Session& uniformMemorySession() noexcept;
 
+    //  Чистый пайплайн барьер, то есть просто разделяем поток исполнения
+    //    команд без сброса кэшей
+    void pipelineBarrier( VkPipelineStageFlags srcStages,
+                          VkPipelineStageFlags dstStages);
+
     //  Барьер памяти. То есть разделяем поток исполнения команд плюс
     //    флашим кэши srcAccesMask и инвалидируем кэши dstAccesMask
     void memoryBarrier( VkPipelineStageFlags srcStages,

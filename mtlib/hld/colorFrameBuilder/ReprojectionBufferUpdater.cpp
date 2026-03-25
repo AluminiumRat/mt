@@ -41,6 +41,9 @@ void ReprojectionBufferUpdater::updateReprojection(
     commandProducer.dispatch(_gridSize);
   }
 
+  commandProducer.pipelineBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+
   {
     Technique::BindCompute bind(_technique, _copyHistoryPass, commandProducer);
     MT_ASSERT(bind.isValid())

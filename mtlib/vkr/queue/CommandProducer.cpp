@@ -308,6 +308,13 @@ void CommandProducer::addMultipleImagesUsage(MultipleImageUsage usages)
   }
 }
 
+void CommandProducer::pipelineBarrier(VkPipelineStageFlags srcStages,
+                                      VkPipelineStageFlags dstStages)
+{
+  CommandBuffer& buffer = getOrCreateBuffer();
+  buffer.pipelineBarrier(srcStages, dstStages);
+}
+
 void CommandProducer::memoryBarrier(VkPipelineStageFlags srcStages,
                                     VkPipelineStageFlags dstStages,
                                     VkAccessFlags srcAccesMask,
