@@ -128,7 +128,7 @@ void main()
                                 ivec2(int(gl_GlobalInvocationID.x) % 32,
                                       int(gl_GlobalInvocationID.y) % 32),
                                 0).r;
-    int sampleIndex = int(random * 255.0f) +
+    int sampleIndex = int(random * 1024) +
                                     (commonData.frameIndex % 4) * MAX_RAY_CASTS;
 
     vec3 normal = octahedronDecode( texture(sampler2D(normalHalfBuffer,
