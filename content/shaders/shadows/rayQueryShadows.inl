@@ -19,7 +19,7 @@ layout (set = STATIC, binding = 3) uniform texture1D samplerTexture;
 
 //  Буфер, куда кладется история результатов трассировки теней.
 //  r канал - текущая трассировка, g - предыдущая и т.д. Всего 4 кадра
-layout(rgba16f, set = VOLATILE, binding = 0) uniform image2D traceResults;
+layout(rgba8, set = VOLATILE, binding = 0) uniform image2D traceResults;
 //  История трассировки с предыдущего кадра.
 //  r канал - предыдущая трассировка, g - 2 кадра назад и т.д. Всего 4 кадра
 layout(set = VOLATILE, binding = 1) uniform texture2D traceResultsPrev;

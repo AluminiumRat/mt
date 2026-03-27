@@ -113,7 +113,7 @@ void ShadowsStage::_createBuffers(CommandProducerGraphic& commandProducer)
                                                 VK_IMAGE_USAGE_STORAGE_BIT |
                                                   VK_IMAGE_USAGE_SAMPLED_BIT,
                                                 0,
-                                                VK_FORMAT_R16G16B16A16_SFLOAT,
+                                                VK_FORMAT_R8G8B8A8_UNORM,
                                                 _shadowBuffer->extent(),
                                                 VK_SAMPLE_COUNT_1_BIT,
                                                 1,
