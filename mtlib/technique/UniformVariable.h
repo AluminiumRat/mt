@@ -56,9 +56,9 @@ namespace mt
     inline void setValue( TechniqueVolatileContext& context,
                           const DataType& data) const;
     template <typename DataType>
-    inline void setValue( TechniqueVolatileContext& context, 
+    inline void setValue( TechniqueVolatileContext& context,
                           const std::vector<DataType>& data) const;
-    void setValue(TechniqueVolatileContext& context, 
+    void setValue(TechniqueVolatileContext& context,
                   ValueRef newValue) const;
 
     //  Может вернуть data == nullptr, если значение ещё не было установлено

@@ -43,6 +43,7 @@ namespace mt
 
   private:
     void _createBuffers(CommandProducerGraphic& commandProducer);
+    void _swapTraceBuffers(CommandProducerGraphic& commandProducer);
 
   private:
     Device& _device;
@@ -54,8 +55,8 @@ namespace mt
     ResourceBinding& _tlasBinding;
     ResourceBinding& _noiseTextureBinding;
     ResourceBinding& _samplerTextureBinding;
-    ResourceBinding& _rawShadowMaskBinding;
-    ResourceBinding& _prevShadowMaskBinding;
+    ResourceBinding& _traceResultsBufferBinding;
+    ResourceBinding& _prevTraceResultsBufferBinding;
     ResourceBinding& _finalShadowMaskBinding;
     UniformVariable& _rayForwardShiftUniform;
     UniformVariable& _rayNormalShiftUniform;
@@ -64,11 +65,12 @@ namespace mt
     float _rayForwardShift;
     float _rayNormalShift;
 
-    //  Буферы, куда кладутся результаты трассировки теней
-    //  Один из буферов - предыдущий кадр, другой - текущий
-    ConstRef<ImageView> _rayShadowBuffers[2];
-    //  Индекс для выбора, в какой из _rayShadowBuffers отрисовывать тени
-    int _targetBuffer;
+    //  Буфер, куда кладутся результаты трассировки теней
+    //  Хранится история за предыдущие 4 кадра, каждый из rgba каналов - один
+    //    кадр.
+    //  Один буфер для записи в текущем кадре, второй для чтения результатов
+    //    с предыдущего кадра
+    ConstRef<ImageView> _traceResultBuffers[2];
     //  Буфер, куда кладется окончательно отфильтрованная маска теней
     ConstRef<ImageView> _shadowBuffer;
 
@@ -82,8 +84,8 @@ namespace mt
 
     _shadowBuffer = &shadowBuffer;
 
-    _rayShadowBuffers[0].reset();
-    _rayShadowBuffers[1].reset();
+    _traceResultBuffers[0].reset();
+    _traceResultBuffers[1].reset();
   }
 
   inline float ShadowsStage::rayForwardShift() const noexcept

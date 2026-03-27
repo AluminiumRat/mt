@@ -25,10 +25,10 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
                 _rayQueryTechnique.getOrCreateResourceBinding("noiseTexture")),
   _samplerTextureBinding(
               _rayQueryTechnique.getOrCreateResourceBinding("samplerTexture")),
-  _rawShadowMaskBinding(
-              _rayQueryTechnique.getOrCreateResourceBinding("rawShadowMask")),
-  _prevShadowMaskBinding(
-              _rayQueryTechnique.getOrCreateResourceBinding("prevShadowMask")),
+  _traceResultsBufferBinding(
+              _rayQueryTechnique.getOrCreateResourceBinding("traceResults")),
+  _prevTraceResultsBufferBinding(
+            _rayQueryTechnique.getOrCreateResourceBinding("traceResultsPrev")),
   _finalShadowMaskBinding(
               _rayQueryTechnique.getOrCreateResourceBinding("finalShadowMask")),
   _rayForwardShiftUniform(
@@ -37,7 +37,6 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
               _rayQueryTechnique.getOrCreateUniform("params.rayNormalShift")),
   _rayForwardShift(0.5f),
   _rayNormalShift(2.0f),
-  _targetBuffer(0),
   _gridSize(1)
 {
   ConstRef<TechniqueResource> noiseTexture =
@@ -69,14 +68,11 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
 void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
                         const FrameBuildContext& frameContext)
 {
-  if(_rayShadowBuffers[0] == nullptr) _createBuffers(commandProducer);
+  if(_traceResultBuffers[0] == nullptr) _createBuffers(commandProducer);
+  _swapTraceBuffers(commandProducer);
 
   const TLAS* tlas = frameContext.drawScene->tlas();
   _tlasBinding.setTLAS(tlas);
-
-  _rawShadowMaskBinding.setImage(_rayShadowBuffers[_targetBuffer]);
-  _targetBuffer = (_targetBuffer + 1) % 2;
-  _prevShadowMaskBinding.setImage(_rayShadowBuffers[_targetBuffer]);
 
   if(_rayQueryTechnique.isReady())
   {
@@ -92,6 +88,7 @@ void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
                                   VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                                   VK_ACCESS_SHADER_WRITE_BIT,
                                   VK_ACCESS_SHADER_READ_BIT);
+
     {
       Technique::BindCompute bind(_rayQueryTechnique,
                                   _spatialFilterPass,
@@ -108,29 +105,36 @@ void ShadowsStage::_createBuffers(CommandProducerGraphic& commandProducer)
 
   _gridSize = (glm::uvec2(_shadowBuffer->extent()) + glm::uvec2(7)) / 8u;
 
-  //  Буферы для трэйса теней
   for(int i = 0; i < 2; i++)
   {
-    ConstRef<Image> rayShadowsBufferImage(new Image(
+    ConstRef<Image> traceResultsBufferImage(new Image(
                                                 _device,
                                                 VK_IMAGE_TYPE_2D,
                                                 VK_IMAGE_USAGE_STORAGE_BIT |
                                                   VK_IMAGE_USAGE_SAMPLED_BIT,
                                                 0,
-                                                VK_FORMAT_R8_UNORM,
+                                                VK_FORMAT_R16G16B16A16_SFLOAT,
                                                 _shadowBuffer->extent(),
                                                 VK_SAMPLE_COUNT_1_BIT,
                                                 1,
                                                 1,
                                                 true,
                                                 "ShadowsStage::TracingBuffer"));
-    //commandProducer.initLayout(*rayShadowsBufferImage, VK_IMAGE_LAYOUT_GENERAL);
-    _rayShadowBuffers[i] = new ImageView( *rayShadowsBufferImage,
-                                          ImageSlice(*rayShadowsBufferImage),
+    //commandProducer.initLayout(*traceResultsBufferImage, VK_IMAGE_LAYOUT_GENERAL);
+    _traceResultBuffers[i] = new ImageView(
+                                          *traceResultsBufferImage,
+                                          ImageSlice(*traceResultsBufferImage),
                                           VK_IMAGE_VIEW_TYPE_2D);
   }
 
   _finalShadowMaskBinding.setImage(_shadowBuffer);
+}
+
+void ShadowsStage::_swapTraceBuffers(CommandProducerGraphic& commandProducer)
+{
+  std::swap(_traceResultBuffers[0], _traceResultBuffers[1]);
+  _traceResultsBufferBinding.setImage(_traceResultBuffers[0]);
+  _prevTraceResultsBufferBinding.setImage(_traceResultBuffers[1]);
 }
 
 void ShadowsStage::makeGui()

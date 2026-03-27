@@ -80,19 +80,30 @@ float castRay(vec2 ssCoords,
   return result;
 }
 
-//  Получить тень из предыдущего кадра
-//  r компонент - значение тени
-//  g компонент - коэффициент смешивания с тенью текущего кадра
-vec2 getPrevShadow(vec2 ssCoords, float depth)
+//  Записать результаты трассировки в историю
+void updateHistory(float newShadowFactor, vec2 ssCoords, float depth)
 {
   vec3 reprojection = texture(sampler2D(reprojectionBuffer,
                                         commonLinearSampler),
                               ssCoords).xyw;
-  vec2 prevSSCoords = ssCoords + reprojection.xy;
-  float prevShadow = texture( sampler2D(prevShadowMask, commonLinearSampler),
-                              prevSSCoords).r;
-
-  return vec2(prevShadow, reprojection.z * 0.9f);
+  if(reprojection.z > 0.9f)
+  {
+    //  Репроекция достаточно надежная, сохраняем старую историю
+    vec2 prevSSCoords = ssCoords + reprojection.xy;
+    vec3 oldTraceResults = texture( sampler2D(traceResultsPrev,
+                                              commonLinearSampler),
+                                    prevSSCoords).rgb;
+    imageStore( traceResults,
+                ivec2(gl_GlobalInvocationID.xy),
+                vec4(newShadowFactor, oldTraceResults));
+  }
+  else
+  {
+    //  Репроекция недостаточно надежная, сбрасываем историю
+    imageStore( traceResults,
+                ivec2(gl_GlobalInvocationID.xy),
+                vec4(newShadowFactor));
+  }
 }
 
 layout (local_size_x = 8,
@@ -110,6 +121,7 @@ void main()
 
   float depth = texture(sampler2D(linearDepthHalfBuffer, commonNearestSampler),
                         ssCoords).r;
+  //  Проверка, что не попали в небо
   if(depth != LINEAR_DEPTH_EMPTY_VALUE)
   {
     float random = texelFetch( sampler2D(noiseTexture, commonNearestSampler),
@@ -130,11 +142,5 @@ void main()
   }
   else shadowFactor = 1.0f;
 
-  //  Смешиваем с тенью из предыдущего кадра
-  vec2 prevShadow = getPrevShadow(ssCoords, depth);
-  shadowFactor = mix(shadowFactor, prevShadow.r, prevShadow.g);
-
-  imageStore( rawShadowMask,
-              ivec2(gl_GlobalInvocationID.xy),
-              vec4(shadowFactor));
+  updateHistory(shadowFactor, ssCoords, depth);
 }

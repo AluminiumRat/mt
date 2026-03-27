@@ -33,11 +33,17 @@ void main()
   {
     for(int j = -2; j <= 2; j++)
     {
+      //  Считываем результаты трассировки и усредняем за последние 4 кадра
       ivec2 sampleCoord = ivec2(gl_GlobalInvocationID.xy) + ivec2(i, j);
       sampleCoord = clamp(sampleCoord,
                           ivec2(0),
                           commonData.iHalfFrameExtent - ivec2(1));
-      float currenttValue = imageLoad(rawShadowMask, sampleCoord).r;
+      vec4 traceResultsHistory = imageLoad(traceResults, sampleCoord);
+      float currenttValue = traceResultsHistory.r +
+                            traceResultsHistory.g +
+                            traceResultsHistory.b +
+                            traceResultsHistory.a;
+      currenttValue /= 4.0f;
 
       //  Фильтр Гауса
       float currentWeight = gaussKernel[i + 2] * gaussKernel[j + 2];
