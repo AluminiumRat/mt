@@ -9,6 +9,35 @@ layout (set = STATIC, binding = 0) uniform accelerationStructureEXT tlas;
 //  Какое максимальное количество раз можно вызвать rayQueryProceedEXT за проход
 #define MAX_RAY_CASTS 8
 
+//  Получить количество сэмплов для рэйтрейсинга и обновить их историю
+int updateSamplesCount(vec2 ssCoords,
+                        vec3 reprojection)
+{
+  ivec4 samplesHistory;
+  int currentSamplesCount;
+  if(reprojection.z >= REPROJECTION_MIN_RELIABILITY)
+  {
+    //  У нас достаточно надежная репроекция, вычисляем количество сэмплов
+    //  по истории
+    samplesHistory = texture( isampler2D( prevSamplesCountBuffer,
+                                          commonNearestSampler),
+                              ssCoords + reprojection.xy);
+    currentSamplesCount = MAX_RAY_CASTS;
+  }
+  else
+  {
+    //  Репроекция недостаточно надежная, сбрасываем историю
+    samplesHistory = ivec4(MAX_RAY_CASTS);
+    currentSamplesCount = MAX_RAY_CASTS;
+  }
+
+  imageStore( samplesCountBuffer,
+              ivec2(gl_GlobalInvocationID.xy),
+              ivec4(currentSamplesCount, samplesHistory.xyz));
+
+  return currentSamplesCount;
+}
+
 //  Получить направление на случайную точку на солце
 vec3 getRayDirection(int sampleIndex)
 {
@@ -81,12 +110,12 @@ float castRay(vec2 ssCoords,
 }
 
 //  Записать результаты трассировки в историю
-void updateHistory(float newShadowFactor, vec2 ssCoords, float depth)
+void updateHistory( float newShadowFactor,
+                    vec2 ssCoords,
+                    vec3 reprojection,
+                    float depth)
 {
-  vec3 reprojection = texture(sampler2D(reprojectionBuffer,
-                                        commonLinearSampler),
-                              ssCoords).xyw;
-  if(reprojection.z > 0.9f)
+  if(reprojection.z >= REPROJECTION_MIN_RELIABILITY)
   {
     //  Репроекция достаточно надежная, сохраняем старую историю
     vec2 prevSSCoords = ssCoords + reprojection.xy;
@@ -116,6 +145,10 @@ void main()
       invocationId.y >= commonData.halfFrameExtent.y) return;
 
   vec2 ssCoords = (invocationId + vec2(0.5f)) * commonData.halfFrameExtent.zw;
+  vec3 reprojection = texture(sampler2D(reprojectionBuffer,
+                                        commonLinearSampler),
+                              ssCoords).xyw;
+  int samplesCount = updateSamplesCount(ssCoords, reprojection);
 
   float shadowFactor = 0.0f;
 
@@ -135,7 +168,7 @@ void main()
                                                       commonNearestSampler),
                                             ssCoords).xy);
 
-    for(int i = 0; i < MAX_RAY_CASTS; i++)
+    for(int i = 0; i < samplesCount; i++)
     {
       shadowFactor += castRay(ssCoords, depth, normal, sampleIndex + i);
     }
@@ -143,5 +176,5 @@ void main()
   }
   else shadowFactor = 1.0f;
 
-  updateHistory(shadowFactor, ssCoords, depth);
+  updateHistory(shadowFactor, ssCoords, reprojection, depth);
 }

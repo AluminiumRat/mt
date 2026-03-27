@@ -27,6 +27,10 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
               _rayQueryTechnique.getOrCreateResourceBinding("samplerTexture")),
   _traceResultsBufferBinding(
               _rayQueryTechnique.getOrCreateResourceBinding("traceResults")),
+  _samplesCountTextureBinding(
+          _rayQueryTechnique.getOrCreateResourceBinding("samplesCountBuffer")),
+  _prevSamplesCountTextureBinding(
+      _rayQueryTechnique.getOrCreateResourceBinding("prevSamplesCountBuffer")),
   _prevTraceResultsBufferBinding(
             _rayQueryTechnique.getOrCreateResourceBinding("traceResultsPrev")),
   _finalShadowMaskBinding(
@@ -69,7 +73,7 @@ void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
                         const FrameBuildContext& frameContext)
 {
   if(_traceResultBuffers[0] == nullptr) _createBuffers(commandProducer);
-  _swapTraceBuffers(commandProducer);
+  _swapBuffers(commandProducer);
 
   const TLAS* tlas = frameContext.drawScene->tlas();
   _tlasBinding.setTLAS(tlas);
@@ -120,21 +124,45 @@ void ShadowsStage::_createBuffers(CommandProducerGraphic& commandProducer)
                                                 1,
                                                 true,
                                                 "ShadowsStage::TracingBuffer"));
-    //commandProducer.initLayout(*traceResultsBufferImage, VK_IMAGE_LAYOUT_GENERAL);
     _traceResultBuffers[i] = new ImageView(
                                           *traceResultsBufferImage,
                                           ImageSlice(*traceResultsBufferImage),
                                           VK_IMAGE_VIEW_TYPE_2D);
+
+    ConstRef<Image> samplesCountBufferImage(new Image(
+                                                _device,
+                                                VK_IMAGE_TYPE_2D,
+                                                VK_IMAGE_USAGE_STORAGE_BIT |
+                                                  VK_IMAGE_USAGE_SAMPLED_BIT,
+                                                0,
+                                                VK_FORMAT_R8G8B8A8_SINT,
+                                                _shadowBuffer->extent(),
+                                                VK_SAMPLE_COUNT_1_BIT,
+                                                1,
+                                                1,
+                                                true,
+                                                "ShadowsStage::SamplesCountBuffer"));
+
+    _samplesCountBuffers[i] = new ImageView(
+                                          *samplesCountBufferImage,
+                                          ImageSlice(*samplesCountBufferImage),
+                                          VK_IMAGE_VIEW_TYPE_2D);
   }
+
+  //commandProducer.initLayout(*traceResultsBufferImage, VK_IMAGE_LAYOUT_GENERAL);
 
   _finalShadowMaskBinding.setImage(_shadowBuffer);
 }
 
-void ShadowsStage::_swapTraceBuffers(CommandProducerGraphic& commandProducer)
+void ShadowsStage::_swapBuffers(CommandProducerGraphic& commandProducer)
 {
   std::swap(_traceResultBuffers[0], _traceResultBuffers[1]);
   _traceResultsBufferBinding.setImage(_traceResultBuffers[0]);
   _prevTraceResultsBufferBinding.setImage(_traceResultBuffers[1]);
+
+  std::swap(_samplesCountBuffers[0], _samplesCountBuffers[1]);
+  _samplesCountTextureBinding.setImage(_samplesCountBuffers[0]);
+  _prevSamplesCountTextureBinding.setImage(_samplesCountBuffers[1]);
 }
 
 void ShadowsStage::makeGui()

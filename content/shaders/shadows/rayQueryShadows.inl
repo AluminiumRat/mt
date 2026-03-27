@@ -3,6 +3,10 @@
 
 #include "lib/commonSet.inl"
 
+//  Минимальная надежность репроекции, ниже которой сбрасываем историю
+//  для пикселя
+#define REPROJECTION_MIN_RELIABILITY 0.9f
+
 //  Нулевой биндинг зарезервирован за TLAS
 
 layout (set = STATIC, binding = 1) uniform Params
@@ -17,12 +21,20 @@ layout (set = STATIC, binding = 2) uniform texture2D noiseTexture;
 //  Сэмплы для равномерной выборки по диску
 layout (set = STATIC, binding = 3) uniform texture1D samplerTexture;
 
+//  Буфер, куда кладется история сколько сэмплов использовано при трассировке
+//   теней
+//  r канал - текущая трассировка, g - предыдущая и т.д. Всего 4 кадра
+layout(rgba8i, set = VOLATILE, binding = 0) uniform iimage2D samplesCountBuffer;
+//  История количества сэмплов трассировки с предыдущего кадра.
+//  r канал - предыдущая трассировка, g - 2 кадра назад и т.д. Всего 4 кадра
+layout(set = VOLATILE, binding = 1) uniform itexture2D prevSamplesCountBuffer;
+
 //  Буфер, куда кладется история результатов трассировки теней.
 //  r канал - текущая трассировка, g - предыдущая и т.д. Всего 4 кадра
-layout(rgba8, set = VOLATILE, binding = 0) uniform image2D traceResults;
+layout(rgba8, set = VOLATILE, binding = 2) uniform image2D traceResults;
 //  История трассировки с предыдущего кадра.
 //  r канал - предыдущая трассировка, g - 2 кадра назад и т.д. Всего 4 кадра
-layout(set = VOLATILE, binding = 1) uniform texture2D traceResultsPrev;
+layout(set = VOLATILE, binding = 3) uniform texture2D traceResultsPrev;
 
 //  Сюда склыдываем окончательную отфильтрованную маску теней
 layout(r8, set = STATIC, binding = 4) uniform image2D finalShadowMask;

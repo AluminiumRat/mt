@@ -43,7 +43,7 @@ namespace mt
 
   private:
     void _createBuffers(CommandProducerGraphic& commandProducer);
-    void _swapTraceBuffers(CommandProducerGraphic& commandProducer);
+    void _swapBuffers(CommandProducerGraphic& commandProducer);
 
   private:
     Device& _device;
@@ -55,6 +55,8 @@ namespace mt
     ResourceBinding& _tlasBinding;
     ResourceBinding& _noiseTextureBinding;
     ResourceBinding& _samplerTextureBinding;
+    ResourceBinding& _samplesCountTextureBinding;
+    ResourceBinding& _prevSamplesCountTextureBinding;
     ResourceBinding& _traceResultsBufferBinding;
     ResourceBinding& _prevTraceResultsBufferBinding;
     ResourceBinding& _finalShadowMaskBinding;
@@ -65,12 +67,20 @@ namespace mt
     float _rayForwardShift;
     float _rayNormalShift;
 
+    //  Буферы, в которых хранятся счетчики, сколько необходимо делать
+    //  rayTrace запросов за 1 проход теней
+    //  Хранится история за последние 4 кадра, по одному счетчику на каждый из
+    //  rgba каналов
+    //  Один буфер для записи в текущем кадре, второй для чтения результатов
+    //    с предыдущего кадра
+    ConstRef<ImageView> _samplesCountBuffers[2];
     //  Буфер, куда кладутся результаты трассировки теней
     //  Хранится история за предыдущие 4 кадра, каждый из rgba каналов - один
     //    кадр.
     //  Один буфер для записи в текущем кадре, второй для чтения результатов
     //    с предыдущего кадра
     ConstRef<ImageView> _traceResultBuffers[2];
+
     //  Буфер, куда кладется окончательно отфильтрованная маска теней
     ConstRef<ImageView> _shadowBuffer;
 
