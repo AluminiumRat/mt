@@ -6,6 +6,16 @@ passes:
     shaders:
       COMPUTE : shadows/rayTracePass.comp
 
+  VariationHorizontalPass:
+    pipeline: COMPUTE
+    shaders:
+      COMPUTE : shadows/variationMapHorizontal.comp
+
+  VariationVerticalPass:
+    pipeline: COMPUTE
+    shaders:
+      COMPUTE : shadows/variationMapVertical.comp
+
   SpatialFilterPass :
     pipeline: COMPUTE
     shaders:

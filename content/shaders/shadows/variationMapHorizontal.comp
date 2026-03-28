@@ -1,0 +1,65 @@
+#version 450
+//  Первичное вычисление вариативности при трэйсе теней плюс размытие по горизонтали
+
+#include <shadows/rayQueryShadows.inl>
+
+layout (constant_id = 0) const int GROUP_SIZE = 1024;
+
+layout (local_size_x_id = 0,
+        local_size_y = 1,
+        local_size_z = 1) in;
+
+//  Кэш для хранения промежуточных результатов при фильтрации
+shared float variationValues[GROUP_SIZE];
+float getNeighbor(int coord)
+{
+  coord = clamp(coord, 0, GROUP_SIZE);
+  return variationValues[coord];
+}
+
+void main()
+{
+  ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
+
+  //  Вычисляем вариативность результатов за последние 4 кадра
+  vec4 traceHistory = imageLoad(traceResults, pixelCoord);
+  float maxValue = max(traceHistory.x,
+                      max(traceHistory.y,
+                      max(traceHistory.z,
+                          traceHistory.w)));
+  float minValue = min(traceHistory.x,
+                      min(traceHistory.y,
+                      min(traceHistory.z,
+                          traceHistory.w)));
+  float variation = maxValue - minValue;
+
+  variationValues[pixelCoord.x] = variation;
+  barrier();
+
+  // MAX фильтр по окресности 5 пикселей
+  variation = max(variation, getNeighbor(pixelCoord.x - 2));
+  variation = max(variation, getNeighbor(pixelCoord.x - 1));
+  variation = max(variation, getNeighbor(pixelCoord.x + 1));
+  variation = max(variation, getNeighbor(pixelCoord.x + 2));
+
+  variationValues[pixelCoord.x] = variation;
+  barrier();
+
+  //  Треугольный фильтр по окрестности 13 пикселей
+  variation *= 7;
+  variation += getNeighbor(pixelCoord.x - 6);
+  variation += 2 * getNeighbor(pixelCoord.x - 5);
+  variation += 3 * getNeighbor(pixelCoord.x - 4);
+  variation += 4 * getNeighbor(pixelCoord.x - 3);
+  variation += 5 * getNeighbor(pixelCoord.x - 2);
+  variation += 6 * getNeighbor(pixelCoord.x - 1);
+  variation += 6 * getNeighbor(pixelCoord.x + 1);
+  variation += 5 * getNeighbor(pixelCoord.x + 2);
+  variation += 4 * getNeighbor(pixelCoord.x + 3);
+  variation += 3 * getNeighbor(pixelCoord.x + 4);
+  variation += 2 * getNeighbor(pixelCoord.x + 5);
+  variation += getNeighbor(pixelCoord.x + 6);
+  variation /= 49;
+
+  imageStore(variationBuffer, pixelCoord, vec4(variation));
+}

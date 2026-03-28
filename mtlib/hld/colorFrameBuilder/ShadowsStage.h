@@ -43,6 +43,7 @@ namespace mt
 
   private:
     void _createBuffers(CommandProducerGraphic& commandProducer);
+    void _rebuildTechnique();
     void _swapBuffers(CommandProducerGraphic& commandProducer);
 
   private:
@@ -51,6 +52,8 @@ namespace mt
     Ref<TechniqueConfigurator> _rayQueryTechniqueConfigurator;
     Technique _rayQueryTechnique;
     TechniquePass& _rayQueryPass;
+    TechniquePass& _variationHorizontalPass;
+    TechniquePass& _variationVerticalPass;
     TechniquePass& _spatialFilterPass;
     ResourceBinding& _tlasBinding;
     ResourceBinding& _noiseTextureBinding;
@@ -59,6 +62,7 @@ namespace mt
     ResourceBinding& _prevSamplesCountTextureBinding;
     ResourceBinding& _traceResultsBufferBinding;
     ResourceBinding& _prevTraceResultsBufferBinding;
+    ResourceBinding& _variationBufferBinding;
     ResourceBinding& _finalShadowMaskBinding;
     UniformVariable& _rayForwardShiftUniform;
     UniformVariable& _rayNormalShiftUniform;
@@ -80,6 +84,9 @@ namespace mt
     //  Один буфер для записи в текущем кадре, второй для чтения результатов
     //    с предыдущего кадра
     ConstRef<ImageView> _traceResultBuffers[2];
+
+    //  Буфер, где хранится вариативность результатов трэйса теней
+    ConstRef<ImageView> _variationBuffer;
 
     //  Буфер, куда кладется окончательно отфильтрованная маска теней
     ConstRef<ImageView> _shadowBuffer;

@@ -36,7 +36,10 @@ layout(rgba8, set = VOLATILE, binding = 2) uniform image2D traceResults;
 //  r канал - предыдущая трассировка, g - 2 кадра назад и т.д. Всего 4 кадра
 layout(set = VOLATILE, binding = 3) uniform texture2D traceResultsPrev;
 
+//  Буфер, в который складывается отфильтрованная вариативность результатов трассировки
+layout(r8, set = STATIC, binding = 4) uniform image2D variationBuffer;
+
 //  Сюда склыдываем окончательную отфильтрованную маску теней
-layout(r8, set = STATIC, binding = 4) uniform image2D finalShadowMask;
+layout(r8, set = STATIC, binding = 5) uniform image2D finalShadowMask;
 
 #endif

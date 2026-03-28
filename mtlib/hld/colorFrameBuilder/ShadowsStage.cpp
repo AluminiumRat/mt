@@ -19,6 +19,10 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
                                                             "RayQueryShadows")),
   _rayQueryTechnique(*_rayQueryTechniqueConfigurator),
   _rayQueryPass(_rayQueryTechnique.getOrCreatePass("RayTracePass")),
+  _variationHorizontalPass(
+                _rayQueryTechnique.getOrCreatePass("VariationHorizontalPass")),
+  _variationVerticalPass(
+                _rayQueryTechnique.getOrCreatePass("VariationVerticalPass")),
   _spatialFilterPass(_rayQueryTechnique.getOrCreatePass("SpatialFilterPass")),
   _tlasBinding(_rayQueryTechnique.getOrCreateResourceBinding("tlas")),
   _noiseTextureBinding(
@@ -33,6 +37,8 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
       _rayQueryTechnique.getOrCreateResourceBinding("prevSamplesCountBuffer")),
   _prevTraceResultsBufferBinding(
             _rayQueryTechnique.getOrCreateResourceBinding("traceResultsPrev")),
+  _variationBufferBinding(
+              _rayQueryTechnique.getOrCreateResourceBinding("variationBuffer")),
   _finalShadowMaskBinding(
               _rayQueryTechnique.getOrCreateResourceBinding("finalShadowMask")),
   _rayForwardShiftUniform(
@@ -62,7 +68,6 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
   {
     loadConfigurator( *_rayQueryTechniqueConfigurator,
                       "shadows/rayQueryShadows.tch");
-    _rayQueryTechniqueConfigurator->rebuildConfiguration();
   }
 
   _rayForwardShiftUniform.setValue(_rayForwardShift);
@@ -72,7 +77,14 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
 void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
                         const FrameBuildContext& frameContext)
 {
-  if(_traceResultBuffers[0] == nullptr) _createBuffers(commandProducer);
+  if(_traceResultBuffers[0] == nullptr)
+  {
+    //  Был вызван setBuffers, необходимо пересоздать буферы под новый
+    //  размер и перенастроить технику
+    _createBuffers(commandProducer);
+    _rebuildTechnique();
+  }
+
   _swapBuffers(commandProducer);
 
   const TLAS* tlas = frameContext.drawScene->tlas();
@@ -80,6 +92,7 @@ void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
 
   if(_rayQueryTechnique.isReady())
   {
+    //  Трэйс теней
     {
       Technique::BindCompute bind(_rayQueryTechnique,
                                   _rayQueryPass,
@@ -93,12 +106,36 @@ void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
                                   VK_ACCESS_SHADER_WRITE_BIT,
                                   VK_ACCESS_SHADER_READ_BIT);
 
+    //  Фильтрация маски теней
     {
       Technique::BindCompute bind(_rayQueryTechnique,
                                   _spatialFilterPass,
                                   commandProducer);
-      MT_ASSERT(bind.isValid())
+      MT_ASSERT(bind.isValid());
       commandProducer.dispatch(_gridSize);
+    }
+
+    //  Построение variationMap. Горизонтальное размытие
+    {
+      Technique::BindCompute bind(_rayQueryTechnique,
+                                  _variationHorizontalPass,
+                                  commandProducer);
+      MT_ASSERT(bind.isValid());
+      commandProducer.dispatch(1, _shadowBuffer->extent().y);
+    }
+
+    commandProducer.memoryBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                  VK_ACCESS_SHADER_WRITE_BIT,
+                                  VK_ACCESS_SHADER_READ_BIT);
+
+    //  Построение variationMap. Вертикальное размытие
+    {
+      Technique::BindCompute bind(_rayQueryTechnique,
+                                  _variationVerticalPass,
+                                  commandProducer);
+      MT_ASSERT(bind.isValid());
+      commandProducer.dispatch(_shadowBuffer->extent().x, 1);
     }
   }
 }
@@ -149,9 +186,61 @@ void ShadowsStage::_createBuffers(CommandProducerGraphic& commandProducer)
                                           VK_IMAGE_VIEW_TYPE_2D);
   }
 
+  ConstRef<Image> variationBufferImage(new Image(
+                                              _device,
+                                              VK_IMAGE_TYPE_2D,
+                                              VK_IMAGE_USAGE_STORAGE_BIT,
+                                              0,
+                                              VK_FORMAT_R8_UNORM,
+                                              _shadowBuffer->extent(),
+                                              VK_SAMPLE_COUNT_1_BIT,
+                                              1,
+                                              1,
+                                              true,
+                                              "ShadowsStage::VariationBuffer"));
+  _variationBuffer = new ImageView( *variationBufferImage,
+                                    ImageSlice(*variationBufferImage),
+                                    VK_IMAGE_VIEW_TYPE_2D);
+  _variationBufferBinding.setImage(_variationBuffer);
+
   //commandProducer.initLayout(*traceResultsBufferImage, VK_IMAGE_LAYOUT_GENERAL);
 
   _finalShadowMaskBinding.setImage(_shadowBuffer);
+}
+
+void ShadowsStage::_rebuildTechnique()
+{
+  if(_device.features().rayQuery.rayQuery != VK_TRUE) return;
+
+  //  Технику нужно пересобирать каждый раз при изменении размеров размываемой
+  //  картинки. Это необходимо из-за настройки размеров групп для шейдеров.
+  //  Ищем проходы, для которых надо настроить константы специализации,
+  //  настраиваем их, и пересобираем технику.
+  const TechniqueConfigurator::Passes& passes =
+                                      _rayQueryTechniqueConfigurator->passes();
+  for(const std::unique_ptr<PassConfigurator>& pass : passes)
+  {
+    if(pass->name() == _variationHorizontalPass.name())
+    {
+      MT_ASSERT(pass->shaders().empty());
+      PassConfigurator::ShaderInfo shader = pass->shaders()[0];
+      shader.constants.clear();
+      shader.constants.addConstant( "GROUP_SIZE",
+                                    uint32_t(_shadowBuffer->extent().x));
+      pass->setShaders(std::span(&shader, 1));
+    }
+    if(pass->name() == _variationVerticalPass.name())
+    {
+      MT_ASSERT(pass->shaders().empty());
+      PassConfigurator::ShaderInfo shader = pass->shaders()[0];
+      shader.constants.clear();
+      shader.constants.addConstant( "GROUP_SIZE",
+                                    uint32_t(_shadowBuffer->extent().y));
+      pass->setShaders(std::span(&shader, 1));
+    }
+  }
+
+  _rayQueryTechniqueConfigurator->rebuildConfiguration();
 }
 
 void ShadowsStage::_swapBuffers(CommandProducerGraphic& commandProducer)

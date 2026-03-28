@@ -115,24 +115,27 @@ void updateHistory( float newShadowFactor,
                     vec3 reprojection,
                     float depth)
 {
+  vec4 traceHistory;
+
   if(reprojection.z >= REPROJECTION_MIN_RELIABILITY)
   {
     //  Репроекция достаточно надежная, сохраняем старую историю
     vec2 prevSSCoords = ssCoords + reprojection.xy;
     vec3 oldTraceResults = texture( sampler2D(traceResultsPrev,
                                               commonLinearSampler),
-                                    prevSSCoords).rgb;
-    imageStore( traceResults,
-                ivec2(gl_GlobalInvocationID.xy),
-                vec4(newShadowFactor, oldTraceResults));
+                                    prevSSCoords).xyz;
+    traceHistory = vec4(newShadowFactor, oldTraceResults);
   }
   else
   {
     //  Репроекция недостаточно надежная, сбрасываем историю
-    imageStore( traceResults,
-                ivec2(gl_GlobalInvocationID.xy),
-                vec4(newShadowFactor));
+    traceHistory = vec4(newShadowFactor);
   }
+
+  //  Сохраняем полученные результаты
+  imageStore( traceResults,
+              ivec2(gl_GlobalInvocationID.xy),
+              traceHistory);
 }
 
 layout (local_size_x = 8,
