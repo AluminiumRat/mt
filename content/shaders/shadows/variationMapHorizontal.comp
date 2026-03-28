@@ -13,7 +13,7 @@ layout (local_size_x_id = 0,
 shared float variationValues[GROUP_SIZE];
 float getNeighbor(int coord)
 {
-  coord = clamp(coord, 0, GROUP_SIZE);
+  coord = clamp(coord, 0, GROUP_SIZE - 1);
   return variationValues[coord];
 }
 

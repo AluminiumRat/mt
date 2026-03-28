@@ -9,8 +9,12 @@ layout (set = STATIC, binding = 0) uniform accelerationStructureEXT tlas;
 //  Какое максимальное количество раз можно вызвать rayQueryProceedEXT за проход
 #define MAX_RAY_CASTS 8
 
+//  Порог для вариативности. Выше него количество сэмплов для рэй трэйсинга
+//  увеличивается, ниже - уменьшается
+#define VARIANCE_TRESHOLD 0.2f
+
 //  Получить количество сэмплов для рэйтрейсинга и обновить их историю
-int updateSamplesCount(vec2 ssCoords,
+int updateSamplesCount( vec2 ssCoords,
                         vec3 reprojection)
 {
   ivec4 samplesHistory;
@@ -22,7 +26,27 @@ int updateSamplesCount(vec2 ssCoords,
     samplesHistory = texture( isampler2D( prevSamplesCountBuffer,
                                           commonNearestSampler),
                               ssCoords + reprojection.xy);
-    currentSamplesCount = MAX_RAY_CASTS;
+    currentSamplesCount = samplesHistory.x;
+
+    //  Считываем вариативность сэмплинга за прошлые кадры
+    ivec2 reprojectedPixel = ivec2((ssCoords + reprojection.xy) *
+                                                commonData.halfFrameExtent.xy);
+    float variance = imageLoad(variationBuffer, reprojectedPixel).r;
+    if(variance > VARIANCE_TRESHOLD)
+    {
+      // Вариативность большая, здесь лежит полутень, увеличиваем количество
+      // сэмплов
+      currentSamplesCount = min(currentSamplesCount + 1, MAX_RAY_CASTS);
+    }
+    else if(samplesHistory.x == samplesHistory.y &&
+            samplesHistory.x == samplesHistory.z &&
+            samplesHistory.x == samplesHistory.w)
+    {
+      //  Вариативность низкая, система стабильная. Здесь либо
+      //  полностью тень, либо полностью освещенный участок. Можно
+      //  уменьшить количество сэмплов
+      currentSamplesCount = max(currentSamplesCount - 1, 1);
+    }
   }
   else
   {
@@ -175,7 +199,7 @@ void main()
     {
       shadowFactor += castRay(ssCoords, depth, normal, sampleIndex + i);
     }
-    shadowFactor /= MAX_RAY_CASTS;
+    shadowFactor /= samplesCount;
   }
   else shadowFactor = 1.0f;
 
