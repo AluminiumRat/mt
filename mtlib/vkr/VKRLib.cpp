@@ -128,6 +128,9 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
                       const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
                       void* pUserData)
 {
+  //  Подавляем сообщения об переводе лэйаута из UNDEFINED в VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+  if(pCallbackData->messageIdNumber == 0xf4fc0180) return VK_FALSE;
+
   if (messageSeverity < VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
   {
     Log::info() << "[Vulkan validation] " << pCallbackData->pMessage;

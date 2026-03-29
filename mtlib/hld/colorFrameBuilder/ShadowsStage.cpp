@@ -159,8 +159,12 @@ void ShadowsStage::_createBuffers(CommandProducerGraphic& commandProducer)
                                                 VK_SAMPLE_COUNT_1_BIT,
                                                 1,
                                                 1,
-                                                true,
+                                                false,
                                                 "ShadowsStage::TracingBuffer"));
+    commandProducer.initLayout( *traceResultsBufferImage,
+                                i == 0 ?
+                                      VK_IMAGE_LAYOUT_GENERAL :
+                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     _traceResultBuffers[i] = new ImageView(
                                           *traceResultsBufferImage,
                                           ImageSlice(*traceResultsBufferImage),
@@ -177,9 +181,12 @@ void ShadowsStage::_createBuffers(CommandProducerGraphic& commandProducer)
                                                 VK_SAMPLE_COUNT_1_BIT,
                                                 1,
                                                 1,
-                                                true,
+                                                false,
                                                 "ShadowsStage::SamplesCountBuffer"));
-
+    commandProducer.initLayout( *samplesCountBufferImage,
+                                i == 0 ?
+                                      VK_IMAGE_LAYOUT_GENERAL :
+                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     _samplesCountBuffers[i] = new ImageView(
                                           *samplesCountBufferImage,
                                           ImageSlice(*samplesCountBufferImage),
@@ -196,14 +203,13 @@ void ShadowsStage::_createBuffers(CommandProducerGraphic& commandProducer)
                                               VK_SAMPLE_COUNT_1_BIT,
                                               1,
                                               1,
-                                              true,
+                                              false,
                                               "ShadowsStage::VariationBuffer"));
+  commandProducer.initLayout(*variationBufferImage, VK_IMAGE_LAYOUT_GENERAL);
   _variationBuffer = new ImageView( *variationBufferImage,
                                     ImageSlice(*variationBufferImage),
                                     VK_IMAGE_VIEW_TYPE_2D);
   _variationBufferBinding.setImage(_variationBuffer);
-
-  //commandProducer.initLayout(*traceResultsBufferImage, VK_IMAGE_LAYOUT_GENERAL);
 
   _finalShadowMaskBinding.setImage(_shadowBuffer);
 }
@@ -246,10 +252,42 @@ void ShadowsStage::_rebuildTechnique()
 void ShadowsStage::_swapBuffers(CommandProducerGraphic& commandProducer)
 {
   std::swap(_traceResultBuffers[0], _traceResultBuffers[1]);
+  commandProducer.imageBarrier( _traceResultBuffers[0]->image(),
+                                ImageSlice(_traceResultBuffers[0]->image()),
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                VK_IMAGE_LAYOUT_GENERAL,
+                                0,
+                                0,
+                                0,
+                                0);
+  commandProducer.imageBarrier( _traceResultBuffers[1]->image(),
+                                ImageSlice(_traceResultBuffers[1]->image()),
+                                VK_IMAGE_LAYOUT_GENERAL,
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                0,
+                                0,
+                                0,
+                                0);
   _traceResultsBufferBinding.setImage(_traceResultBuffers[0]);
   _prevTraceResultsBufferBinding.setImage(_traceResultBuffers[1]);
 
   std::swap(_samplesCountBuffers[0], _samplesCountBuffers[1]);
+  commandProducer.imageBarrier( _samplesCountBuffers[0]->image(),
+                                ImageSlice(_samplesCountBuffers[0]->image()),
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                VK_IMAGE_LAYOUT_GENERAL,
+                                0,
+                                0,
+                                0,
+                                0);
+  commandProducer.imageBarrier( _samplesCountBuffers[1]->image(),
+                                ImageSlice(_samplesCountBuffers[1]->image()),
+                                VK_IMAGE_LAYOUT_GENERAL,
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                0,
+                                0,
+                                0,
+                                0);
   _samplesCountTextureBinding.setImage(_samplesCountBuffers[0]);
   _prevSamplesCountTextureBinding.setImage(_samplesCountBuffers[1]);
 }
