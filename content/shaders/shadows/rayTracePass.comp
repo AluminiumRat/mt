@@ -36,16 +36,24 @@ int updateSamplesCount( vec2 ssCoords,
     {
       // Вариативность большая, здесь лежит полутень, увеличиваем количество
       // сэмплов
-      currentSamplesCount = min(currentSamplesCount + 1, MAX_RAY_CASTS);
+      currentSamplesCount = min(currentSamplesCount + 3, MAX_RAY_CASTS);
     }
     else if(samplesHistory.x == samplesHistory.y &&
             samplesHistory.x == samplesHistory.z &&
             samplesHistory.x == samplesHistory.w)
     {
       //  Вариативность низкая, система стабильная. Здесь либо
-      //  полностью тень, либо полностью освещенный участок. Можно
-      //  уменьшить количество сэмплов
-      currentSamplesCount = max(currentSamplesCount - 1, 1);
+      //    полностью тень, либо полностью освещенный участок. Можно
+      //    уменьшить количество сэмплов
+      currentSamplesCount = currentSamplesCount - 1;
+
+      //  Не даем уснуть части пикселей, чтобы они разбудили остальных
+      //  при изменениях в сцене или освещенке
+      int minSamplesCount =
+                  (gl_GlobalInvocationID.x + gl_GlobalInvocationID.y) % 2 == 0 ?
+                  1 :
+                  0;
+      currentSamplesCount = max(currentSamplesCount, minSamplesCount);
     }
   }
   else
@@ -136,8 +144,7 @@ float castRay(vec2 ssCoords,
 //  Записать результаты трассировки в историю
 void updateHistory( float newShadowFactor,
                     vec2 ssCoords,
-                    vec3 reprojection,
-                    float depth)
+                    vec3 reprojection)
 {
   vec4 traceHistory;
 
@@ -162,6 +169,20 @@ void updateHistory( float newShadowFactor,
               traceHistory);
 }
 
+//  Просто копирование истории трэйсов по репроекции. Используется для уснувших
+//  пикселей, для которых трэйсинт не проводится
+void reprojectHistory(vec2 ssCoords, vec3 reprojection)
+{
+  vec2 prevSSCoords = ssCoords + reprojection.xy;
+  vec4 traceHistory = texture(sampler2D(traceResultsPrev,
+                                        commonLinearSampler),
+                              prevSSCoords);
+  //  Сохраняем полученные результаты
+  imageStore( traceResults,
+              ivec2(gl_GlobalInvocationID.xy),
+              traceHistory);
+}
+
 layout (local_size_x = 8,
         local_size_y = 8,
         local_size_z = 1) in;
@@ -176,6 +197,11 @@ void main()
                                         commonLinearSampler),
                               ssCoords).xyw;
   int samplesCount = updateSamplesCount(ssCoords, reprojection);
+  if(samplesCount == 0)
+  {
+    reprojectHistory(ssCoords, reprojection);
+    return;
+  }
 
   float shadowFactor = 0.0f;
 
@@ -203,5 +229,5 @@ void main()
   }
   else shadowFactor = 1.0f;
 
-  updateHistory(shadowFactor, ssCoords, reprojection, depth);
+  updateHistory(shadowFactor, ssCoords, reprojection);
 }
