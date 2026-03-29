@@ -23,7 +23,9 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
                 _rayQueryTechnique.getOrCreatePass("VariationHorizontalPass")),
   _variationVerticalPass(
                 _rayQueryTechnique.getOrCreatePass("VariationVerticalPass")),
-  _spatialFilterPass(_rayQueryTechnique.getOrCreatePass("SpatialFilterPass")),
+  _horizontalFilterPass(
+                    _rayQueryTechnique.getOrCreatePass("FilterHorizontalPass")),
+  _verticalFilterPass(_rayQueryTechnique.getOrCreatePass("FilterVerticalPass")),
   _tlasBinding(_rayQueryTechnique.getOrCreateResourceBinding("tlas")),
   _noiseTextureBinding(
                 _rayQueryTechnique.getOrCreateResourceBinding("noiseTexture")),
@@ -106,13 +108,13 @@ void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
                                   VK_ACCESS_SHADER_WRITE_BIT,
                                   VK_ACCESS_SHADER_READ_BIT);
 
-    //  Фильтрация маски теней
+    //  Фильтрация маски теней. Горизонтальное размытие
     {
       Technique::BindCompute bind(_rayQueryTechnique,
-                                  _spatialFilterPass,
+                                  _horizontalFilterPass,
                                   commandProducer);
       MT_ASSERT(bind.isValid());
-      commandProducer.dispatch(_gridSize);
+      commandProducer.dispatch(1, _shadowBuffer->extent().y);
     }
 
     //  Построение variationMap. Горизонтальное размытие
@@ -128,6 +130,15 @@ void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
                                   VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                                   VK_ACCESS_SHADER_WRITE_BIT,
                                   VK_ACCESS_SHADER_READ_BIT);
+
+    //  Фильтрация маски теней. Вертикальное размытие
+    {
+      Technique::BindCompute bind(_rayQueryTechnique,
+                                  _verticalFilterPass,
+                                  commandProducer);
+      MT_ASSERT(bind.isValid());
+      commandProducer.dispatch(_shadowBuffer->extent().x, 1);
+    }
 
     //  Построение variationMap. Вертикальное размытие
     {
@@ -226,7 +237,8 @@ void ShadowsStage::_rebuildTechnique()
                                       _rayQueryTechniqueConfigurator->passes();
   for(const std::unique_ptr<PassConfigurator>& pass : passes)
   {
-    if(pass->name() == _variationHorizontalPass.name())
+    if(pass->name() == _variationHorizontalPass.name() ||
+        pass->name() == _horizontalFilterPass.name())
     {
       MT_ASSERT(pass->shaders().empty());
       PassConfigurator::ShaderInfo shader = pass->shaders()[0];
@@ -235,7 +247,8 @@ void ShadowsStage::_rebuildTechnique()
                                     uint32_t(_shadowBuffer->extent().x));
       pass->setShaders(std::span(&shader, 1));
     }
-    if(pass->name() == _variationVerticalPass.name())
+    if(pass->name() == _variationVerticalPass.name() ||
+        pass->name() == _verticalFilterPass.name())
     {
       MT_ASSERT(pass->shaders().empty());
       PassConfigurator::ShaderInfo shader = pass->shaders()[0];

@@ -1,0 +1,78 @@
+#version 450
+//  Фильтрация сырых результатов рэй трэйсинга теней
+//  Горизонтальное размытие
+
+#include "lib/octahedronEncoding.inl"
+#include "shadows/filterPass.inl"
+
+layout (local_size_x_id = 0,
+        local_size_y = 1,
+        local_size_z = 1) in;
+
+void main()
+{
+  //  Для начала извлекаем нужные нам данные и укладываем их в кэш
+  float depth = texelFetch( sampler2D(linearDepthHalfBuffer,
+                                      commonNearestSampler),
+                            ivec2(gl_GlobalInvocationID.xy),
+                            0).x;
+  depthCache[gl_GlobalInvocationID.x] = depth;
+
+  vec3 normal = octahedronDecode(texelFetch(sampler2D(normalHalfBuffer,
+                                                      commonNearestSampler),
+                                            ivec2(gl_GlobalInvocationID.xy),
+                                            0).xy);
+  normalCache[gl_GlobalInvocationID.x] = normal;
+
+  //  Темпоральное сглаживание результатов трэйсинга по последним 4 кадрам
+  vec4 traceResultsHistory = imageLoad( traceResults,
+                                        ivec2(gl_GlobalInvocationID.xy));
+  float value = traceResultsHistory.r +
+                traceResultsHistory.g +
+                traceResultsHistory.b +
+                traceResultsHistory.a;
+  value /= 4.0f;
+  valueCache[gl_GlobalInvocationID.x] = value;
+
+  barrier();
+
+  float pixelSize = getHalfBufferPixelSize(depth);
+  float depthTreshold = 5.0f * pixelSize;
+  //depthTreshold /= max( dot(normal, -commonData.cameraData.frontVector),
+  //                      0.1f);
+
+  //  Филтрация по данным из кэша
+  float weight = 1.0f;
+  applyNeighbor(int(gl_GlobalInvocationID.x) - 2,
+                -2,
+                value,
+                weight,
+                depth,
+                depthTreshold,
+                normal);
+  applyNeighbor(int(gl_GlobalInvocationID.x) - 1,
+                -1,
+                value,
+                weight,
+                depth,
+                depthTreshold,
+                normal);
+  applyNeighbor(int(gl_GlobalInvocationID.x) + 1,
+                1,
+                value,
+                weight,
+                depth,
+                depthTreshold,
+                normal);
+  applyNeighbor(int(gl_GlobalInvocationID.x) + 2,
+                2,
+                value,
+                weight,
+                depth,
+                depthTreshold,
+                normal);
+
+  imageStore( finalShadowMask,
+              ivec2(gl_GlobalInvocationID.xy),
+              vec4(value / weight));
+}

@@ -16,7 +16,12 @@ passes:
     shaders:
       COMPUTE : shadows/variationMapVertical.comp
 
-  SpatialFilterPass :
+  FilterHorizontalPass:
     pipeline: COMPUTE
     shaders:
-      COMPUTE : shadows/spatialFilterPass.comp
+      COMPUTE : shadows/filterHorizontal.comp
+
+  FilterVerticalPass:
+    pipeline: COMPUTE
+    shaders:
+      COMPUTE : shadows/filterVertical.comp

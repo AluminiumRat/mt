@@ -54,7 +54,8 @@ namespace mt
     TechniquePass& _rayQueryPass;
     TechniquePass& _variationHorizontalPass;
     TechniquePass& _variationVerticalPass;
-    TechniquePass& _spatialFilterPass;
+    TechniquePass& _horizontalFilterPass;
+    TechniquePass& _verticalFilterPass;
     ResourceBinding& _tlasBinding;
     ResourceBinding& _noiseTextureBinding;
     ResourceBinding& _samplerTextureBinding;
