@@ -23,13 +23,13 @@ void main()
                             ivec2(gl_GlobalInvocationID.xy),
                             0).x;
   if(depth == LINEAR_DEPTH_EMPTY_VALUE) return;
-  float pixelSize = getHalfBufferPixelSize(depth);
-  float depthTreshold = 5.0f * pixelSize;
 
   vec3 normal = octahedronDecode(texelFetch(sampler2D(normalHalfBuffer,
                                                       commonNearestSampler),
                                             ivec2(gl_GlobalInvocationID.xy),
                                             0).xy);
+
+  float depthTreshold = getDepthTreshold(depth, normal);
 
   //  Обход по окну фильтрации и взвешивание
   float totalValue = 0.0f;

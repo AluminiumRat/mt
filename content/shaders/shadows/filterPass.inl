@@ -5,6 +5,16 @@
 
 const float gaussKernel[5] = float[](0.54f, 0.86f, 1.0f,  0.86f, 0.54f);
 
+//  Максимальное отклонение при взвешивании сэмплов по глубине
+float getDepthTreshold( float depth,
+                        vec3 normal)
+{
+  float pixelSize = getHalfBufferPixelSize(depth);
+  float normalFactor = 1.0f - abs(dot(normal,
+                                      commonData.cameraData.frontVector));
+  return (5.0f + 3.0f * normalFactor) * pixelSize;
+}
+
 float getWeight(ivec2 sampleCoord,
                 int pixelShift,
                 float depth,
