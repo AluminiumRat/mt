@@ -114,7 +114,7 @@ void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
                                   _horizontalFilterPass,
                                   commandProducer);
       MT_ASSERT(bind.isValid());
-      commandProducer.dispatch(1, _shadowBuffer->extent().y);
+      commandProducer.dispatch(_gridSize);
     }
 
     //  Построение variationMap. Горизонтальное размытие
@@ -137,7 +137,7 @@ void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
                                   _verticalFilterPass,
                                   commandProducer);
       MT_ASSERT(bind.isValid());
-      commandProducer.dispatch(_shadowBuffer->extent().x, 1);
+      commandProducer.dispatch(_gridSize);
     }
 
     //  Построение variationMap. Вертикальное размытие
@@ -237,8 +237,7 @@ void ShadowsStage::_rebuildTechnique()
                                       _rayQueryTechniqueConfigurator->passes();
   for(const std::unique_ptr<PassConfigurator>& pass : passes)
   {
-    if(pass->name() == _variationHorizontalPass.name() ||
-        pass->name() == _horizontalFilterPass.name())
+    if(pass->name() == _variationHorizontalPass.name())
     {
       MT_ASSERT(pass->shaders().empty());
       PassConfigurator::ShaderInfo shader = pass->shaders()[0];
@@ -247,8 +246,7 @@ void ShadowsStage::_rebuildTechnique()
                                     uint32_t(_shadowBuffer->extent().x));
       pass->setShaders(std::span(&shader, 1));
     }
-    if(pass->name() == _variationVerticalPass.name() ||
-        pass->name() == _verticalFilterPass.name())
+    if(pass->name() == _variationVerticalPass.name())
     {
       MT_ASSERT(pass->shaders().empty());
       PassConfigurator::ShaderInfo shader = pass->shaders()[0];

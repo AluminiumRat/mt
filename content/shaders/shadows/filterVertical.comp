@@ -5,67 +5,50 @@
 #include "lib/octahedronEncoding.inl"
 #include "shadows/filterPass.inl"
 
-layout (local_size_x = 1,
-        local_size_y_id = 0,
+layout (local_size_x = 8,
+        local_size_y = 8,
         local_size_z = 1) in;
 
 void main()
 {
-  //  Для начала извлекаем нужные нам данные и укладываем их в кэш
+  if(gl_GlobalInvocationID.x > commonData.iHalfFrameExtent.x - 1 ||
+     gl_GlobalInvocationID.y > commonData.iHalfFrameExtent.y - 1 )
+  {
+    return;
+  }
+
+  //  Для начала извлекаем нужные нам данные
   float depth = texelFetch( sampler2D(linearDepthHalfBuffer,
                                       commonNearestSampler),
                             ivec2(gl_GlobalInvocationID.xy),
                             0).x;
-  depthCache[gl_GlobalInvocationID.y] = depth;
+  if(depth == LINEAR_DEPTH_EMPTY_VALUE) return;
+  float pixelSize = getHalfBufferPixelSize(depth);
+  float depthTreshold = 5.0f * pixelSize;
 
   vec3 normal = octahedronDecode(texelFetch(sampler2D(normalHalfBuffer,
                                                       commonNearestSampler),
                                             ivec2(gl_GlobalInvocationID.xy),
                                             0).xy);
-  normalCache[gl_GlobalInvocationID.y] = normal;
 
-  float value = imageLoad(finalShadowMask, ivec2(gl_GlobalInvocationID.xy)).r;
-  valueCache[gl_GlobalInvocationID.y] = value;
+  //  Обход по окну фильтрации и взвешивание
+  float totalValue = 0.0f;
+  float totalWeight = 0.0f;
+  for(int i = -2; i < 2; i++)
+  {
+    ivec2 sampleCoord = ivec2(gl_GlobalInvocationID.xy);
+    sampleCoord.y = clamp(sampleCoord.y + i,
+                          0,
+                          commonData.iHalfFrameExtent.y - 1);
 
-  barrier();
+    float value = imageLoad(finalShadowMask, sampleCoord).r;
+    float weight = getWeight(sampleCoord, i, depth, depthTreshold, normal);
 
-  float pixelSize = getHalfBufferPixelSize(depth);
-  float depthTreshold = 5.0f * pixelSize;
-  //depthTreshold /= max( dot(normal, -commonData.cameraData.frontVector),
-  //                      0.1f);
-
-  //  Филтрация по данным из кэша
-  float weight = 1.0f;
-  applyNeighbor(int(gl_GlobalInvocationID.y) - 2,
-                -2,
-                value,
-                weight,
-                depth,
-                depthTreshold,
-                normal);
-  applyNeighbor(int(gl_GlobalInvocationID.y) - 1,
-                -1,
-                value,
-                weight,
-                depth,
-                depthTreshold,
-                normal);
-  applyNeighbor(int(gl_GlobalInvocationID.y) + 1,
-                1,
-                value,
-                weight,
-                depth,
-                depthTreshold,
-                normal);
-  applyNeighbor(int(gl_GlobalInvocationID.y) + 2,
-                2,
-                value,
-                weight,
-                depth,
-                depthTreshold,
-                normal);
+    totalValue += value * weight;
+    totalWeight += weight;
+  }
 
   imageStore( finalShadowMask,
               ivec2(gl_GlobalInvocationID.xy),
-              vec4(value / weight));
+              vec4(totalValue / totalWeight));
 }
