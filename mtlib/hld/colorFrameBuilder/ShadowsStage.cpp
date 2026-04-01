@@ -15,6 +15,7 @@ using namespace mt;
 
 ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
   _device(device),
+  _enabled(true),
   _rayQueryTechniqueConfigurator(new TechniqueConfigurator( device,
                                                             "RayQueryShadows")),
   _rayQueryTechnique(*_rayQueryTechniqueConfigurator),
@@ -77,7 +78,7 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
 void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
                         const FrameBuildContext& frameContext)
 {
-  if(_device.features().rayQuery.rayQuery != VK_TRUE)
+  if(!_enabled || _device.features().rayQuery.rayQuery != VK_TRUE)
   {
     //  Тени отключены или не могут быть посчитаны. Просто чистим маску
     commandProducer.clearColorImage(_shadowBuffer->image(),
@@ -316,7 +317,10 @@ void ShadowsStage::makeGui()
   if(_device.features().rayQuery.rayQuery != VK_TRUE)
   {
     ImGui::Text("WARNING! Ray queries aren't available.");
+    ImGui::Text("Shadows are disabled.");
   }
+  bool enabledValue = enabled();
+  if(ImGui::Checkbox("enabled", &enabledValue)) setEnabled(enabledValue);
 
   ImGuiPropertyGrid grid("Shadows");
 

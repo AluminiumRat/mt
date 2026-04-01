@@ -20,6 +20,9 @@ namespace mt
     ShadowsStage& operator = (const ShadowsStage&) = delete;
     ~ShadowsStage() noexcept = default;
 
+    inline bool enabled() const noexcept;
+    inline void setEnabled(bool newValue) noexcept;
+
     //  К моменту вызова shadowBuffer должен находиться в лэйауте
     //    VK_IMAGE_LAYOUT_GENERAL
     void draw(CommandProducerGraphic& commandProducer,
@@ -49,6 +52,8 @@ namespace mt
 
   private:
     Device& _device;
+
+    bool _enabled;
 
     Ref<TechniqueConfigurator> _rayQueryTechniqueConfigurator;
     Technique _rayQueryTechnique;
@@ -95,16 +100,24 @@ namespace mt
     glm::uvec2 _gridSize;
   };
 
+  inline bool ShadowsStage::enabled() const noexcept
+  {
+    return _enabled;
+  }
+
+  inline void ShadowsStage::setEnabled(bool newValue) noexcept
+  {
+    if(_enabled == newValue) return;
+    _enabled = newValue;
+    _resetBuffers();
+  }
+
   inline void ShadowsStage::setBuffers(const ImageView& shadowBuffer)
   {
     if(_shadowBuffer == &shadowBuffer) return;
-
     _shadowBuffer = &shadowBuffer;
-
     _gridSize = (glm::uvec2(_shadowBuffer->extent()) + glm::uvec2(7)) / 8u;
-
     _resetBuffers();
-
     _rayQueryTechnique.getOrCreateResourceBinding("finalShadowMask").
                                                         setImage(_shadowBuffer);
   }
