@@ -40,6 +40,18 @@ namespace mt
     inline void dispatch(glm::uvec2 gridSize);
     inline void dispatch(uint32_t gridSize);
 
+    //  Очистка Image или его части в заданный цвет.
+    //  Обертка вокруг vkCmdClearColorImage
+    //  dtsImage должен либо поддерживать автоконтроль лэйаутов, либо
+    //    находиться в лэйауте VK_IMAGE_LAYOUT_GENERAL
+    //  dtsImage должен поддерживать флаг VK_IMAGE_USAGE_TRANSFER_DST_BIT
+    void clearColorImage( const Image& dstImage,
+                          VkClearColorValue color = {},
+                          uint32_t baseMipLevel = 0,
+                          uint32_t mipsCount = -1,
+                          uint32_t baseArrayIndex = 0,
+                          uint32_t arrayElementsCount = -1);
+
   private:
     //  Работа с acceleration structures (BLAS и TLAS), не предназначено для
     //  внешнего использования

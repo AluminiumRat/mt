@@ -261,3 +261,56 @@ void CommandProducerCompute::updateTLAS(const TLAS& tlas,
                                                               &buildGeometryInfo,
                                                               &rangePtr);
 }
+
+void CommandProducerCompute::clearColorImage( const Image& dstImage,
+                                              VkClearColorValue color,
+                                              uint32_t baseMipLevel,
+                                              uint32_t mipsCount,
+                                              uint32_t baseArrayIndex,
+                                              uint32_t arrayElementsCount)
+{
+  MT_ASSERT(!insideRenderPass());
+  MT_ASSERT(baseMipLevel >= dstImage.mipmapCount());
+  MT_ASSERT(baseArrayIndex >= dstImage.arraySize());
+
+  if(mipsCount == -1) mipsCount = dstImage.mipmapCount() - baseMipLevel;
+  if(arrayElementsCount == -1)
+  {
+    arrayElementsCount = dstImage.arraySize() - baseArrayIndex;
+  }
+  MT_ASSERT(baseMipLevel + mipsCount > dstImage.mipmapCount());
+  MT_ASSERT(baseArrayIndex + arrayElementsCount > dstImage.arraySize());
+
+  ImageAccess imageAccess;
+  imageAccess.slices[0] = ImageSlice( dstImage,
+                                      dstImage.aspectMask(),
+                                      baseMipLevel,
+                                      mipsCount,
+                                      baseArrayIndex,
+                                      arrayElementsCount);
+  imageAccess.layouts[0] = VK_IMAGE_LAYOUT_GENERAL;
+  imageAccess.memoryAccess[0] = MemoryAccess{
+                              .readStagesMask = 0,
+                              .readAccessMask = 0,
+                              .writeStagesMask = VK_PIPELINE_STAGE_TRANSFER_BIT,
+                              .writeAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT};
+  imageAccess.slicesCount = 1;
+  addImageUsage(dstImage, imageAccess);
+
+  lockResource(dstImage);
+
+  VkImageSubresourceRange range{};
+  range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  range.baseMipLevel = baseMipLevel;
+  range.levelCount = mipsCount;
+  range.baseArrayLayer = baseArrayIndex;
+  range.layerCount = arrayElementsCount;
+
+  CommandBuffer& buffer = getOrCreateBuffer();
+  vkCmdClearColorImage( buffer.handle(),
+                        dstImage.handle(),
+                        VK_IMAGE_LAYOUT_GENERAL,
+                        &color,
+                        1,
+                        &range);
+}
