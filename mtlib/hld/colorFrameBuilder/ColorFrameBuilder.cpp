@@ -229,7 +229,8 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
   _shadowBuffer = new Image(_device,
                             VK_IMAGE_TYPE_2D,
                             VK_IMAGE_USAGE_STORAGE_BIT |
-                              VK_IMAGE_USAGE_SAMPLED_BIT,
+                              VK_IMAGE_USAGE_SAMPLED_BIT |
+                              VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                             0,
                             shadowFormat,
                             glm::uvec3(halfSize, 1),

@@ -42,7 +42,7 @@ void TestWindow::_loadModel(const std::filesystem::path& filename)
                         _textureManager,
                         _techniqueManager,
                         GLTFImporter::LOAD_ASYNC,
-                        true);
+                        device().features().rayQuery.rayQuery == VK_TRUE);
   GLTFImporter::Results imported = importer.importGLTF(filename);
   for(std::unique_ptr<MeshDrawable>& mesh : imported.drawables)
   {

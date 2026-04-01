@@ -41,8 +41,6 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
             _rayQueryTechnique.getOrCreateResourceBinding("traceResultsPrev")),
   _variationBufferBinding(
               _rayQueryTechnique.getOrCreateResourceBinding("variationBuffer")),
-  _finalShadowMaskBinding(
-              _rayQueryTechnique.getOrCreateResourceBinding("finalShadowMask")),
   _rayForwardShiftUniform(
               _rayQueryTechnique.getOrCreateUniform("params.rayForwardShift")),
   _rayNormalShiftUniform(
@@ -51,23 +49,23 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
   _rayNormalShift(2.0f),
   _gridSize(1)
 {
-  ConstRef<TechniqueResource> noiseTexture =
-                        textureManager.loadImmediately( "util/noiseR8x32.dds",
-                                                        *device.graphicQueue(),
-                                                        false);
-  if(noiseTexture->image() == nullptr) throw std::runtime_error("ShadowsStage: unable to load 'util/noiseR8x32.dds'");
-  _noiseTextureBinding.setResource(noiseTexture);
+  if(device.features().rayQuery.rayQuery == VK_TRUE)
+  {
+    ConstRef<TechniqueResource> noiseTexture =
+                          textureManager.loadImmediately( "util/noiseR8x32.dds",
+                                                          *device.graphicQueue(),
+                                                          false);
+    if(noiseTexture->image() == nullptr) throw std::runtime_error("ShadowsStage: unable to load 'util/noiseR8x32.dds'");
+    _noiseTextureBinding.setResource(noiseTexture);
 
-  ConstRef<TechniqueResource> samplerTexture =
-                          textureManager.loadImmediately(
+    ConstRef<TechniqueResource> samplerTexture =
+                            textureManager.loadImmediately(
                                                     "util/diskSampler1024.dds",
                                                     *device.graphicQueue(),
                                                     false);
-  if(samplerTexture->image() == nullptr) throw std::runtime_error("ShadowsStage: unable to load 'util/diskSampler1024.dds'");
-  _samplerTextureBinding.setResource(samplerTexture);
+    if(samplerTexture->image() == nullptr) throw std::runtime_error("ShadowsStage: unable to load 'util/diskSampler1024.dds'");
+    _samplerTextureBinding.setResource(samplerTexture);
 
-  if(device.features().rayQuery.rayQuery == VK_TRUE)
-  {
     loadConfigurator( *_rayQueryTechniqueConfigurator,
                       "shadows/rayQueryShadows.tch");
   }
@@ -79,6 +77,14 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
 void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
                         const FrameBuildContext& frameContext)
 {
+  if(_device.features().rayQuery.rayQuery != VK_TRUE)
+  {
+    //  Тени отключены или не могут быть посчитаны. Просто чистим маску
+    commandProducer.clearColorImage(_shadowBuffer->image(),
+                                    VkClearColorValue{.float32 = {1, 1, 1, 1}});
+    return;
+  }
+
   if(_traceResultBuffers[0] == nullptr)
   {
     //  Был вызван setBuffers, необходимо пересоздать буферы под новый
@@ -92,70 +98,74 @@ void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
   const TLAS* tlas = frameContext.drawScene->tlas();
   _tlasBinding.setTLAS(tlas);
 
-  if(_rayQueryTechnique.isReady())
+  MT_ASSERT(_rayQueryTechnique.isReady());
+
+  //  Трэйс теней
   {
-    //  Трэйс теней
-    {
-      Technique::BindCompute bind(_rayQueryTechnique,
-                                  _rayQueryPass,
-                                  commandProducer);
-      MT_ASSERT(bind.isValid())
-      commandProducer.dispatch(_gridSize);
-    }
-
-    commandProducer.memoryBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                  VK_ACCESS_SHADER_WRITE_BIT,
-                                  VK_ACCESS_SHADER_READ_BIT);
-
-    //  Фильтрация маски теней. Горизонтальное размытие
-    {
-      Technique::BindCompute bind(_rayQueryTechnique,
-                                  _horizontalFilterPass,
-                                  commandProducer);
-      MT_ASSERT(bind.isValid());
-      commandProducer.dispatch(_gridSize);
-    }
-
-    //  Построение variationMap. Горизонтальное размытие
-    {
-      Technique::BindCompute bind(_rayQueryTechnique,
-                                  _variationHorizontalPass,
-                                  commandProducer);
-      MT_ASSERT(bind.isValid());
-      commandProducer.dispatch(1, _shadowBuffer->extent().y);
-    }
-
-    commandProducer.memoryBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                  VK_ACCESS_SHADER_WRITE_BIT,
-                                  VK_ACCESS_SHADER_READ_BIT);
-
-    //  Фильтрация маски теней. Вертикальное размытие
-    {
-      Technique::BindCompute bind(_rayQueryTechnique,
-                                  _verticalFilterPass,
-                                  commandProducer);
-      MT_ASSERT(bind.isValid());
-      commandProducer.dispatch(_gridSize);
-    }
-
-    //  Построение variationMap. Вертикальное размытие
-    {
-      Technique::BindCompute bind(_rayQueryTechnique,
-                                  _variationVerticalPass,
-                                  commandProducer);
-      MT_ASSERT(bind.isValid());
-      commandProducer.dispatch(_shadowBuffer->extent().x, 1);
-    }
+    Technique::BindCompute bind(_rayQueryTechnique,
+                                _rayQueryPass,
+                                commandProducer);
+    MT_ASSERT(bind.isValid())
+    commandProducer.dispatch(_gridSize);
   }
+
+  commandProducer.memoryBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                VK_ACCESS_SHADER_WRITE_BIT,
+                                VK_ACCESS_SHADER_READ_BIT);
+
+  //  Фильтрация маски теней. Горизонтальное размытие
+  {
+    Technique::BindCompute bind(_rayQueryTechnique,
+                                _horizontalFilterPass,
+                                commandProducer);
+    MT_ASSERT(bind.isValid());
+    commandProducer.dispatch(_gridSize);
+  }
+  //  Построение variationMap. Горизонтальное размытие
+  {
+    Technique::BindCompute bind(_rayQueryTechnique,
+                                _variationHorizontalPass,
+                                commandProducer);
+    MT_ASSERT(bind.isValid());
+    commandProducer.dispatch(1, _shadowBuffer->extent().y);
+  }
+
+  commandProducer.memoryBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                VK_ACCESS_SHADER_WRITE_BIT,
+                                VK_ACCESS_SHADER_READ_BIT);
+
+  //  Фильтрация маски теней. Вертикальное размытие
+  {
+    Technique::BindCompute bind(_rayQueryTechnique,
+                                _verticalFilterPass,
+                                commandProducer);
+    MT_ASSERT(bind.isValid());
+    commandProducer.dispatch(_gridSize);
+  }
+  //  Построение variationMap. Вертикальное размытие
+  {
+    Technique::BindCompute bind(_rayQueryTechnique,
+                                _variationVerticalPass,
+                                commandProducer);
+    MT_ASSERT(bind.isValid());
+    commandProducer.dispatch(_shadowBuffer->extent().x, 1);
+  }
+}
+
+void ShadowsStage::_resetBuffers() noexcept
+{
+  _samplesCountBuffers[0].reset();
+  _samplesCountBuffers[1].reset();
+  _traceResultBuffers[0].reset();
+  _traceResultBuffers[1].reset();
+  _variationBuffer.reset();
 }
 
 void ShadowsStage::_createBuffers(CommandProducerGraphic& commandProducer)
 {
   MT_ASSERT(_shadowBuffer != nullptr);
-
-  _gridSize = (glm::uvec2(_shadowBuffer->extent()) + glm::uvec2(7)) / 8u;
 
   for(int i = 0; i < 2; i++)
   {
@@ -221,8 +231,6 @@ void ShadowsStage::_createBuffers(CommandProducerGraphic& commandProducer)
                                     ImageSlice(*variationBufferImage),
                                     VK_IMAGE_VIEW_TYPE_2D);
   _variationBufferBinding.setImage(_variationBuffer);
-
-  _finalShadowMaskBinding.setImage(_shadowBuffer);
 }
 
 void ShadowsStage::_rebuildTechnique()
@@ -305,6 +313,11 @@ void ShadowsStage::_swapBuffers(CommandProducerGraphic& commandProducer)
 
 void ShadowsStage::makeGui()
 {
+  if(_device.features().rayQuery.rayQuery != VK_TRUE)
+  {
+    ImGui::Text("WARNING! Ray queries aren't available.");
+  }
+
   ImGuiPropertyGrid grid("Shadows");
 
   grid.addRow("rayForwardShift");

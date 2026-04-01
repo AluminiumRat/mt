@@ -42,6 +42,7 @@ namespace mt
     void makeGui();
 
   private:
+    void _resetBuffers() noexcept;
     void _createBuffers(CommandProducerGraphic& commandProducer);
     void _rebuildTechnique();
     void _swapBuffers(CommandProducerGraphic& commandProducer);
@@ -64,7 +65,6 @@ namespace mt
     ResourceBinding& _traceResultsBufferBinding;
     ResourceBinding& _prevTraceResultsBufferBinding;
     ResourceBinding& _variationBufferBinding;
-    ResourceBinding& _finalShadowMaskBinding;
     UniformVariable& _rayForwardShiftUniform;
     UniformVariable& _rayNormalShiftUniform;
 
@@ -85,7 +85,6 @@ namespace mt
     //  Один буфер для записи в текущем кадре, второй для чтения результатов
     //    с предыдущего кадра
     ConstRef<ImageView> _traceResultBuffers[2];
-
     //  Буфер, где хранится вариативность результатов трэйса теней
     ConstRef<ImageView> _variationBuffer;
 
@@ -102,8 +101,12 @@ namespace mt
 
     _shadowBuffer = &shadowBuffer;
 
-    _traceResultBuffers[0].reset();
-    _traceResultBuffers[1].reset();
+    _gridSize = (glm::uvec2(_shadowBuffer->extent()) + glm::uvec2(7)) / 8u;
+
+    _resetBuffers();
+
+    _rayQueryTechnique.getOrCreateResourceBinding("finalShadowMask").
+                                                        setImage(_shadowBuffer);
   }
 
   inline float ShadowsStage::rayForwardShift() const noexcept
