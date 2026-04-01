@@ -68,8 +68,6 @@ void ReprojectionBufferUpdater::createBuffers(
                                     false,
                                     "ReprojectionBufferUpdater::DepthHistory"));
   commandProducer.initLayout(*depthHistoryImage, VK_IMAGE_LAYOUT_GENERAL);
-  _depthHistory = new ImageView(*depthHistoryImage,
-                                ImageSlice(*depthHistoryImage),
-                                VK_IMAGE_VIEW_TYPE_2D);
+  _depthHistory = new ImageView(*depthHistoryImage);
   _depthHistoryBinding.setImage(_depthHistory);
 }

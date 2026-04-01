@@ -125,9 +125,7 @@ void Bloom::_updateBindings()
                           1,
                           false,
                           "Bloom");
-  Ref<ImageView> targetImageView(new ImageView( *_bloomImage,
-                                                ImageSlice(*_bloomImage),
-                                                VK_IMAGE_VIEW_TYPE_2D));
+  Ref<ImageView> targetImageView(new ImageView(*_bloomImage));
   _targetImageBinding.setImage(targetImageView);
 
   _sourceImageChanged = false;

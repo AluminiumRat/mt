@@ -187,10 +187,7 @@ void ShadowsStage::_createBuffers(CommandProducerGraphic& commandProducer)
                                 i == 0 ?
                                       VK_IMAGE_LAYOUT_GENERAL :
                                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    _traceResultBuffers[i] = new ImageView(
-                                          *traceResultsBufferImage,
-                                          ImageSlice(*traceResultsBufferImage),
-                                          VK_IMAGE_VIEW_TYPE_2D);
+    _traceResultBuffers[i] = new ImageView(*traceResultsBufferImage);
 
     ConstRef<Image> samplesCountBufferImage(new Image(
                                                 _device,
@@ -209,10 +206,7 @@ void ShadowsStage::_createBuffers(CommandProducerGraphic& commandProducer)
                                 i == 0 ?
                                       VK_IMAGE_LAYOUT_GENERAL :
                                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    _samplesCountBuffers[i] = new ImageView(
-                                          *samplesCountBufferImage,
-                                          ImageSlice(*samplesCountBufferImage),
-                                          VK_IMAGE_VIEW_TYPE_2D);
+    _samplesCountBuffers[i] = new ImageView(*samplesCountBufferImage);
   }
 
   ConstRef<Image> variationBufferImage(new Image(
@@ -228,9 +222,7 @@ void ShadowsStage::_createBuffers(CommandProducerGraphic& commandProducer)
                                               false,
                                               "ShadowsStage::VariationBuffer"));
   commandProducer.initLayout(*variationBufferImage, VK_IMAGE_LAYOUT_GENERAL);
-  _variationBuffer = new ImageView( *variationBufferImage,
-                                    ImageSlice(*variationBufferImage),
-                                    VK_IMAGE_VIEW_TYPE_2D);
+  _variationBuffer = new ImageView(*variationBufferImage);
   _variationBufferBinding.setImage(_variationBuffer);
 }
 

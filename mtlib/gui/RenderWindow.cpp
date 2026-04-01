@@ -145,15 +145,11 @@ Ref<FrameBuffer> RenderWindow::_createFrameBuffer(Image& targetColorBuffer)
     device().graphicQueue()->initImageLayout(
                               *_depthBufferImage,
                               VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-    _depthBufferView = new ImageView( *_depthBufferImage,
-                                      ImageSlice(*_depthBufferImage),
-                                      VK_IMAGE_VIEW_TYPE_2D);
+    _depthBufferView = new ImageView(*_depthBufferImage);
   }
 
   //  Колор буфер делам из Image из свапчейна
-  Ref<ImageView> colorTarget(new ImageView( targetColorBuffer,
-                                            ImageSlice(targetColorBuffer),
-                                            VK_IMAGE_VIEW_TYPE_2D));
+  Ref<ImageView> colorTarget(new ImageView(targetColorBuffer));
 
   VkAttachmentLoadOp loadOp = _needClearFrameBuffer ?
                                                 VK_ATTACHMENT_LOAD_OP_CLEAR :

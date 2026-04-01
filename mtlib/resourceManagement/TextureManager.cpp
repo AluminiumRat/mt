@@ -161,9 +161,7 @@ static Ref<ImageView> createDefaultImage(CommandQueueGraphic& uploadingQueue)
 
   uploadingQueue.submitCommands(std::move(producer));
 
-  return Ref(new ImageView( *image,
-                            ImageSlice(*image),
-                            VK_IMAGE_VIEW_TYPE_2D));
+  return Ref(new ImageView(*image));
 }
 
 TextureManager::ResourceRecord*

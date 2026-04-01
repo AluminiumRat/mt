@@ -81,9 +81,7 @@ void TestWindow::_createTexture()
                               true,
                               "Test image");
 
-  Ref<ImageView> imageView(new ImageView( *_renderedImage,
-                                          ImageSlice(*_renderedImage),
-                                          VK_IMAGE_VIEW_TYPE_2D));
+  Ref<ImageView> imageView(new ImageView(*_renderedImage));
   _renderTechnique.texture.setImage(imageView);
   _computeTechnique.texture.setImage(imageView);
 }

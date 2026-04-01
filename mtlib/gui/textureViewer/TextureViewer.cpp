@@ -353,9 +353,7 @@ void TextureViewer::_rebuildRenderTarget(glm::uvec2 widgetSize)
                                 1,
                                 false,
                                 "TextureViewerRenderTarget"));
-  Ref imageView(new ImageView(*newRenderTarget,
-                              ImageSlice(*newRenderTarget),
-                              VK_IMAGE_VIEW_TYPE_2D));
+  Ref imageView(new ImageView(*newRenderTarget));
 
   FrameBuffer::ColorAttachmentInfo colorAttachment = {
                     .target = imageView.get(),

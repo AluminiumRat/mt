@@ -143,9 +143,7 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                           1,
                           false,
                           "HDRBuffer");
-  _hdrBufferView = new ImageView( *_hdrBuffer,
-                                  ImageSlice(*_hdrBuffer),
-                                  VK_IMAGE_VIEW_TYPE_2D);
+  _hdrBufferView = new ImageView(*_hdrBuffer);
 
   _depthBuffer = new Image( _device,
                             VK_IMAGE_TYPE_2D,
@@ -158,9 +156,7 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                             1,
                             false,
                             "DepthBuffer");
-  _depthBufferView = new ImageView( *_depthBuffer,
-                                    ImageSlice(*_depthBuffer),
-                                    VK_IMAGE_VIEW_TYPE_2D);
+  _depthBufferView = new ImageView(*_depthBuffer);
 
   _halfDepthBuffer = new Image( _device,
                                 VK_IMAGE_TYPE_2D,
@@ -174,9 +170,8 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                                 1,
                                 false,
                                 "DepthHalfBuffer");
-  _halfDepthBufferView = new ImageView( *_halfDepthBuffer,
-                                        ImageSlice(*_halfDepthBuffer),
-                                        VK_IMAGE_VIEW_TYPE_2D);
+  _halfDepthBufferView = new ImageView( *_halfDepthBuffer);
+
   _halfLinearDepthBuffer = new Image( _device,
                                       VK_IMAGE_TYPE_2D,
                                       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
@@ -189,11 +184,8 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                                       1,
                                       false,
                                       "LinearDepthHalfBuffer");
-  _halfLinearDepthBufferView = new ImageView(
-                                            *_halfLinearDepthBuffer,
-                                            ImageSlice(*_halfLinearDepthBuffer),
-                                            VK_IMAGE_VIEW_TYPE_2D);
-  
+  _halfLinearDepthBufferView = new ImageView(*_halfLinearDepthBuffer);
+
   _halfNormalBuffer = new Image(_device,
                                 VK_IMAGE_TYPE_2D,
                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
@@ -206,9 +198,7 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                                 1,
                                 false,
                                 "NormalHalfBuffer");
-  _halfNormalBufferView = new ImageView(*_halfNormalBuffer,
-                                        ImageSlice(*_halfNormalBuffer),
-                                        VK_IMAGE_VIEW_TYPE_2D);
+  _halfNormalBufferView = new ImageView(*_halfNormalBuffer);
 
   _reprojectionBuffer = new Image(_device,
                                   VK_IMAGE_TYPE_2D,
@@ -222,9 +212,7 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                                   1,
                                   false,
                                   "ReprojectionBuffer");
-  _reprojectionBufferView = new ImageView(*_reprojectionBuffer,
-                                          ImageSlice(*_reprojectionBuffer),
-                                          VK_IMAGE_VIEW_TYPE_2D);
+  _reprojectionBufferView = new ImageView(*_reprojectionBuffer);
 
   _shadowBuffer = new Image(_device,
                             VK_IMAGE_TYPE_2D,
@@ -239,9 +227,7 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                             1,
                             false,
                             "ShadowBuffer");
-  _shadowBufferView = new ImageView(*_shadowBuffer,
-                                    ImageSlice(*_shadowBuffer),
-                                    VK_IMAGE_VIEW_TYPE_2D);
+  _shadowBufferView = new ImageView(*_shadowBuffer);
 
   _opaquePrepassStage.setBuffers( *_halfDepthBufferView,
                                   *_halfLinearDepthBufferView,

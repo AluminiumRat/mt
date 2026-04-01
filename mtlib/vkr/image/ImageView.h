@@ -19,10 +19,13 @@ namespace mt
                                                   .b = VK_COMPONENT_SWIZZLE_B,
                                                   .a = VK_COMPONENT_SWIZZLE_A};
   public:
+    //  Полнофункциональный конструктор со всеми настройками
     ImageView(const Image& image,
               const ImageSlice& slice,
               VkImageViewType viewType,
               const VkComponentMapping& components = defaultComponentMapping);
+    //  Упрощенный конструктор, создающий вью сразу на весь image
+    explicit ImageView(const Image& image);
     ImageView(const ImageView&) = delete;
     ImageView& operator = (const ImageView&) = delete;
   protected:
@@ -38,6 +41,10 @@ namespace mt
     // Разрешение произвольного mip уровня. Отчет начинается с первого уровня,
     // попавшего в ImageView
     inline glm::uvec3 extent(uint32_t mipLevel = 0) const noexcept;
+
+  private:
+    void _createHandle();
+    static VkImageViewType _getDefaultViewType(const Image& image) noexcept;
 
   private:
     VkImageView _handle;

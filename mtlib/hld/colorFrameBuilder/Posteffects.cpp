@@ -74,10 +74,7 @@ void Posteffects::_updateBindings()
   if(_bloomEnabled)
   {
     MT_ASSERT(_bloom.bloomImage() != nullptr);
-    Ref<ImageView> bloomTextureView(new ImageView(
-                                              *_bloom.bloomImage(),
-                                              ImageSlice(*_bloom.bloomImage()),
-                                              VK_IMAGE_VIEW_TYPE_2D));
+    Ref<ImageView> bloomTextureView(new ImageView(*_bloom.bloomImage()));
     _bloomTextureBinding.setImage(bloomTextureView);
   }
   else _bloomTextureBinding.setImage(nullptr);

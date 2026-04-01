@@ -41,9 +41,7 @@ void TestWindow::_setupMeshAsset()
   Ref<Image> image = loadImage( "examples/image.dds",
                                 *device().graphicQueue(),
                                 false);
-  Ref<ImageView> imageView(new ImageView( *image,
-                                          ImageSlice(*image),
-                                          VK_IMAGE_VIEW_TYPE_2D));
+  Ref<ImageView> imageView(new ImageView(*image));
   technique->getOrCreateResourceBinding("colorTexture").setImage(imageView);
 
   _meshAsset->addTechnique(std::move(technique));

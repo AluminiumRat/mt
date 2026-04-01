@@ -117,10 +117,7 @@ void AvgLum::_updateBindings(CommandProducerCompute& commandProducer)
                                   1,
                                   false,
                                   "AVGLumIntermediateImage");
-  Ref<ImageView> intermediateImageView(new ImageView(
-                                                *_intermediateImage,
-                                                ImageSlice(*_intermediateImage),
-                                                VK_IMAGE_VIEW_TYPE_2D));
+  Ref<ImageView> intermediateImageView(new ImageView(*_intermediateImage));
   _intermediateImageBinding.setImage(intermediateImageView);
 
   commandProducer.imageBarrier( *_intermediateImage,

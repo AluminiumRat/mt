@@ -114,9 +114,7 @@ void TestWindow::_createTexture()
                                           glm::uvec3(2,2,1),
                                           pixels);
 
-  Ref<ImageView> imageView(new ImageView( *image,
-                                          ImageSlice(*image),
-                                          VK_IMAGE_VIEW_TYPE_2D));
+  Ref<ImageView> imageView(new ImageView(*image));
   _texture.setImage(imageView);
 }
 

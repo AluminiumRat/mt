@@ -153,9 +153,7 @@ Ref<ImageView> TestWindow::_createTexture()
                                           glm::uvec3(2,2,1),
                                           pixels);
 
-  return Ref(new ImageView( *image,
-                            ImageSlice(*image),
-                            VK_IMAGE_VIEW_TYPE_2D));
+  return Ref(new ImageView(*image));
 }
 
 Ref<DataBuffer> TestWindow::_createUniformBuffer()
