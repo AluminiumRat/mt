@@ -167,21 +167,16 @@ void ShadowsStage::_resetBuffers() noexcept
 void ShadowsStage::_createBuffers(CommandProducerGraphic& commandProducer)
 {
   MT_ASSERT(_shadowBuffer != nullptr);
+  glm::uvec2 buffersExtent = _shadowBuffer->extent();
 
   for(int i = 0; i < 2; i++)
   {
     ConstRef<Image> traceResultsBufferImage(new Image(
                                                 _device,
-                                                VK_IMAGE_TYPE_2D,
                                                 VK_IMAGE_USAGE_STORAGE_BIT |
                                                   VK_IMAGE_USAGE_SAMPLED_BIT,
-                                                0,
                                                 VK_FORMAT_R8G8B8A8_UNORM,
-                                                _shadowBuffer->extent(),
-                                                VK_SAMPLE_COUNT_1_BIT,
-                                                1,
-                                                1,
-                                                false,
+                                                buffersExtent,
                                                 "ShadowsStage::TracingBuffer"));
     commandProducer.initLayout( *traceResultsBufferImage,
                                 i == 0 ?
@@ -191,16 +186,10 @@ void ShadowsStage::_createBuffers(CommandProducerGraphic& commandProducer)
 
     ConstRef<Image> samplesCountBufferImage(new Image(
                                                 _device,
-                                                VK_IMAGE_TYPE_2D,
                                                 VK_IMAGE_USAGE_STORAGE_BIT |
                                                   VK_IMAGE_USAGE_SAMPLED_BIT,
-                                                0,
                                                 VK_FORMAT_R8G8B8A8_SINT,
-                                                _shadowBuffer->extent(),
-                                                VK_SAMPLE_COUNT_1_BIT,
-                                                1,
-                                                1,
-                                                false,
+                                                buffersExtent,
                                                 "ShadowsStage::SamplesCountBuffer"));
     commandProducer.initLayout( *samplesCountBufferImage,
                                 i == 0 ?
@@ -211,15 +200,9 @@ void ShadowsStage::_createBuffers(CommandProducerGraphic& commandProducer)
 
   ConstRef<Image> variationBufferImage(new Image(
                                               _device,
-                                              VK_IMAGE_TYPE_2D,
                                               VK_IMAGE_USAGE_STORAGE_BIT,
-                                              0,
                                               VK_FORMAT_R8_UNORM,
-                                              _shadowBuffer->extent(),
-                                              VK_SAMPLE_COUNT_1_BIT,
-                                              1,
-                                              1,
-                                              false,
+                                              buffersExtent,
                                               "ShadowsStage::VariationBuffer"));
   commandProducer.initLayout(*variationBufferImage, VK_IMAGE_LAYOUT_GENERAL);
   _variationBuffer = new ImageView(*variationBufferImage);

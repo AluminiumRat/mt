@@ -54,18 +54,12 @@ void ReprojectionBufferUpdater::updateReprojection(
 void ReprojectionBufferUpdater::createBuffers(
                                         CommandProducerGraphic& commandProducer)
 {
-  glm::uvec3 extent = _reprojectionBufferBinding.image()->extent();
+  glm::uvec2 extent = _reprojectionBufferBinding.image()->extent();
   Ref<Image> depthHistoryImage(new Image(
                                     _device,
-                                    VK_IMAGE_TYPE_2D,
                                     VK_IMAGE_USAGE_STORAGE_BIT,
-                                    0,
                                     VK_FORMAT_R16_SFLOAT,
                                     extent,
-                                    VK_SAMPLE_COUNT_1_BIT,
-                                    1,
-                                    1,
-                                    false,
                                     "ReprojectionBufferUpdater::DepthHistory"));
   commandProducer.initLayout(*depthHistoryImage, VK_IMAGE_LAYOUT_GENERAL);
   _depthHistory = new ImageView(*depthHistoryImage);

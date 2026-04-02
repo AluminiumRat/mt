@@ -111,19 +111,13 @@ void Bloom::_updateBindings()
   _sourceImageBinding.setImage(_sourceImage);
   _invSourceSizeUniform.setValue(1.0f / glm::vec2(_sourceImage->extent()));
 
-  _targetSizeUniform.setValue(glm::uvec2(_bloomImageSize));
+  _targetSizeUniform.setValue(_bloomImageSize);
 
   _bloomImage = new Image(_device,
-                          VK_IMAGE_TYPE_2D,
                           VK_IMAGE_USAGE_STORAGE_BIT |
                             VK_IMAGE_USAGE_SAMPLED_BIT,
-                          0,
                           _sourceImage->image().format(),
-                          glm::uvec3(_bloomImageSize, 1),
-                          VK_SAMPLE_COUNT_1_BIT,
-                          1,
-                          1,
-                          false,
+                          _bloomImageSize,
                           "Bloom");
   Ref<ImageView> targetImageView(new ImageView(*_bloomImage));
   _targetImageBinding.setImage(targetImageView);

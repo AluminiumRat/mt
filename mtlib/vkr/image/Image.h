@@ -42,6 +42,15 @@ namespace mt
           bool enableLayoutAutoControl,
           const char* debugName);
 
+    //  Упрощенный конструктор для 2D Image c 1 mip уровнем, 1 сэмплом на тексель
+    //  и отключенным автоконтролем лэйаутов
+    Image(Device& device,
+          VkImageUsageFlags usageFlags,
+          VkFormat format,
+          glm::uvec2 extent,
+          const char* debugName);
+
+
     //  Создать объект-обертку вокруг уже существующего VkImage
     //  enableLayoutAutoControl - необходимо ли производить автоматический
     //    контроль лэйаута. Работает только если sharingMode равен

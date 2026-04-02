@@ -111,17 +111,11 @@ static Ref<ImageView> createDefaultImage(CommandQueueGraphic& uploadingQueue)
   uploadingBuffer->uploadData(pixels, 0, sizeof(pixels));
 
   Ref<Image> image(new Image( device,
-                              VK_IMAGE_TYPE_2D,
                               VK_IMAGE_USAGE_SAMPLED_BIT |
                                 VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
                                 VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                              0,
                               VK_FORMAT_R8G8B8A8_UNORM,
-                              glm::uvec3(4, 4, 1),
-                              VK_SAMPLE_COUNT_1_BIT,
-                              1,
-                              1,
-                              false,
+                              glm::uvec2(4, 4),
                               "Default texture"));
 
   std::unique_ptr<CommandProducerGraphic> producer =

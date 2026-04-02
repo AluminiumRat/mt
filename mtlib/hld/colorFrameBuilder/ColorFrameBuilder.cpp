@@ -131,101 +131,59 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
   glm::uvec2 halfSize = glm::max(targetExtent / 2u, glm::uvec2(1));
 
   _hdrBuffer = new Image( _device,
-                          VK_IMAGE_TYPE_2D,
                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
                             VK_IMAGE_USAGE_SAMPLED_BIT |
                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-                          0,
                           hdrFormat,
-                          glm::uvec3(targetExtent, 1),
-                          VK_SAMPLE_COUNT_1_BIT,
-                          1,
-                          1,
-                          false,
+                          targetExtent,
                           "HDRBuffer");
   _hdrBufferView = new ImageView(*_hdrBuffer);
 
   _depthBuffer = new Image( _device,
-                            VK_IMAGE_TYPE_2D,
                             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                            0,
                             depthBufferFormat,
-                            glm::uvec3(targetExtent, 1),
-                            VK_SAMPLE_COUNT_1_BIT,
-                            1,
-                            1,
-                            false,
+                            targetExtent,
                             "DepthBuffer");
   _depthBufferView = new ImageView(*_depthBuffer);
 
   _halfDepthBuffer = new Image( _device,
-                                VK_IMAGE_TYPE_2D,
                                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
                                   VK_IMAGE_USAGE_SAMPLED_BIT,
-                                0,
                                 depthBufferFormat,
-                                glm::uvec3(halfSize, 1),
-                                VK_SAMPLE_COUNT_1_BIT,
-                                1,
-                                1,
-                                false,
+                                halfSize,
                                 "DepthHalfBuffer");
   _halfDepthBufferView = new ImageView( *_halfDepthBuffer);
 
   _halfLinearDepthBuffer = new Image( _device,
-                                      VK_IMAGE_TYPE_2D,
                                       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
                                         VK_IMAGE_USAGE_SAMPLED_BIT,
-                                      0,
                                       linearDepthFormat,
-                                      glm::uvec3(halfSize, 1),
-                                      VK_SAMPLE_COUNT_1_BIT,
-                                      1,
-                                      1,
-                                      false,
+                                      halfSize,
                                       "LinearDepthHalfBuffer");
   _halfLinearDepthBufferView = new ImageView(*_halfLinearDepthBuffer);
 
   _halfNormalBuffer = new Image(_device,
-                                VK_IMAGE_TYPE_2D,
                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
                                   VK_IMAGE_USAGE_SAMPLED_BIT,
-                                0,
                                 halfNormalFormat,
-                                glm::uvec3(halfSize, 1),
-                                VK_SAMPLE_COUNT_1_BIT,
-                                1,
-                                1,
-                                false,
+                                halfSize,
                                 "NormalHalfBuffer");
   _halfNormalBufferView = new ImageView(*_halfNormalBuffer);
 
   _reprojectionBuffer = new Image(_device,
-                                  VK_IMAGE_TYPE_2D,
                                   VK_IMAGE_USAGE_STORAGE_BIT |
                                     VK_IMAGE_USAGE_SAMPLED_BIT,
-                                  0,
                                   reprojectionBufferFormat,
-                                  glm::uvec3(halfSize, 1),
-                                  VK_SAMPLE_COUNT_1_BIT,
-                                  1,
-                                  1,
-                                  false,
+                                  halfSize,
                                   "ReprojectionBuffer");
   _reprojectionBufferView = new ImageView(*_reprojectionBuffer);
 
   _shadowBuffer = new Image(_device,
-                            VK_IMAGE_TYPE_2D,
                             VK_IMAGE_USAGE_STORAGE_BIT |
                               VK_IMAGE_USAGE_SAMPLED_BIT |
                               VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                            0,
                             shadowFormat,
-                            glm::uvec3(halfSize, 1),
-                            VK_SAMPLE_COUNT_1_BIT,
-                            1,
-                            1,
-                            false,
+                            halfSize,
                             "ShadowBuffer");
   _shadowBufferView = new ImageView(*_shadowBuffer);
 
