@@ -4,7 +4,6 @@
 #include <gui/ImGuiRAII.h>
 #include <hld/colorFrameBuilder/ColorFrameBuilder.h>
 #include <hld/colorFrameBuilder/Posteffects.h>
-#include <technique/TechniqueLoader.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 
 using namespace mt;
@@ -14,8 +13,7 @@ Posteffects::Posteffects(Device& device) :
   _needUpdateBindings(false),
   _avgLum(device),
   _bloom(device, _avgLum.resultBuffer()),
-  _resolveConfigurator(new TechniqueConfigurator(device, "HDRResolve")),
-  _resolveTechnique(*_resolveConfigurator),
+  _resolveTechnique(device, "posteffects/posteffects.tch"),
   _resolvePass(_resolveTechnique.getOrCreatePass("ResolvePass")),
   _hdrBufferBinding(_resolveTechnique.getOrCreateResourceBinding("hdrTexture")),
   _avgLuminanceBinding(
@@ -30,9 +28,6 @@ Posteffects::Posteffects(Device& device) :
                       _resolveTechnique.getOrCreateSelection("BLOOM_ENABLED")),
   _bloomEnabled(true)
 {
-  loadConfigurator(*_resolveConfigurator, "posteffects/posteffects.tch");
-  _resolveConfigurator->rebuildConfiguration();
-
   _updateProperties();
 }
 

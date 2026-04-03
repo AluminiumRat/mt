@@ -1,5 +1,4 @@
 ﻿#include <hld/colorFrameBuilder/ReprojectionBufferUpdater.h>
-#include <technique/TechniqueLoader.h>
 #include <util/Assert.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 
@@ -7,10 +6,7 @@ using namespace mt;
 
 ReprojectionBufferUpdater::ReprojectionBufferUpdater(Device& device) :
   _device(device),
-  _techniqueConfigurator(new TechniqueConfigurator(
-                                                  device,
-                                                  "ReprojectionBufferUpdate")),
-  _technique(*_techniqueConfigurator),
+  _technique(device, "reprojectionBuffer/updateReprojectionBuffer.tch"),
   _updatePass(_technique.getOrCreatePass("UpdatePass")),
   _copyHistoryPass(_technique.getOrCreatePass("CopyDepthHistoryPass")),
   _historyAvailableSelection(
@@ -20,9 +16,6 @@ ReprojectionBufferUpdater::ReprojectionBufferUpdater(Device& device) :
   _depthHistoryBinding(_technique.getOrCreateResourceBinding("depthHistory")),
   _gridSize(1)
 {
-  loadConfigurator( *_techniqueConfigurator,
-                    "reprojectionBuffer/updateReprojectionBuffer.tch");
-  _techniqueConfigurator->rebuildConfiguration();
 }
 
 void ReprojectionBufferUpdater::updateReprojection(

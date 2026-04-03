@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include <technique/TechniqueConfigurator.h>
 #include <technique/Technique.h>
 #include <util/Ref.h>
 
@@ -38,7 +37,6 @@ namespace mt
   private:
     Device& _device;
 
-    Ref<TechniqueConfigurator> _techniqueConfigurator;
     Technique _technique;
     TechniquePass& _updatePass;
     TechniquePass& _copyHistoryPass;

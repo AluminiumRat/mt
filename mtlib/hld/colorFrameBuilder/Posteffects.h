@@ -2,7 +2,6 @@
 
 #include <hld/colorFrameBuilder/AvgLum.h>
 #include <hld/colorFrameBuilder/Bloom.h>
-#include <technique/TechniqueConfigurator.h>
 #include <technique/Technique.h>
 #include <util/Ref.h>
 #include <util/Region.h>
@@ -57,7 +56,6 @@ namespace mt
     AvgLum _avgLum;
     Bloom _bloom;
 
-    Ref<TechniqueConfigurator> _resolveConfigurator;
     Technique _resolveTechnique;
     TechniquePass& _resolvePass;
     ResourceBinding& _hdrBufferBinding;

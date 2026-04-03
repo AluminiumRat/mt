@@ -94,6 +94,10 @@ namespace mt
     //    обнавляют состояние техники
     Technique(const TechniqueConfiguration& configuration,
               const char* debugName);
+    //  Упрощенный способ создать технику напрямую из файла конфигурации
+    //  ВНИМАНИЕ! Этот коструктор работает без ресурс менеджеров, поэтому
+    //  автообновление техники происходить не будет.
+    explicit Technique(Device& device, const std::filesystem::path& configFile);
     Technique(const Technique&) = delete;
     Technique& operator = (const Technique&) = delete;
     virtual ~Technique() noexcept;

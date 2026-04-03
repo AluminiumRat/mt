@@ -2,8 +2,10 @@
 #include <stdexcept>
 
 #include <technique/Technique.h>
+#include <technique/TechniqueLoader.h>
 #include <util/Abort.h>
 #include <util/Assert.h>
+#include <util/fileSystemHelpers.h>
 #include <util/Log.h>
 #include <vkr/pipeline/ComputePipeline.h>
 #include <vkr/pipeline/GraphicPipeline.h>
@@ -43,6 +45,24 @@ Technique::Technique( const TechniqueConfiguration& configuration,
 {
   MT_ASSERT(configuration.device != nullptr);
   _setConfiguration(configuration);
+}
+
+Technique::Technique(Device& device, const std::filesystem::path& configFile) :
+  _device(device),
+  _debugName(pathToUtf8(configFile)),
+  _configurator(new TechniqueConfigurator(device, _debugName.c_str())),
+  _volatileSetDescription(nullptr),
+  _staticSetDescription(nullptr),
+  _lastProcessedSelectionsRevision(0),
+  _resourcesRevision(0),
+  _staticSetComplete(true),
+  _lastProcessedResourcesRevision(0)
+{
+  loadConfigurator(*_configurator, configFile);
+  _configurator->rebuildConfiguration();
+
+  _configurator->addObserver(*this);
+  updateConfiguration();
 }
 
 Technique::~Technique() noexcept
