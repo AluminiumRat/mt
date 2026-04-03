@@ -9,9 +9,28 @@
 
 using namespace mt;
 
-// Выбрать формат для свапчейно. Ищем SRGB, иначе используем первый
+//  Найти формат свапчейна по формату Image
+static VkSurfaceFormatKHR getSwapchainFormat(
+                        VkFormat imageFormat,
+                        const std::vector<VkSurfaceFormatKHR>& availableFormats)
+{
+  MT_ASSERT(!availableFormats.empty());
+  MT_ASSERT(!*imageFormat == VK_FORMAT_UNDEFINED);
+
+  for(const VkSurfaceFormatKHR& availableFormat : availableFormats)
+  {
+    if(availableFormat.format == imageFormat)
+    {
+      return availableFormat;
+    }
+  }
+
+  throw std::runtime_error("Unable to find a compatible swapchain format");
+}
+
+// Выбрать формат для свапчейна автоматом. Ищем SRGB, иначе используем первый
 // попавшийся формат
-VkSurfaceFormatKHR chooseSwapSurfaceFormat(
+static VkSurfaceFormatKHR chooseSwapSurfaceFormat(
                         const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
   MT_ASSERT(!availableFormats.empty());
@@ -93,13 +112,12 @@ static std::vector<uint32_t> getFamilyIndices(
 SwapChain::SwapChain( Device& device,
                       WindowSurface& surface,
                       std::optional<VkPresentModeKHR> presentationMode,
-                      std::optional<VkSurfaceFormatKHR> format) :
+                      std::optional<VkFormat> format) :
   _device(device),
   _presentQueue(device.presentationQueue()),
   _primaryQueue(&device.primaryQueue()),
   _handle(VK_NULL_HANDLE),
-  _imageFormat{ .format = VK_FORMAT_UNDEFINED,
-                .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR },
+  _imageFormat(VK_FORMAT_UNDEFINED),
   _extent(0, 0),
   _presentationMode(VK_PRESENT_MODE_FIFO_KHR),
   _imageIsReadyFence(new Fence(device))
@@ -122,19 +140,25 @@ SwapChain::SwapChain( Device& device,
   }
 }
 
-void SwapChain::_createHandle(
-  WindowSurface& surface,
-  std::optional<VkPresentModeKHR> presentationMode,
-  std::optional<VkSurfaceFormatKHR> format)
+void SwapChain::_createHandle(WindowSurface& surface,
+                              std::optional<VkPresentModeKHR> presentationMode,
+                              std::optional<VkFormat> format)
 {
   MT_ASSERT(_device.physicalDevice().isSurfaceSuitable(surface));
 
   PhysicalDevice::SwapChainSupport swapChainSupport =
                       _device.physicalDevice().surfaceСompatibility(surface);
 
-  _imageFormat = format.has_value() ?
-                              *format :
-                              chooseSwapSurfaceFormat(swapChainSupport.formats);
+  VkSurfaceFormatKHR swapchainFormat{};
+  if(format.has_value())
+  {
+    swapchainFormat = getSwapchainFormat(*format, swapChainSupport.formats);
+  }
+  else
+  {
+    swapchainFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+  }
+  _imageFormat = swapchainFormat.format;
 
   _presentationMode = presentationMode.has_value() ?
                           *presentationMode :
@@ -149,8 +173,8 @@ void SwapChain::_createHandle(
   createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
   createInfo.surface = surface.handle();
   createInfo.minImageCount = imageCount;
-  createInfo.imageFormat = _imageFormat.format;
-  createInfo.imageColorSpace = _imageFormat.colorSpace;
+  createInfo.imageFormat = swapchainFormat.format;
+  createInfo.imageColorSpace = swapchainFormat.colorSpace;
   createInfo.imageExtent = extent;
   createInfo.imageArrayLayers = 1;
   createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
@@ -209,7 +233,7 @@ void SwapChain::_createHandle(
     _frames[frameIndex] = new Image(_device,
                                     images[frameIndex],
                                     VK_IMAGE_TYPE_2D,
-                                    _imageFormat.format,
+                                    _imageFormat,
                                     glm::uvec3(_extent, 1),
                                     VK_SAMPLE_COUNT_1_BIT,
                                     1,

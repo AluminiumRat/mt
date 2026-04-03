@@ -18,7 +18,7 @@ using namespace mt;
 RenderWindow::RenderWindow( Device& device,
                             const char* name,
                             std::optional<VkPresentModeKHR> presentationMode,
-                            std::optional<VkSurfaceFormatKHR> swapchainFormat,
+                            std::optional<VkFormat> swapchainFormat,
                             VkFormat depthBufferFormat) :
   BaseWindow(name),
   _device(device),

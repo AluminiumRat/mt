@@ -38,7 +38,7 @@ namespace mt
     RenderWindow( Device& device,
                   const char* name,
                   std::optional<VkPresentModeKHR> presentationMode,
-                  std::optional<VkSurfaceFormatKHR> swapchainFormat,
+                  std::optional<VkFormat> swapchainFormat,
                   VkFormat bepthBufferFormat);
     RenderWindow(const RenderWindow&) = delete;
     RenderWindow& operator = (const RenderWindow&) = delete;
@@ -46,7 +46,7 @@ namespace mt
 
     inline Device& device() const noexcept;
     inline VkPresentModeKHR presentationMode() const noexcept;
-    inline VkSurfaceFormatKHR swapchainFormat() const noexcept;
+    inline VkFormat swapchainFormat() const noexcept;
     inline VkFormat depthBufferFormat() const noexcept;
 
     virtual void draw() override;
@@ -95,7 +95,7 @@ namespace mt
     std::unique_ptr<WindowSurface> _surface;
 
     std::optional<VkPresentModeKHR> _presentationMode;
-    std::optional<VkSurfaceFormatKHR> _swapchainFormat;
+    std::optional<VkFormat> _swapchainFormat;
     VkFormat _depthBufferFormat;
 
     Ref<SwapChain> _swapChain;
@@ -119,7 +119,7 @@ namespace mt
     return *_presentationMode;
   }
 
-  inline VkSurfaceFormatKHR RenderWindow::swapchainFormat() const noexcept
+  inline VkFormat RenderWindow::swapchainFormat() const noexcept
   {
     MT_ASSERT(_swapchainFormat != std::nullopt);
     return *_swapchainFormat;

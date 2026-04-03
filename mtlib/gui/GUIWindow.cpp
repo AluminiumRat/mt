@@ -57,7 +57,7 @@ public:
 GUIWindow::GUIWindow( Device& device,
                       const char* name,
                       std::optional<VkPresentModeKHR> presentationMode,
-                      std::optional<VkSurfaceFormatKHR> swapchainFormat,
+                      std::optional<VkFormat> swapchainFormat,
                       VkFormat bepthBufferFormat) :
   RenderWindow( device,
                 name,
@@ -107,7 +107,7 @@ void GUIWindow::_initImGuiVulkanBackend()
   pipelineInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
 
   pipelineInfo.colorAttachmentCount = 1;
-  VkFormat targetFormat = swapChain().imageFormat().format;
+  VkFormat targetFormat = swapChain().imageFormat();
   pipelineInfo.pColorAttachmentFormats = &targetFormat;
 
   VkFormat depthFormat = depthBufferFormat();

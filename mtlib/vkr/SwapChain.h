@@ -79,7 +79,7 @@ namespace mt
     SwapChain(Device& device,
               WindowSurface& surface,
               std::optional<VkPresentModeKHR> presentationMode,
-              std::optional<VkSurfaceFormatKHR> format);
+              std::optional<VkFormat> format);
 
     SwapChain(const SwapChain&) = delete;
     SwapChain& operator = (const SwapChain&) = delete;
@@ -89,7 +89,7 @@ namespace mt
   public:
     inline VkSwapchainKHR handle() const noexcept;
   
-    inline VkSurfaceFormatKHR imageFormat() const noexcept;
+    inline VkFormat imageFormat() const noexcept;
     inline const glm::uvec2& extent() const noexcept;
 
     inline VkPresentModeKHR presentationMode() const noexcept;
@@ -114,7 +114,7 @@ namespace mt
   private:
     void _createHandle( WindowSurface& surface,
                         std::optional<VkPresentModeKHR> presentationMode,
-                        std::optional<VkSurfaceFormatKHR> format);
+                        std::optional<VkFormat> format);
     void _cleanup() noexcept;
 
   private:
@@ -123,7 +123,7 @@ namespace mt
     CommandQueue* _primaryQueue;
 
     VkSwapchainKHR _handle;
-    VkSurfaceFormatKHR _imageFormat;
+    VkFormat _imageFormat;
     glm::uvec2 _extent;
     VkPresentModeKHR _presentationMode;
 
@@ -180,7 +180,7 @@ namespace mt
     return _handle;
   }
 
-  inline VkSurfaceFormatKHR SwapChain::imageFormat() const noexcept
+  inline VkFormat SwapChain::imageFormat() const noexcept
   {
     return _imageFormat;
   }

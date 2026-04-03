@@ -23,7 +23,7 @@ namespace mt
     GUIWindow(Device& device,
               const char* name,
               std::optional<VkPresentModeKHR> presentationMode,
-              std::optional<VkSurfaceFormatKHR> swapchainFormat,
+              std::optional<VkFormat> swapchainFormat,
               VkFormat bepthBufferFormat);
     GUIWindow(const GUIWindow&) = delete;
     GUIWindow& operator = (const GUIWindow&) = delete;
