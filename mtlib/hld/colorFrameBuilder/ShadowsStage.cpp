@@ -115,14 +115,6 @@ void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
                                 VK_ACCESS_SHADER_WRITE_BIT,
                                 VK_ACCESS_SHADER_READ_BIT);
 
-  //  Фильтрация маски теней. Горизонтальное размытие
-  {
-    Technique::BindCompute bind(_rayQueryTechnique,
-                                _horizontalFilterPass,
-                                commandProducer);
-    MT_ASSERT(bind.isValid());
-    commandProducer.dispatch(_gridSize);
-  }
   //  Построение variationMap. Горизонтальное размытие
   {
     Technique::BindCompute bind(_rayQueryTechnique,
@@ -131,20 +123,20 @@ void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
     MT_ASSERT(bind.isValid());
     commandProducer.dispatch(1, _shadowBuffer->extent().y);
   }
+  //  Фильтрация маски теней. Горизонтальное размытие
+  {
+    Technique::BindCompute bind(_rayQueryTechnique,
+                                _horizontalFilterPass,
+                                commandProducer);
+    MT_ASSERT(bind.isValid());
+    commandProducer.dispatch(_gridSize);
+  }
 
   commandProducer.memoryBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                                 VK_ACCESS_SHADER_WRITE_BIT,
                                 VK_ACCESS_SHADER_READ_BIT);
 
-  //  Фильтрация маски теней. Вертикальное размытие
-  {
-    Technique::BindCompute bind(_rayQueryTechnique,
-                                _verticalFilterPass,
-                                commandProducer);
-    MT_ASSERT(bind.isValid());
-    commandProducer.dispatch(_gridSize);
-  }
   //  Построение variationMap. Вертикальное размытие
   {
     Technique::BindCompute bind(_rayQueryTechnique,
@@ -152,6 +144,14 @@ void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
                                 commandProducer);
     MT_ASSERT(bind.isValid());
     commandProducer.dispatch(_shadowBuffer->extent().x, 1);
+  }
+  //  Фильтрация маски теней. Вертикальное размытие
+  {
+    Technique::BindCompute bind(_rayQueryTechnique,
+                                _verticalFilterPass,
+                                commandProducer);
+    MT_ASSERT(bind.isValid());
+    commandProducer.dispatch(_gridSize);
   }
 }
 
@@ -211,12 +211,25 @@ void ShadowsStage::_createBuffers(CommandProducerGraphic& commandProducer)
 
 void ShadowsStage::_rebuildTechnique()
 {
-  if(_device.features().rayQuery.rayQuery != VK_TRUE) return;
-
   //  Технику нужно пересобирать каждый раз при изменении размеров размываемой
   //  картинки. Это необходимо из-за настройки размеров групп для шейдеров.
   //  Ищем проходы, для которых надо настроить константы специализации,
   //  настраиваем их, и пересобираем технику.
+
+  if(_device.features().rayQuery.rayQuery != VK_TRUE) return;
+
+  constexpr uint32_t maxGroupSize = 256;
+
+  // Pixel per invocation, количество пикселей на 1 поток на GPU
+  uint32_t ppiHorizontal =
+                  (_shadowBuffer->extent().x + maxGroupSize - 1) / maxGroupSize;
+  uint32_t horizontalGroupSize =
+                (_shadowBuffer->extent().x + ppiHorizontal - 1) / ppiHorizontal;
+  uint32_t ppiVertical =
+                  (_shadowBuffer->extent().y + maxGroupSize - 1) / maxGroupSize;
+  uint32_t verticalGroupSize =
+                (_shadowBuffer->extent().y + ppiHorizontal - 1) / ppiHorizontal;
+
   const TechniqueConfigurator::Passes& passes =
                                       _rayQueryTechniqueConfigurator->passes();
   for(const std::unique_ptr<PassConfigurator>& pass : passes)
@@ -226,8 +239,8 @@ void ShadowsStage::_rebuildTechnique()
       MT_ASSERT(pass->shaders().empty());
       PassConfigurator::ShaderInfo shader = pass->shaders()[0];
       shader.constants.clear();
-      shader.constants.addConstant( "GROUP_SIZE",
-                                    uint32_t(_shadowBuffer->extent().x));
+      shader.constants.addConstant("GROUP_SIZE", horizontalGroupSize);
+      shader.constants.addConstant("PPI", ppiHorizontal);
       pass->setShaders(std::span(&shader, 1));
     }
     if(pass->name() == _variationVerticalPass.name())
@@ -235,8 +248,8 @@ void ShadowsStage::_rebuildTechnique()
       MT_ASSERT(pass->shaders().empty());
       PassConfigurator::ShaderInfo shader = pass->shaders()[0];
       shader.constants.clear();
-      shader.constants.addConstant( "GROUP_SIZE",
-                                    uint32_t(_shadowBuffer->extent().y));
+      shader.constants.addConstant("GROUP_SIZE", verticalGroupSize);
+      shader.constants.addConstant("PPI", ppiVertical);
       pass->setShaders(std::span(&shader, 1));
     }
   }

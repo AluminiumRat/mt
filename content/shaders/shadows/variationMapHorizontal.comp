@@ -3,17 +3,20 @@
 
 #include <shadows/rayQueryShadows.inl>
 
+//  Количество потоков в группе
 layout (constant_id = 0) const int GROUP_SIZE = 1024;
+//  Количество пикселей на поток
+layout (constant_id = 1) const int PPI = 1;
 
 layout (local_size_x_id = 0,
         local_size_y = 1,
         local_size_z = 1) in;
 
 //  Кэш для хранения промежуточных результатов при фильтрации
-shared float variationValues[GROUP_SIZE];
+shared float variationValues[GROUP_SIZE * PPI];
 float getNeighbor(int coord)
 {
-  coord = clamp(coord, 0, GROUP_SIZE - 1);
+  coord = clamp(coord, 0, (GROUP_SIZE * PPI) - 1);
   return variationValues[coord];
 }
 
@@ -22,44 +25,62 @@ void main()
   ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
 
   //  Вычисляем вариативность результатов за последние 4 кадра
-  vec4 traceHistory = imageLoad(traceResults, pixelCoord);
-  float maxValue = max(traceHistory.x,
-                      max(traceHistory.y,
-                      max(traceHistory.z,
-                          traceHistory.w)));
-  float minValue = min(traceHistory.x,
-                      min(traceHistory.y,
-                      min(traceHistory.z,
-                          traceHistory.w)));
-  float variation = maxValue - minValue;
+  for(int i = 0; i < PPI; i++)
+  {
+    vec4 traceHistory = imageLoad(traceResults, pixelCoord);
+    float maxValue = max(traceHistory.x,
+                        max(traceHistory.y,
+                        max(traceHistory.z,
+                            traceHistory.w)));
+    float minValue = min(traceHistory.x,
+                        min(traceHistory.y,
+                        min(traceHistory.z,
+                            traceHistory.w)));
+    float variation = maxValue - minValue;
 
-  variationValues[pixelCoord.x] = variation;
+    variationValues[pixelCoord.x] = variation;
+    pixelCoord.x += GROUP_SIZE;
+  }
   barrier();
 
   // MAX фильтр по окресности 5 пикселей
-  variation = max(variation, getNeighbor(pixelCoord.x - 2));
-  variation = max(variation, getNeighbor(pixelCoord.x - 1));
-  variation = max(variation, getNeighbor(pixelCoord.x + 1));
-  variation = max(variation, getNeighbor(pixelCoord.x + 2));
+  pixelCoord.x = int(gl_GlobalInvocationID.x);
+  for(int i = 0; i < PPI; i++)
+  {
+    float variation = variationValues[pixelCoord.x];
+    variation = max(variation, getNeighbor(pixelCoord.x - 2));
+    variation = max(variation, getNeighbor(pixelCoord.x - 1));
+    variation = max(variation, getNeighbor(pixelCoord.x + 1));
+    variation = max(variation, getNeighbor(pixelCoord.x + 2));
 
-  variationValues[pixelCoord.x] = variation;
+    variationValues[pixelCoord.x] = variation;
+    pixelCoord.x += GROUP_SIZE;
+  }
   barrier();
 
   //  Треугольный фильтр по окрестности 13 пикселей
-  variation *= 7;
-  variation += getNeighbor(pixelCoord.x - 6);
-  variation += 2 * getNeighbor(pixelCoord.x - 5);
-  variation += 3 * getNeighbor(pixelCoord.x - 4);
-  variation += 4 * getNeighbor(pixelCoord.x - 3);
-  variation += 5 * getNeighbor(pixelCoord.x - 2);
-  variation += 6 * getNeighbor(pixelCoord.x - 1);
-  variation += 6 * getNeighbor(pixelCoord.x + 1);
-  variation += 5 * getNeighbor(pixelCoord.x + 2);
-  variation += 4 * getNeighbor(pixelCoord.x + 3);
-  variation += 3 * getNeighbor(pixelCoord.x + 4);
-  variation += 2 * getNeighbor(pixelCoord.x + 5);
-  variation += getNeighbor(pixelCoord.x + 6);
-  variation /= 49;
+  pixelCoord.x = int(gl_GlobalInvocationID.x);
+  for(int i = 0; i < PPI; i++)
+  {
+    float variation = 7.0f * variationValues[pixelCoord.x];
+    variation += getNeighbor(pixelCoord.x - 6);
+    variation += 2 * getNeighbor(pixelCoord.x - 5);
+    variation += 3 * getNeighbor(pixelCoord.x - 4);
+    variation += 4 * getNeighbor(pixelCoord.x - 3);
+    variation += 5 * getNeighbor(pixelCoord.x - 2);
+    variation += 6 * getNeighbor(pixelCoord.x - 1);
+    variation += 6 * getNeighbor(pixelCoord.x + 1);
+    variation += 5 * getNeighbor(pixelCoord.x + 2);
+    variation += 4 * getNeighbor(pixelCoord.x + 3);
+    variation += 3 * getNeighbor(pixelCoord.x + 4);
+    variation += 2 * getNeighbor(pixelCoord.x + 5);
+    variation += getNeighbor(pixelCoord.x + 6);
+    variation /= 49;
 
-  imageStore(variationBuffer, pixelCoord, vec4(variation));
+    if(pixelCoord.x < commonData.iHalfFrameExtent.x)
+    {
+      imageStore(variationBuffer, pixelCoord, vec4(variation));
+    }
+    pixelCoord.x += GROUP_SIZE;
+  }
 }

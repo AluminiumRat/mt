@@ -3,53 +3,75 @@
 
 #include <shadows/rayQueryShadows.inl>
 
+//  Количество потоков в группе
 layout (constant_id = 0) const int GROUP_SIZE = 1024;
+//  Количество пикселей на поток
+layout (constant_id = 1) const int PPI = 1;
 
 layout (local_size_x = 1,
         local_size_y_id = 0,
         local_size_z = 1) in;
 
 //  Кэш для хранения промежуточных результатов при фильтрации
-shared float variationValues[GROUP_SIZE];
+shared float variationValues[GROUP_SIZE * PPI];
 float getNeighbor(int coord)
 {
-  coord = clamp(coord, 0, GROUP_SIZE - 1);
+  coord = clamp(coord, 0, (GROUP_SIZE * PPI) - 1);
   return variationValues[coord];
 }
 
 void main()
 {
-  //  Считываем результат после горизонтального размытия
   ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
-  float variation = imageLoad(variationBuffer, pixelCoord).x;
-  variationValues[pixelCoord.y] = variation;
+
+  //  Считываем результат после горизонтального размытия
+  for(int i = 0; i < PPI; i++)
+  {
+    float variation = imageLoad(variationBuffer, pixelCoord).x;
+    variationValues[pixelCoord.y] = variation;
+    pixelCoord.y += GROUP_SIZE;
+  }
 
   barrier();
 
   // MAX фильтр по окресности 5 пикселей
-  variation = max(variation, getNeighbor(pixelCoord.y - 2));
-  variation = max(variation, getNeighbor(pixelCoord.y - 1));
-  variation = max(variation, getNeighbor(pixelCoord.y + 1));
-  variation = max(variation, getNeighbor(pixelCoord.y + 2));
+  pixelCoord.y = int(gl_GlobalInvocationID.y);
+  for(int i = 0; i < PPI; i++)
+  {
+    float variation = variationValues[pixelCoord.y];
+    variation = max(variation, getNeighbor(pixelCoord.y - 2));
+    variation = max(variation, getNeighbor(pixelCoord.y - 1));
+    variation = max(variation, getNeighbor(pixelCoord.y + 1));
+    variation = max(variation, getNeighbor(pixelCoord.y + 2));
+    variationValues[pixelCoord.y] = variation;
+    pixelCoord.y += GROUP_SIZE;
+  }
 
-  variationValues[pixelCoord.y] = variation;
   barrier();
 
   //  Треугольный фильтр по окрестности 13 пикселей
-  variation *= 7;
-  variation += getNeighbor(pixelCoord.y - 6);
-  variation += 2 * getNeighbor(pixelCoord.y - 5);
-  variation += 3 * getNeighbor(pixelCoord.y - 4);
-  variation += 4 * getNeighbor(pixelCoord.y - 3);
-  variation += 5 * getNeighbor(pixelCoord.y - 2);
-  variation += 6 * getNeighbor(pixelCoord.y - 1);
-  variation += 6 * getNeighbor(pixelCoord.y + 1);
-  variation += 5 * getNeighbor(pixelCoord.y + 2);
-  variation += 4 * getNeighbor(pixelCoord.y + 3);
-  variation += 3 * getNeighbor(pixelCoord.y + 4);
-  variation += 2 * getNeighbor(pixelCoord.y + 5);
-  variation += getNeighbor(pixelCoord.y + 6);
-  variation /= 49;
+  pixelCoord.y = int(gl_GlobalInvocationID.y);
+  for(int i = 0; i < PPI; i++)
+  {
+    float variation = 7.0f * variationValues[pixelCoord.y];
+    variation += getNeighbor(pixelCoord.y - 6);
+    variation += 2 * getNeighbor(pixelCoord.y - 5);
+    variation += 3 * getNeighbor(pixelCoord.y - 4);
+    variation += 4 * getNeighbor(pixelCoord.y - 3);
+    variation += 5 * getNeighbor(pixelCoord.y - 2);
+    variation += 6 * getNeighbor(pixelCoord.y - 1);
+    variation += 6 * getNeighbor(pixelCoord.y + 1);
+    variation += 5 * getNeighbor(pixelCoord.y + 2);
+    variation += 4 * getNeighbor(pixelCoord.y + 3);
+    variation += 3 * getNeighbor(pixelCoord.y + 4);
+    variation += 2 * getNeighbor(pixelCoord.y + 5);
+    variation += getNeighbor(pixelCoord.y + 6);
+    variation /= 49;
 
-  imageStore(variationBuffer, pixelCoord, vec4(variation));
+    if(pixelCoord.y < commonData.iHalfFrameExtent.y)
+    {
+      imageStore(variationBuffer, pixelCoord, vec4(variation));
+    }
+    pixelCoord.y += GROUP_SIZE;
+  }
 }
