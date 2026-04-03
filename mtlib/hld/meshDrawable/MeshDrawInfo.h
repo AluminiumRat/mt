@@ -21,8 +21,8 @@ namespace mt
     Technique* technique;
 
     TechniquePass* pass;
-    const UniformVariable* positionMatrix;
-    const UniformVariable* prevPositionMatrix;
+    const UniformVariable* transformMatrix;
+    const UniformVariable* prevTransformMatrix;
     const UniformVariable* bivecMatrix;
 
     uint32_t maxInstances;

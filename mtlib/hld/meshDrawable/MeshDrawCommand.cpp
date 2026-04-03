@@ -43,16 +43,16 @@ void MeshDrawCommand::updateInstanceData(
                                     TechniqueVolatileContext& volatileContext,
                                     std::span<const CommandPtr> commands)
 {
-  _updatePositionMatrix(volatileContext, commands);
+  _updateTransformMatrix(volatileContext, commands);
   _updateBivecMatrix(volatileContext, commands);
-  _updatePrevPositionMatrix(volatileContext, commands);
+  _updatePrevTransformMatrix(volatileContext, commands);
 }
 
-void MeshDrawCommand::_updatePositionMatrix(
+void MeshDrawCommand::_updateTransformMatrix(
                                       TechniqueVolatileContext& volatileContext,
                                       std::span<const CommandPtr> commands)
 {
-  if(!_drawInfo.positionMatrix->isActive()) return;
+  if(!_drawInfo.transformMatrix->isActive()) return;
 
   size_t arraySize = commands.size();
   size_t dataSize = arraySize * sizeof(glm::mat4);
@@ -61,20 +61,20 @@ void MeshDrawCommand::_updatePositionMatrix(
   {
     const MeshDrawCommand& meshCommand =
                               static_cast<const MeshDrawCommand&>(*commands[i]);
-    positionMatrices[i] = meshCommand._drawable.positionMatrix();
+    positionMatrices[i] = meshCommand._drawable.transformMatrix();
   }
 
-  _drawInfo.positionMatrix->setValue( volatileContext,
+  _drawInfo.transformMatrix->setValue(volatileContext,
                                       UniformVariable::ValueRef{
                                                       .data = positionMatrices,
                                                       .dataSize = dataSize});
 }
 
-void MeshDrawCommand::_updatePrevPositionMatrix(
+void MeshDrawCommand::_updatePrevTransformMatrix(
                                       TechniqueVolatileContext& volatileContext,
                                       std::span<const CommandPtr> commands)
 {
-  if(!_drawInfo.prevPositionMatrix->isActive()) return;
+  if(!_drawInfo.prevTransformMatrix->isActive()) return;
 
   size_t arraySize = commands.size();
   size_t dataSize = arraySize * sizeof(glm::mat4);
@@ -83,10 +83,10 @@ void MeshDrawCommand::_updatePrevPositionMatrix(
   {
     const MeshDrawCommand& meshCommand =
                               static_cast<const MeshDrawCommand&>(*commands[i]);
-    positionMatrices[i] = meshCommand._drawable.prevPositionMatrix();
+    positionMatrices[i] = meshCommand._drawable.prevTransformMatrix();
   }
 
-  _drawInfo.prevPositionMatrix->setValue( volatileContext,
+  _drawInfo.prevTransformMatrix->setValue(volatileContext,
                                           UniformVariable::ValueRef{
                                                       .data = positionMatrices,
                                                       .dataSize = dataSize});

@@ -9,9 +9,9 @@ layout (set = COMMON,
 layout (set = VOLATILE,
         binding = 0) uniform TransformData
 {
-  mat4 positionMatrix[32];
+  mat4 transformMatrix[32];
   //mat3 bivecMatrix[32];
-  //mat4 prevPositionMatrix[32];
+  //mat4 prevTransformMatrix[32];
 } transformData;
 
 struct Vertex

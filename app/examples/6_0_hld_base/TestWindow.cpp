@@ -113,7 +113,7 @@ void TestWindow::_fillScene()
       _scene.registerDrawable(*newDrawable);
       glm::mat4 translete =
                       glm::translate(glm::mat4(1), glm::vec3(i * 3, j * 3, 0));
-      newDrawable->setPositionMatrix(translete);
+      newDrawable->setTransformMatrix(translete);
       _drawables.push_back(std::move(newDrawable));
     }
   }

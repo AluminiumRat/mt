@@ -11,17 +11,17 @@ Camera::Camera() noexcept :
   _farDistance(1),
   _fovY(0)
 {
-  _updateFromPositionMatrix();
+  _updateFromTransformMatrix();
   _updateFromProjectionMatrix();
 }
 
 void Camera::setTransformMatrix(const glm::mat4& newValue) noexcept
 {
   _transformMatrix = newValue;
-  _updateFromPositionMatrix();
+  _updateFromTransformMatrix();
 }
 
-void Camera::_updateFromPositionMatrix() noexcept
+void Camera::_updateFromTransformMatrix() noexcept
 {
   _eyePoint = transformMatrix() * glm::vec4(0, 0, 0, 1);
   _frontVector = transformMatrix() * glm::vec4(0, 0, -1, 0);

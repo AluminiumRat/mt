@@ -36,15 +36,15 @@ namespace mt
                                   const void* extraData) const override;
 
     //  Матрица положения в текущем кадре
-    inline const glm::mat4& positionMatrix() const noexcept;
-    virtual void setPositionMatrix(const glm::mat4& newValue);
+    inline const glm::mat4& transformMatrix() const noexcept;
+    virtual void setTransformMatrix(const glm::mat4& newValue);
 
     //  Матрица положения в предыдущем кадре
-    inline const glm::mat4& prevPositionMatrix() const noexcept;
-    void setPrevPositionMatrix(const glm::mat4& newValue);
+    inline const glm::mat4& prevTransformMatrix() const noexcept;
+    void setPrevTransformMatrix(const glm::mat4& newValue);
 
     //  Матрица преобразования нормалей (и прочих бивекторов)
-    //  Автоматически вычисляется на основе positionMatrix, если она
+    //  Автоматически вычисляется на основе transformMatrix, если она
     //    используется в технике отрисовки
     inline const glm::mat3x3& bivecMatrix() const noexcept;
 
@@ -60,9 +60,9 @@ namespace mt
     Slot<> _onAssetUpdatedSlot;
 
     //  Матрица положения в текущем кадре
-    glm::mat4 _positionMatrix;
+    glm::mat4 _transformMatrix;
     //  Матрица положения в предыдущем кадре
-    glm::mat4 _prevPositionMatrix;
+    glm::mat4 _prevTransformMatrix;
     //  Матрица преобразования нормалей (и прочих бивекторов)
     glm::mat3x3 _bivecMatrix;
   };
@@ -72,14 +72,14 @@ namespace mt
     return *_asset;
   }
 
-  inline const glm::mat4& MeshDrawable::positionMatrix() const noexcept
+  inline const glm::mat4& MeshDrawable::transformMatrix() const noexcept
   {
-    return _positionMatrix;
+    return _transformMatrix;
   }
 
-  inline const glm::mat4& MeshDrawable::prevPositionMatrix() const noexcept
+  inline const glm::mat4& MeshDrawable::prevTransformMatrix() const noexcept
   {
-    return _prevPositionMatrix;
+    return _prevTransformMatrix;
   }
 
   inline const glm::mat3x3& MeshDrawable::bivecMatrix() const noexcept

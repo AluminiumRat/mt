@@ -99,7 +99,7 @@ namespace mt
     inline ShaderData makeShaderData() const noexcept;
 
   private:
-    void _updateFromPositionMatrix() noexcept;
+    void _updateFromTransformMatrix() noexcept;
     void _updateFromProjectionMatrix() noexcept;
     void _calculateNearFar() noexcept;
     void _calculateFovY() noexcept;

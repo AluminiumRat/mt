@@ -34,9 +34,9 @@ namespace mt
   private:
     void _processChunk( CommandProducerGraphic& producer,
                         std::span<const CommandPtr> commands);
-    void _updatePositionMatrix( TechniqueVolatileContext& volatileContext,
+    void _updateTransformMatrix(TechniqueVolatileContext& volatileContext,
                                 std::span<const CommandPtr> commands);
-    void _updatePrevPositionMatrix( TechniqueVolatileContext& volatileContext,
+    void _updatePrevTransformMatrix(TechniqueVolatileContext& volatileContext,
                                     std::span<const CommandPtr> commands);
     void _updateBivecMatrix(TechniqueVolatileContext& volatileContext,
                             std::span<const CommandPtr> commands);

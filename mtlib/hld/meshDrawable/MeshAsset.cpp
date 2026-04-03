@@ -185,11 +185,11 @@ void MeshAsset::_updateDrawmapFromTechnique(Technique& technique)
   const TechniqueConfiguration* configuration = technique.configuration();
   if (configuration == nullptr) return;
 
-  UniformVariable& positionMatrix =
-                  technique.getOrCreateUniform("transformData.positionMatrix");
+  UniformVariable& transformMatrix =
+                  technique.getOrCreateUniform("transformData.transformMatrix");
 
-  UniformVariable& prevPositionMatrix =
-              technique.getOrCreateUniform("transformData.prevPositionMatrix");
+  UniformVariable& prevTransformMatrix =
+              technique.getOrCreateUniform("transformData.prevTransformMatrix");
 
   UniformVariable& bivecMatrix =
                       technique.getOrCreateUniform("transformData.bivecMatrix");
@@ -216,8 +216,8 @@ void MeshAsset::_updateDrawmapFromTechnique(Technique& technique)
     else newPassInfo.commandGroup = DrawCommand::noGroup;
     newPassInfo.technique = &technique;
     newPassInfo.pass = &technique.getOrCreatePass(passConfig.name.c_str());
-    newPassInfo.positionMatrix = &positionMatrix;
-    newPassInfo.prevPositionMatrix = &prevPositionMatrix;
+    newPassInfo.transformMatrix = &transformMatrix;
+    newPassInfo.prevTransformMatrix = &prevTransformMatrix;
     newPassInfo.bivecMatrix = &bivecMatrix;
     newPassInfo.maxInstances = passConfig.maxInstances;
 

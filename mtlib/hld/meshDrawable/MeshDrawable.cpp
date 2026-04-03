@@ -10,8 +10,8 @@ using namespace mt;
 MeshDrawable::MeshDrawable(const MeshAsset& asset) :
   Drawable3D(COMMANDS_DRAW),
   _onAssetUpdatedSlot(*this, &MeshDrawable::onAssetUpdated),
-  _positionMatrix(1),
-  _prevPositionMatrix(1),
+  _transformMatrix(1),
+  _prevTransformMatrix(1),
   _bivecMatrix(1)
 {
   asset.techniquesChanged.addSlot(_onAssetUpdatedSlot);
@@ -25,28 +25,28 @@ MeshDrawable::~MeshDrawable() noexcept
   _asset->boundChanged.removeSlot(_onAssetUpdatedSlot);
 }
 
-void MeshDrawable::setPositionMatrix(const glm::mat4& newValue)
+void MeshDrawable::setTransformMatrix(const glm::mat4& newValue)
 {
-  _positionMatrix = newValue;
+  _transformMatrix = newValue;
   _updateBivecMatrix();
   _updateBoundingBox();
 }
 
 void MeshDrawable::_updateBivecMatrix() noexcept
 {
-  _bivecMatrix = _positionMatrix;
+  _bivecMatrix = _transformMatrix;
   _bivecMatrix = glm::inverse(_bivecMatrix);
   _bivecMatrix = glm::transpose(_bivecMatrix);
 }
 
-void MeshDrawable::setPrevPositionMatrix(const glm::mat4& newValue)
+void MeshDrawable::setPrevTransformMatrix(const glm::mat4& newValue)
 {
-  _prevPositionMatrix = newValue;
+  _prevTransformMatrix = newValue;
 }
 
 void MeshDrawable::_updateBoundingBox() noexcept
 {
-  setBoundingBox(_asset->bound().translated(_positionMatrix));
+  setBoundingBox(_asset->bound().translated(_transformMatrix));
 }
 
 void MeshDrawable::onAssetUpdated()
@@ -71,7 +71,7 @@ void MeshDrawable::addToCommandList(DrawCommandList& commandList,
                                                         stage);
   if(passes.empty()) return;
 
-  glm::vec3 meshPosition = _positionMatrix[3];
+  glm::vec3 meshPosition = _transformMatrix[3];
   glm::vec3 cameraToMesh = meshPosition - frameContext.viewCamera->eyePoint();
   float distance = glm::dot(frameContext.viewCamera->frontVector(),
                             cameraToMesh);

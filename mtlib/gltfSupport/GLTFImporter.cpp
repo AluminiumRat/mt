@@ -93,7 +93,7 @@ void GLTFImporter::_processMesh(int gltfMeshIndex, const glm::mat4& tansform)
   for(ConstRef<MeshAsset> asset : assets)
   {
     std::unique_ptr<MeshDrawable> drawable(new MeshDrawable(*asset));
-    drawable->setPositionMatrix(tansform);
+    drawable->setTransformMatrix(tansform);
     _drawables.push_back(std::move(drawable));
   }
 

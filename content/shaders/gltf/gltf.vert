@@ -39,7 +39,7 @@ void main()
                         POSITION.data[vertexShift + 1],
                         POSITION.data[vertexShift + 2],
                         1.0);
-  position = transformData.positionMatrix[gl_InstanceIndex] * position;
+  position = transformData.transformMatrix[gl_InstanceIndex] * position;
   gl_Position = commonData.cameraData.viewProjectionMatrix * position;
   outWorldPosition.xyz = position.xyz;
   outWorldPosition.w = gl_Position.w;
