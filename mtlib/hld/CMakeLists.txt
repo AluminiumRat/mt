@@ -17,6 +17,7 @@ set(SOURCES
     "colorFrameBuilder/ColorFrameCommonSet.cpp"
     "colorFrameBuilder/ColorFrameCommonSetBindings.cpp"
     "colorFrameBuilder/EnvironmentScene.cpp"
+    "colorFrameBuilder/HiZBuilder.cpp"
     "colorFrameBuilder/OpaqueColorStage.cpp"
     "colorFrameBuilder/OpaquePrepassStage.cpp"
     "colorFrameBuilder/Posteffects.cpp"

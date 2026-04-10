@@ -21,6 +21,7 @@ ColorFrameBuilder::ColorFrameBuilder( Device& device,
   _commonSet(device, textureManager),
   _opaquePrepassStage(device),
   _reprojectionBufferUpdater(device),
+  _hiZBuilder(device),
   _shadowsStage(device, textureManager),
   _opaqueColorStage(device),
   _backgroundRender(device, techniqueManager),
@@ -75,6 +76,7 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
                                 frameContext);
       _reprojectionStageLayout(*preopaqueProducer);
       _reprojectionBufferUpdater.updateReprojection(*preopaqueProducer);
+      _hiZBuilder.buildHiZ(*preopaqueProducer);
     }
     _device.graphicQueue()->submitCommands(std::move(preopaqueProducer));
   }
@@ -162,6 +164,21 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                                       "LinearDepthHalfBuffer");
   _halfLinearDepthBufferView = new ImageView(*_halfLinearDepthBuffer);
 
+  glm::uvec2 hiZSize = HiZBuilder::getHiZExtent(halfSize);
+  _hiZBuffer = new Image( _device,
+                          VK_IMAGE_TYPE_2D,
+                          VK_IMAGE_USAGE_STORAGE_BIT |
+                            VK_IMAGE_USAGE_SAMPLED_BIT,
+                          0,
+                          hiZFormat,
+                          glm::uvec3(hiZSize, 1),
+                          VK_SAMPLE_COUNT_1_BIT,
+                          1,
+                          Image::calculateMipNumber(hiZSize),
+                          false,
+                          "HiZ");
+  _hiZBufferView = new ImageView(*_hiZBuffer);
+
   _halfNormalBuffer = new Image(_device,
                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
                                   VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -191,6 +208,7 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                                   *_halfLinearDepthBufferView,
                                   *_halfNormalBufferView);
   _reprojectionBufferUpdater.setBuffers(*_reprojectionBufferView);
+  _hiZBuilder.setBuffers(*_hiZBuffer);
   _shadowsStage.setBuffers(*_shadowBufferView);
   _opaqueColorStage.setBuffers(*_hdrBufferView, *_depthBufferView);
   _backgroundRender.setBuffers(*_hdrBufferView, *_depthBufferView);
@@ -211,6 +229,8 @@ void ColorFrameBuilder::_initBuffersLayout(
 
   commandProducer.initLayout( *_halfLinearDepthBuffer,
                               VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+  commandProducer.initLayout(*_hiZBuffer, VK_IMAGE_LAYOUT_GENERAL);
 
   commandProducer.initLayout( *_halfNormalBuffer,
                               VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);

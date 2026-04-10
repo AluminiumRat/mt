@@ -6,9 +6,10 @@
 
 #include <hld/colorFrameBuilder/BackgroundRender.h>
 #include <hld/colorFrameBuilder/ColorFrameCommonSet.h>
+#include <hld/colorFrameBuilder/HiZBuilder.h>
 #include <hld/colorFrameBuilder/OpaqueColorStage.h>
-#include <hld/colorFrameBuilder/Posteffects.h>
 #include <hld/colorFrameBuilder/OpaquePrepassStage.h>
+#include <hld/colorFrameBuilder/Posteffects.h>
 #include <hld/colorFrameBuilder/ShadowsStage.h>
 #include <hld/colorFrameBuilder/ReprojectionBufferUpdater.h>
 #include <hld/drawCommand/CommandMemoryPool.h>
@@ -46,6 +47,7 @@ namespace mt
     static constexpr VkFormat hdrFormat = VK_FORMAT_B10G11R11_UFLOAT_PACK32;
     static constexpr VkFormat depthBufferFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
     static constexpr VkFormat linearDepthFormat = VK_FORMAT_R32_SFLOAT;
+    static constexpr VkFormat hiZFormat = VK_FORMAT_R16G16_SFLOAT;
     static constexpr VkFormat halfNormalFormat = VK_FORMAT_R16G16_SNORM;
     static constexpr VkFormat reprojectionBufferFormat =
                                                   VK_FORMAT_R16G16B16A16_SFLOAT;
@@ -102,6 +104,8 @@ namespace mt
     Ref<ImageView> _halfDepthBufferView;
     Ref<Image> _halfLinearDepthBuffer;
     Ref<ImageView> _halfLinearDepthBufferView;
+    Ref<Image> _hiZBuffer;
+    Ref<ImageView> _hiZBufferView;
     Ref<Image> _halfNormalBuffer;
     Ref<ImageView> _halfNormalBufferView;
     Ref<Image> _reprojectionBuffer;
@@ -113,6 +117,7 @@ namespace mt
 
     OpaquePrepassStage _opaquePrepassStage;
     ReprojectionBufferUpdater _reprojectionBufferUpdater;
+    HiZBuilder _hiZBuilder;
     ShadowsStage _shadowsStage;
     OpaqueColorStage _opaqueColorStage;
     BackgroundRender _backgroundRender;

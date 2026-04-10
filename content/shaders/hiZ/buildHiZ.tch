@@ -1,0 +1,7 @@
+commonSetName : ColorFrameCommonSet
+
+passes:
+  BuildPass :
+    pipeline: COMPUTE
+    shaders:
+      COMPUTE : hiZ/buildHiZ.comp

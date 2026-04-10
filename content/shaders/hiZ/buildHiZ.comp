@@ -1,0 +1,140 @@
+#version 450
+
+//  Построение HiZ буфера
+//  По мотивам UE4 и https://habr.com/ru/articles/1008236/
+//  HiZ имеет размер, равный степени 2
+//  HiZ разбивается на тайлы 8х8 пиксела, каждый из которых обрабатывается
+//  своей группой
+
+#include "lib/commonSet.inl"
+
+layout (set = STATIC, binding = 0) uniform Params
+{
+  uvec2 hiZSize;
+} params;
+
+layout (rg16f, set = STATIC, binding = 2) uniform image2D hiZ[];
+
+layout (local_size_x = 64,
+        local_size_y = 1,
+        local_size_z = 1) in;
+
+shared float minValues[64];
+shared float maxValues[64];
+
+//  Распределение пикселей внутри тайла по потокам
+uvec2 getLocalCoords()
+{
+  uvec2 localCoords;
+
+  uint threadMask = gl_LocalInvocationID.x;
+  localCoords.x = threadMask & 1;
+  threadMask = threadMask >> 1;
+  localCoords.y = threadMask & 1;
+  threadMask = threadMask >> 1;
+
+  localCoords = localCoords << 1;
+  localCoords.x |= threadMask & 1;
+  threadMask = threadMask >> 1;
+  localCoords.y |= threadMask & 1;
+  threadMask = threadMask >> 1;
+
+  localCoords = localCoords << 1;
+  localCoords.x |= threadMask & 1;
+  threadMask = threadMask >> 1;
+  localCoords.y |= threadMask & 1;
+
+  return localCoords;
+}
+
+//  Чтение первичных данных из линейного буфера глубины и заполнение
+//    нулевого мипа HiZ
+vec2 initialRead(uvec2 texelCoord)
+{
+  vec2 texCoords = (vec2(texelCoord) + vec2(0.5f)) / vec2(params.hiZSize);
+  vec4 depthValues = textureGather( sampler2D(linearDepthHalfBuffer,
+                                              commonNearestSampler),
+                                    texCoords);
+  float minValue = min(depthValues.x,
+                    min(depthValues.y,
+                    min(depthValues.z,
+                        depthValues.w)));
+  minValues[gl_LocalInvocationID.x] = minValue;
+
+  float maxValue = max(depthValues.x,
+                    max(depthValues.y,
+                    max(depthValues.z,
+                        depthValues.w)));
+  maxValues[gl_LocalInvocationID.x] = maxValue;
+
+  return vec2(minValue, maxValue);
+}
+
+//  Посчитать минимальное и максимальное значения для очередного мипа
+vec2 makeMip(uint step)
+{
+  uint valueIndex = gl_LocalInvocationID.x;
+  float minValue = minValues[valueIndex];
+  float maxValue = maxValues[valueIndex];
+
+  valueIndex += step;
+  minValue = min(minValue, minValues[valueIndex]);
+  maxValue = max(maxValue, maxValues[valueIndex]);
+
+  valueIndex += step;
+  minValue = min(minValue, minValues[valueIndex]);
+  maxValue = max(maxValue, maxValues[valueIndex]);
+
+  valueIndex += step;
+  minValue = min(minValue, minValues[valueIndex]);
+  maxValue = max(maxValue, maxValues[valueIndex]);
+
+  minValues[gl_LocalInvocationID.x] = minValue;
+  maxValues[gl_LocalInvocationID.x] = maxValue;
+
+  return vec2(minValue, maxValue);
+}
+
+void main()
+{
+  //  Координаты обрабатываемого пикселя внутри тайла
+  uvec2 localCoord = getLocalCoords();
+  //  Координаты внутри HiZ
+  uvec2 texelCoord = gl_WorkGroupID.xy * uvec2(8, 8) + localCoord;
+
+  //  Надо ли записывать результаты в HiZ, если false, то поток используется
+  //  только для заполнения shared памяти
+  bool needStore = texelCoord.x < params.hiZSize.x &&
+                    texelCoord.y < params.hiZSize.y;
+
+  // Формируем мип0
+  vec2 minMax = initialRead(texelCoord);
+  if(needStore) imageStore( hiZ[0],
+                            ivec2(texelCoord),
+                            vec4(minMax, 0, 0));
+
+  //  Считаем мип1
+  if(gl_LocalInvocationID.x >= 16) return;
+  barrier();
+  minMax = makeMip(16);
+  texelCoord /= 2;
+  if(needStore) imageStore( hiZ[1],
+                            ivec2(texelCoord),
+                            vec4(minMax, 0, 0));
+
+  //  Считаем мип2
+  if(gl_LocalInvocationID.x >= 4) return;
+  minMax = makeMip(4);
+  texelCoord /= 2;
+  if(needStore) imageStore( hiZ[2],
+                            ivec2(texelCoord),
+                            vec4(minMax, 0, 0));
+
+  //  Считаем мип3
+  if(gl_LocalInvocationID.x >= 1) return;
+  minMax = makeMip(1);
+  texelCoord /= 2;
+  if(needStore) imageStore( hiZ[3],
+                            ivec2(texelCoord),
+                            vec4(minMax, 0, 0));
+}
