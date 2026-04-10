@@ -15,12 +15,12 @@ layout (set = STATIC, binding = 0) uniform Params
 
 layout (rg16f, set = STATIC, binding = 2) uniform image2D hiZ[];
 
-layout (local_size_x = 64,
+layout (local_size_x = 256,
         local_size_y = 1,
         local_size_z = 1) in;
 
-shared float minValues[64];
-shared float maxValues[64];
+shared float minValues[256];
+shared float maxValues[256];
 
 //  Распределение пикселей внутри тайла по потокам
 uvec2 getLocalCoords()
@@ -31,6 +31,12 @@ uvec2 getLocalCoords()
   localCoords.x = threadMask & 1;
   threadMask = threadMask >> 1;
   localCoords.y = threadMask & 1;
+  threadMask = threadMask >> 1;
+
+  localCoords = localCoords << 1;
+  localCoords.x |= threadMask & 1;
+  threadMask = threadMask >> 1;
+  localCoords.y |= threadMask & 1;
   threadMask = threadMask >> 1;
 
   localCoords = localCoords << 1;
@@ -100,7 +106,7 @@ void main()
   //  Координаты обрабатываемого пикселя внутри тайла
   uvec2 localCoord = getLocalCoords();
   //  Координаты внутри HiZ
-  uvec2 texelCoord = gl_WorkGroupID.xy * uvec2(8, 8) + localCoord;
+  uvec2 texelCoord = gl_WorkGroupID.xy * uvec2(16, 16) + localCoord;
 
   //  Надо ли записывать результаты в HiZ, если false, то поток используется
   //  только для заполнения shared памяти
@@ -114,27 +120,36 @@ void main()
                             vec4(minMax, 0, 0));
 
   //  Считаем мип1
-  if(gl_LocalInvocationID.x >= 16) return;
+  if(gl_LocalInvocationID.x >= 64) return;
   barrier();
-  minMax = makeMip(16);
+  minMax = makeMip(64);
   texelCoord /= 2;
   if(needStore) imageStore( hiZ[1],
                             ivec2(texelCoord),
                             vec4(minMax, 0, 0));
 
   //  Считаем мип2
-  if(gl_LocalInvocationID.x >= 4) return;
-  minMax = makeMip(4);
+  if(gl_LocalInvocationID.x >= 16) return;
+  barrier();
+  minMax = makeMip(16);
   texelCoord /= 2;
   if(needStore) imageStore( hiZ[2],
                             ivec2(texelCoord),
                             vec4(minMax, 0, 0));
 
   //  Считаем мип3
+  if(gl_LocalInvocationID.x >= 4) return;
+  minMax = makeMip(4);
+  texelCoord /= 2;
+  if(needStore) imageStore( hiZ[3],
+                            ivec2(texelCoord),
+                            vec4(minMax, 0, 0));
+
+  //  Считаем мип4
   if(gl_LocalInvocationID.x >= 1) return;
   minMax = makeMip(1);
   texelCoord /= 2;
-  if(needStore) imageStore( hiZ[3],
+  if(needStore) imageStore( hiZ[4],
                             ivec2(texelCoord),
                             vec4(minMax, 0, 0));
 }

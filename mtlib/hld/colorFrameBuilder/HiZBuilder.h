@@ -62,7 +62,7 @@ namespace mt
     _hiZBinding.setImages(hiZViews);
 
     _hiZ = &hiZ;
-    _gridSize = (glm::uvec2(_hiZ->extent()) + glm::uvec2(7)) / 8u;
+    _gridSize = (glm::uvec2(_hiZ->extent()) + glm::uvec2(15)) / 16u;
     _hizSizeUniform.setValue(glm::uvec2(_hiZ->extent()));
   }
 
