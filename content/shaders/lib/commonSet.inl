@@ -25,6 +25,10 @@ layout (set = COMMON, binding = 0) uniform CommonData
   //  zw = 1 / xy
   vec4 halfFrameExtent;
   ivec2 iHalfFrameExtent;
+  //  Размер нулевого мипа для HiZ(иерархический depth буффер)
+  //  zw = 1 / xy
+  vec4 hiZExtent;
+  ivec2 iHiZExtent;
 
   //  Номер кадра, начиная с 0. Относится только к конкретному ColorFrameBuilder
   int frameIndex;
@@ -52,6 +56,14 @@ layout (set = COMMON,
 layout (set = COMMON,
         binding = 6) uniform texture2D normalHalfBuffer;
 
+//  HiZ. Иерархический depth буффер. Размерность - половинное разрешение
+//  округленное вниз до степени двойки. Можно получить из
+//  commonData.hiZExtent и commonData.iHiZExtent
+//  x компонента - минимальное расстояние
+//  y компонента - максимальное расстояние
+layout (set = COMMON,
+        binding = 7) uniform texture2D hiZBuffer;
+
 //  Буфер репроекции из текущего кадра в предыдущий. В половинном разрешении.
 //  XY - смещение скрин спэйс координат точки
 //  Z - ожидаемое смещение в линейном буфере глубины
@@ -59,21 +71,21 @@ layout (set = COMMON,
 //      корректная, 0 - уверены, что репроекция не корректная, то есть точка
 //      не имеет истории на экране и появилась только в этом фрэйме)
 layout (set = COMMON,
-        binding = 7) uniform texture2D reprojectionBuffer;
+        binding = 8) uniform texture2D reprojectionBuffer;
 
 //  Скринспейсовый буфер с тенями
 layout (set = COMMON,
-        binding = 8) uniform texture2D shadowBuffer;
+        binding = 9) uniform texture2D shadowBuffer;
 
 //  Дефолтный сэмплер общего назначения.
 //  Линейная фильтрация, VK_SAMPLER_ADDRESS_MODE_REPEAT, анизотропия 4
 layout (set = COMMON,
-        binding = 9) uniform sampler commonLinearSampler;
+        binding = 10) uniform sampler commonLinearSampler;
 
 //  Дефолтный сэмплер общего назначения.
 //  Nearest фильтрация
 layout (set = COMMON,
-        binding = 10) uniform sampler commonNearestSampler;
+        binding = 11) uniform sampler commonNearestSampler;
 
 //  Получить размер пикселя для половинных буферов на определенной дистанции
 //  от камеры

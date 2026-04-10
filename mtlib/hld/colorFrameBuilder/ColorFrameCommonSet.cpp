@@ -63,6 +63,7 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
                                   const EnvironmentScene& environment,
                                   const ImageView& linearDepthHalfBuffer,
                                   const ImageView& normalHalfBuffer,
+                                  const ImageView& hiZBuffer,
                                   const ImageView& reprojectionBuffer,
                                   const ImageView& shadowBuffer)
 {
@@ -81,7 +82,8 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
   _updateuniformBuffer( commandProducer,
                         frameContext,
                         environment,
-                        glm::uvec2(linearDepthHalfBuffer.extent()));
+                        glm::uvec2(linearDepthHalfBuffer.extent()),
+                        glm::uvec2(hiZBuffer.extent()));
 
   Ref<DescriptorPool> pool(new DescriptorPool(_device,
                                               _setLayout->descriptorCounter(),
@@ -106,6 +108,9 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
   _descriptorSet->attachSampledImage( normalHalfBuffer,
                                       normalHalfBufferBinding,
                                       VK_SHADER_STAGE_ALL);
+  _descriptorSet->attachSampledImage( hiZBuffer,
+                                      hiZBufferBinding,
+                                      VK_SHADER_STAGE_ALL);
   _descriptorSet->attachSampledImage( reprojectionBuffer,
                                       reprojectionBufferBinding,
                                       VK_SHADER_STAGE_ALL);
@@ -125,7 +130,8 @@ void ColorFrameCommonSet::_updateuniformBuffer(
                                         CommandProducerGraphic& commandProducer,
                                         const FrameBuildContext& frameContext,
                                         const EnvironmentScene& environment,
-                                        glm::uvec2 halfFrameExtent)
+                                        glm::uvec2 halfFrameExtent,
+                                        glm::uvec2 hiZExtent)
 {
   UniformCommonData uniformData{};
   uniformData.cameraData = _currentCameraData;
@@ -143,6 +149,11 @@ void ColorFrameCommonSet::_updateuniformBuffer(
                                       1.0f / halfFrameExtent.x,
                                       1.0f / halfFrameExtent.y);
   uniformData.iHalfExtent = halfFrameExtent;
+  uniformData.hiZExtent = glm::vec4(  (float)hiZExtent.x,
+                                      (float)hiZExtent.y,
+                                      1.0f / hiZExtent.x,
+                                      1.0f / hiZExtent.y);
+  uniformData.iHiZExtent = hiZExtent;
   uniformData.frameIndex = _frameIndex;
 
   commandProducer.uploadToBuffer( *_uniformBuffer,

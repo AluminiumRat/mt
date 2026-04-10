@@ -59,6 +59,7 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
                       environment,
                       *_halfLinearDepthBufferView,
                       *_halfNormalBufferView,
+                      *_hiZBufferView,
                       *_reprojectionBufferView,
                       *_shadowBufferView);
     _device.graphicQueue()->submitCommands(std::move(prepareProducer));
@@ -260,7 +261,18 @@ void ColorFrameBuilder::_shadowsLayout(CommandProducerGraphic& commandProducer)
                                 VK_IMAGE_LAYOUT_GENERAL,
                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                                  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                VK_ACCESS_SHADER_WRITE_BIT,
+                                VK_ACCESS_SHADER_READ_BIT);
+
+  commandProducer.imageBarrier( *_hiZBuffer,
+                                ImageSlice(*_hiZBuffer),
+                                VK_IMAGE_LAYOUT_GENERAL,
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                                  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                                 VK_ACCESS_SHADER_WRITE_BIT,
                                 VK_ACCESS_SHADER_READ_BIT);
 

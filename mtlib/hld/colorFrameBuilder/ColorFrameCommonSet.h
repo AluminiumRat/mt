@@ -22,7 +22,7 @@ namespace mt
   {
   public:
     static constexpr const char* setName = "ColorFrameCommonSet";
-    static const VkDescriptorSetLayoutBinding bindings[11];
+    static const VkDescriptorSetLayoutBinding bindings[12];
 
     static constexpr uint32_t uniformBufferBinding = 0;
     static constexpr uint32_t iblLutBinding = 1;
@@ -31,10 +31,11 @@ namespace mt
     static constexpr uint32_t iblspecularMapBinding = 4;
     static constexpr uint32_t linearDepthHalfBufferBinding = 5;
     static constexpr uint32_t normalHalfBufferBinding = 6;
-    static constexpr uint32_t reprojectionBufferBinding = 7;
-    static constexpr uint32_t shadowBufferBinding = 8;
-    static constexpr uint32_t commonLinearSamplerBinding = 9;
-    static constexpr uint32_t commonNearestSamplerBinding = 10;
+    static constexpr uint32_t hiZBufferBinding = 7;
+    static constexpr uint32_t reprojectionBufferBinding = 8;
+    static constexpr uint32_t shadowBufferBinding = 9;
+    static constexpr uint32_t commonLinearSamplerBinding = 10;
+    static constexpr uint32_t commonNearestSamplerBinding = 11;
 
   public:
     //  Хелпер, который биндит сет в конструкторе и анбиндит в деструкторе
@@ -63,6 +64,7 @@ namespace mt
                 const EnvironmentScene& environment,
                 const ImageView& linearDepthHalfBuffer,
                 const ImageView& normalHalfBuffer,
+                const ImageView& hiZBuffer,
                 const ImageView& reprojectionBuffer,
                 const ImageView& shadowBuffer);
 
@@ -85,6 +87,8 @@ namespace mt
       alignas(16) glm::uvec2 iFrameExtent;
       alignas(16) glm::vec4 halfExtent;
       alignas(16) glm::uvec2 iHalfExtent;
+      alignas(16) glm::vec4 hiZExtent;
+      alignas(16) glm::uvec2 iHiZExtent;
 
       alignas(4) uint32_t frameIndex;
     };
@@ -94,7 +98,8 @@ namespace mt
     void _updateuniformBuffer(CommandProducerGraphic& commandProducer,
                               const FrameBuildContext& frameContext,
                               const EnvironmentScene& environment,
-                              glm::uvec2 halfFrameSize);
+                              glm::uvec2 halfFrameSize,
+                              glm::uvec2 hiZExtent);
 
   private:
     Device& _device;
