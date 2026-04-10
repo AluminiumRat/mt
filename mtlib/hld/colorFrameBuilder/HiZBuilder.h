@@ -36,6 +36,8 @@ namespace mt
     TechniquePass& _buildPass;
     ResourceBinding& _hiZBinding;
     UniformVariable& _hizSizeUniform;
+    UniformVariable& _hizMipCountUniform;
+    Selection& _baseMipSelection;
 
     ConstRef<Image> _hiZ;
 
@@ -63,6 +65,7 @@ namespace mt
     _hiZ = &hiZ;
     _gridSize = (glm::uvec2(_hiZ->extent()) + glm::uvec2(15)) / 16u;
     _hizSizeUniform.setValue(glm::uvec2(_hiZ->extent()));
+    _hizMipCountUniform.setValue(_hiZ->mipmapCount());
   }
 
   inline glm::uvec2 HiZBuilder::getHiZExtent(

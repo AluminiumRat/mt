@@ -348,8 +348,7 @@ void PassConfigurator::_processBindings(
         // Проверяем, что биндинги совместимы
         if( resource.type != newResource.type ||
             resource.name != newResource.name ||
-            resource.writeAccess != newResource.writeAccess ||
-            resource.count != newResource.count)
+            resource.writeAccess != newResource.writeAccess)
         {
           Log::warning() << _name << ": binding conflict: " << shaderFilename << " set: " << uint32_t(resource.set) << " binding: " << resource.bindingIndex;
           throw std::runtime_error(_name + ": binding conflict: " + shaderFilename);
@@ -357,6 +356,7 @@ void PassConfigurator::_processBindings(
         // Биндинги совместимы, просто дополняем информацию
         resource.shaderStages |= newResource.shaderStages;
         resource.pipelineStages |= newResource.pipelineStages;
+        resource.count = std::max(resource.count, newResource.count);
         itIsNewResource = false;
         break;
       }

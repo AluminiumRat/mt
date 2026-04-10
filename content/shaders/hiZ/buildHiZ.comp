@@ -3,17 +3,19 @@
 //  Построение HiZ буфера
 //  По мотивам UE4 и https://habr.com/ru/articles/1008236/
 //  HiZ имеет размер, равный степени 2
-//  HiZ разбивается на тайлы 8х8 пиксела, каждый из которых обрабатывается
-//  своей группой
+//  HiZ разбивается на тайлы 16х16 пикселов, каждый из которых обрабатывается
+//  своей группой. На каждом проходе обрабатывается до 5 мип уровней.
+//  Селекшен BASE_MIP указывает, с какого мипа начинать на текущем проходе
 
 #include "lib/commonSet.inl"
 
 layout (set = STATIC, binding = 0) uniform Params
 {
   uvec2 hiZSize;
+  uint hiZMipCount;
 } params;
 
-layout (rg16f, set = STATIC, binding = 2) uniform image2D hiZ[];
+layout (rg16f, set = STATIC, binding = 1) uniform image2D hiZ[];
 
 layout (local_size_x = 256,
         local_size_y = 1,
@@ -53,28 +55,65 @@ uvec2 getLocalCoords()
   return localCoords;
 }
 
-//  Чтение первичных данных из линейного буфера глубины и заполнение
-//    нулевого мипа HiZ
-vec2 initialRead(uvec2 texelCoord)
-{
-  vec2 texCoords = (vec2(texelCoord) + vec2(0.5f)) / vec2(params.hiZSize);
-  vec4 depthValues = textureGather( sampler2D(linearDepthHalfBuffer,
-                                              commonNearestSampler),
-                                    texCoords);
-  float minValue = min(depthValues.x,
-                    min(depthValues.y,
-                    min(depthValues.z,
-                        depthValues.w)));
-  minValues[gl_LocalInvocationID.x] = minValue;
+#if BASE_MIP == 0
+  //  Чтение первичных данных из линейного буфера глубины
+  //  mipSize не используется, нужен для совместивости с initialRead
+  //  для высоких мипов
+  vec2 initialRead(uvec2 texelCoord, uvec2 mipSize)
+  {
+    vec2 texCoords = (vec2(texelCoord) + vec2(0.5f)) / vec2(params.hiZSize);
+    vec4 depthValues = textureGather( sampler2D(linearDepthHalfBuffer,
+                                                commonNearestSampler),
+                                      texCoords);
+    float minValue = min(depthValues.x,
+                      min(depthValues.y,
+                      min(depthValues.z,
+                          depthValues.w)));
+    minValues[gl_LocalInvocationID.x] = minValue;
 
-  float maxValue = max(depthValues.x,
-                    max(depthValues.y,
-                    max(depthValues.z,
-                        depthValues.w)));
-  maxValues[gl_LocalInvocationID.x] = maxValue;
+    float maxValue = max(depthValues.x,
+                      max(depthValues.y,
+                      max(depthValues.z,
+                          depthValues.w)));
+    maxValues[gl_LocalInvocationID.x] = maxValue;
 
-  return vec2(minValue, maxValue);
-}
+    return vec2(minValue, maxValue);
+  }
+#else
+  //  Чтение первичных данных из мипа, который был посчитан на предыдущем
+  //  проходе
+  vec2 initialRead(uvec2 texelCoord, uvec2 mipSize)
+  {
+    //  Защита от выхода за границы текстуры
+    texelCoord = min(texelCoord, mipSize - uvec2(1));
+    texelCoord *= 2;
+
+    vec2 minmax = imageLoad(hiZ[BASE_MIP - 1],
+                            ivec2(texelCoord)).xy;
+    float minValue = minmax.x;
+    float maxValue = minmax.y;
+
+    minmax = imageLoad( hiZ[BASE_MIP - 1],
+                        ivec2(texelCoord) + ivec2(1, 0)).xy;
+    minValue = min(minValue, minmax.x);
+    maxValue = max(maxValue, minmax.y);
+
+    minmax = imageLoad( hiZ[BASE_MIP - 1],
+                        ivec2(texelCoord) + ivec2(0, 1)).xy;
+    minValue = min(minValue, minmax.x);
+    maxValue = max(maxValue, minmax.y);
+
+    minmax = imageLoad( hiZ[BASE_MIP - 1],
+                        ivec2(texelCoord) + ivec2(1, 1)).xy;
+    minValue = min(minValue, minmax.x);
+    maxValue = max(maxValue, minmax.y);
+
+    minValues[gl_LocalInvocationID.x] = minValue;
+    maxValues[gl_LocalInvocationID.x] = maxValue;
+
+    return vec2(minValue,maxValue);
+  }
+#endif
 
 //  Посчитать минимальное и максимальное значения для очередного мипа
 vec2 makeMip(uint step)
@@ -108,48 +147,56 @@ void main()
   //  Координаты внутри HiZ
   uvec2 texelCoord = gl_WorkGroupID.xy * uvec2(16, 16) + localCoord;
 
+  //  Размер текущего обрабатываемого мипа
+  uvec2 mipSize = uvec2(params.hiZSize.x >> BASE_MIP,
+                        params.hiZSize.y >> BASE_MIP);
+  mipSize = max(mipSize, uvec2(1));
+
   //  Надо ли записывать результаты в HiZ, если false, то поток используется
   //  только для заполнения shared памяти
-  bool needStore = texelCoord.x < params.hiZSize.x &&
-                    texelCoord.y < params.hiZSize.y;
+  bool needStore = texelCoord.x < mipSize.x && texelCoord.y < mipSize.y;
 
   // Формируем мип0
-  vec2 minMax = initialRead(texelCoord);
-  if(needStore) imageStore( hiZ[0],
+  vec2 minMax = initialRead(texelCoord, mipSize);
+  if(needStore) imageStore( hiZ[BASE_MIP],
                             ivec2(texelCoord),
                             vec4(minMax, 0, 0));
 
   //  Считаем мип1
-  if(gl_LocalInvocationID.x >= 64) return;
+  if( gl_LocalInvocationID.x >= 64 ||
+      BASE_MIP + 2 > params.hiZMipCount) return;
   barrier();
   minMax = makeMip(64);
   texelCoord /= 2;
-  if(needStore) imageStore( hiZ[1],
+  if(needStore) imageStore( hiZ[BASE_MIP + 1],
                             ivec2(texelCoord),
                             vec4(minMax, 0, 0));
 
   //  Считаем мип2
-  if(gl_LocalInvocationID.x >= 16) return;
+  if( gl_LocalInvocationID.x >= 16 ||
+      BASE_MIP + 3 > params.hiZMipCount) return;
   barrier();
   minMax = makeMip(16);
   texelCoord /= 2;
-  if(needStore) imageStore( hiZ[2],
+  if(needStore) imageStore( hiZ[BASE_MIP + 2],
                             ivec2(texelCoord),
                             vec4(minMax, 0, 0));
 
   //  Считаем мип3
-  if(gl_LocalInvocationID.x >= 4) return;
+  if( gl_LocalInvocationID.x >= 4 ||
+      BASE_MIP + 4 > params.hiZMipCount) return;
   minMax = makeMip(4);
   texelCoord /= 2;
-  if(needStore) imageStore( hiZ[3],
+  if(needStore) imageStore( hiZ[BASE_MIP + 3],
                             ivec2(texelCoord),
                             vec4(minMax, 0, 0));
 
   //  Считаем мип4
-  if(gl_LocalInvocationID.x >= 1) return;
+  if( gl_LocalInvocationID.x >= 1 ||
+      BASE_MIP + 5 > params.hiZMipCount) return;
   minMax = makeMip(1);
   texelCoord /= 2;
-  if(needStore) imageStore( hiZ[4],
+  if(needStore) imageStore( hiZ[BASE_MIP + 4],
                             ivec2(texelCoord),
                             vec4(minMax, 0, 0));
 }

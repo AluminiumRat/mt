@@ -1,7 +1,11 @@
 commonSetName : ColorFrameCommonSet
 
+selections:
+  BASE_MIP: [0, 5, 10]
+
 passes:
   BuildPass :
     pipeline: COMPUTE
+    selections: [BASE_MIP]
     shaders:
       COMPUTE : hiZ/buildHiZ.comp
