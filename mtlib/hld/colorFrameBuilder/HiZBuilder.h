@@ -47,7 +47,6 @@ namespace mt
   {
     if(_hiZ == &hiZ) return;
 
-    MT_ASSERT(glm::uvec2(hiZ.extent()) == getHiZExtent(linearDepth.extent()));
     MT_ASSERT(hiZ.mipmapCount() == Image::calculateMipNumber(hiZ.extent()));
 
     std::vector<ConstRef<ImageView>> hiZViews;

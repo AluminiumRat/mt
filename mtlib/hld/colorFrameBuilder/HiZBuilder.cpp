@@ -16,7 +16,7 @@ HiZBuilder::HiZBuilder(Device& device) :
 
 void HiZBuilder::buildHiZ(CommandProducerCompute& producer)
 {
-  MT_ASSERT(_linearDepth != nullptr);
+  MT_ASSERT(_hiZ != nullptr);
 
   Technique::BindCompute bind(_technique, _buildPass, producer);
   MT_ASSERT(bind.isValid());

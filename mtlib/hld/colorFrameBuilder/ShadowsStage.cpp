@@ -236,7 +236,7 @@ void ShadowsStage::_rebuildTechnique()
   {
     if(pass->name() == _variationHorizontalPass.name())
     {
-      MT_ASSERT(pass->shaders().empty());
+      MT_ASSERT(!pass->shaders().empty());
       PassConfigurator::ShaderInfo shader = pass->shaders()[0];
       shader.constants.clear();
       shader.constants.addConstant("GROUP_SIZE", horizontalGroupSize);
@@ -245,7 +245,7 @@ void ShadowsStage::_rebuildTechnique()
     }
     if(pass->name() == _variationVerticalPass.name())
     {
-      MT_ASSERT(pass->shaders().empty());
+      MT_ASSERT(!pass->shaders().empty());
       PassConfigurator::ShaderInfo shader = pass->shaders()[0];
       shader.constants.clear();
       shader.constants.addConstant("GROUP_SIZE", verticalGroupSize);

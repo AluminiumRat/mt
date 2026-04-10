@@ -15,7 +15,7 @@ static VkSurfaceFormatKHR getSwapchainFormat(
                         const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
   MT_ASSERT(!availableFormats.empty());
-  MT_ASSERT(!*imageFormat == VK_FORMAT_UNDEFINED);
+  MT_ASSERT(imageFormat != VK_FORMAT_UNDEFINED);
 
   for(const VkSurfaceFormatKHR& availableFormat : availableFormats)
   {
