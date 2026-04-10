@@ -75,8 +75,8 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
                                 _drawPlan,
                                 frameContext);
       _reprojectionStageLayout(*preopaqueProducer);
-      _reprojectionBufferUpdater.updateReprojection(*preopaqueProducer);
       _hiZBuilder.buildHiZ(*preopaqueProducer);
+      _reprojectionBufferUpdater.updateReprojection(*preopaqueProducer);
     }
     _device.graphicQueue()->submitCommands(std::move(preopaqueProducer));
   }
