@@ -22,7 +22,13 @@ void main()
                                       commonNearestSampler),
                             ivec2(gl_GlobalInvocationID.xy),
                             0).x;
-  if(depth == LINEAR_DEPTH_EMPTY_VALUE) return;
+  if(depth == LINEAR_DEPTH_EMPTY_VALUE)
+  {
+    imageStore( finalShadowMask,
+                ivec2(gl_GlobalInvocationID.xy),
+                vec4(1.0f));
+    return;
+  }
 
   vec3 normal = octahedronDecode(texelFetch(sampler2D(normalHalfBuffer,
                                                       commonNearestSampler),
