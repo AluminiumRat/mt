@@ -78,7 +78,11 @@ ShadowsStage::ShadowsStage(Device& device, TextureManager& textureManager) :
 void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
                         const FrameBuildContext& frameContext)
 {
-  if(!_enabled || _device.features().rayQuery.rayQuery != VK_TRUE)
+  const TLAS* tlas = frameContext.drawScene->tlas();
+
+  if( !_enabled ||
+      _device.features().rayQuery.rayQuery != VK_TRUE ||
+      tlas == nullptr)
   {
     //  Тени отключены или не могут быть посчитаны. Просто чистим маску
     commandProducer.clearColorImage(_shadowBuffer->image(),
@@ -95,8 +99,6 @@ void ShadowsStage::draw(CommandProducerGraphic& commandProducer,
   }
 
   _swapBuffers(commandProducer);
-
-  const TLAS* tlas = frameContext.drawScene->tlas();
   _tlasBinding.setTLAS(tlas);
 
   MT_ASSERT(_rayQueryTechnique.isReady());

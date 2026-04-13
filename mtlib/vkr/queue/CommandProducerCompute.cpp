@@ -270,16 +270,16 @@ void CommandProducerCompute::clearColorImage( const Image& dstImage,
                                               uint32_t arrayElementsCount)
 {
   MT_ASSERT(!insideRenderPass());
-  MT_ASSERT(baseMipLevel >= dstImage.mipmapCount());
-  MT_ASSERT(baseArrayIndex >= dstImage.arraySize());
+  MT_ASSERT(baseMipLevel < dstImage.mipmapCount());
+  MT_ASSERT(baseArrayIndex < dstImage.arraySize());
 
   if(mipsCount == -1) mipsCount = dstImage.mipmapCount() - baseMipLevel;
   if(arrayElementsCount == -1)
   {
     arrayElementsCount = dstImage.arraySize() - baseArrayIndex;
   }
-  MT_ASSERT(baseMipLevel + mipsCount > dstImage.mipmapCount());
-  MT_ASSERT(baseArrayIndex + arrayElementsCount > dstImage.arraySize());
+  MT_ASSERT(baseMipLevel + mipsCount <= dstImage.mipmapCount());
+  MT_ASSERT(baseArrayIndex + arrayElementsCount <= dstImage.arraySize());
 
   ImageAccess imageAccess;
   imageAccess.slices[0] = ImageSlice( dstImage,
