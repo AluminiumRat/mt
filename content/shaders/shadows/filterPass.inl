@@ -33,11 +33,8 @@ float getWeight(ivec2 sampleCoord,
   weight *= max((depthTreshold - depthDelta) / depthTreshold, 0.0f);
 
   //  Взвешивание по нормали
-  vec3 currentNormal = octahedronDecode(
-                                    texelFetch( sampler2D( normalHalfBuffer,
-                                                          commonNearestSampler),
-                                                sampleCoord,
-                                                0).xy);
+  vec3 currentNormal = getNormalFromHalfBuffer(sampleCoord);
+
   weight *= max(dot(currentNormal, normal), 0.0f);
 
   return weight;

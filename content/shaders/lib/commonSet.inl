@@ -3,6 +3,7 @@
 
 #include <lib/cameraData.inl>
 #include <lib/environmentData.inl>
+#include "lib/octahedronEncoding.inl"
 
 //  Магическое число, если оно встречается в линейном буфере глубины, значит
 //  туда не было отрендерено никакой геометрии. Т.е это фон
@@ -95,6 +96,16 @@ float getHalfBufferPixelSize(float linearDepth)
                                                   commonData.halfFrameExtent.w;
 }
 
+//  Прочитать нормаль из normalHalfBuffer
+//  PixelCoord - координаты пикселя в normalHalfBuffer
+vec3 getNormalFromHalfBuffer(ivec2 pixelCoord)
+{
+  return octahedronDecode(texelFetch(sampler2D( normalHalfBuffer,
+                                                commonNearestSampler),
+                                     pixelCoord,
+                                     0).xy);
+}
+
 //  Вектор, специально предназначенный для вычисления мировых координат
 //  по линейному буферу глубины. Представляет из себя напрвление "из камеры",
 //  но с нормализованной во вью пространстве координатой z
@@ -104,6 +115,23 @@ vec3 getPosRestoreVec(vec2 ssCoords)
   return commonData.cameraData.leftTopRPV +
             ssCoords.x * commonData.cameraData.leftToRightRPV +
             ssCoords.y * commonData.cameraData.topToBottomRPV;
+}
+
+//  Получить направление "из камеры"(в мировых координатах) по экранным
+//    координатам
+//  ssCoords - экранные координаты в диапазоне [0; 1]
+vec3 getViewDirection(vec2 ssCoords)
+{
+  return normalize(getPosRestoreVec(ssCoords));
+}
+
+//  Восстановить позицию в мировых координатах по экранным координатам и
+//    линейной глубине
+//  ssCoords - экранные координаты в диапазоне [0; 1]
+vec3 getWorldPosition(vec2 ssCoords, float linearDepth)
+{
+  vec3 posRestoreVec = getPosRestoreVec(ssCoords);
+  return commonData.cameraData.eyePoint + posRestoreVec * linearDepth;
 }
 
 #endif

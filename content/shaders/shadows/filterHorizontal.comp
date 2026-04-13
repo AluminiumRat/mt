@@ -2,7 +2,6 @@
 //  Фильтрация сырых результатов рэй трэйсинга теней
 //  Горизонтальное размытие
 
-#include "lib/octahedronEncoding.inl"
 #include "shadows/filterPass.inl"
 
 layout (local_size_x = 8,
@@ -24,10 +23,7 @@ void main()
                             0).x;
   if(depth == LINEAR_DEPTH_EMPTY_VALUE) return;
 
-  vec3 normal = octahedronDecode(texelFetch(sampler2D(normalHalfBuffer,
-                                                      commonNearestSampler),
-                                            ivec2(gl_GlobalInvocationID.xy),
-                                            0).xy);
+  vec3 normal = getNormalFromHalfBuffer(ivec2(gl_GlobalInvocationID.xy));
 
   float depthTreshold = getDepthTreshold(depth, normal);
 

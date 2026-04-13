@@ -30,10 +30,7 @@ void main()
     return;
   }
 
-  vec3 normal = octahedronDecode(texelFetch(sampler2D(normalHalfBuffer,
-                                                      commonNearestSampler),
-                                            ivec2(gl_GlobalInvocationID.xy),
-                                            0).xy);
+  vec3 normal = getNormalFromHalfBuffer(ivec2(gl_GlobalInvocationID.xy));
 
   float depthTreshold = getDepthTreshold(depth, normal);
 

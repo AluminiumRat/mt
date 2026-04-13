@@ -1,7 +1,6 @@
 #version 460
 #extension GL_EXT_ray_query : enable
 
-#include "lib/octahedronEncoding.inl"
 #include "shadows/rayQueryShadows.inl"
 
 layout (set = STATIC, binding = 0) uniform accelerationStructureEXT tlas;
@@ -93,8 +92,7 @@ vec3 getStartPoint( vec2 ssCoords,
                     vec3 rayDirection,
                     float pixelSize)
 {
-  vec3 posRestoreVec = getPosRestoreVec(ssCoords);
-  vec3 startPoint = commonData.cameraData.eyePoint + posRestoreVec * depth;
+  vec3 startPoint = getWorldPosition(ssCoords, depth);
 
   //  Смещаем вдоль нормали, чтобы погасить артефакты терминатора
   float normalShiftValue = clamp(1.0f - dot(normal, rayDirection), 0.0f, 1.0f);
@@ -217,9 +215,7 @@ void main()
     int sampleIndex = int(random * 1024) +
                                     (commonData.frameIndex % 4) * MAX_RAY_CASTS;
 
-    vec3 normal = octahedronDecode( texture(sampler2D(normalHalfBuffer,
-                                                      commonNearestSampler),
-                                            ssCoords).xy);
+    vec3 normal = getNormalFromHalfBuffer(ivec2(gl_GlobalInvocationID.xy));
 
     for(int i = 0; i < samplesCount; i++)
     {
