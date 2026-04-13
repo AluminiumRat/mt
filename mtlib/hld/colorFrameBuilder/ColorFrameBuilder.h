@@ -12,6 +12,7 @@
 #include <hld/colorFrameBuilder/Posteffects.h>
 #include <hld/colorFrameBuilder/ShadowsStage.h>
 #include <hld/colorFrameBuilder/ReprojectionBufferUpdater.h>
+#include <hld/colorFrameBuilder/SSRBuilder.h>
 #include <hld/drawCommand/CommandMemoryPool.h>
 #include <hld/DrawPlan.h>
 #include <hld/FrameTypeIndex.h>
@@ -80,7 +81,8 @@ namespace mt
     void makeGui();
 
   private:
-    void _updateBuffers(glm::uvec2 targetExtent);
+    void _updateBuffers(glm::uvec2 targetExtent,
+                        CommandProducerGraphic& commandProducer);
     void _initBuffersLayout(CommandProducerGraphic& commandProducer);
     void _reprojectionStageLayout(CommandProducerGraphic& commandProducer);
     void _shadowsLayout(CommandProducerGraphic& commandProducer);
@@ -112,6 +114,8 @@ namespace mt
     Ref<ImageView> _reprojectionBufferView;
     Ref<Image> _shadowBuffer;
     Ref<ImageView> _shadowBufferView;
+    Ref<Image> _reflectionBuffer;
+    Ref<ImageView> _reflectionBufferView;
 
     ColorFrameCommonSet _commonSet;
 
@@ -119,6 +123,7 @@ namespace mt
     ReprojectionBufferUpdater _reprojectionBufferUpdater;
     HiZBuilder _hiZBuilder;
     ShadowsStage _shadowsStage;
+    SSRBuilder _ssrBuilder;
     OpaqueColorStage _opaqueColorStage;
     BackgroundRender _backgroundRender;
     Posteffects _posteffects;

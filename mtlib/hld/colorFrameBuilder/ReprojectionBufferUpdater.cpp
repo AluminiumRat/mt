@@ -23,7 +23,7 @@ void ReprojectionBufferUpdater::updateReprojection(
 {
   if(_depthHistory == nullptr)
   {
-    createBuffers(commandProducer);
+    _createBuffers(commandProducer);
     _historyAvailableSelection.setValue("0");
   }
   else _historyAvailableSelection.setValue("1");
@@ -44,7 +44,7 @@ void ReprojectionBufferUpdater::updateReprojection(
   }
 }
 
-void ReprojectionBufferUpdater::createBuffers(
+void ReprojectionBufferUpdater::_createBuffers(
                                         CommandProducerGraphic& commandProducer)
 {
   glm::uvec2 extent = _reprojectionBufferBinding.image()->extent();

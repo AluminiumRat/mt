@@ -23,6 +23,7 @@ ColorFrameBuilder::ColorFrameBuilder( Device& device,
   _reprojectionBufferUpdater(device),
   _hiZBuilder(device),
   _shadowsStage(device, textureManager),
+  _ssrBuilder(device),
   _opaqueColorStage(device),
   _backgroundRender(device, techniqueManager),
   _posteffects(device)
@@ -38,8 +39,6 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
   Region targetRegion = _drawRegion.valid() ? _drawRegion : target.extent();
   if(!targetRegion.valid()) return;
 
-  _updateBuffers(targetRegion.size());
-
   FrameBuildContext frameContext{};
   frameContext.frameType = _frameTypeIndex;
   frameContext.viewCamera = &viewCamera;
@@ -53,6 +52,9 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
     //  Подготовительные работы
     std::unique_ptr<CommandProducerGraphic> prepareProducer =
                                         _device.graphicQueue()->startCommands();
+
+    _updateBuffers(targetRegion.size(), *prepareProducer);
+
     _initBuffersLayout(*prepareProducer);
     _commonSet.update(*prepareProducer,
                       frameContext,
@@ -95,6 +97,17 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
   }
 
   {
+    //  SSR
+    std::unique_ptr<CommandProducerGraphic> ssrProducer =
+                                  _device.graphicQueue()->startCommands("SSR");
+    {
+      ColorFrameCommonSet::Bind bindCommonSet(_commonSet, *ssrProducer);
+      _ssrBuilder.buildReflection(*ssrProducer);
+    }
+    _device.graphicQueue()->submitCommands(std::move(ssrProducer));
+  }
+
+  {
     //  Opaque проход
     std::unique_ptr<CommandProducerGraphic> opaqueProducer =
                                   _device.graphicQueue()->startCommands(
@@ -122,7 +135,8 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
   }
 }
 
-void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
+void ColorFrameBuilder::_updateBuffers( glm::uvec2 targetExtent,
+                                        CommandProducerGraphic& commandProducer)
 {
   //  Проверка, а надо ли вообще пересоздавать буферы
   if (_hdrBuffer != nullptr &&
@@ -141,6 +155,8 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                           targetExtent,
                           "HDRBuffer");
   _hdrBufferView = new ImageView(*_hdrBuffer);
+  commandProducer.initLayout( *_hdrBuffer,
+                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
   _depthBuffer = new Image( _device,
                             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -205,12 +221,21 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
                             "ShadowBuffer");
   _shadowBufferView = new ImageView(*_shadowBuffer);
 
+  _reflectionBuffer = new Image(_device,
+                                VK_IMAGE_USAGE_STORAGE_BIT |
+                                  VK_IMAGE_USAGE_SAMPLED_BIT,
+                                hdrFormat,
+                                halfSize,
+                                "ReflectionBuffer");
+  _reflectionBufferView = new ImageView(*_reflectionBuffer);
+
   _opaquePrepassStage.setBuffers( *_halfDepthBufferView,
                                   *_halfLinearDepthBufferView,
                                   *_halfNormalBufferView);
   _reprojectionBufferUpdater.setBuffers(*_reprojectionBufferView);
   _hiZBuilder.setBuffers(*_hiZBuffer);
   _shadowsStage.setBuffers(*_shadowBufferView);
+  _ssrBuilder.setBuffers(*_reflectionBufferView, *_hdrBufferView),
   _opaqueColorStage.setBuffers(*_hdrBufferView, *_depthBufferView);
   _backgroundRender.setBuffers(*_hdrBufferView, *_depthBufferView);
   _posteffects.setHdrBuffer(*_hdrBufferView);
@@ -219,9 +244,6 @@ void ColorFrameBuilder::_updateBuffers(glm::uvec2 targetExtent)
 void ColorFrameBuilder::_initBuffersLayout(
                                         CommandProducerGraphic& commandProducer)
 {
-  commandProducer.initLayout( *_hdrBuffer,
-                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
   commandProducer.initLayout( *_depthBuffer,
                               VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
@@ -236,9 +258,11 @@ void ColorFrameBuilder::_initBuffersLayout(
   commandProducer.initLayout( *_halfNormalBuffer,
                               VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
-  commandProducer.initLayout( *_reprojectionBuffer, VK_IMAGE_LAYOUT_GENERAL);
+  commandProducer.initLayout(*_reprojectionBuffer, VK_IMAGE_LAYOUT_GENERAL);
 
   commandProducer.initLayout(*_shadowBuffer, VK_IMAGE_LAYOUT_GENERAL);
+
+  commandProducer.initLayout(*_reflectionBuffer, VK_IMAGE_LAYOUT_GENERAL);
 }
 
 void ColorFrameBuilder::_reprojectionStageLayout(
@@ -289,8 +313,20 @@ void ColorFrameBuilder::_shadowsLayout(CommandProducerGraphic& commandProducer)
 void ColorFrameBuilder::_opaquePassLayout(
                                       CommandProducerGraphic& commandProducer)
 {
+  commandProducer.initLayout( *_hdrBuffer,
+                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
   commandProducer.imageBarrier( *_shadowBuffer,
                                 ImageSlice(*_shadowBuffer),
+                                VK_IMAGE_LAYOUT_GENERAL,
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                VK_ACCESS_SHADER_WRITE_BIT,
+                                VK_ACCESS_SHADER_READ_BIT);
+
+  commandProducer.imageBarrier( *_reflectionBuffer,
+                                ImageSlice(*_reflectionBuffer),
                                 VK_IMAGE_LAYOUT_GENERAL,
                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,

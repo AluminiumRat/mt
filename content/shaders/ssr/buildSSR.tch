@@ -1,0 +1,7 @@
+commonSetName : ColorFrameCommonSet
+
+passes:
+  MarchingPass :
+    pipeline: COMPUTE
+    shaders:
+      COMPUTE : ssr/buildSSR.comp

@@ -23,6 +23,7 @@ set(SOURCES
     "colorFrameBuilder/Posteffects.cpp"
     "colorFrameBuilder/ReprojectionBufferUpdater.cpp"
     "colorFrameBuilder/ShadowsStage.cpp"
+    "colorFrameBuilder/SSRBuilder.cpp"
     "drawCommand/CommandMemoryPool.cpp"
     "drawCommand/DrawCommandList.cpp"
     "drawScene/Drawable.cpp"

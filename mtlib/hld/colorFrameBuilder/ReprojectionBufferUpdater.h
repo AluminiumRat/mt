@@ -32,7 +32,7 @@ namespace mt
     inline void setBuffers(const ImageView& reprojectionBuffer);
 
   private:
-    void createBuffers(CommandProducerGraphic& commandProducer);
+    void _createBuffers(CommandProducerGraphic& commandProducer);
 
   private:
     Device& _device;
