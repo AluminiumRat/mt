@@ -30,6 +30,7 @@ layout (set = COMMON, binding = 0) uniform CommonData
   //  zw = 1 / xy
   vec4 hiZExtent;
   ivec2 iHiZExtent;
+  uint hiZMipCount;
 
   //  Номер кадра, начиная с 0. Относится только к конкретному ColorFrameBuilder
   int frameIndex;

@@ -89,6 +89,7 @@ namespace mt
       alignas(16) glm::uvec2 iHalfExtent;
       alignas(16) glm::vec4 hiZExtent;
       alignas(16) glm::uvec2 iHiZExtent;
+      alignas(4) uint32_t hiZMipCount;
 
       alignas(4) uint32_t frameIndex;
     };
@@ -99,7 +100,8 @@ namespace mt
                               const FrameBuildContext& frameContext,
                               const EnvironmentScene& environment,
                               glm::uvec2 halfFrameSize,
-                              glm::uvec2 hiZExtent);
+                              glm::uvec2 hiZExtent,
+                              uint32_t hiZMipCount);
 
   private:
     Device& _device;

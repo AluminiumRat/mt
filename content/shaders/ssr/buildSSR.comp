@@ -9,16 +9,168 @@ layout( r11f_g11f_b10f,
 layout( set = STATIC,
         binding = 1) uniform texture2D prevHDR;
 
+float hyperbolicToLinearDepth(float hyperbolic)
+{
+  float near = commonData.cameraData.nearDistance;
+  float far = commonData.cameraData.farDistance;
+  return far * near / (hyperbolic * (far - near) + near);
+}
+
+float linearToHiperbolicDepth(float linear)
+{
+  float near = commonData.cameraData.nearDistance;
+  float far = commonData.cameraData.farDistance;
+  return near * (far - linear) / linear / (far - near);
+}
+
+//  Упрощенная обработка для пикселей фона(неба). Просто читаем значение из
+//  предыдущего кадра для лучшей постобработки
+void processBackground(vec2 ssCoords)
+{
+  vec3 backgroundColor = texture( sampler2D(prevHDR, commonLinearSampler),
+                                  ssCoords).rgb;
+  imageStore( outReflectionBuffer,
+              ivec2(gl_GlobalInvocationID.xy),
+              vec4(backgroundColor, 0.0f));
+}
+
+//  Вычислить луч, вдоль которого будет происходить маршинг
+//  xy - скрин спэйс координаты [0,1]
+//  z - гиперболическая глубина
+void getRay(out vec3 origin,
+            out vec3 direction,
+            vec2 ssCoords,
+            float linearDepth)
+{
+  vec3 worldPos = getWorldPosition(ssCoords, linearDepth);
+  vec3 normal = getNormalFromHalfBuffer(ivec2(gl_GlobalInvocationID.xy));
+
+  //  Делаем небольшое смещение вдоль нормали, чтобы на старте маршинга
+  //  не получить ложное пересечение
+  worldPos += normal * 2.0f * getHalfBufferPixelSize(linearDepth);
+
+  //  Переводим начало луча в экранные координаты
+  vec4 clipSpacePos =
+                commonData.cameraData.viewProjectionMatrix * vec4(worldPos, 1);
+  clipSpacePos.xyz /= clipSpacePos.w;
+  origin = vec3(clipSpacePos.xy * 0.5f + 0.5f, clipSpacePos.z);
+
+  //  Вычисляем направление луча. Находим какую-нибудь точку на луче отражения,
+  //  переводим в скрин спэйс и вычитаем начало луча
+  vec3 viewDir = getViewDirection(ssCoords);
+  vec3 reflectionDir = reflect(viewDir, normal);
+  vec3 shiftedPoint = worldPos + reflectionDir;
+  vec4 shiftedPointSS =
+            commonData.cameraData.viewProjectionMatrix * vec4(shiftedPoint, 1);
+  shiftedPointSS.xyz /= shiftedPointSS.w;
+  shiftedPointSS.xy = shiftedPointSS.xy * 0.5f + 0.5f;
+  direction = shiftedPointSS.xyz - origin;
+  direction = direction / length(direction.xy);
+}
+
+//  Координаты ячейки HiZ по скринспэйс координатам
+ivec2 getCell(vec2 ssCoords, int mipLevel)
+{
+  ivec2 pixelCoord = ivec2(ssCoords * commonData.hiZExtent.xy);
+  return pixelCoord >> mipLevel;
+}
+
+//  Пересечение с границей ячейки
+float cellIntersection( vec2 startPoint,
+                        vec2 direction,
+                        ivec2 cell,
+                        int hizMip,
+                        vec2 border)
+{
+  // Размер ячейки в screenSpace координатах
+  vec2 cellSize = vec2(1 << hizMip);
+  cellSize *= commonData.hiZExtent.zw;
+
+  // Вертикаль и горизонталь, с которыми надо пересечься
+  vec2 cellBorders = (cell + border) * cellSize;
+  cellBorders = min(cellBorders, 1.0f);
+
+  vec2 ortoDist = (cellBorders - startPoint) / direction;
+  return min(ortoDist.x, ortoDist.y);
+}
+
 layout (local_size_x = 8,
         local_size_y = 8,
         local_size_z = 1) in;
 
 void main()
 {
-  if( gl_GlobalInvocationID.x >= commonData.iHalfFrameExtent.x ||
-      gl_GlobalInvocationID.y >= commonData.iHalfFrameExtent.y) return;
+  vec2 pixelCoord = vec2(gl_GlobalInvocationID.xy);
+  if( pixelCoord.x >= commonData.halfFrameExtent.x ||
+      pixelCoord.y >= commonData.halfFrameExtent.y) return;
 
-  imageStore( outReflectionBuffer,
-              ivec2(gl_GlobalInvocationID.xy),
-              vec4(1, 0, 0, 0));
+  vec2 ssCoords = (pixelCoord + vec2(0.5f)) * commonData.halfFrameExtent.zw;
+  float linearDepth = texture(sampler2D(linearDepthHalfBuffer,
+                                        commonNearestSampler),
+                              ssCoords).r;
+  if(linearDepth == LINEAR_DEPTH_EMPTY_VALUE)
+  {
+    //  Попали в небо
+    processBackground(ssCoords);
+    return;
+  }
+
+  //  Луч, по которому будет проходить маршинг
+  vec3 startPoint, direction;
+  getRay(startPoint, direction, ssCoords, linearDepth);
+
+  //  В каком направлении идет перебор клеток HiZ
+  vec2 cellStep = sign(direction.xy);
+  //  Смещение точек от края ячейки HiZ, чтобы попадать в следующую ячейку
+  vec2 pointShift = cellStep * commonData.hiZExtent.zw * 0.5f;
+  //  С каким краем клеток HiZ будем искать пересечение
+  vec2 cellBorder = max(cellStep, 0.0f);
+
+  ivec2 cell = getCell(startPoint.xy, 0);
+  float currentT = cellIntersection(startPoint.xy,
+                                    direction.xy,
+                                    cell,
+                                    0,
+                                    cellBorder);
+
+  uint stepCount = 0;
+  int currentMip = 1;
+  vec3 currentPoint = startPoint + direction * currentT;
+  currentPoint.xy += pointShift;
+  while(currentMip >= 0 &&
+        currentMip < commonData.hiZMipCount &&
+        ++stepCount <= 100)
+  {
+    cell = getCell(currentPoint.xy, currentMip);
+    float nextT = cellIntersection( startPoint.xy,
+                                    direction.xy,
+                                    cell,
+                                    currentMip,
+                                    cellBorder);
+    vec3 nextPoint = startPoint + direction * nextT;
+
+    float rayDepth = min(currentPoint.z, nextPoint.z);
+    float cellDepth = textureLod( sampler2D(hiZBuffer, commonNearestSampler),
+                                  currentPoint.xy,
+                                  currentMip).x;
+    cellDepth = linearToHiperbolicDepth(cellDepth);
+    if(cellDepth < rayDepth)
+    {
+      //  HiZ не пересекается с лучем, можно делать следующий шаг маршинга
+      currentPoint = nextPoint;
+      currentPoint.xy += pointShift;
+      currentMip++;
+    }
+    else
+    {
+      //  Текущий мип HiZ пересекается с лучем. Спускаемся на мип ниже,
+      //  чтобы уточнить, кто из дочерних клеток дает пересечение
+      currentMip--;
+    }
+  }
+
+  //imageStore( outReflectionBuffer,
+  //            ivec2(gl_GlobalInvocationID.xy),
+  //            vec4(currentPoint,0, 0));
+  processBackground(currentPoint.xy);
 }

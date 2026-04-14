@@ -83,7 +83,8 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
                         frameContext,
                         environment,
                         glm::uvec2(linearDepthHalfBuffer.extent()),
-                        glm::uvec2(hiZBuffer.extent()));
+                        glm::uvec2(hiZBuffer.extent()),
+                        hiZBuffer.slice().levelCount());
 
   Ref<DescriptorPool> pool(new DescriptorPool(_device,
                                               _setLayout->descriptorCounter(),
@@ -131,7 +132,8 @@ void ColorFrameCommonSet::_updateuniformBuffer(
                                         const FrameBuildContext& frameContext,
                                         const EnvironmentScene& environment,
                                         glm::uvec2 halfFrameExtent,
-                                        glm::uvec2 hiZExtent)
+                                        glm::uvec2 hiZExtent,
+                                        uint32_t hiZMipCount)
 {
   UniformCommonData uniformData{};
   uniformData.cameraData = _currentCameraData;
@@ -154,6 +156,7 @@ void ColorFrameCommonSet::_updateuniformBuffer(
                                       1.0f / hiZExtent.x,
                                       1.0f / hiZExtent.y);
   uniformData.iHiZExtent = hiZExtent;
+  uniformData.hiZMipCount = hiZMipCount;
   uniformData.frameIndex = _frameIndex;
 
   commandProducer.uploadToBuffer( *_uniformBuffer,
