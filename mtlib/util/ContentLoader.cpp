@@ -58,8 +58,8 @@ DefaultContentLoader::DefaultContentLoader() :
 {
   _searchPatches.push_back(fs::current_path());
   _searchPatches.push_back(fs::current_path() / "shaders");
-  _searchPatches.push_back(fs::current_path() / "content");
-  _searchPatches.push_back(fs::current_path() / "content/shaders");
+  _searchPatches.push_back(fs::current_path() / "../content");
+  _searchPatches.push_back(fs::current_path() / "../content/shaders");
 
   //  Строка для создания хэша лоадера
   std::string loaderDescription = "DefaultContentLoader";
