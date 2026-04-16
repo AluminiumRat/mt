@@ -176,8 +176,6 @@ void main()
                                     cell,
                                     currentMip,
                                     cellBorder);
-    if(nextT >= maxT) break;
-
     vec3 nextPoint = startPoint + direction * nextT;
 
     float rayDepth = min(currentPoint.z, nextPoint.z);
@@ -199,6 +197,9 @@ void main()
       nextPoint.xy += pointShift;   // Небольшое смещение, чтобы уйти за границу
                                     // ячейки HiZ
       currentPoint = nextPoint;
+
+      //  Проверка, не уходим ли мы за экран
+      if(nextT >= maxT) break;
     }
     else
     {
@@ -209,8 +210,8 @@ void main()
     }
   }
 
-  //imageStore( outReflectionBuffer,
-  //            ivec2(gl_GlobalInvocationID.xy),
-  //            vec4(stepCount,currentMip,0, 0));
+  /*imageStore( outReflectionBuffer,
+              ivec2(gl_GlobalInvocationID.xy),
+              vec4(startPoint + direction * maxT, 0));*/
   processBackground(currentPoint.xy);
 }
