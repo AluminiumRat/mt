@@ -66,6 +66,9 @@ void getRay(out vec3 origin,
   shiftedPointSS.xy = shiftedPointSS.xy * 0.5f + 0.5f;
   direction = shiftedPointSS.xyz - origin;
   direction = direction / length(direction.xy);
+
+  //  Немного смещаем направление, чтобы избежать нулей (и деление на ноль)
+  direction += step(vec3(0.0f), direction) * 0.0001f;
 }
 
 //  Координаты ячейки HiZ по скринспэйс координатам
@@ -96,10 +99,10 @@ float cellIntersection( vec2 startPoint,
 
 //  Получить максимальное значение t, до которого нужно
 //  маршить
-float getMaxT(vec3 startPoint, vec3 direction)
+float getMaxT(vec3 startPoint, vec3 direction, vec3 directionSign)
 {
   //  Края clip пространства в направлении луча
-  vec3 border = max(sign(direction), 0.0f);
+  vec3 border = max(directionSign, 0.0f);
   vec3 ortoDist = (border - startPoint) / direction;
   return min(min(ortoDist.x, ortoDist.y), ortoDist.z);
 }
@@ -146,18 +149,17 @@ void main()
   //  Луч, по которому будет проходить маршинг
   vec3 startPoint, direction;
   getRay(startPoint, direction, ssCoords, linearDepth);
+  vec3 directionSign = sign(direction);
+
+  //  Смещение точек от края ячейки HiZ, чтобы попадать в следующую ячейку
+  vec2 pointShift = directionSign.xy * commonData.hiZExtent.zw * 0.5f;
+  //  С каким краем клеток HiZ будем искать пересечение
+  vec2 cellBorder = max(directionSign.xy, 0.0f);
 
   //  Максимальный параметр t, до которого надо маршить
-  float maxT = getMaxT(startPoint, direction);
+  float maxT = getMaxT(startPoint, direction, directionSign);
   //  Мип, до которого можно подниматься при маршинге
   int maxMip = int(commonData.hiZMipCount) - 1;
-
-  //  В каком направлении идет перебор клеток HiZ
-  vec2 cellStep = sign(direction.xy);
-  //  Смещение точек от края ячейки HiZ, чтобы попадать в следующую ячейку
-  vec2 pointShift = cellStep * commonData.hiZExtent.zw * 0.5f;
-  //  С каким краем клеток HiZ будем искать пересечение
-  vec2 cellBorder = max(cellStep, 0.0f);
 
   uint stepCount = 0;
   int currentMip = 1;
