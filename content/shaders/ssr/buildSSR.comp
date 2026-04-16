@@ -94,16 +94,44 @@ float cellIntersection( vec2 startPoint,
   return min(ortoDist.x, ortoDist.y);
 }
 
+//  Получить максимальное значение t, до которого нужно
+//  маршить
+float getMaxT(vec3 startPoint, vec3 direction)
+{
+  //  Края clip пространства в направлении луча
+  vec3 border = max(sign(direction), 0.0f);
+  vec3 ortoDist = (border - startPoint) / direction;
+  return min(min(ortoDist.x, ortoDist.y), ortoDist.z);
+}
+
+//  Получить первую точку на луче для маршинга
+vec3 getFirstPoint( vec3 startPoint,
+                    vec3 direction,
+                    vec2 cellBorder,
+                    vec2 pointShift)
+{
+  ivec2 cell = getCell(startPoint.xy, 0);
+  float tValue = cellIntersection(startPoint.xy,
+                                  direction.xy,
+                                  cell,
+                                  0,
+                                  cellBorder);
+  vec3 firstPoint = startPoint + direction * tValue;
+  // Небольшое смещение, чтобы уйти за границу ячейки HiZ
+  firstPoint.xy += pointShift;
+  return firstPoint;
+}
+
 layout (local_size_x = 8,
         local_size_y = 8,
         local_size_z = 1) in;
 
 void main()
 {
-  vec2 pixelCoord = vec2(gl_GlobalInvocationID.xy);
-  if( pixelCoord.x >= commonData.halfFrameExtent.x ||
-      pixelCoord.y >= commonData.halfFrameExtent.y) return;
+  if( gl_GlobalInvocationID.x >= commonData.iHalfFrameExtent.x ||
+      gl_GlobalInvocationID.y >= commonData.iHalfFrameExtent.y) return;
 
+  vec2 pixelCoord = vec2(gl_GlobalInvocationID.xy);
   vec2 ssCoords = (pixelCoord + vec2(0.5f)) * commonData.halfFrameExtent.zw;
   float linearDepth = texture(sampler2D(linearDepthHalfBuffer,
                                         commonNearestSampler),
@@ -119,6 +147,11 @@ void main()
   vec3 startPoint, direction;
   getRay(startPoint, direction, ssCoords, linearDepth);
 
+  //  Максимальный параметр t, до которого надо маршить
+  float maxT = getMaxT(startPoint, direction);
+  //  Мип, до которого можно подниматься при маршинге
+  int maxMip = int(commonData.hiZMipCount) - 1;
+
   //  В каком направлении идет перебор клеток HiZ
   vec2 cellStep = sign(direction.xy);
   //  Смещение точек от края ячейки HiZ, чтобы попадать в следующую ячейку
@@ -126,27 +159,25 @@ void main()
   //  С каким краем клеток HiZ будем искать пересечение
   vec2 cellBorder = max(cellStep, 0.0f);
 
-  ivec2 cell = getCell(startPoint.xy, 0);
-  float currentT = cellIntersection(startPoint.xy,
-                                    direction.xy,
-                                    cell,
-                                    0,
-                                    cellBorder);
-
   uint stepCount = 0;
   int currentMip = 1;
-  vec3 currentPoint = startPoint + direction * currentT;
-  currentPoint.xy += pointShift;
-  while(currentMip >= 0 &&
-        currentMip < commonData.hiZMipCount &&
-        ++stepCount <= 100)
+  //  Граница ячейки для вышележащего лода HiZ, используем для того чтобы
+  //  не возвращаться на лод вверх лишний раз
+  float upperLodT = 0;
+  vec3 currentPoint = getFirstPoint(startPoint,
+                                    direction,
+                                    cellBorder,
+                                    pointShift);
+  while(currentMip >= 0 && ++stepCount <= 50)
   {
-    cell = getCell(currentPoint.xy, currentMip);
+    ivec2 cell = getCell(currentPoint.xy, currentMip);
     float nextT = cellIntersection( startPoint.xy,
                                     direction.xy,
                                     cell,
                                     currentMip,
                                     cellBorder);
+    if(nextT >= maxT) break;
+
     vec3 nextPoint = startPoint + direction * nextT;
 
     float rayDepth = min(currentPoint.z, nextPoint.z);
@@ -157,20 +188,29 @@ void main()
     if(cellDepth < rayDepth)
     {
       //  HiZ не пересекается с лучем, можно делать следующий шаг маршинга
+
+      //  Переходим на мип выше, только если произойдет смена ячейки HiZ.
+      //  Избавляет от повторных проверок на одних и тех же ячейках
+      //if(nextT >= upperLodT)
+      {
+        currentMip = min(currentMip + 1, maxMip);
+      }
+
+      nextPoint.xy += pointShift;   // Небольшое смещение, чтобы уйти за границу
+                                    // ячейки HiZ
       currentPoint = nextPoint;
-      currentPoint.xy += pointShift;
-      currentMip++;
     }
     else
     {
       //  Текущий мип HiZ пересекается с лучем. Спускаемся на мип ниже,
       //  чтобы уточнить, кто из дочерних клеток дает пересечение
       currentMip--;
+      upperLodT = nextT;
     }
   }
 
   //imageStore( outReflectionBuffer,
   //            ivec2(gl_GlobalInvocationID.xy),
-  //            vec4(currentPoint,0, 0));
+  //            vec4(stepCount,currentMip,0, 0));
   processBackground(currentPoint.xy);
 }
