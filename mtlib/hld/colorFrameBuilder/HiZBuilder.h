@@ -62,10 +62,11 @@ namespace mt
     }
     _hiZBinding.setImages(hiZViews);
 
+    _gridSize = (glm::uvec2(hiZ.extent()) + glm::uvec2(15)) / 16u;
+    _hizSizeUniform.setValue(glm::uvec2(hiZ.extent()));
+    _hizMipCountUniform.setValue(hiZ.mipmapCount());
+
     _hiZ = &hiZ;
-    _gridSize = (glm::uvec2(_hiZ->extent()) + glm::uvec2(15)) / 16u;
-    _hizSizeUniform.setValue(glm::uvec2(_hiZ->extent()));
-    _hizMipCountUniform.setValue(_hiZ->mipmapCount());
   }
 
   inline glm::uvec2 HiZBuilder::getHiZExtent(

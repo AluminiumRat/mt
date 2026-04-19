@@ -1,0 +1,184 @@
+#version 450
+
+//  Построение репроекции HDR буфера из прошлога кадра в текущий плюс построение
+//  цепочки мип уровней для него.
+//  Итоговый буфер разбивается на тайлы 16х16 пикселов, каждый из которых
+//  обрабатывается своей группой. На каждом проходе создается до 5 мип уровней.
+//  Селекшен BASE_MIP указывает, с какого мипа начинать на текущем проходе
+
+#include "lib/commonSet.inl"
+
+layout (set = STATIC, binding = 0) uniform Params
+{
+  uvec2 targetSize;
+  uint targetMipCount;
+} params;
+
+layout(set = STATIC, binding = 1) uniform texture2D prevHDR;
+
+layout (r11f_g11f_b10f,
+        set = STATIC,
+        binding = 2) uniform image2D reprojectedHdrOut[];
+
+layout (local_size_x = 256,
+        local_size_y = 1,
+        local_size_z = 1) in;
+
+//  Пикселы внутри тайла
+shared vec3 colorValues[256];
+
+//  Распределение пикселей внутри тайла по потокам. Сделано так, что на каждом
+//  следующем мипе в работе оставалась только первая четверть потоков
+uvec2 getLocalCoords()
+{
+  uvec2 localCoords;
+
+  uint threadMask = gl_LocalInvocationID.x;
+  localCoords.x = threadMask & 1;
+  threadMask = threadMask >> 1;
+  localCoords.y = threadMask & 1;
+  threadMask = threadMask >> 1;
+
+  localCoords = localCoords << 1;
+  localCoords.x |= threadMask & 1;
+  threadMask = threadMask >> 1;
+  localCoords.y |= threadMask & 1;
+  threadMask = threadMask >> 1;
+
+  localCoords = localCoords << 1;
+  localCoords.x |= threadMask & 1;
+  threadMask = threadMask >> 1;
+  localCoords.y |= threadMask & 1;
+  threadMask = threadMask >> 1;
+
+  localCoords = localCoords << 1;
+  localCoords.x |= threadMask & 1;
+  threadMask = threadMask >> 1;
+  localCoords.y |= threadMask & 1;
+
+  return localCoords;
+}
+
+#if BASE_MIP == 0
+  //  Чтение первичных данных из исходного буфера
+  //  mipSize не используется, нужен для совместивости с initialRead
+  //  для высоких мипов
+  vec3 initialRead(uvec2 texelCoord, uvec2 mipSize)
+  {
+    vec2 textureCoords = (vec2(texelCoord) + vec2(0.5f)) / vec2(params.targetSize);
+    vec3 reprojection = texture(sampler2D(reprojectionBuffer,
+                                        commonLinearSampler),
+                                textureCoords).xyw;
+    if(reprojection.z > 0.9f) textureCoords += reprojection.xy;
+
+    vec3 colorValue = texture(sampler2D(prevHDR,
+                                        commonLinearSampler),
+                              textureCoords).rgb;
+    colorValues[gl_LocalInvocationID.x] = colorValue;
+    return colorValue;
+  }
+#else
+  //  Чтение первичных данных из мипа, который был посчитан на предыдущем
+  //  проходе
+  vec3 initialRead(uvec2 texelCoord, uvec2 mipSize)
+  {
+    //  Защита от выхода за границы текстуры
+    texelCoord = min(texelCoord, mipSize - uvec2(1));
+    texelCoord *= 2;
+
+    vec3 color = imageLoad( reprojectedHdrOut[BASE_MIP - 1],
+                            ivec2(texelCoord)).rgb;
+    color += imageLoad( reprojectedHdrOut[BASE_MIP - 1],
+                        ivec2(texelCoord) + ivec2(1, 0)).rgb;
+    color += imageLoad( reprojectedHdrOut[BASE_MIP - 1],
+                        ivec2(texelCoord) + ivec2(0, 1)).rgb;
+    color += imageLoad( reprojectedHdrOut[BASE_MIP - 1],
+                        ivec2(texelCoord) + ivec2(1, 1)).rgb;
+    color /= 4.0f;
+
+    colorValues[gl_LocalInvocationID.x] = color;
+    return color;
+  }
+#endif
+
+//  Посчитать очереднй мип
+vec3 makeMip(uint step)
+{
+  uint valueIndex = gl_LocalInvocationID.x;
+  vec3 color = colorValues[valueIndex];
+
+  valueIndex += step;
+  color += colorValues[valueIndex];
+
+  valueIndex += step;
+  color += colorValues[valueIndex];
+
+  valueIndex += step;
+  color += colorValues[valueIndex];
+
+  color /= 4.0f;
+
+  colorValues[gl_LocalInvocationID.x] = color;
+  return color;
+}
+
+void main()
+{
+  //  Координаты обрабатываемого пикселя внутри тайла
+  uvec2 localCoord = getLocalCoords();
+  //  Координаты внутри выходного буфера
+  uvec2 texelCoord = gl_WorkGroupID.xy * uvec2(16, 16) + localCoord;
+
+  //  Размер текущего обрабатываемого мипа
+  uvec2 mipSize = uvec2(params.targetSize.x >> BASE_MIP,
+                        params.targetSize.y >> BASE_MIP);
+  mipSize = max(mipSize, uvec2(1));
+
+  //  Надо ли записывать результаты в target, если false, то поток используется
+  //  только для заполнения shared памяти
+  bool needStore = texelCoord.x < mipSize.x && texelCoord.y < mipSize.y;
+
+  // Формируем мип0
+  vec3 color = initialRead(texelCoord, mipSize);
+  if(needStore) imageStore( reprojectedHdrOut[BASE_MIP],
+                            ivec2(texelCoord),
+                            vec4(color, 0));
+
+  //  Считаем мип1
+  if( gl_LocalInvocationID.x >= 64 ||
+      BASE_MIP + 2 > params.targetMipCount) return;
+  barrier();
+  color = makeMip(64);
+  texelCoord /= 2;
+  if(needStore) imageStore( reprojectedHdrOut[BASE_MIP + 1],
+                            ivec2(texelCoord),
+                            vec4(color, 0));
+
+  //  Считаем мип2
+  if( gl_LocalInvocationID.x >= 16 ||
+      BASE_MIP + 3 > params.targetMipCount) return;
+  barrier();
+  color = makeMip(16);
+  texelCoord /= 2;
+  if(needStore) imageStore( reprojectedHdrOut[BASE_MIP + 2],
+                            ivec2(texelCoord),
+                            vec4(color, 0));
+
+  //  Считаем мип3
+  if( gl_LocalInvocationID.x >= 4 ||
+      BASE_MIP + 4 > params.targetMipCount) return;
+  color = makeMip(4);
+  texelCoord /= 2;
+  if(needStore) imageStore( reprojectedHdrOut[BASE_MIP + 3],
+                            ivec2(texelCoord),
+                            vec4(color, 0));
+
+  //  Считаем мип4
+  if( gl_LocalInvocationID.x >= 1 ||
+      BASE_MIP + 5 > params.targetMipCount) return;
+  color = makeMip(1);
+  texelCoord /= 2;
+  if(needStore) imageStore( reprojectedHdrOut[BASE_MIP + 4],
+                            ivec2(texelCoord),
+                            vec4(color, 0));
+}
