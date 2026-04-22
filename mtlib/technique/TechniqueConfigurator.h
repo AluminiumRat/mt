@@ -162,6 +162,8 @@ namespace mt
     //  По пропарсенным данным из рефлексии создаем лэйауты для
     //  дескриптер сетов и пайплайнов
     void _createLayouts(ConfigurationBuildContext& context) const;
+    //  Если техника использует COMMON сет, то настроить его лэйаут
+    void _processCommonSetLayout(ConfigurationBuildContext& context) const;
     //  Пересчитать, сколько ресурсов в каком сете лежит
     void _recountResources(ConfigurationBuildContext& context) const;
     //  Создаем все варианты пайплайнов

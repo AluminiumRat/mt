@@ -1,5 +1,4 @@
 #version 450
-
 //  Построение репроекции HDR буфера из прошлога кадра в текущий плюс построение
 //  цепочки мип уровней для него.
 //  Итоговый буфер разбивается на тайлы 16х16 пикселов, каждый из которых
@@ -10,19 +9,18 @@
 
 layout (set = STATIC, binding = 0) uniform Params
 {
+  //  Разрешение нулевого мипа reprojectedHdrOut и pingpongBuffer
   uvec2 targetSize;
+  //  Количество мипов в targetMipCount и pingpongBuffer
   uint targetMipCount;
 } params;
 
 layout(set = STATIC, binding = 1) uniform texture2D prevHDR;
 
+//  Куда в конечном счете будем класть результат
 layout (r11f_g11f_b10f,
         set = STATIC,
         binding = 2) uniform image2D reprojectedHdrOut[];
-
-layout (local_size_x = 256,
-        local_size_y = 1,
-        local_size_z = 1) in;
 
 //  Пикселы внутри тайла
 shared vec3 colorValues[256];
@@ -67,7 +65,7 @@ uvec2 getLocalCoords()
   {
     vec2 textureCoords = (vec2(texelCoord) + vec2(0.5f)) / vec2(params.targetSize);
     vec3 reprojection = texture(sampler2D(reprojectionBuffer,
-                                        commonLinearSampler),
+                                          commonLinearSampler),
                                 textureCoords).xyw;
     if(reprojection.z > 0.9f) textureCoords += reprojection.xy;
 
@@ -121,6 +119,10 @@ vec3 makeMip(uint step)
   colorValues[gl_LocalInvocationID.x] = color;
   return color;
 }
+
+layout (local_size_x = 256,
+        local_size_y = 1,
+        local_size_z = 1) in;
 
 void main()
 {

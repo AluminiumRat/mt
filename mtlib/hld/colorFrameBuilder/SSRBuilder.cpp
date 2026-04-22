@@ -24,7 +24,7 @@ void SSRBuilder::buildReflection(CommandProducerGraphic& commandProducer)
 
   if(_reprojectedHdr == nullptr) _createBuffers(commandProducer);
 
-  _hdrReprojector.reproject(commandProducer);
+  _hdrReprojector.make(commandProducer);
 
   {
     Technique::BindCompute bind(_technique, _marchingPass, commandProducer);
@@ -38,6 +38,7 @@ void SSRBuilder::_createBuffers(CommandProducerGraphic& commandProducer)
   glm::uvec2 reprojectedHDRSize = floorPow(_prevHDRBuffer->extent());
   uint32_t reprojectedHDRMipCount = Image::calculateMipNumber(reprojectedHDRSize);
   if(reprojectedHDRMipCount > 4) reprojectedHDRMipCount -= 4;
+  reprojectedHDRMipCount = std::min(reprojectedHDRMipCount, 10u);
   _reprojectedHdr = new Image(_device,
                               VK_IMAGE_TYPE_2D,
                               VK_IMAGE_USAGE_SAMPLED_BIT |

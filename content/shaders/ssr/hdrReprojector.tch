@@ -1,7 +1,7 @@
 commonSetName : ColorFrameCommonSet
 
 selections:
-  BASE_MIP: [0, 5, 10]
+  BASE_MIP: [0, 5]
 
 passes:
   ReprojectPass :

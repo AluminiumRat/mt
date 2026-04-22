@@ -147,6 +147,7 @@ void TechniqueConfigurator::_createLayouts(
   // Теперь можно создать лэйауты для сетов
   std::array< ConstRef<DescriptorSetLayout>,
               maxDescriptorSetIndex + 1> setLayouts;
+  _processCommonSetLayout(context);
   for(TechniqueConfiguration::DescriptorSet& set :
                                           context.configuration->descriptorSets)
   {
@@ -154,9 +155,6 @@ void TechniqueConfigurator::_createLayouts(
     if(set.type == DescriptorSetType::COMMON)
     {
       if(_commonSetName.empty()) throw std::runtime_error(_debugName + " uses COMMON descriptor set but commonSetName is not specified");
-      const std::vector<VkDescriptorSetLayoutBinding>& setBindings =
-                              CommonSetRegistry::getSet(_commonSetName.c_str());
-      set.layout = ConstRef(new DescriptorSetLayout(_device, setBindings));
     }
     else
     {
@@ -176,6 +174,33 @@ void TechniqueConfigurator::_createLayouts(
   }
   context.configuration->pipelineLayout =
                             ConstRef(new PipelineLayout( _device, setLayouts));
+}
+
+void TechniqueConfigurator::_processCommonSetLayout(
+                                      ConfigurationBuildContext& context) const
+{
+  if(_commonSetName.empty()) return;
+  //  Ищем описание COMMON сета
+  TechniqueConfiguration::DescriptorSet* commonSet = nullptr;
+  for(TechniqueConfiguration::DescriptorSet& set :
+                                          context.configuration->descriptorSets)
+  {
+    if (set.type == DescriptorSetType::COMMON)
+    {
+      commonSet = &set;
+      break;
+    }
+  }
+  // Если не нашли, то создаем
+  if(commonSet == nullptr)
+  {
+    commonSet = &context.configuration->descriptorSets.emplace_back();
+    commonSet->type = DescriptorSetType::COMMON;
+  }
+  // Выставляем лэйаут
+  const std::vector<VkDescriptorSetLayoutBinding>& setBindings =
+                              CommonSetRegistry::getSet(_commonSetName.c_str());
+  commonSet->layout = ConstRef(new DescriptorSetLayout(_device, setBindings));
 }
 
 void TechniqueConfigurator::_recountResources(

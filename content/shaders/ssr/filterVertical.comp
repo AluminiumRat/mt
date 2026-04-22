@@ -1,0 +1,18 @@
+#version 450
+//  Размытие репроецированного HDR буфера по вертикали
+#include "ssr/filter.inl"
+
+layout (local_size_x = 8,
+        local_size_y = 8,
+        local_size_z = 1) in;
+void main()
+{
+  ivec2 pixelPosition = ivec2(gl_GlobalInvocationID.xy);
+
+  vec3 color = imageLoad( sourceImage, pixelPosition).rgb;
+  color += imageLoad( sourceImage, pixelPosition + ivec2(0, 1)).rgb;
+  color += imageLoad( sourceImage, pixelPosition - ivec2(0, 1)).rgb;
+  color /= 3.0f;
+
+  imageStore( targetImage, pixelPosition, vec4(color, 0));
+}

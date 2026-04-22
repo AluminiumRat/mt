@@ -36,11 +36,11 @@ ImageSlice::ImageSlice( const Image& image,
   MT_ASSERT((aspectMask & image.aspectMask()) != 0);
   MT_ASSERT((aspectMask & ~image.aspectMask()) == 0);
 
-  MT_ASSERT(_baseMipLevel < image.mipmapCount());
-  MT_ASSERT(_lastMipLevel < image.mipmapCount());
+  _baseMipLevel = std::min(_baseMipLevel, image.mipmapCount() - 1);
+  _lastMipLevel = std::min(_lastMipLevel, image.mipmapCount() - 1);
 
-  MT_ASSERT(_baseArrayLayer < image.arraySize());
-  MT_ASSERT(_lastArrayLayer < image.arraySize());
+  _baseArrayLayer = std::min(_baseArrayLayer, image.arraySize() - 1);
+  _lastArrayLayer = std::min(_lastArrayLayer, image.arraySize() - 1);
 }
 
 ImageSlice::ImageSlice( VkImageAspectFlags aspectMask,

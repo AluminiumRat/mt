@@ -1,0 +1,12 @@
+commonSetName : ColorFrameCommonSet
+
+passes:
+  HorizontalPass :
+    pipeline: COMPUTE
+    shaders:
+      COMPUTE : ssr/filterHorizontal.comp
+
+  VerticalPass :
+    pipeline: COMPUTE
+    shaders:
+      COMPUTE : ssr/filterVertical.comp
