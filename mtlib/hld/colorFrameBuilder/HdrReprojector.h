@@ -31,6 +31,7 @@ namespace mt
                             const ImageView& prevHDRBuffer);
 
   private:
+    void _calculateFilterCore();
     void _createPingpongBuffer(CommandProducerCompute& producer);
     void _makeMips( CommandProducerCompute& producer,
                     const char* baseMipValue,
@@ -60,6 +61,8 @@ namespace mt
     TechniquePass& _filterVerticalPass;
     ResourceBinding& _filterSourceBinding;
     ResourceBinding& _filterTargetBinding;
+    UniformVariable& _horizontalFilterCore;
+    UniformVariable& _verticalFilterCore;
     //  Размер сетки компьюта при фильтрации
     glm::uvec2 _filterGridSize;
 
@@ -85,13 +88,15 @@ namespace mt
       _reprojectedHdrViews.clear();
       _prevHdrBinding.setImage(&prevHDRBuffer);
 
-      for(uint32_t mip = 0; mip < reprojectedHdr.mipmapCount(); mip++)
+      for(uint32_t mip = 0; mip < 10; mip++)
       {
         _reprojectedHdrViews.push_back(
                           ConstRef(new ImageView( reprojectedHdr,
                                                   ImageSlice(
+                                                      reprojectedHdr,
                                                       VK_IMAGE_ASPECT_COLOR_BIT,
-                                                      mip),
+                                                      mip,
+                                                      1),
                                                   VK_IMAGE_VIEW_TYPE_2D)));
       }
       _reprojectedHdrBinding.setImages(_reprojectedHdrViews);
@@ -105,6 +110,8 @@ namespace mt
 
       _filterGridSize =
                   (glm::uvec2(_reprojectedHdr->extent()) + glm::uvec2(7)) / 8u;
+
+      _calculateFilterCore();
     }
     catch(...)
     {

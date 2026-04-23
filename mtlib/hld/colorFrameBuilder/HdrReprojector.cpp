@@ -1,4 +1,5 @@
 ﻿#include <hld/colorFrameBuilder/HdrReprojector.h>
+#include <util/gaussian.h>
 #include <vkr/queue/CommandProducerCompute.h>
 
 using namespace mt;
@@ -23,8 +24,56 @@ HdrReprojector::HdrReprojector(Device& device) :
                     _filterTechnique.getOrCreateResourceBinding("sourceImage")),
   _filterTargetBinding(
                     _filterTechnique.getOrCreateResourceBinding("targetImage")),
+  _horizontalFilterCore(_filterTechnique.getOrCreateUniform("params.horizontalCore")),
+  _verticalFilterCore(_filterTechnique.getOrCreateUniform("params.verticalCore")),
   _filterGridSize(1)
 {
+}
+
+void HdrReprojector::_calculateFilterCore()
+{
+  MT_ASSERT(_prevHdrBinding.image() != nullptr);
+  MT_ASSERT(_reprojectedHdr != nullptr);
+
+  //  Вычисляем ядро для фильтра Гаусса 3х3 пикселя.
+  //  Так как оригинальный hdr буфер и репроецированный буфер могут иметь разное
+  //    соотношение сторон, то необходимо сделать разные ядра для вертикального
+  //    и горизонтального прохода.
+  //  Подход заключается в том, чтобы по одной стороне сделать ширину фильтра
+  //    в 4 сигмы (2 сигмы в каждую сторону). Для другой стороны ширина в сигмах
+  //    будет больше, чтобы компенсировать разницу в соотношении сторон
+  glm::uvec2 originalBufferSize = _prevHdrBinding.image()->extent();
+  float originalAspectRatio = (float)originalBufferSize.x /
+                                                          originalBufferSize.y;
+  glm::uvec2 reprojectedBufferSize = _reprojectedHdr->extent();
+  float reprojectedAspectRatio = (float)reprojectedBufferSize.x /
+                                                        reprojectedBufferSize.y;
+  float sigmaRatio = reprojectedAspectRatio / originalAspectRatio;
+
+  //  Вычисляем ядро фильтра для ширины в 4 сигмы
+  float sigma = 1.5f / 2.0f;
+  glm::vec2 longFilerCore{gaussianIntegral(-0.5f, 0.5f, 100, sigma),
+                          gaussianIntegral(0.5f, 1.5f, 100, sigma)};
+  longFilerCore = longFilerCore / (longFilerCore[0] + longFilerCore[1]);
+
+  //  Ядро фильтра с урезанной сигмой
+  float shortSigma = sigmaRatio < 1.0f ?  sigma * sigmaRatio :
+                                          sigma / sigmaRatio;
+  glm::vec2 shortFilerCore{ gaussianIntegral(-0.5f, 0.5f, 100, shortSigma),
+                            gaussianIntegral(0.5f, 1.5f, 100, shortSigma) };
+  shortFilerCore = shortFilerCore / (shortFilerCore[0] + shortFilerCore[1]);
+
+  //  Выбираем, на какое направление какое едро отправить
+  if(sigmaRatio > 1.0f)
+  {
+    _verticalFilterCore.setValue(shortFilerCore);
+    _horizontalFilterCore.setValue(longFilerCore);
+  }
+  else
+  {
+    _verticalFilterCore.setValue(longFilerCore);
+    _horizontalFilterCore.setValue(shortFilerCore);
+  }
 }
 
 void HdrReprojector::_createPingpongBuffer(CommandProducerCompute& producer)

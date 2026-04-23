@@ -9,10 +9,12 @@ void main()
 {
   ivec2 pixelPosition = ivec2(gl_GlobalInvocationID.xy);
 
-  vec3 color = imageLoad( sourceImage, pixelPosition).rgb;
-  color += imageLoad( sourceImage, pixelPosition + ivec2(1, 0)).rgb;
-  color += imageLoad( sourceImage, pixelPosition - ivec2(1, 0)).rgb;
-  color /= 3.0f;
+  vec3 color = params.horizontalCore[0] *
+                                    imageLoad( sourceImage, pixelPosition).rgb;
+  color += params.horizontalCore[1] *
+                      imageLoad( sourceImage, pixelPosition + ivec2(1, 0)).rgb;
+  color += params.horizontalCore[1] *
+                      imageLoad( sourceImage, pixelPosition - ivec2(1, 0)).rgb;
 
   imageStore( targetImage, pixelPosition, vec4(color, 0));
 }
