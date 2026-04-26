@@ -54,14 +54,15 @@ void HdrReprojector::_calculateFilterCore()
   float sigma = 1.5f / 2.0f;
   glm::vec2 longFilerCore{gaussianIntegral(-0.5f, 0.5f, 100, sigma),
                           gaussianIntegral(0.5f, 1.5f, 100, sigma)};
-  longFilerCore = longFilerCore / (longFilerCore[0] + longFilerCore[1]);
+  longFilerCore = longFilerCore / (longFilerCore[0] + 2.0f * longFilerCore[1]);
 
   //  Ядро фильтра с урезанной сигмой
   float shortSigma = sigmaRatio < 1.0f ?  sigma * sigmaRatio :
                                           sigma / sigmaRatio;
   glm::vec2 shortFilerCore{ gaussianIntegral(-0.5f, 0.5f, 100, shortSigma),
                             gaussianIntegral(0.5f, 1.5f, 100, shortSigma) };
-  shortFilerCore = shortFilerCore / (shortFilerCore[0] + shortFilerCore[1]);
+  shortFilerCore = shortFilerCore /
+                                (shortFilerCore[0] + 2.0f * shortFilerCore[1]);
 
   //  Выбираем, на какое направление какое едро отправить
   if(sigmaRatio > 1.0f)

@@ -11,10 +11,15 @@ void main()
 
   vec3 color = params.verticalCore[0] *
                                     imageLoad( sourceImage, pixelPosition).rgb;
-  color += params.verticalCore[1] *
-                      imageLoad( sourceImage, pixelPosition + ivec2(0, 1)).rgb;
-  color += params.verticalCore[1] *
-                      imageLoad( sourceImage, pixelPosition - ivec2(0, 1)).rgb;
+
+  ivec2 fetchCoord = ivec2( pixelPosition.x,
+                            min(pixelPosition.y + 1,
+                                imageSize(sourceImage).y - 1));
+  color += params.verticalCore[1] * imageLoad( sourceImage, fetchCoord).rgb;
+
+  fetchCoord = ivec2( pixelPosition.x,
+                      max(pixelPosition.y - 1, 0));
+  color += params.verticalCore[1] * imageLoad( sourceImage, fetchCoord).rgb;
 
   imageStore( targetImage, pixelPosition, vec4(color, 0));
 }
