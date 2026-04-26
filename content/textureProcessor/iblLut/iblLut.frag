@@ -24,7 +24,7 @@ void main()
   float roughness_2 = roughness * roughness;
   float roughness_4 = roughness_2 * roughness_2;
 
-  vec3 viewDir = vec3(1.0f - normDotView * normDotView,
+  vec3 viewDir = vec3(sqrt(1.0f - normDotView * normDotView),
                       0.0f,
                       normDotView);
 
