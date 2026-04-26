@@ -4,7 +4,7 @@ using namespace mt;
 
 //  Вынес в отдельный файл, чтобы msvc не тащил зависимости из
 //  ColorFrameCommonSet.cpp
-const VkDescriptorSetLayoutBinding ColorFrameCommonSet::bindings[12] =
+const VkDescriptorSetLayoutBinding ColorFrameCommonSet::bindings[13] =
 { { .binding = ColorFrameCommonSet::uniformBufferBinding,
     .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
     .descriptorCount = 1,
@@ -30,6 +30,10 @@ const VkDescriptorSetLayoutBinding ColorFrameCommonSet::bindings[12] =
     .descriptorCount = 1,
     .stageFlags = VK_SHADER_STAGE_ALL},
   { .binding = ColorFrameCommonSet::normalHalfBufferBinding,
+    .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+    .descriptorCount = 1,
+    .stageFlags = VK_SHADER_STAGE_ALL},
+  { .binding = ColorFrameCommonSet::roughnessHalfBufferBinding,
     .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
     .descriptorCount = 1,
     .stageFlags = VK_SHADER_STAGE_ALL},

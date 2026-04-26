@@ -22,7 +22,7 @@ namespace mt
   {
   public:
     static constexpr const char* setName = "ColorFrameCommonSet";
-    static const VkDescriptorSetLayoutBinding bindings[12];
+    static const VkDescriptorSetLayoutBinding bindings[13];
 
     static constexpr uint32_t uniformBufferBinding = 0;
     static constexpr uint32_t iblLutBinding = 1;
@@ -31,11 +31,12 @@ namespace mt
     static constexpr uint32_t iblspecularMapBinding = 4;
     static constexpr uint32_t linearDepthHalfBufferBinding = 5;
     static constexpr uint32_t normalHalfBufferBinding = 6;
-    static constexpr uint32_t hiZBufferBinding = 7;
-    static constexpr uint32_t reprojectionBufferBinding = 8;
-    static constexpr uint32_t shadowBufferBinding = 9;
-    static constexpr uint32_t commonLinearSamplerBinding = 10;
-    static constexpr uint32_t commonNearestSamplerBinding = 11;
+    static constexpr uint32_t roughnessHalfBufferBinding = 7;
+    static constexpr uint32_t hiZBufferBinding = 8;
+    static constexpr uint32_t reprojectionBufferBinding = 9;
+    static constexpr uint32_t shadowBufferBinding = 10;
+    static constexpr uint32_t commonLinearSamplerBinding = 11;
+    static constexpr uint32_t commonNearestSamplerBinding = 12;
 
   public:
     //  Хелпер, который биндит сет в конструкторе и анбиндит в деструкторе
@@ -64,6 +65,7 @@ namespace mt
                 const EnvironmentScene& environment,
                 const ImageView& linearDepthHalfBuffer,
                 const ImageView& normalHalfBuffer,
+                const ImageView& roughnessHalfBuffer,
                 const ImageView& hiZBuffer,
                 const ImageView& reprojectionBuffer,
                 const ImageView& shadowBuffer);

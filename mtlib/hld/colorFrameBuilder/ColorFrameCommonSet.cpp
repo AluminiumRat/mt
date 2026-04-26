@@ -63,6 +63,7 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
                                   const EnvironmentScene& environment,
                                   const ImageView& linearDepthHalfBuffer,
                                   const ImageView& normalHalfBuffer,
+                                  const ImageView& roughnessHalfBuffer,
                                   const ImageView& hiZBuffer,
                                   const ImageView& reprojectionBuffer,
                                   const ImageView& shadowBuffer)
@@ -108,6 +109,9 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
                                       VK_SHADER_STAGE_ALL);
   _descriptorSet->attachSampledImage( normalHalfBuffer,
                                       normalHalfBufferBinding,
+                                      VK_SHADER_STAGE_ALL);
+  _descriptorSet->attachSampledImage( roughnessHalfBuffer,
+                                      roughnessHalfBufferBinding,
                                       VK_SHADER_STAGE_ALL);
   _descriptorSet->attachSampledImage( hiZBuffer,
                                       hiZBufferBinding,

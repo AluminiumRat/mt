@@ -58,13 +58,17 @@ layout (set = COMMON,
 layout (set = COMMON,
         binding = 6) uniform texture2D normalHalfBuffer;
 
+//  Шероховатость в половинном разрешении
+layout (set = COMMON,
+        binding = 7) uniform texture2D roughnessHalfBuffer;
+
 //  HiZ. Иерархический depth буффер. Размерность - половинное разрешение
 //  округленное вниз до степени двойки. Можно получить из
 //  commonData.hiZExtent и commonData.iHiZExtent
 //  x компонента - минимальное расстояние
 //  y компонента - максимальное расстояние
 layout (set = COMMON,
-        binding = 7) uniform texture2D hiZBuffer;
+        binding = 8) uniform texture2D hiZBuffer;
 
 //  Буфер репроекции из текущего кадра в предыдущий. В половинном разрешении.
 //  XY - смещение скрин спэйс координат точки
@@ -73,21 +77,21 @@ layout (set = COMMON,
 //      корректная, 0 - уверены, что репроекция не корректная, то есть точка
 //      не имеет истории на экране и появилась только в этом фрэйме)
 layout (set = COMMON,
-        binding = 8) uniform texture2D reprojectionBuffer;
+        binding = 9) uniform texture2D reprojectionBuffer;
 
 //  Скринспейсовый буфер с тенями
 layout (set = COMMON,
-        binding = 9) uniform texture2D shadowBuffer;
+        binding = 10) uniform texture2D shadowBuffer;
 
 //  Дефолтный сэмплер общего назначения.
 //  Линейная фильтрация, VK_SAMPLER_ADDRESS_MODE_REPEAT, анизотропия 4
 layout (set = COMMON,
-        binding = 10) uniform sampler commonLinearSampler;
+        binding = 11) uniform sampler commonLinearSampler;
 
 //  Дефолтный сэмплер общего назначения.
 //  Nearest фильтрация
 layout (set = COMMON,
-        binding = 11) uniform sampler commonNearestSampler;
+        binding = 12) uniform sampler commonNearestSampler;
 
 //  Получить размер пикселя для половинных буферов на определенной дистанции
 //  от камеры

@@ -61,15 +61,9 @@ void main()
                         getTexCoord(materialBuffer.material.baseColorTexCoord));
   #endif
 
-  float roughness = materialBuffer.material.roughness;
-  float metallic = materialBuffer.material.metallic;
-  #if TEXCOORD_COUNT > 0
-    vec4 mRFromTexture = texture(
-                sampler2D(metallicRougghnessTexture, commonLinearSampler),
-                getTexCoord(materialBuffer.material.metallicRoughnessTexCoord));
-    roughness *= mRFromTexture.g;
-    metallic *= mRFromTexture.b;
-  #endif
+  vec2 rm = getRoughnessMetallic();
+  float roughness = rm.r;
+  float metallic = rm.g;
 
   vec3 normal = getNormal();
 

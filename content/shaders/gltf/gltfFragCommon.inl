@@ -74,4 +74,20 @@ vec3 getNormal()
   return normal;
 }
 
+//  r - шероховатость(roughness)
+//  g - металик
+vec2 getRoughnessMetallic()
+{
+  float roughness = materialBuffer.material.roughness;
+  float metallic = materialBuffer.material.metallic;
+  #if TEXCOORD_COUNT > 0
+    vec4 mRFromTexture = texture(
+                sampler2D(metallicRougghnessTexture, commonLinearSampler),
+                getTexCoord(materialBuffer.material.metallicRoughnessTexCoord));
+    roughness *= mRFromTexture.g;
+    metallic *= mRFromTexture.b;
+  #endif
+  return vec2(roughness, metallic);
+}
+
 #endif

@@ -61,6 +61,7 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
                       environment,
                       *_halfLinearDepthBufferView,
                       *_halfNormalBufferView,
+                      *_halfRoughnessBufferView,
                       *_hiZBufferView,
                       *_reprojectionBufferView,
                       *_shadowBufferView);
@@ -100,6 +101,7 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
     //  SSR
     std::unique_ptr<CommandProducerGraphic> ssrProducer =
                                   _device.graphicQueue()->startCommands("SSR");
+    _ssrLayout(*ssrProducer);
     {
       ColorFrameCommonSet::Bind bindCommonSet(_commonSet, *ssrProducer);
       _ssrBuilder.buildReflection(*ssrProducer);
@@ -204,6 +206,14 @@ void ColorFrameBuilder::_updateBuffers( glm::uvec2 targetExtent,
                                 "NormalHalfBuffer");
   _halfNormalBufferView = new ImageView(*_halfNormalBuffer);
 
+  _halfRoughnessBuffer = new Image( _device,
+                                    VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                                      VK_IMAGE_USAGE_SAMPLED_BIT,
+                                    halfRoughnessFormat,
+                                    halfSize,
+                                    "RoughnessHalfBuffer");
+  _halfRoughnessBufferView = new ImageView(*_halfRoughnessBuffer);
+
   _reprojectionBuffer = new Image(_device,
                                   VK_IMAGE_USAGE_STORAGE_BIT |
                                     VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -231,7 +241,8 @@ void ColorFrameBuilder::_updateBuffers( glm::uvec2 targetExtent,
 
   _opaquePrepassStage.setBuffers( *_halfDepthBufferView,
                                   *_halfLinearDepthBufferView,
-                                  *_halfNormalBufferView);
+                                  *_halfNormalBufferView,
+                                  *_halfRoughnessBufferView);
   _reprojectionBufferUpdater.setBuffers(*_reprojectionBufferView);
   _hiZBuilder.setBuffers(*_hiZBuffer);
   _shadowsStage.setBuffers(*_shadowBufferView);
@@ -256,6 +267,9 @@ void ColorFrameBuilder::_initBuffersLayout(
   commandProducer.initLayout(*_hiZBuffer, VK_IMAGE_LAYOUT_GENERAL);
 
   commandProducer.initLayout( *_halfNormalBuffer,
+                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+  commandProducer.initLayout( *_halfRoughnessBuffer,
                               VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
   commandProducer.initLayout(*_reprojectionBuffer, VK_IMAGE_LAYOUT_GENERAL);
@@ -305,7 +319,20 @@ void ColorFrameBuilder::_shadowsLayout(CommandProducerGraphic& commandProducer)
                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                 VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                                  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                VK_ACCESS_SHADER_READ_BIT);
+}
+
+void ColorFrameBuilder::_ssrLayout(CommandProducerGraphic& commandProducer)
+{
+  commandProducer.imageBarrier( *_halfRoughnessBuffer,
+                                ImageSlice(*_halfRoughnessBuffer),
+                                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                                 VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                 VK_ACCESS_SHADER_READ_BIT);
 }

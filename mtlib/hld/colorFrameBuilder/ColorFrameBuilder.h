@@ -50,6 +50,7 @@ namespace mt
     static constexpr VkFormat linearDepthFormat = VK_FORMAT_R32_SFLOAT;
     static constexpr VkFormat hiZFormat = VK_FORMAT_R16G16_SFLOAT;
     static constexpr VkFormat halfNormalFormat = VK_FORMAT_R16G16_SNORM;
+    static constexpr VkFormat halfRoughnessFormat = VK_FORMAT_R8_UNORM;
     static constexpr VkFormat reprojectionBufferFormat =
                                                   VK_FORMAT_R16G16B16A16_SFLOAT;
     static constexpr VkFormat shadowFormat = VK_FORMAT_R8_UNORM;
@@ -86,6 +87,7 @@ namespace mt
     void _initBuffersLayout(CommandProducerGraphic& commandProducer);
     void _reprojectionStageLayout(CommandProducerGraphic& commandProducer);
     void _shadowsLayout(CommandProducerGraphic& commandProducer);
+    void _ssrLayout(CommandProducerGraphic& commandProducer);
     void _opaquePassLayout(CommandProducerGraphic& commandProducer);
     void _posteffectsLayouts(CommandProducerGraphic& commandProducer);
 
@@ -110,6 +112,8 @@ namespace mt
     Ref<ImageView> _hiZBufferView;
     Ref<Image> _halfNormalBuffer;
     Ref<ImageView> _halfNormalBufferView;
+    Ref<Image> _halfRoughnessBuffer;
+    Ref<ImageView> _halfRoughnessBufferView;
     Ref<Image> _reprojectionBuffer;
     Ref<ImageView> _reprojectionBufferView;
     Ref<Image> _shadowBuffer;

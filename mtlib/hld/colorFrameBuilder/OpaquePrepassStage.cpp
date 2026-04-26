@@ -17,8 +17,9 @@ ConstRef<FrameBuffer> OpaquePrepassStage::buildFrameBuffer() const
   MT_ASSERT(_depthBuffer != nullptr);
   MT_ASSERT(_normalBuffer != nullptr);
   MT_ASSERT(_linearDepthBuffer != nullptr);
+  MT_ASSERT(_roughnessBuffer != nullptr);
 
-  FrameBuffer::ColorAttachmentInfo colorAttachment[2] = {
+  FrameBuffer::ColorAttachmentInfo colorAttachment[3] = {
                   { .target = _linearDepthBuffer.get(),
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                     .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -29,7 +30,11 @@ ConstRef<FrameBuffer> OpaquePrepassStage::buildFrameBuffer() const
                   { .target = _normalBuffer.get(),
                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                     .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-                    .clearValue = VkClearColorValue{0.0f, 0.0f, 0.0f, 1.0f}}};
+                    .clearValue = VkClearColorValue{0.0f, 0.0f, 0.0f, 0.0f}},
+                  { .target = _roughnessBuffer.get(),
+                    .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                    .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                    .clearValue = VkClearColorValue{0.0f, 0.0f, 0.0f, 0.0f}}};
 
   FrameBuffer::DepthStencilAttachmentInfo depthAttachment = {
                                         .target = _depthBuffer.get(),
