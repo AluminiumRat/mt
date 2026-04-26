@@ -1,0 +1,11 @@
+shader: angleDistrib.frag
+output: ..\..\util\angleDistrib.dds
+outputFormat: VK_FORMAT_R16_SFLOAT
+outputWidth: 64
+outputHeight: 1
+outputMips: 1
+mipsAutogenerate: false
+outputArraySize: 1
+shaderProps:
+  params.samplesCount:
+    int: [10000]
