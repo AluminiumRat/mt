@@ -8,4 +8,4 @@ mipsAutogenerate: false
 outputArraySize: 1
 shaderProps:
   params.samplesCount:
-    int: [10000]
+    int: [1000000]
