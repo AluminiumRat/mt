@@ -9,6 +9,7 @@ HiZBuilder::HiZBuilder(Device& device) :
   _technique(device, "hiZ/buildHiZ.tch"),
   _buildPass(_technique.getOrCreatePass("BuildPass")),
   _hiZBinding(_technique.getOrCreateResourceBinding("hiZ")),
+  _fullnessBinding(_technique.getOrCreateResourceBinding("fullnessBuffer")),
   _hizSizeUniform(_technique.getOrCreateUniform("params.hiZSize")),
   _hizMipCountUniform(_technique.getOrCreateUniform("params.hiZMipCount")),
   _baseMipSelection(_technique.getOrCreateSelection("BASE_MIP")),
@@ -31,14 +32,7 @@ void HiZBuilder::buildHiZ(CommandProducerCompute& producer)
 
   if(_hiZ->mipmapCount() > 5)
   {
-    producer.imageBarrier(*_hiZ,
-                          ImageSlice(*_hiZ),
-                          VK_IMAGE_LAYOUT_GENERAL,
-                          VK_IMAGE_LAYOUT_GENERAL,
-                          VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                          VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                          VK_ACCESS_SHADER_WRITE_BIT,
-                          VK_ACCESS_SHADER_READ_BIT);
+    _barriers(producer, 0);
 
     _baseMipSelection.setValue("5");
     currentGridSize.x = std::max(currentGridSize.x / 16u, 1u);
@@ -51,14 +45,7 @@ void HiZBuilder::buildHiZ(CommandProducerCompute& producer)
 
   if(_hiZ->mipmapCount() > 10)
   {
-    producer.imageBarrier(*_hiZ,
-                          ImageSlice(*_hiZ),
-                          VK_IMAGE_LAYOUT_GENERAL,
-                          VK_IMAGE_LAYOUT_GENERAL,
-                          VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                          VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                          VK_ACCESS_SHADER_WRITE_BIT,
-                          VK_ACCESS_SHADER_READ_BIT);
+    _barriers(producer, 5);
 
     _baseMipSelection.setValue("10");
     currentGridSize.x = std::max(currentGridSize.x / 16u, 1u);
@@ -68,4 +55,32 @@ void HiZBuilder::buildHiZ(CommandProducerCompute& producer)
     MT_ASSERT(bind.isValid());
     producer.dispatch(currentGridSize);
   }
+}
+
+void HiZBuilder::_barriers( CommandProducerCompute& producer,
+                            uint32_t baseMip)
+{
+  producer.imageBarrier(*_hiZ,
+                        ImageSlice( *_hiZ,
+                                    VK_IMAGE_ASPECT_COLOR_BIT,
+                                    baseMip,
+                                    5),
+                        VK_IMAGE_LAYOUT_GENERAL,
+                        VK_IMAGE_LAYOUT_GENERAL,
+                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                        VK_ACCESS_SHADER_WRITE_BIT,
+                        VK_ACCESS_SHADER_READ_BIT);
+
+  producer.imageBarrier(*_fullnessBuffer,
+                        ImageSlice( *_fullnessBuffer,
+                                    VK_IMAGE_ASPECT_COLOR_BIT,
+                                    baseMip,
+                                    5),
+                        VK_IMAGE_LAYOUT_GENERAL,
+                        VK_IMAGE_LAYOUT_GENERAL,
+                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                        VK_ACCESS_SHADER_WRITE_BIT,
+                        VK_ACCESS_SHADER_READ_BIT);
 }

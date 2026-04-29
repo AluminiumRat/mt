@@ -16,6 +16,7 @@ layout (set = STATIC, binding = 0) uniform Params
 } params;
 
 layout (rg16f, set = STATIC, binding = 1) uniform image2D hiZ[];
+layout (r8, set = STATIC, binding = 2) uniform image2D fullnessBuffer[];
 
 layout (local_size_x = 256,
         local_size_y = 1,
@@ -23,6 +24,7 @@ layout (local_size_x = 256,
 
 shared float minValues[256];
 shared float maxValues[256];
+shared float fullnessValues[256];
 
 //  Распределение пикселей внутри тайла по потокам
 uvec2 getLocalCoords()
@@ -55,89 +57,150 @@ uvec2 getLocalCoords()
   return localCoords;
 }
 
+//  Посчитать минимальный/максимальный Z и наполненность по значениям из предыдущего
+//    мипа
+//  Наполненность - это доля заплненного объема между минимальным и максимальным Z
+//  Возвращает: x - минимальная глубина
+//              y - максимальная глубина
+//              z - заполненнойсть объема межу минимальной и максимальной
+//                  глубиной
+vec3 getMinMaxFullness(vec4 childMinZ, vec4 childMaxZ, vec4 childFullness)
+{
+  float minZ = min(childMinZ.x,min(childMinZ.y, min(childMinZ.z, childMinZ.w)));
+  float maxZ = max(childMaxZ.x,max(childMaxZ.y, max(childMaxZ.z, childMaxZ.w)));
+
+  vec4 fillRanges = vec4(maxZ) - childMaxZ +
+                                        childFullness * (childMaxZ - childMinZ);
+  float fillVolume = fillRanges.x + fillRanges.y + fillRanges.z + fillRanges.w;
+  fillVolume += 0.004f;
+  float fillRate = 0.25f * fillVolume / (maxZ - minZ + 0.001f);
+
+  return vec3(minZ, maxZ, fillRate);
+}
+
 #if BASE_MIP == 0
   //  Чтение первичных данных из линейного буфера глубины
   //  mipSize не используется, нужен для совместивости с initialRead
   //  для высоких мипов
-  vec2 initialRead(uvec2 texelCoord, uvec2 mipSize)
+  //  Возвращает: x - минимальная глубина
+  //              y - максимальная глубина
+  //              z - заполненнойсть объема межу минимальной и максимальной
+  //                  глубиной
+  vec3 initialRead(uvec2 texelCoord, uvec2 mipSize)
   {
     vec2 texCoords = (vec2(texelCoord) + vec2(0.5f)) / vec2(params.hiZSize);
     vec4 depthValues = textureGather( sampler2D(linearDepthHalfBuffer,
                                                 commonNearestSampler),
                                       texCoords);
-    float minValue = min(depthValues.x,
-                      min(depthValues.y,
-                      min(depthValues.z,
-                          depthValues.w)));
-    minValues[gl_LocalInvocationID.x] = minValue;
+    vec3 minMaxFullness = getMinMaxFullness(depthValues,
+                                            depthValues,
+                                            vec4(1));
 
-    float maxValue = max(depthValues.x,
-                      max(depthValues.y,
-                      max(depthValues.z,
-                          depthValues.w)));
-    maxValues[gl_LocalInvocationID.x] = maxValue;
+    minValues[gl_LocalInvocationID.x] = minMaxFullness.x;
+    maxValues[gl_LocalInvocationID.x] = minMaxFullness.y;
+    fullnessValues[gl_LocalInvocationID.x] = minMaxFullness.z;
 
-    return vec2(minValue, maxValue);
+    return minMaxFullness;
   }
 #else
   //  Чтение первичных данных из мипа, который был посчитан на предыдущем
   //  проходе
-  vec2 initialRead(uvec2 texelCoord, uvec2 mipSize)
+  //  Возвращает: x - минимальная глубина
+  //              y - максимальная глубина
+  //              z - заполненнойсть объема межу минимальной и максимальной
+  //                  глубиной
+  vec3 initialRead(uvec2 texelCoord, uvec2 mipSize)
   {
     //  Защита от выхода за границы текстуры
     texelCoord = min(texelCoord, mipSize - uvec2(1));
     texelCoord *= 2;
 
+    //  Значения из буферов на предыдущем мипе
+    vec4 childMinValues;
+    vec4 childMaxValues;
+    vec4 childFullnessValues;
+
     vec2 minmax = imageLoad(hiZ[BASE_MIP - 1],
                             ivec2(texelCoord)).xy;
-    float minValue = minmax.x;
-    float maxValue = minmax.y;
+    childMinValues.x = minmax.x;
+    childMaxValues.x = minmax.y;
+    childFullnessValues.x = imageLoad(fullnessBuffer[BASE_MIP - 1],
+                                      ivec2(texelCoord)).x;
 
     minmax = imageLoad( hiZ[BASE_MIP - 1],
                         ivec2(texelCoord) + ivec2(1, 0)).xy;
-    minValue = min(minValue, minmax.x);
-    maxValue = max(maxValue, minmax.y);
+    childMinValues.y = minmax.x;
+    childMaxValues.y = minmax.y;
+    childFullnessValues.y = imageLoad(fullnessBuffer[BASE_MIP - 1],
+                                      ivec2(texelCoord) + ivec2(1, 0)).x;
 
     minmax = imageLoad( hiZ[BASE_MIP - 1],
                         ivec2(texelCoord) + ivec2(0, 1)).xy;
-    minValue = min(minValue, minmax.x);
-    maxValue = max(maxValue, minmax.y);
+    childMinValues.z = minmax.x;
+    childMaxValues.z = minmax.y;
+    childFullnessValues.z = imageLoad(fullnessBuffer[BASE_MIP - 1],
+                                      ivec2(texelCoord) + ivec2(0, 1)).x;
 
     minmax = imageLoad( hiZ[BASE_MIP - 1],
                         ivec2(texelCoord) + ivec2(1, 1)).xy;
-    minValue = min(minValue, minmax.x);
-    maxValue = max(maxValue, minmax.y);
+    childMinValues.w = minmax.x;
+    childMaxValues.w = minmax.y;
+    childFullnessValues.w = imageLoad(fullnessBuffer[BASE_MIP - 1],
+                                      ivec2(texelCoord) + ivec2(1, 1)).x;
 
-    minValues[gl_LocalInvocationID.x] = minValue;
-    maxValues[gl_LocalInvocationID.x] = maxValue;
+    vec3 minMaxFillness = getMinMaxFullness(childMinValues,
+                                            childMaxValues,
+                                            childFullnessValues);
 
-    return vec2(minValue,maxValue);
+    minValues[gl_LocalInvocationID.x] = minMaxFillness.x;
+    maxValues[gl_LocalInvocationID.x] = minMaxFillness.y;
+    fullnessValues[gl_LocalInvocationID.x] = minMaxFillness.z;
+
+    return minMaxFillness;
   }
 #endif
 
-//  Посчитать минимальное и максимальное значения для очередного мипа
-vec2 makeMip(uint step)
+//  Посчитать значения для очередного мипа
+//  Возвращает: x - минимальная глубина
+//              y - максимальная глубина
+//              z - заполненнойсть объема межу минимальной и максимальной
+//                  глубиной
+vec3 makeMip(uint step)
 {
   uint valueIndex = gl_LocalInvocationID.x;
-  float minValue = minValues[valueIndex];
-  float maxValue = maxValues[valueIndex];
+  //  По 4 значения на предыдущем мипе
+  vec4 childMinValues;
+  vec4 childMaxValues;
+  vec4 childFullnessValues;
+
+  childMinValues.x = minValues[valueIndex];
+  childMaxValues.x = maxValues[valueIndex];
+  childFullnessValues.x = fullnessValues[valueIndex];
 
   valueIndex += step;
-  minValue = min(minValue, minValues[valueIndex]);
-  maxValue = max(maxValue, maxValues[valueIndex]);
+  childMinValues.y = minValues[valueIndex];
+  childMaxValues.y = maxValues[valueIndex];
+  childFullnessValues.y = fullnessValues[valueIndex];
 
   valueIndex += step;
-  minValue = min(minValue, minValues[valueIndex]);
-  maxValue = max(maxValue, maxValues[valueIndex]);
+  childMinValues.z = minValues[valueIndex];
+  childMaxValues.z = maxValues[valueIndex];
+  childFullnessValues.z = fullnessValues[valueIndex];
 
   valueIndex += step;
-  minValue = min(minValue, minValues[valueIndex]);
-  maxValue = max(maxValue, maxValues[valueIndex]);
+  childMinValues.w = minValues[valueIndex];
+  childMaxValues.w = maxValues[valueIndex];
+  childFullnessValues.w = fullnessValues[valueIndex];
 
-  minValues[gl_LocalInvocationID.x] = minValue;
-  maxValues[gl_LocalInvocationID.x] = maxValue;
+  vec3 minMaxFillness = getMinMaxFullness(childMinValues,
+                                          childMaxValues,
+                                          childFullnessValues);
 
-  return vec2(minValue, maxValue);
+  minValues[gl_LocalInvocationID.x] = minMaxFillness.x;
+  maxValues[gl_LocalInvocationID.x] = minMaxFillness.y;
+  fullnessValues[gl_LocalInvocationID.x] = minMaxFillness.z;
+
+  return minMaxFillness;
 }
 
 void main()
@@ -157,46 +220,76 @@ void main()
   bool needStore = texelCoord.x < mipSize.x && texelCoord.y < mipSize.y;
 
   // Формируем мип0
-  vec2 minMax = initialRead(texelCoord, mipSize);
-  if(needStore) imageStore( hiZ[BASE_MIP],
-                            ivec2(texelCoord),
-                            vec4(minMax, 0, 0));
+  vec3 mipValues = initialRead(texelCoord, mipSize);
+  if(needStore)
+  {
+    imageStore( hiZ[BASE_MIP],
+                ivec2(texelCoord),
+                vec4(mipValues.xy, 0, 0));
+    imageStore( fullnessBuffer[BASE_MIP],
+                ivec2(texelCoord),
+                vec4(mipValues.z, 0, 0, 0));
+  }
 
   //  Считаем мип1
   if( gl_LocalInvocationID.x >= 64 ||
       BASE_MIP + 2 > params.hiZMipCount) return;
   barrier();
-  minMax = makeMip(64);
+  mipValues = makeMip(64);
   texelCoord /= 2;
-  if(needStore) imageStore( hiZ[BASE_MIP + 1],
-                            ivec2(texelCoord),
-                            vec4(minMax, 0, 0));
+  if(needStore)
+  {
+    imageStore( hiZ[BASE_MIP + 1],
+                ivec2(texelCoord),
+                vec4(mipValues.xy, 0, 0));
+    imageStore( fullnessBuffer[BASE_MIP + 1],
+                ivec2(texelCoord),
+                vec4(mipValues.z, 0, 0, 0));
+  }
 
   //  Считаем мип2
   if( gl_LocalInvocationID.x >= 16 ||
       BASE_MIP + 3 > params.hiZMipCount) return;
   barrier();
-  minMax = makeMip(16);
+  mipValues = makeMip(16);
   texelCoord /= 2;
-  if(needStore) imageStore( hiZ[BASE_MIP + 2],
-                            ivec2(texelCoord),
-                            vec4(minMax, 0, 0));
+  if(needStore)
+  {
+    imageStore( hiZ[BASE_MIP + 2],
+                ivec2(texelCoord),
+                vec4(mipValues.xy, 0, 0));
+    imageStore( fullnessBuffer[BASE_MIP + 2],
+                ivec2(texelCoord),
+                vec4(mipValues.z, 0, 0, 0));
+  }
 
   //  Считаем мип3
   if( gl_LocalInvocationID.x >= 4 ||
       BASE_MIP + 4 > params.hiZMipCount) return;
-  minMax = makeMip(4);
+  mipValues = makeMip(4);
   texelCoord /= 2;
-  if(needStore) imageStore( hiZ[BASE_MIP + 3],
-                            ivec2(texelCoord),
-                            vec4(minMax, 0, 0));
+  if(needStore)
+  {
+    imageStore( hiZ[BASE_MIP + 3],
+                ivec2(texelCoord),
+                vec4(mipValues.xy, 0, 0));
+    imageStore( fullnessBuffer[BASE_MIP + 3],
+                ivec2(texelCoord),
+                vec4(mipValues.z, 0, 0, 0));
+  }
 
   //  Считаем мип4
   if( gl_LocalInvocationID.x >= 1 ||
       BASE_MIP + 5 > params.hiZMipCount) return;
-  minMax = makeMip(1);
+  mipValues = makeMip(1);
   texelCoord /= 2;
-  if(needStore) imageStore( hiZ[BASE_MIP + 4],
-                            ivec2(texelCoord),
-                            vec4(minMax, 0, 0));
+  if(needStore)
+  {
+    imageStore( hiZ[BASE_MIP + 4],
+                ivec2(texelCoord),
+                vec4(mipValues.xy, 0, 0));
+    imageStore( fullnessBuffer[BASE_MIP + 4],
+                ivec2(texelCoord),
+                vec4(mipValues.z, 0, 0, 0));
+  }
 }

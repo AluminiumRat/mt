@@ -197,6 +197,19 @@ void ColorFrameBuilder::_updateBuffers( glm::uvec2 targetExtent,
                           false,
                           "HiZ");
   _hiZBufferView = new ImageView(*_hiZBuffer);
+  _fullnessBuffer = new Image(_device,
+                              VK_IMAGE_TYPE_2D,
+                              VK_IMAGE_USAGE_STORAGE_BIT |
+                                VK_IMAGE_USAGE_SAMPLED_BIT,
+                              0,
+                              fullnessFormat,
+                              glm::uvec3(hiZSize, 1),
+                              VK_SAMPLE_COUNT_1_BIT,
+                              1,
+                              Image::calculateMipNumber(hiZSize),
+                              false,
+                              "FullnessBuffer");
+  _fullnessBufferView = new ImageView(*_fullnessBuffer);
 
   _halfNormalBuffer = new Image(_device,
                                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
@@ -244,7 +257,7 @@ void ColorFrameBuilder::_updateBuffers( glm::uvec2 targetExtent,
                                   *_halfNormalBufferView,
                                   *_halfRoughnessBufferView);
   _reprojectionBufferUpdater.setBuffers(*_reprojectionBufferView);
-  _hiZBuilder.setBuffers(*_hiZBuffer);
+  _hiZBuilder.setBuffers(*_hiZBuffer, *_fullnessBuffer);
   _shadowsStage.setBuffers(*_shadowBufferView);
   _ssrBuilder.setBuffers(*_reflectionBufferView, *_hdrBufferView),
   _opaqueColorStage.setBuffers(*_hdrBufferView, *_depthBufferView);
@@ -265,6 +278,7 @@ void ColorFrameBuilder::_initBuffersLayout(
                               VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
   commandProducer.initLayout(*_hiZBuffer, VK_IMAGE_LAYOUT_GENERAL);
+  commandProducer.initLayout(*_fullnessBuffer, VK_IMAGE_LAYOUT_GENERAL);
 
   commandProducer.initLayout( *_halfNormalBuffer,
                               VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -304,16 +318,6 @@ void ColorFrameBuilder::_shadowsLayout(CommandProducerGraphic& commandProducer)
                                 VK_ACCESS_SHADER_WRITE_BIT,
                                 VK_ACCESS_SHADER_READ_BIT);
 
-  commandProducer.imageBarrier( *_hiZBuffer,
-                                ImageSlice(*_hiZBuffer),
-                                VK_IMAGE_LAYOUT_GENERAL,
-                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-                                  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                VK_ACCESS_SHADER_WRITE_BIT,
-                                VK_ACCESS_SHADER_READ_BIT);
-
   commandProducer.imageBarrier( *_halfNormalBuffer,
                                 ImageSlice(*_halfNormalBuffer),
                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -327,6 +331,26 @@ void ColorFrameBuilder::_shadowsLayout(CommandProducerGraphic& commandProducer)
 
 void ColorFrameBuilder::_ssrLayout(CommandProducerGraphic& commandProducer)
 {
+  commandProducer.imageBarrier( *_hiZBuffer,
+                                ImageSlice(*_hiZBuffer),
+                                VK_IMAGE_LAYOUT_GENERAL,
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                                  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                VK_ACCESS_SHADER_WRITE_BIT,
+                                VK_ACCESS_SHADER_READ_BIT);
+
+  commandProducer.imageBarrier( *_fullnessBuffer,
+                                ImageSlice(*_fullnessBuffer),
+                                VK_IMAGE_LAYOUT_GENERAL,
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                                  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                VK_ACCESS_SHADER_WRITE_BIT,
+                                VK_ACCESS_SHADER_READ_BIT);
+
   commandProducer.imageBarrier( *_halfRoughnessBuffer,
                                 ImageSlice(*_halfRoughnessBuffer),
                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,

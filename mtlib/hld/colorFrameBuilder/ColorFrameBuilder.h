@@ -49,6 +49,7 @@ namespace mt
     static constexpr VkFormat depthBufferFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
     static constexpr VkFormat linearDepthFormat = VK_FORMAT_R32_SFLOAT;
     static constexpr VkFormat hiZFormat = VK_FORMAT_R16G16_SFLOAT;
+    static constexpr VkFormat fullnessFormat = VK_FORMAT_R8_UNORM;
     static constexpr VkFormat halfNormalFormat = VK_FORMAT_R16G16_SNORM;
     static constexpr VkFormat halfRoughnessFormat = VK_FORMAT_R8_UNORM;
     static constexpr VkFormat reprojectionBufferFormat =
@@ -110,6 +111,8 @@ namespace mt
     Ref<ImageView> _halfLinearDepthBufferView;
     Ref<Image> _hiZBuffer;
     Ref<ImageView> _hiZBufferView;
+    Ref<Image> _fullnessBuffer;
+    Ref<ImageView> _fullnessBufferView;
     Ref<Image> _halfNormalBuffer;
     Ref<ImageView> _halfNormalBufferView;
     Ref<Image> _halfRoughnessBuffer;
