@@ -5,3 +5,23 @@ passes:
     pipeline: COMPUTE
     shaders:
       COMPUTE : ssr/buildSSR.comp
+
+  DebugPass :
+    pipeline: GRAPHIC
+
+    shaders:
+      VERTEX : lib/fsQuad.vert
+      FRAGMENT : ssr/ssrDebug.frag
+
+    frameBuffer:
+      color: VK_FORMAT_B8G8R8A8_SRGB
+
+    graphicSettings:
+      topology: TRIANGLE_STRIP
+
+      blending:
+        blendEnable: true
+        srcColorBlendFactor: SRC_ALPHA
+        dstColorBlendFactor: ONE_MINUS_SRC_ALPHA
+        srcAlphaBlendFactor: ZERO
+        dstAlphaBlendFactor: ONE

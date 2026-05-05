@@ -9,6 +9,8 @@ namespace mt
 {
   class CommandProducerGraphic;
   class Device;
+  class FrameBuffer;
+  struct Region;
 
   class SSRBuilder
   {
@@ -23,8 +25,16 @@ namespace mt
     //    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     void buildReflection(CommandProducerGraphic& commandProducer);
 
+    //  Дебажная отрисовка в LDR буфер
+    //  Если дебажная отрисовка отключена, то ничего не делает
+    void debugRender( FrameBuffer& target,
+                      const Region& drawRegion,
+                      CommandProducerGraphic& commandProducer);
+
     inline void setBuffers( const ImageView& reflectionBuffer,
                             const ImageView& prevHDRBuffer);
+
+    void makeGui();
 
   private:
     void _createBuffers(CommandProducerGraphic& commandProducer);
@@ -40,11 +50,16 @@ namespace mt
 
     Technique _technique;
     TechniquePass& _marchingPass;
+    TechniquePass& _debugPass;
     ResourceBinding& _reflectionBufferBinding;
     ResourceBinding& _prevHDRBufferBinding;
 
     //  Размер сетки для вызова компьют шейдеров
     glm::uvec2 _gridSize;
+
+    //  Настройки для дебажной отрисовки
+    bool _enableDebugDraw;
+    glm::vec2 _mousePosition;
   };
 
   inline void SSRBuilder::setBuffers( const ImageView& reflectionBuffer,

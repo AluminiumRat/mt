@@ -49,11 +49,13 @@ void Posteffects::makeLDR(FrameBuffer& target,
                                                 target,
                                                 drawRegion,
                                                 drawRegion);
+  {
     Technique::BindGraphic bind(_resolveTechnique,
                                 _resolvePass,
                                 commandProducer);
     MT_ASSERT(bind.isValid())
     commandProducer.draw(4);
+  }
   renderPass.endPass();
 }
 

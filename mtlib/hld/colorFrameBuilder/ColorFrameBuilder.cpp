@@ -132,6 +132,7 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
 
     _posteffectsLayouts(*ldrProducer);
     _posteffects.makeLDR(target, targetRegion, *ldrProducer);
+    _ssrBuilder.debugRender(target, targetRegion, *ldrProducer);
 
     _device.graphicQueue()->submitCommands(std::move(ldrProducer));
   }
@@ -409,6 +410,11 @@ void ColorFrameBuilder::makeGui()
     {
       ImGuiTreeNode shadowsNode("Shadows");
       if(shadowsNode.open()) _shadowsStage.makeGui();
+    }
+
+    {
+      ImGuiTreeNode ssrNode("SSR");
+      if (ssrNode.open()) _ssrBuilder.makeGui();
     }
 
     {

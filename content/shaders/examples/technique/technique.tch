@@ -131,7 +131,8 @@ passes:
       # Дефолт FILL
       polygonMode: FILL
 
-      lineWidth: 1                      # Дефолт 1
+      # Дефолт 1
+      lineWidth: 1
 
       # Может быть NONE, FRONT, BACK, FRONT_AND_BACK
       # Дефолт NONE

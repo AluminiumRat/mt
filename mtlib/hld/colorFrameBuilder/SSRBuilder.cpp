@@ -1,4 +1,8 @@
-﻿#include <hld/colorFrameBuilder/SSRBuilder.h>
+﻿#include <ImGui.h>
+
+#include <gui/ImGuiPropertyGrid.h>
+#include <gui/ImGuiRAII.h>
+#include <hld/colorFrameBuilder/SSRBuilder.h>
 #include <util/Assert.h>
 #include <util/floorPow.h>
 #include <vkr/queue/CommandProducerGraphic.h>
@@ -10,10 +14,12 @@ SSRBuilder::SSRBuilder(Device& device) :
   _hdrReprojector(device),
   _technique(device, "ssr/buildSSR.tch"),
   _marchingPass(_technique.getOrCreatePass("MarchingPass")),
+  _debugPass(_technique.getOrCreatePass("DebugPass")),
   _reflectionBufferBinding(
     _technique.getOrCreateResourceBinding("outReflectionBuffer")),
   _prevHDRBufferBinding(_technique.getOrCreateResourceBinding("prevHDR")),
-  _gridSize(1)
+  _gridSize(1),
+  _enableDebugDraw(false)
 {
 }
 
@@ -54,4 +60,43 @@ void SSRBuilder::_createBuffers(CommandProducerGraphic& commandProducer)
   commandProducer.initLayout( *_reprojectedHdr, VK_IMAGE_LAYOUT_GENERAL);
 
   _hdrReprojector.setBuffers(*_reprojectedHdr, *_prevHDRBuffer);
+}
+
+void SSRBuilder::debugRender( FrameBuffer& target,
+                              const Region& drawRegion,
+                              CommandProducerGraphic& commandProducer)
+{
+  if(!_enableDebugDraw) return;
+
+  MT_ASSERT(_reflectionBuffer != nullptr);
+  MT_ASSERT(_prevHDRBuffer != nullptr);
+  MT_ASSERT(_reprojectedHdr != nullptr);
+
+  CommandProducerGraphic::RenderPass renderPass(commandProducer,
+                                                target,
+                                                drawRegion,
+                                                drawRegion);
+  {
+    Technique::BindGraphic bind(_technique, _debugPass, commandProducer);
+    MT_ASSERT(bind.isValid());
+    commandProducer.draw(4);
+  }
+  renderPass.endPass();
+}
+
+void SSRBuilder::makeGui()
+{
+  ImGuiPropertyGrid grid("SSR");
+  grid.addRow("Debug draw");
+  ImGui::Checkbox("##DebugDraw", &_enableDebugDraw);
+
+  if(_prevHDRBuffer != nullptr)
+  {
+    ImVec2 mousePos = ImGui::GetMousePos();
+    _mousePosition = glm::vec2( mousePos.x / _prevHDRBuffer->extent().x,
+                                mousePos.y / _prevHDRBuffer->extent().y);
+
+    grid.addRow("Mouse position");
+    ImGui::Text("(%.3f, %.3f)", _mousePosition.x, _mousePosition.y);
+  }
 }
