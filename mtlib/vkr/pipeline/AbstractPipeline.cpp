@@ -28,7 +28,7 @@ void AbstractPipeline::setDebugName(const char* debugName)
 
   VkDebugUtilsObjectNameInfoEXT nameInfo{};
   nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-  nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
+  nameInfo.objectType = VK_OBJECT_TYPE_PIPELINE;
   nameInfo.objectHandle = (uint64_t)_handle;
   nameInfo.pObjectName = _debugName.c_str();
 
