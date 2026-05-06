@@ -10,7 +10,8 @@ namespace mt
   {
   public:
     ComputePipeline(std::span<const ShaderInfo> shaders,
-                    const PipelineLayout& layout);
+                    const PipelineLayout& layout,
+                    const char* debugName);
     ComputePipeline(const ComputePipeline&) = delete;
     ComputePipeline& operator = (const ComputePipeline&) = delete;
     virtual ~ComputePipeline() noexcept = default;

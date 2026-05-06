@@ -550,7 +550,9 @@ SpecializationInfo PassConfigurator::_createSpecialization(
 
 void PassConfigurator::createPipelines(ConfigurationBuildContext& context) const
 {
-  MT_ASSERT(context.configuration->pipelineLayout != nullptr)
+  MT_ASSERT(context.configuration->pipelineLayout != nullptr);
+
+  std::string pipelineName = context.configuratorName + ":" + _name;
 
   for(uint32_t variant = 0;
       variant < context.currentPass->pipelineVariants.size();
@@ -574,7 +576,8 @@ void PassConfigurator::createPipelines(ConfigurationBuildContext& context) const
       context.currentPass->pipelineVariants[variant] =
                     ConstRef(new ComputePipeline(
                                       shaders,
-                                      *context.configuration->pipelineLayout));
+                                      *context.configuration->pipelineLayout,
+                                      pipelineName.c_str()));
     }
     else
     {
@@ -586,7 +589,8 @@ void PassConfigurator::createPipelines(ConfigurationBuildContext& context) const
                                       _rasterizationState,
                                       _depthStencilState,
                                       _blendingState,
-                                      *context.configuration->pipelineLayout));
+                                      *context.configuration->pipelineLayout,
+                                      pipelineName.c_str()));
     }
   }
 }

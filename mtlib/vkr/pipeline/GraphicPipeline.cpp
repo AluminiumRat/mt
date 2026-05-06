@@ -20,7 +20,8 @@ GraphicPipeline::GraphicPipeline(
               const VkPipelineRasterizationStateCreateInfo& rasterizationState,
               const VkPipelineDepthStencilStateCreateInfo& depthStencilState,
               const VkPipelineColorBlendStateCreateInfo& blendingState,
-              const PipelineLayout& layout) :
+              const PipelineLayout& layout,
+              const char* debugName) :
   AbstractPipeline(GRAPHIC_PIPELINE, layout)
 {
   // Данные вершин будем грузить в вершинном шейдере через буферы
@@ -94,7 +95,8 @@ GraphicPipeline::GraphicPipeline(
                                 nullptr,
                                 &handle) != VK_SUCCESS)
   {
-    throw std::runtime_error("GraphicPipeline: Unable to create graphic pipeline");
+    throw std::runtime_error(std::string(debugName) + ": Unable to create graphic pipeline");
   }
   setHandle(handle);
+  setDebugName(debugName);
 }

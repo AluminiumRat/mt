@@ -50,6 +50,7 @@ namespace mt
   protected:
     //  Должен вызываться ровно 1 раз в конструкторе дочернего класса
     void setHandle(VkPipeline handle);
+    void setDebugName(const char* debugName);
 
     using VkShadersInfo = std::vector<VkPipelineShaderStageCreateInfo>;
     static VkShadersInfo createVkShadersInfo(
@@ -61,6 +62,8 @@ namespace mt
     Type _type;
     VkPipeline _handle;
     ConstRef<PipelineLayout> _layout;
+
+    std::string _debugName;
   };
 
   inline Device& AbstractPipeline::device() const noexcept

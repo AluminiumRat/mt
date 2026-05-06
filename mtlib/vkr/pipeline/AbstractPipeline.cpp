@@ -2,6 +2,7 @@
 #include <vkr/pipeline/AbstractPipeline.h>
 #include <vkr/pipeline/ShaderModule.h>
 #include <vkr/Device.h>
+#include <vkr/VKRLib.h>
 
 using namespace mt;
 
@@ -17,6 +18,21 @@ void AbstractPipeline::setHandle(VkPipeline handle)
 {
   MT_ASSERT(handle != VK_NULL_HANDLE);
   _handle = handle;
+}
+
+void AbstractPipeline::setDebugName(const char* debugName)
+{
+  _debugName = debugName;
+
+  if (!VKRLib::instance().isDebugEnabled()) return;
+
+  VkDebugUtilsObjectNameInfoEXT nameInfo{};
+  nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+  nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
+  nameInfo.objectHandle = (uint64_t)_handle;
+  nameInfo.pObjectName = _debugName.c_str();
+
+  _device.extFunctions().vkSetDebugUtilsObjectNameEXT(&nameInfo);
 }
 
 AbstractPipeline::VkShadersInfo AbstractPipeline::createVkShadersInfo(

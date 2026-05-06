@@ -3,11 +3,13 @@
 #include <util/Assert.h>
 #include <vkr/pipeline/ComputePipeline.h>
 #include <vkr/Device.h>
+#include <vkr/VKRLib.h>
 
 using namespace mt;
 
 ComputePipeline::ComputePipeline( std::span<const ShaderInfo> shaders,
-                                  const PipelineLayout& layout) :
+                                  const PipelineLayout& layout,
+                                  const char* debugName) :
   AbstractPipeline(COMPUTE_PIPELINE, layout)
 {
   VkShadersInfo vkShadersInfo = createVkShadersInfo(shaders);
@@ -26,7 +28,9 @@ ComputePipeline::ComputePipeline( std::span<const ShaderInfo> shaders,
                               nullptr,
                               &handle) != VK_SUCCESS)
   {
-    throw std::runtime_error("ComputePipeline: Unable to create pipeline");
+    throw std::runtime_error(std::string(debugName) + ": Unable to create pipeline");
   }
+
   setHandle(handle);
+  setDebugName(debugName);
 }

@@ -18,7 +18,8 @@ namespace mt
               const VkPipelineRasterizationStateCreateInfo& rasterizationState,
               const VkPipelineDepthStencilStateCreateInfo& depthStencilState,
               const VkPipelineColorBlendStateCreateInfo& blendingState,
-              const PipelineLayout& layout);
+              const PipelineLayout& layout,
+              const char* debugName);
     GraphicPipeline(const GraphicPipeline&) = delete;
     GraphicPipeline& operator = (const GraphicPipeline&) = delete;
     virtual ~GraphicPipeline() noexcept = default;
