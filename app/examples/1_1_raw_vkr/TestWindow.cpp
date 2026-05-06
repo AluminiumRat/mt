@@ -62,7 +62,8 @@ Ref<GraphicPipeline> TestWindow::_createPipeline()
                                   rasterizationState,
                                   depthStencilState,
                                   blendingState,
-                                  *pipelineLayout));
+                                  *pipelineLayout,
+                                  "TestPipeline"));
 }
 
 Ref<PipelineLayout> TestWindow::_createPipelineLayout()
