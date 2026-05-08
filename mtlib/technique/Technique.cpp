@@ -134,6 +134,11 @@ void Technique::_setConfiguration(const TechniqueConfiguration & configuration)
       uniform->setConfiguration(&configuration, newUniformBlocks);
     }
 
+    for (std::unique_ptr<PushConstantImpl>& pushConstant : _pushConstants)
+    {
+      pushConstant->setConfiguration(&configuration);
+    }
+
     for (std::unique_ptr<TechniquePassImpl>& pass : _passes)
     {
       pass->setConfiguration(&configuration);
@@ -641,6 +646,37 @@ const UniformVariable* Technique::getUniform(
   for (const std::unique_ptr<UniformVariableImpl>& unifrom : _uniforms)
   {
     if (unifrom->name() == uniformFullName) return unifrom.get();
+  }
+  return nullptr;
+}
+
+PushConstant& Technique::getOrCreatePushConstant(const char* pushConstantName)
+{
+  for(std::unique_ptr<PushConstantImpl>& pushConstant : _pushConstants)
+  {
+    if(pushConstant->name() == pushConstantName) return *pushConstant;
+  }
+  _pushConstants.push_back(std::make_unique<PushConstantImpl>(
+                                                        pushConstantName,
+                                                        _configuration.get()));
+  return *_pushConstants.back();
+}
+
+PushConstant* Technique::getPushConstant(const char* pushConstantName) noexcept
+{
+  for(std::unique_ptr<PushConstantImpl>& pushConstant : _pushConstants)
+  {
+    if(pushConstant->name() == pushConstantName) return pushConstant.get();
+  }
+  return nullptr;
+}
+
+const PushConstant* Technique::getPushConstant(
+                                    const char* pushConstantName) const noexcept
+{
+  for(const std::unique_ptr<PushConstantImpl>& pushConstant : _pushConstants)
+  {
+    if(pushConstant->name() == pushConstantName) return pushConstant.get();
   }
   return nullptr;
 }

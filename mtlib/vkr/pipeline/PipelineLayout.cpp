@@ -39,6 +39,12 @@ PipelineLayout::PipelineLayout(
       pipelineLayoutInfo.pSetLayouts = handlesArray.data();
     }
 
+    VkPushConstantRange pushConstants{};
+    pushConstants.stageFlags = VK_SHADER_STAGE_ALL;
+    pushConstants.size = 128;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = &pushConstants;
+
     if(vkCreatePipelineLayout(device.handle(),
                               &pipelineLayoutInfo,
                               nullptr,
@@ -84,6 +90,12 @@ PipelineLayout::PipelineLayout(
       pipelineLayoutInfo.setLayoutCount = uint32_t(handlesArray.size());
       pipelineLayoutInfo.pSetLayouts = handlesArray.data();
     }
+
+    VkPushConstantRange pushConstants{};
+    pushConstants.stageFlags = VK_SHADER_STAGE_ALL;
+    pushConstants.size = 128;
+    pipelineLayoutInfo.pushConstantRangeCount = 1;
+    pipelineLayoutInfo.pPushConstantRanges = &pushConstants;
 
     if(vkCreatePipelineLayout(device.handle(),
                               &pipelineLayoutInfo,

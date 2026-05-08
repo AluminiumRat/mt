@@ -26,6 +26,10 @@ Device::Device( PhysicalDevice& physicalDevice,
     _initVMA();
     _buildQueues(queueSources);
     _extFunctions.emplace(_handle);
+    _pushConstantLayout =
+            ConstRef(new PipelineLayout(
+                                      *this,
+                                      std::span<const DescriptorSetLayout*>{}));
   }
   catch(...)
   {
@@ -238,6 +242,8 @@ void Device::_cleanup() noexcept
       Log::error() << error.what();
     }
   }
+
+  _pushConstantLayout.reset();
 
   _queuesByTypes = {};
   _queues.clear();

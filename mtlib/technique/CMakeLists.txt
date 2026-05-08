@@ -14,6 +14,7 @@ set(SOURCES
     "../../3rdParty/spirv_reflect/spirv_reflect.c"
     "CommonSetRegistry.cpp"
     "PassConfigurator.cpp"
+    "PushConstant.cpp"
     "ResourceBinding.cpp"
     "Selection.cpp"
     "ShaderCache.cpp"

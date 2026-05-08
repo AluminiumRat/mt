@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include <technique/PushConstant.h>
 #include <technique/ResourceBinding.h>
 #include <technique/Selection.h>
 #include <technique/TechniqueConfiguration.h>
@@ -155,6 +156,10 @@ namespace mt
     const UniformVariable* getUniform(
                                     const char* uniformFullName) const noexcept;
 
+    PushConstant& getOrCreatePushConstant(const char* pushConstantName);
+    PushConstant* getPushConstant(const char* pushConstantName) noexcept;
+    const PushConstant* getPushConstant(const char* pushConstantName) const noexcept;
+
     TechniquePass& getOrCreatePass(const char* passName);
     TechniquePass* getPass(const char* passName) noexcept;
     const TechniquePass* getPass(const char* passName) const noexcept;
@@ -208,6 +213,8 @@ namespace mt
     UniformBlocks _uniformBlocks;
 
     std::vector<std::unique_ptr<UniformVariableImpl>> _uniforms;
+
+    std::vector<std::unique_ptr<PushConstantImpl>> _pushConstants;
 
     std::vector<std::unique_ptr<TechniquePassImpl>> _passes;
 

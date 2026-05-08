@@ -112,6 +112,17 @@ void CommandProducerCompute::unbindDescriptorSetCompute(
   _computeDescriptors[setIndex] = BindingRecord{};
 }
 
+void CommandProducerCompute::pushConstants(const PushConstantBlock& data)
+{
+  CommandBuffer& buffer = getOrCreateBuffer();
+  vkCmdPushConstants( buffer.handle(),
+                      queue().device().pushConstantLayout().handle(),
+                      VK_SHADER_STAGE_ALL,
+                      0,
+                      data.size(),
+                      data.data());
+}
+
 void CommandProducerCompute::dispatch(uint32_t gridSizeX,
                                       uint32_t gridSizeY,
                                       uint32_t gridSizeZ)

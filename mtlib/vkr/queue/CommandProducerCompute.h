@@ -5,6 +5,7 @@
 #include <util/Ref.h>
 #include <vkr/pipeline/ComputePipeline.h>
 #include <vkr/queue/CommandProducerTransfer.h>
+#include <vkr/queue/PushConstantBlock.h>
 
 namespace mt
 {
@@ -32,6 +33,12 @@ namespace mt
                                   const PipelineLayout& layout);
 
     void unbindDescriptorSetCompute(uint32_t setIndex) noexcept;
+
+    //  Выставить пуш константы.
+    //  Пуш константы всегда устанавливаются блоками по 128 байт. Это сделано для
+    //  совместимости пайплайн лэйаутов и, в частности, для возможности сохранять
+    //  прибинженные общие дескриптор сеты
+    void pushConstants(const PushConstantBlock& data);
 
     //  Запустить прибинженный пайплайн
     void dispatch(uint32_t gridSizeX, uint32_t gridSizeY, uint32_t gridSizeZ);

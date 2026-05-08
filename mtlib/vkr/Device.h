@@ -11,6 +11,8 @@
 #include <vk_mem_alloc.h>
 
 #include <util/Assert.h>
+#include <util/Ref.h>
+#include <vkr/pipeline/PipelineLayout.h>
 #include <vkr/queue/CommandQueue.h>
 #include <vkr/queue/CommandQueueCompute.h>
 #include <vkr/queue/CommandQueueGraphic.h>
@@ -82,6 +84,11 @@ namespace mt
 
     inline const ExtFunctions& extFunctions() const noexcept;
 
+    //  Лэйаут, к которому не присоединен ни один дескриптор сет. Описывает
+    //    только пуш константы. Нужен для установки констант в
+    //    CommandProducerCompute
+    inline const PipelineLayout& pushConstantLayout() const noexcept;
+
   private:
     void _cleanup() noexcept;
     void _createHandle( const std::vector<std::string>& requiredExtensions,
@@ -106,6 +113,8 @@ namespace mt
 
     // std::optional для отложенного создания в конце конструктора
     std::optional<ExtFunctions> _extFunctions;
+
+    ConstRef<PipelineLayout> _pushConstantLayout;
   };
 
   inline VkDevice Device::handle() const noexcept
@@ -201,5 +210,11 @@ namespace mt
   inline const ExtFunctions& Device::extFunctions() const noexcept
   {
     return *_extFunctions;
+  }
+
+  inline const PipelineLayout& Device::pushConstantLayout() const noexcept
+  {
+    MT_ASSERT(_pushConstantLayout != nullptr);
+    return *_pushConstantLayout;
   }
 }

@@ -245,6 +245,8 @@ void PassConfigurator::_processShaderReflection(
                                                                   context);
     _processBindings(shaderRecord, set, reflectedSet, context);
   }
+
+  _processPushConstants(shaderRecord, reflection, context);
 }
 
 TechniqueConfiguration::DescriptorSet&
@@ -518,6 +520,68 @@ void PassConfigurator::_parseUniformBlockMember(
   }
 
   target.variables.push_back(newUniform);
+}
+
+void PassConfigurator::_processPushConstants(
+                                      const ShaderInfo& shaderRecord,
+                                      const SpvReflectShaderModule& reflection,
+                                      ConfigurationBuildContext& context) const
+{
+  //  Обходим все блоки и детей первого порядка.
+  for(uint32_t blockIndex = 0;
+      blockIndex < reflection.push_constant_block_count;
+      blockIndex++)
+  {
+    SpvReflectBlockVariable& block =
+                                    reflection.push_constant_blocks[blockIndex];
+    std::string blockPrefix = block.name;
+    blockPrefix += ".";
+    for(uint32_t memberIndex = 0;
+        memberIndex < block.member_count;
+        memberIndex++)
+    {
+      SpvReflectBlockVariable& member = block.members[memberIndex];
+      std::string shortName = member.name;
+      std::string fullName = blockPrefix + shortName;
+      _addPushConstant( context,
+                        shortName,
+                        fullName,
+                        member);
+    }
+  }
+}
+
+void PassConfigurator::_addPushConstant(ConfigurationBuildContext& context,
+                                        const std::string& shortName,
+                                        const std::string& fullName,
+                                        SpvReflectBlockVariable& member) const
+{
+  TechniqueConfiguration& configuration = *context.configuration;
+
+  if(member.offset + member.size > 128) throw std::runtime_error(context.configuratorName + ": push constant " + fullName + " has wrong location(offset + size > 128)");
+
+  //  Ищем, есть ли уже константы с таким именем
+  for(TechniqueConfiguration::PushConstant& constant :
+                                                    configuration.pushConstants)
+  {
+    if(constant.fullName == fullName)
+    {
+      if( constant.offset != member.offset ||
+          constant.size != member.size)
+      {
+        throw std::runtime_error(context.configuratorName + ": push constant " + fullName + " has different location in some shaders");
+      }
+      return;
+    }
+  }
+
+  //  Это первое упоминание такой константы, создаем новую запись
+  TechniqueConfiguration::PushConstant newConstant{};
+  newConstant.shortName = shortName;
+  newConstant.fullName = fullName;
+  newConstant.offset = member.offset;
+  newConstant.size = member.size;
+  configuration.pushConstants.push_back(newConstant);
 }
 
 SpecializationInfo PassConfigurator::_createSpecialization(

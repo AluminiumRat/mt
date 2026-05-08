@@ -135,6 +135,19 @@ namespace mt
     std::vector<Resource> resources;
     uint32_t resourcesCount[maxDescriptorSetIndex + 1];
 
+    // Описание отдельной пуш константы
+    struct PushConstant
+    {
+      //  Имя без названий родительских объектов, в которых находится переменная
+      std::string shortName;
+      //  Полное уникальное имя со всеми названиями родительских объектов
+      std::string fullName;
+      //  Расположение константы
+      uint32_t offset;
+      uint32_t size;
+    };
+    std::vector<PushConstant> pushConstants;
+
     // Дефолтные сэмплеры. Настраиваются через конфигурацию (файл техники)
     struct DefaultSampler
     {

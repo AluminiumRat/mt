@@ -248,7 +248,16 @@ namespace mt
                             const SpvReflectBlockVariable& sourceMember,
                             std::string namePrefix,
                             uint32_t parentBlockOffset) const;
-    //  По рефлексии и настройкам прохода готовим константы специализации
+    //  Разбираем пуш константы из рефлексии
+    void _processPushConstants( const ShaderInfo& shaderRecord,
+                                const SpvReflectShaderModule& reflection,
+                                ConfigurationBuildContext& context) const;
+    //  Добавить информацию о пуш константе в конфигурацию
+    void _addPushConstant(ConfigurationBuildContext& context,
+                          const std::string& shortName,
+                          const std::string& fullName,
+                          SpvReflectBlockVariable& member) const;
+    //  Готовим константы специализации по рефлексии и настройкам прохода
     SpecializationInfo _createSpecialization(
                                 const ShaderInfo& shaderRecord,
                                 const SpvReflectShaderModule& reflection) const;
