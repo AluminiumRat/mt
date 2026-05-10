@@ -1,4 +1,5 @@
-﻿#include <vkr/queue/CommandProducerGraphic.h>
+﻿#include <util/pi.h>
+#include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/Device.h>
 #include <TestWindow.h>
 
@@ -17,7 +18,8 @@ TestWindow::TestWindow(Device& device) :
   _vertexBuffer(_technique.getOrCreateResourceBinding("vertices")),
   _texture(_technique.getOrCreateResourceBinding("colorTexture")),
   _sampler(_technique.getOrCreateResourceBinding("samplerState")),
-  _color(_technique.getOrCreateUniform("colorData.color"))
+  _color(_technique.getOrCreateUniform("colorData.color")),
+  _rotationPushConstant(_technique.getOrCreatePushConstant("rotation.value"))
 {
   //  Настраивать и пересобирать конфигурацию можно и до и после настройки
   //  ресурсов и юниформов. Эту строку можно перенести в конец конструктора
@@ -131,7 +133,7 @@ void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
 
   //  Можно выбрать один из вариантов рендера
   _drawSimple(*commandProducer);
-  //_drawVolatileContext(commandProducer);
+  //_drawVolatileContext(*commandProducer);
 
   renderPass.endPass();
 
@@ -168,6 +170,16 @@ void TestWindow::_drawSimple(CommandProducerGraphic& commandProducer)
   Technique::BindGraphic bind(_technique, _pass, commandProducer);
   if (bind.isValid())
   {
+    //  Выставляем пуш константы
+    float rotationAngle = (frameIndex % 360) * pi / 180.0f;
+    //  Можно выставить явно через PushConstantBlock
+    PushConstantBlock pushBlock;
+    _rotationPushConstant.setValue(rotationAngle, pushBlock);
+    commandProducer.pushConstants(pushBlock);
+    //  А можно выставить через pushTogether
+    PushConstant::pushTogether( commandProducer,
+                                _rotationPushConstant, rotationAngle);
+
     commandProducer.draw(3);
     bind.release();
   }
@@ -208,6 +220,12 @@ void TestWindow::_drawVolatileContext(
                               &volatileContext);
   if(bind.isValid())
   {
+    //  Выставляем пуш константы. Они работают независимо от волатильного
+    //  контекста
+    float rotationAngle = (frameIndex % 360) * pi / 180.0f;
+    PushConstant::pushTogether( commandProducer,
+                                _rotationPushConstant, rotationAngle);
+
     commandProducer.draw(3);
     bind.release();
   }

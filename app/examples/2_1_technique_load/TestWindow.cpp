@@ -1,4 +1,5 @@
 ﻿#include <technique/TechniqueLoader.h>
+#include <util/pi.h>
 #include <vkr/queue/CommandProducerGraphic.h>
 #include <vkr/Device.h>
 #include <TestWindow.h>
@@ -17,7 +18,8 @@ TestWindow::TestWindow(Device& device) :
   _colorSelector(_technique.getOrCreateSelection("colorSelector")),
   _vertexBuffer(_technique.getOrCreateResourceBinding("vertices")),
   _texture(_technique.getOrCreateResourceBinding("colorTexture")),
-  _color(_technique.getOrCreateUniform("colorData.color"))
+  _color(_technique.getOrCreateUniform("colorData.color")),
+  _rotationPushConstant(_technique.getOrCreatePushConstant("rotation.value"))
 {
   _makeConfiguration();
   _createVertexBuffer();
@@ -114,6 +116,11 @@ void TestWindow::drawImplementation(FrameBuffer& frameBuffer)
   Technique::BindGraphic bind(_technique, _pass, *commandProducer);
   if (bind.isValid())
   {
+    //  Выставляем пуш константы.
+    float rotationAngle = (frameIndex % 360) * pi / 180.0f;
+    PushConstant::pushTogether( *commandProducer,
+                                _rotationPushConstant, rotationAngle);
+
     commandProducer->draw(3);
     bind.release();
   }

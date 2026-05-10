@@ -40,5 +40,6 @@ namespace mt
     ResourceBinding& _sampler;
 
     UniformVariable& _color;
+    PushConstant& _rotationPushConstant;
   };
 }

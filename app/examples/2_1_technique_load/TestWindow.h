@@ -37,5 +37,6 @@ namespace mt
     ResourceBinding& _texture;
 
     UniformVariable& _color;
+    PushConstant& _rotationPushConstant;
   };
 }

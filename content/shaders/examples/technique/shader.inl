@@ -21,6 +21,11 @@ layout (set = VOLATILE,
     vec4 color;
 } colorData;
 
+layout (push_constant) uniform Rotation
+{
+    float value;
+} rotation;
+
 layout (set = STATIC,
         binding = 1) uniform texture2D colorTexture;
 layout (set = STATIC,
