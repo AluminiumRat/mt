@@ -23,7 +23,7 @@ int updateSamplesCount( vec2 ssCoords,
     //  У нас достаточно надежная репроекция, вычисляем количество сэмплов
     //  по истории
     samplesHistory = texture( isampler2D( prevSamplesCountBuffer,
-                                          commonNearestSampler),
+                                          commonNearestSamplerClamped),
                               ssCoords + reprojection.xy);
     currentSamplesCount = samplesHistory.x;
 
@@ -74,7 +74,7 @@ vec3 getRayDirection(int sampleIndex)
 {
   sampleIndex = sampleIndex % 1024;
   vec2 samplerValue = texelFetch( sampler1D(samplerTexture,
-                                            commonNearestSampler),
+                                            commonNearestSamplerClamped),
                                   sampleIndex,
                                   0).rg;
   samplerValue *= commonData.environment.sunAngleSize / 2.0f;
@@ -203,15 +203,17 @@ void main()
 
   float shadowFactor = 0.0f;
 
-  float depth = texture(sampler2D(linearDepthHalfBuffer, commonNearestSampler),
+  float depth = texture(sampler2D(linearDepthHalfBuffer,
+                                  commonNearestSamplerClamped),
                         ssCoords).r;
   //  Проверка, что не попали в небо
   if(depth != LINEAR_DEPTH_EMPTY_VALUE)
   {
-    float random = texelFetch( sampler2D(noiseTexture, commonNearestSampler),
-                                ivec2(int(gl_GlobalInvocationID.x) % 32,
-                                      int(gl_GlobalInvocationID.y) % 32),
-                                0).r;
+    float random = texelFetch(sampler2D(noiseTexture,
+                                        commonNearestSampler),
+                              ivec2(int(gl_GlobalInvocationID.x) % 32,
+                                    int(gl_GlobalInvocationID.y) % 32),
+                              0).r;
     int sampleIndex = int(random * 1024) +
                                     (commonData.frameIndex % 4) * MAX_RAY_CASTS;
 

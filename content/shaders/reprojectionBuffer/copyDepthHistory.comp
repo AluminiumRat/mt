@@ -12,7 +12,7 @@ void main()
       gl_GlobalInvocationID.y >= commonData.iHalfFrameExtent.y) return;
 
   float depth = texelFetch( sampler2D(linearDepthHalfBuffer,
-                                      commonNearestSampler),
+                                      commonNearestSamplerClamped),
                             ivec2(gl_GlobalInvocationID.xy),
                             0).x;
   imageStore( depthHistory,

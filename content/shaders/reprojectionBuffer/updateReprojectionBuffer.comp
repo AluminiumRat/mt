@@ -34,7 +34,7 @@ void main()
 
   #if HISTORY_AVAILABLE == 1
     float depth = texelFetch( sampler2D(linearDepthHalfBuffer,
-                                        commonNearestSampler),
+                                        commonNearestSamplerClamped),
                               ivec2(gl_GlobalInvocationID.xy),
                               0).x;
     vec2 ssCoordShift = vec2(0.0f);

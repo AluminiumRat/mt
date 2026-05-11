@@ -45,11 +45,34 @@ ColorFrameCommonSet::ColorFrameCommonSet( Device& device,
                                       0,
                                       true,
                                       4.0f);
+  _commonLinearClampedSampler = new Sampler(
+                                      _device,
+                                      VK_FILTER_LINEAR,
+                                      VK_FILTER_LINEAR,
+                                      VK_SAMPLER_MIPMAP_MODE_LINEAR,
+                                      VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                                      VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                                      VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                                      0,
+                                      true,
+                                      4.0f);
 
   _commonNearestSampler = new Sampler(_device,
                                       VK_FILTER_NEAREST,
                                       VK_FILTER_NEAREST,
-                                      VK_SAMPLER_MIPMAP_MODE_NEAREST);
+                                      VK_SAMPLER_MIPMAP_MODE_NEAREST,
+                                      VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                                      VK_SAMPLER_ADDRESS_MODE_REPEAT,
+                                      VK_SAMPLER_ADDRESS_MODE_REPEAT);
+
+  _commonNearestClampedSampler = new Sampler(
+                                      _device,
+                                      VK_FILTER_NEAREST,
+                                      VK_FILTER_NEAREST,
+                                      VK_SAMPLER_MIPMAP_MODE_NEAREST,
+                                      VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                                      VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+                                      VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
 }
 
 void ColorFrameCommonSet::_createLayouts()
@@ -124,8 +147,12 @@ void ColorFrameCommonSet::update( CommandProducerGraphic& commandProducer,
                                       VK_SHADER_STAGE_ALL);
   _descriptorSet->attachSampler(*_commonLinearSampler,
                                 commonLinearSamplerBinding);
+  _descriptorSet->attachSampler(*_commonLinearClampedSampler,
+                                commonLinearClampedSamplerBinding);
   _descriptorSet->attachSampler(*_commonNearestSampler,
                                 commonNearestSamplerBinding);
+  _descriptorSet->attachSampler(*_commonNearestClampedSampler,
+                                commonNearestClampedSamplerBinding);
   _descriptorSet->finalize();
 
   _frameIndex++;

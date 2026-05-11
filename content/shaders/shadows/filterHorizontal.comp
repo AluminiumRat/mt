@@ -18,7 +18,7 @@ void main()
 
   //  Для начала извлекаем нужные нам данные
   float depth = texelFetch( sampler2D(linearDepthHalfBuffer,
-                                      commonNearestSampler),
+                                      commonNearestSamplerClamped),
                             ivec2(gl_GlobalInvocationID.xy),
                             0).x;
   if(depth == LINEAR_DEPTH_EMPTY_VALUE) return;

@@ -26,7 +26,7 @@ float getWeight(ivec2 sampleCoord,
 
   //  Взвешивание по глубине
   float currentDepth = texelFetch(sampler2D(linearDepthHalfBuffer,
-                                            commonNearestSampler),
+                                            commonNearestSamplerClamped),
                                   sampleCoord,
                                   0).x;
   float depthDelta = abs(depth - currentDepth);

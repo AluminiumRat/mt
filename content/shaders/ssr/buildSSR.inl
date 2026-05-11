@@ -81,19 +81,20 @@ float getMaxT(vec3 startPoint, vec3 direction, vec3 directionSign)
   return min(min(ortoDist.x, ortoDist.y), ortoDist.z);
 }
 
-//  Получить мгодитель для радиуса пучка который будем интегрировать от параметра t луча
-//    по которому маршим
+//  Получить множитель для радиуса, пучка который будем интегрировать, от
+//    параметра t луча, по которому маршим. X - множитель для SS координат,
+//    Y - множитель для мировых координат.
 //  startPoint, direction - луч, по которому проводим маршинг (в ss координатах и
 //    гиперболическим z)
 //  maxT - максимальное значение t для луча при маршинге
-float getBoundleFactor( vec3 startPoint,
-                        vec3 direction,
-                        float maxT)
+vec2 getBoundleFactor(vec3 startPoint,
+                      vec3 direction,
+                      float maxT)
 {
-  float rougness = textureLod(sampler2D(roughnessHalfBuffer, commonLinearSampler),
+  float rougness = textureLod(sampler2D(roughnessHalfBuffer, commonLinearSamplerClamped),
                               startPoint.xy,
                               0).r;
-  float bundleTg = textureLod(sampler1D(angleDistribTexture, commonLinearSampler),
+  float bundleTg = textureLod(sampler1D(angleDistribTexture, commonLinearSamplerClamped),
                               rougness,
                               0).r;
   //float bundleTg = 0.1f;
@@ -116,7 +117,54 @@ float getBoundleFactor( vec3 startPoint,
   float boundleSSRadius = boundleRadius /
                                     getScreenSizeWorld(finalPointLinearDepth).x;
 
-  return boundleSSRadius / maxT;
+  return vec2(boundleSSRadius / maxT, boundleRadius / maxT);
+}
+
+//  Координаты ячейки HiZ по скринспэйс координатам
+ivec2 getCell(vec2 ssCoords, int mipLevel)
+{
+  ivec2 pixelCoord = ivec2(ssCoords * commonData.hiZExtent.xy);
+  return pixelCoord >> mipLevel;
+}
+
+//  Пересечение с границей ячейки
+float cellIntersection( vec2 startPoint,
+                        vec2 direction,
+                        ivec2 cell,
+                        int hizMip,
+                        vec2 border)
+{
+  // Размер ячейки в screenSpace координатах
+  vec2 cellSize = vec2(1 << hizMip);
+  cellSize *= commonData.hiZExtent.zw;
+
+  // Вертикаль и горизонталь, с которыми надо пересечься
+  vec2 cellBorders = (cell + border) * cellSize;
+  cellBorders = min(cellBorders, 1.0f);
+
+  vec2 ortoDist = (cellBorders - startPoint) / direction;
+  return min(ortoDist.x, ortoDist.y);
+}
+
+//  Получить первую точку на луче, где надо провести проверку пересечения
+//  x,y - ss координаты
+//  z - гиперболический depth
+//  w - t параметр луча
+vec4 getFirstCheckPoint(vec3 startPoint,
+                        vec3 direction,
+                        vec2 cellBorder,
+                        vec2 pointShift)
+{
+  ivec2 cell = getCell(startPoint.xy, 0);
+  float tValue = cellIntersection(startPoint.xy,
+                                  direction.xy,
+                                  cell,
+                                  0,
+                                  cellBorder);
+  vec3 firstPoint = startPoint + direction * tValue;
+  // Небольшое смещение, чтобы уйти за границу ячейки HiZ
+  firstPoint.xy += pointShift;
+  return vec4(firstPoint, tValue);
 }
 
 #endif

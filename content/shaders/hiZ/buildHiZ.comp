@@ -90,7 +90,7 @@ vec3 getMinMaxFullness(vec4 childMinZ, vec4 childMaxZ, vec4 childFullness)
   {
     vec2 texCoords = (vec2(texelCoord) + vec2(0.5f)) / vec2(params.hiZSize);
     vec4 depthValues = textureGather( sampler2D(linearDepthHalfBuffer,
-                                                commonNearestSampler),
+                                                commonNearestSamplerClamped),
                                       texCoords);
     vec3 minMaxFullness = getMinMaxFullness(depthValues,
                                             depthValues,

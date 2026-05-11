@@ -22,7 +22,7 @@ namespace mt
   {
   public:
     static constexpr const char* setName = "ColorFrameCommonSet";
-    static const VkDescriptorSetLayoutBinding bindings[13];
+    static const VkDescriptorSetLayoutBinding bindings[15];
 
     static constexpr uint32_t uniformBufferBinding = 0;
     static constexpr uint32_t iblLutBinding = 1;
@@ -36,7 +36,9 @@ namespace mt
     static constexpr uint32_t reprojectionBufferBinding = 9;
     static constexpr uint32_t shadowBufferBinding = 10;
     static constexpr uint32_t commonLinearSamplerBinding = 11;
-    static constexpr uint32_t commonNearestSamplerBinding = 12;
+    static constexpr uint32_t commonLinearClampedSamplerBinding = 12;
+    static constexpr uint32_t commonNearestSamplerBinding = 13;
+    static constexpr uint32_t commonNearestClampedSamplerBinding = 14;
 
   public:
     //  Хелпер, который биндит сет в конструкторе и анбиндит в деструкторе
@@ -115,7 +117,9 @@ namespace mt
     Ref<Sampler> _iblLutSampler;
     //  Дефолтные сэмплеры общего назначения
     Ref<Sampler> _commonLinearSampler;
+    Ref<Sampler> _commonLinearClampedSampler;
     Ref<Sampler> _commonNearestSampler;
+    Ref<Sampler> _commonNearestClampedSampler;
 
     //  Информация о камере на текущем отрисовываемом кадре
     Camera::ShaderData _currentCameraData;

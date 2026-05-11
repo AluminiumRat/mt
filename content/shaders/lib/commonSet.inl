@@ -89,9 +89,20 @@ layout (set = COMMON,
         binding = 11) uniform sampler commonLinearSampler;
 
 //  Дефолтный сэмплер общего назначения.
-//  Nearest фильтрация
+//  Линейная фильтрация, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+//  анизотропия 4
 layout (set = COMMON,
-        binding = 12) uniform sampler commonNearestSampler;
+        binding = 12) uniform sampler commonLinearSamplerClamped;
+
+//  Дефолтный сэмплер общего назначения.
+//  Nearest фильтрация, VK_SAMPLER_ADDRESS_MODE_REPEAT
+layout (set = COMMON,
+        binding = 13) uniform sampler commonNearestSampler;
+
+//  Дефолтный сэмплер общего назначения.
+//  Nearest фильтрация, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+layout (set = COMMON,
+        binding = 14) uniform sampler commonNearestSamplerClamped;
 
 //  Получить размер пикселя для половинных буферов на определенной дистанции
 //  от камеры
