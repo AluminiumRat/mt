@@ -59,7 +59,8 @@ void getRay(out vec3 origin,
   //  переводим в скрин спэйс и вычитаем начало луча
   vec3 viewDir = getViewDirection(ssCoords);
   vec3 reflectionDir = reflect(viewDir, normal);
-  vec3 shiftedPoint = worldPos + reflectionDir;
+  vec3 shiftedPoint = worldPos +
+                            reflectionDir * commonData.cameraData.nearDistance;
   vec4 shiftedPointSS =
             commonData.cameraData.viewProjectionMatrix * vec4(shiftedPoint, 1);
   shiftedPointSS.xyz /= shiftedPointSS.w;
