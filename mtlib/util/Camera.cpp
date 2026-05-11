@@ -105,3 +105,35 @@ glm::vec3 Camera::getDirection(
   unprojectedPoint = transformMatrix() * unprojectedPoint;
   return glm::normalize(glm::vec3(unprojectedPoint) - _eyePoint);
 }
+
+//  Зависимость размера экрана в мировых координатах от расстояния
+//    xy - размер экрана в точке наблюдения (0 для перспективной проекции)
+//    zw - множители для расстояния
+glm::vec4 Camera::getScreenSizeData() const noexcept
+{
+  glm::vec4 farLeftUp = _inverseProjectionMatrix * glm::vec4(-1, -1, 0, 1);
+  farLeftUp /= farLeftUp.w;
+  glm::vec4 nearLeftUp = _inverseProjectionMatrix * glm::vec4(-1, -1, 1, 1);
+  nearLeftUp /= nearLeftUp.w;
+
+  glm::vec4 screenSizeData(0);
+  screenSizeData.z = abs((farLeftUp.x - nearLeftUp.x) /
+                                                  (farLeftUp.z - nearLeftUp.z));
+  screenSizeData.w = abs((farLeftUp.y - nearLeftUp.y) /
+                                                  (farLeftUp.z - nearLeftUp.z));
+
+  screenSizeData.x = abs(nearLeftUp.x) - abs(screenSizeData.z * nearLeftUp.z);
+  screenSizeData.y = abs(nearLeftUp.y) - abs(screenSizeData.w * nearLeftUp.z);
+
+  glm::vec4 farRightDown = _inverseProjectionMatrix * glm::vec4(1, 1, 0, 1);
+  farRightDown /= farRightDown.w;
+  glm::vec4 nearRightDown = _inverseProjectionMatrix * glm::vec4(1, 1, 1, 1);
+  nearRightDown /= nearRightDown.w;
+
+  screenSizeData.z += abs((farRightDown.x - nearRightDown.x) /
+                                            (farRightDown.z - nearRightDown.z));
+  screenSizeData.w += abs((farRightDown.y - nearRightDown.y) /
+                                            (farRightDown.z - nearRightDown.z));
+
+  return screenSizeData;
+}

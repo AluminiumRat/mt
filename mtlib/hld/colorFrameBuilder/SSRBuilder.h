@@ -11,11 +11,12 @@ namespace mt
   class Device;
   class FrameBuffer;
   struct Region;
+  class TextureManager;
 
   class SSRBuilder
   {
   public:
-    explicit SSRBuilder(Device& device);
+    explicit SSRBuilder(Device& device, TextureManager& textureManager);
     SSRBuilder(const SSRBuilder&) = delete;
     SSRBuilder& operator = (const SSRBuilder&) = delete;
     ~SSRBuilder() noexcept = default;
@@ -53,13 +54,14 @@ namespace mt
     TechniquePass& _debugPass;
     ResourceBinding& _reflectionBufferBinding;
     ResourceBinding& _prevHDRBufferBinding;
+    PushConstant& _mousePosPushConstant;
 
     //  Размер сетки для вызова компьют шейдеров
     glm::uvec2 _gridSize;
 
     //  Настройки для дебажной отрисовки
     bool _enableDebugDraw;
-    glm::vec2 _mousePosition;
+    glm::vec2 _mousePos;
   };
 
   inline void SSRBuilder::setBuffers( const ImageView& reflectionBuffer,

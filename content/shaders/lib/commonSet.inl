@@ -111,6 +111,16 @@ vec3 getNormalFromHalfBuffer(ivec2 pixelCoord)
                                      0).xy);
 }
 
+//  Прочитать нормаль из normalHalfBuffer
+//  ssCoord - экранные координаты [0,1]
+vec3 getNormalFromHalfBuffer(vec2 ssCoords)
+{
+  return octahedronDecode(textureLod(sampler2D( normalHalfBuffer,
+                                                commonNearestSampler),
+                                     ssCoords,
+                                     0).xy);
+}
+
 //  Вектор, специально предназначенный для вычисления мировых координат
 //  по линейному буферу глубины. Представляет из себя напрвление "из камеры",
 //  но с нормализованной во вью пространстве координатой z
@@ -137,6 +147,14 @@ vec3 getWorldPosition(vec2 ssCoords, float linearDepth)
 {
   vec3 posRestoreVec = getPosRestoreVec(ssCoords);
   return commonData.cameraData.eyePoint + posRestoreVec * linearDepth;
+}
+
+//  Получить размер экрана(в мировых координатах) на дистанции dist от
+//  точки наблюдения
+vec2 getScreenSizeWorld(float dist)
+{
+  return commonData.cameraData.screenSizeData.xy +
+                                dist * commonData.cameraData.screenSizeData.zw;
 }
 
 #endif

@@ -2,6 +2,50 @@
 
 #include "ssr/buildSSR.inl"
 
+//  Координаты ячейки HiZ по скринспэйс координатам
+ivec2 getCell(vec2 ssCoords, int mipLevel)
+{
+  ivec2 pixelCoord = ivec2(ssCoords * commonData.hiZExtent.xy);
+  return pixelCoord >> mipLevel;
+}
+
+//  Пересечение с границей ячейки
+float cellIntersection( vec2 startPoint,
+                        vec2 direction,
+                        ivec2 cell,
+                        int hizMip,
+                        vec2 border)
+{
+  // Размер ячейки в screenSpace координатах
+  vec2 cellSize = vec2(1 << hizMip);
+  cellSize *= commonData.hiZExtent.zw;
+
+  // Вертикаль и горизонталь, с которыми надо пересечься
+  vec2 cellBorders = (cell + border) * cellSize;
+  cellBorders = min(cellBorders, 1.0f);
+
+  vec2 ortoDist = (cellBorders - startPoint) / direction;
+  return min(ortoDist.x, ortoDist.y);
+}
+
+//  Получить первую точку на луче для маршинга
+vec3 getFirstPoint( vec3 startPoint,
+                    vec3 direction,
+                    vec2 cellBorder,
+                    vec2 pointShift)
+{
+  ivec2 cell = getCell(startPoint.xy, 0);
+  float tValue = cellIntersection(startPoint.xy,
+                                  direction.xy,
+                                  cell,
+                                  0,
+                                  cellBorder);
+  vec3 firstPoint = startPoint + direction * tValue;
+  // Небольшое смещение, чтобы уйти за границу ячейки HiZ
+  firstPoint.xy += pointShift;
+  return firstPoint;
+}
+
 //  Упрощенная обработка для пикселей фона(неба). Просто читаем значение из
 //  предыдущего кадра для лучшей постобработки
 void processBackground(vec2 ssCoords)

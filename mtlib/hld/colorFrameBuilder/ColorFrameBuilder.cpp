@@ -23,7 +23,7 @@ ColorFrameBuilder::ColorFrameBuilder( Device& device,
   _reprojectionBufferUpdater(device),
   _hiZBuilder(device),
   _shadowsStage(device, textureManager),
-  _ssrBuilder(device),
+  _ssrBuilder(device, textureManager),
   _opaqueColorStage(device),
   _backgroundRender(device, techniqueManager),
   _posteffects(device)
@@ -132,7 +132,11 @@ void ColorFrameBuilder::draw( FrameBuffer& target,
 
     _posteffectsLayouts(*ldrProducer);
     _posteffects.makeLDR(target, targetRegion, *ldrProducer);
-    _ssrBuilder.debugRender(target, targetRegion, *ldrProducer);
+
+    {
+      ColorFrameCommonSet::Bind bindCommonSet(_commonSet, *ldrProducer);
+      _ssrBuilder.debugRender(target, targetRegion, *ldrProducer);
+    }
 
     _device.graphicQueue()->submitCommands(std::move(ldrProducer));
   }

@@ -33,6 +33,12 @@ struct CameraData
   vec3 leftTopRPV;
   vec3 leftToRightRPV;
   vec3 topToBottomRPV;
+
+  //  Данные для вычисления размера экрана на разных расстояниях от камеры
+  //    xy - размер экрана в точке наблюдения (0 для перспективной проекции)
+  //    zw - множители для расстояния
+  //  Размер экрана = screenSizeData.xy + linearDepth * screenSizeData.zw
+  vec4 screenSizeData;
 };
 
 #endif

@@ -3,13 +3,15 @@
 #include <gui/ImGuiPropertyGrid.h>
 #include <gui/ImGuiRAII.h>
 #include <hld/colorFrameBuilder/SSRBuilder.h>
+#include <resourceManagement/TextureManager.h>
 #include <util/Assert.h>
 #include <util/floorPow.h>
 #include <vkr/queue/CommandProducerGraphic.h>
+#include <vkr/Device.h>
 
 using namespace mt;
 
-SSRBuilder::SSRBuilder(Device& device) :
+SSRBuilder::SSRBuilder(Device& device, TextureManager& textureManager) :
   _device(device),
   _hdrReprojector(device),
   _technique(device, "ssr/buildSSR.tch"),
@@ -18,9 +20,19 @@ SSRBuilder::SSRBuilder(Device& device) :
   _reflectionBufferBinding(
     _technique.getOrCreateResourceBinding("outReflectionBuffer")),
   _prevHDRBufferBinding(_technique.getOrCreateResourceBinding("prevHDR")),
+  _mousePosPushConstant(_technique.getOrCreatePushConstant("debugParams.mousePos")),
   _gridSize(1),
-  _enableDebugDraw(false)
+  _enableDebugDraw(false),
+  _mousePos(0)
 {
+  ResourceBinding& angleDistribBinding =
+                  _technique.getOrCreateResourceBinding("angleDistribTexture");
+  ConstRef<TechniqueResource> angleDistribTexture =
+                        textureManager.loadImmediately( "util/angleDistrib.dds",
+                                                        *device.graphicQueue(),
+                                                        false);
+  MT_ASSERT(angleDistribTexture->image() != nullptr);
+  angleDistribBinding.setResource(angleDistribTexture);
 }
 
 void SSRBuilder::buildReflection(CommandProducerGraphic& commandProducer)
@@ -79,6 +91,10 @@ void SSRBuilder::debugRender( FrameBuffer& target,
   {
     Technique::BindGraphic bind(_technique, _debugPass, commandProducer);
     MT_ASSERT(bind.isValid());
+
+    PushConstant::pushTogether( commandProducer,
+                                _mousePosPushConstant, _mousePos);
+
     commandProducer.draw(4);
   }
   renderPass.endPass();
@@ -90,13 +106,12 @@ void SSRBuilder::makeGui()
   grid.addRow("Debug draw");
   ImGui::Checkbox("##DebugDraw", &_enableDebugDraw);
 
-  if(_prevHDRBuffer != nullptr)
+  if(_prevHDRBuffer != nullptr && _enableDebugDraw)
   {
     ImVec2 mousePos = ImGui::GetMousePos();
-    _mousePosition = glm::vec2( mousePos.x / _prevHDRBuffer->extent().x,
-                                mousePos.y / _prevHDRBuffer->extent().y);
-
+    _mousePos = glm::vec2(mousePos.x / _prevHDRBuffer->extent().x,
+                          mousePos.y / _prevHDRBuffer->extent().y);
     grid.addRow("Mouse position");
-    ImGui::Text("(%.3f, %.3f)", _mousePosition.x, _mousePosition.y);
+    ImGui::Text("(%.3f, %.3f)", _mousePos.x, _mousePos.y);
   }
 }

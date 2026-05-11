@@ -42,6 +42,12 @@ namespace mt
       alignas(16) glm::vec3 leftTopRPV;
       alignas(16) glm::vec3 leftToRightRPV;
       alignas(16) glm::vec3 topToBottomRPV;
+
+      //  Данные для вычисления размера экрана на разных расстояниях от камеры
+      //    xy - размер экрана в точке наблюдения (0 для перспективной проекции)
+      //    zw - множители для расстояния
+      //  Размер экрана = screenSizeData.xy + linearDist * screenSizeData.zw
+      alignas(16) glm::vec4 screenSizeData;
     };
 
   public:
@@ -106,6 +112,7 @@ namespace mt
     inline glm::vec3 _getDirection(
                             glm::vec2 cullCoords,
                             const glm::mat4& clipToWorldMatrix) const noexcept;
+    glm::vec4 getScreenSizeData() const noexcept;
 
   private:
     glm::mat4 _viewMatrix;
@@ -218,6 +225,8 @@ namespace mt
     shaderData.topToBottomRPV = _getDirection(glm::vec2(-1, 1),
                                               shaderData.clipToWorldMatrix);
     shaderData.topToBottomRPV -= shaderData.leftTopRPV;
+
+    shaderData.screenSizeData = getScreenSizeData();
 
     return shaderData;
   }
