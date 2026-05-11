@@ -30,6 +30,11 @@ void main()
   getRay(startPoint, direction, ssCoords, linearDepth);
   vec3 directionSign = sign(direction);
 
+  //  Смещение точек от края ячейки HiZ, чтобы попадать в следующую ячейку
+  vec2 pointShift = directionSign.xy * commonData.hiZExtent.zw * 0.5f;
+  //  С каким краем клеток HiZ будем искать пересечение
+  vec2 cellBorder = max(directionSign.xy, 0.0f);
+
   float maxT = getMaxT(startPoint, direction, directionSign);
 
   //  Подсвечиваем луч
@@ -47,31 +52,44 @@ void main()
     return;
   }
 
-  //  Шаг при конетрэйсинге
+  //  Шаг при контрэйсинге
   float coneStep = (1 + boundleFactor.x) / (1 - boundleFactor.x);
 
   //  Подсвечиваем пучек, в котором будем собирать отражение
   float myBundleRad = myT * boundleFactor.x;
   if(distToRay <= myBundleRad) outColor.a = 0.1f;
 
-  //  Смещение точек от края ячейки HiZ, чтобы попадать в следующую ячейку
-  vec2 pointShift = directionSign.xy * commonData.hiZExtent.zw * 0.5f;
-  //  С каким краем клеток HiZ будем искать пересечение
-  vec2 cellBorder = max(directionSign.xy, 0.0f);
-
   float minTStep = max(commonData.hiZExtent.z, commonData.hiZExtent.w);
-  vec4 currentPoint = vec4( startPoint + 2 * minTStep * direction,
-                            2 * minTStep);
+  float currentT = 2.0f * minTStep;
+  vec3 currentPoint = startPoint + currentT * direction;
 
   uint stepCount = 0;
-  while(++stepCount <= 50)
+  vec4 color = vec4(0);
+  while(++stepCount <= 50 && color.a < 1.0f)
   {
+    vec4 checkpointColor = vec4(0.0f, 1.0f, 0.0f, 1.0f);
+
+    float boundleRadiusSS = boundleFactor.x * currentT;
+    float checkpointMip = log2(boundleRadiusSS * commonData.hiZExtent.x) + 1;
+    vec3 hizValue = textureLod( sampler2D(hiZBuffer,
+                                          commonLinearSamplerClamped),
+                                currentPoint.xy,
+                                checkpointMip).xyz;
+
+    float boundleRadiusWorld = boundleFactor.y * currentT;
+    float linearDepth = hyperbolicToLinearDepth(currentPoint.z);
+    if(linearDepth + boundleRadiusWorld > hizValue.x)
+    {
+      checkpointColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    }
+
     // Подсвечиваем чекпоинт
-    if(length(texCoord - currentPoint.xy) < 0.002f) addColor(vec4(1.0f, 0.0f, 0.0f, 1.0f));
+    if(length(texCoord - currentPoint.xy) < 0.002f) addColor(checkpointColor);
 
     // Следующий чекпоинт
-    float nextT = currentPoint.w * coneStep;
-    nextT = max(nextT, currentPoint.w + minTStep);
-    currentPoint = vec4(startPoint + direction * nextT, nextT);
+    float nextT = currentT * coneStep;
+    nextT = max(nextT, currentT + minTStep);
+    currentPoint = startPoint + direction * nextT;
+    currentT = nextT;
   }
 }
